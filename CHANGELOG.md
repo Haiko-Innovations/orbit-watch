@@ -28,6 +28,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   affiliations (format 1.0) and a deterministic, recomputable reviewer
   selection; challenges and votes carry reasons. See
   `docs/optimistic-verification.md`.
+- Reviewer accuracy (phase 1, step 1.4): known-answer calibration tasks built
+  by the simulator are mixed into every reviewer's queue in the same shape as
+  real tasks; reviewer profiles show accuracy, approval rate and missed tasks,
+  with flags for rubber-stamping. See `docs/reviewer-accuracy.md`.
 
 ## [0.1.0] - 2026-11-11
 
