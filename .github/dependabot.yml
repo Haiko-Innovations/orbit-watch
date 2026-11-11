@@ -1,4 +1,8 @@
 version: 2
+# contracts/lib (forge-std, OpenZeppelin) are git submodules pinned to release
+# commits. They are not listed here on purpose: Dependabot would move them to the
+# newest commit of the default branch, which is not a release. They are updated by
+# hand, see contracts/README.md (decision D-18).
 updates:
   # New versions wait 14 days before they are proposed (supply-chain protection:
   # a compromised release is usually detected and pulled within that time).

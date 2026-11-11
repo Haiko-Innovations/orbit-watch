@@ -30,6 +30,7 @@ jobs:
         with:
           fetch-depth: 0 # gitleaks scans the whole history
           persist-credentials: false
+          submodules: true # contracts/lib: forge-std and OpenZeppelin, pinned to release commits
 
       - name: Secrets (gitleaks)
         working-directory: .
@@ -92,6 +93,19 @@ jobs:
           diff -r ../examples/simulated "$RUNNER_TEMP/demo-3.15"
           diff -r ../examples/phase1 "$RUNNER_TEMP/demo1-pip"
           diff -r ../examples/phase1 "$RUNNER_TEMP/demo1-3.15"
+
+      # Contracts (phase 2). Foundry pinned to a release older than 14 days (decision P2-04).
+      - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1.9.2
+        with:
+          version: v1.8.6
+
+      - name: Contracts (format, lint, build, tests with fuzzing and invariants)
+        working-directory: contracts
+        run: |
+          forge fmt --check
+          forge lint --deny warnings
+          forge build --sizes
+          forge test
 
       - name: Known vulnerabilities (runtime dependencies, including the API extra)
         run: |

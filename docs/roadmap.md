@@ -20,8 +20,9 @@ command-line client and data publication. See the
 its one open criterion, a real public IOD example, is still open
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
-**Next: phase 2.** The plan is below; its choices are proposed decisions that
-need approval before any code, as in phase 1.
+**Now: phase 2**, settlement on a testnet. Its decisions were approved on
+2026-11-11; step 2.1, the contracts project with the escrow skeleton, is done.
+Next is step 2.2, the settlement rules on chain.
 
 ## Next steps
 
@@ -73,16 +74,16 @@ attestations**. The rules stay exactly those of phase 1: the testnet adapter
 must pass the same settlement scenario suite as the ledger. No mainnet, no
 token of our own, no real money: testnet USDC has no value.
 
-The choices behind this plan are **proposed decisions P2-01 to P2-11** in
-[decisions.md](decisions.md#proposed-decisions-for-phase-2); they need approval
-before step 2.1 starts ([#27](https://github.com/Haiko-Innovations/orbit-watch/issues/27)). In short: **Base Sepolia**, Circle's **testnet USDC**,
+The choices behind this plan are **decisions P2-01 to P2-11** in
+[decisions.md](decisions.md#phase-2-decisions), approved on 2026-11-11
+([#27](https://github.com/Haiko-Innovations/orbit-watch/issues/27)). In short: **Base Sepolia**, Circle's **testnet USDC**,
 EAS at its predeploy address, **Foundry** and **OpenZeppelin Contracts**, a
 non-upgradeable escrow, a reviewer registry behind a **Safe multisig and a
 public timelock**, and a Python adapter on **web3.py**.
 
 | Step | Content | Done when |
 |---|---|---|
-| **2.1 Contracts project** ([#28](https://github.com/Haiko-Innovations/orbit-watch/issues/28)) | `contracts/` Foundry project, OpenZeppelin pinned, built and tested in the `tarkistus` check; escrow skeleton with `fund` and `refund`; refuses to run on any chain but Base Sepolia or a local Anvil chain. | `forge test` runs in CI; funding and refunding work on a local chain. |
+| ✅ **2.1 Contracts project** ([#28](https://github.com/Haiko-Innovations/orbit-watch/issues/28)) | `contracts/` Foundry project, OpenZeppelin pinned, built and tested in the `tarkistus` check; escrow skeleton with `fund` and `refund`; refuses to run on any chain but Base Sepolia or a local Anvil chain. | `forge test` runs in CI; funding and refunding work on a local chain. |
 | **2.2 Settlement rules on chain** ([#29](https://github.com/Haiko-Innovations/orbit-watch/issues/29)) | The phase 1 settlement rules in Solidity: split locked at funding, deadlines on chain, permissionless and idempotent settlement, no administrator access to deposits. | Fuzz and invariant tests: deposit = rewards + refunds, a request is settled once, unauthorised parties cannot withdraw. |
 | **2.3 Attestations** ([#30](https://github.com/Haiko-Innovations/orbit-watch/issues/30)) | EAS schemas for the automated result and for reviewer votes; the escrow reads the automated attestation, opens the challenge period and counts 2-of-3 votes from registered reviewers. | Unchallenged, challenged-accepted, challenged-rejected and dispute settle on chain from attestations. |
 | **2.4 Reviewer registry** ([#31](https://github.com/Haiko-Innovations/orbit-watch/issues/31)) | Registry of reviewer addresses owned by an OpenZeppelin TimelockController whose proposer is a Safe multisig; the privileges are documented in the README. | Adding and removing reviewers works only through the multisig and the timelock; tested. |

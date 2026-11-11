@@ -20,7 +20,10 @@ tarkka heidän asemansa on.
 > paikallisesti, **ilman rahaa ja ilman lohkoketjua**. Tilaukset koskevat vain
 > siviilikohteita. **Simuloitu data on aina merkitty simuloiduksi**, ja
 > automaattinen tarkistus on prototyyppi, ei tuotantovalmis tieteellinen
-> validointi. Seuraavaksi vaiheen 2 suunnittelu. Katso [tiekartta](docs/roadmap.fi.md),
+> validointi. Vaihe 2, tilitys Base Sepolia -**testiverkossa**, on alkanut:
+> escrow-sopimuksen runko on hakemistossa [`contracts/`](contracts), ja se
+> kieltäytyy toimimasta muualla kuin testiverkossa ja paikallisessa ketjussa.
+> Katso [tiekartta](docs/roadmap.fi.md),
 > [vaiheen 1 yhteenveto](docs/phase-1-summary.fi.md) ja [muutosloki](CHANGELOG.md).
 
 ## Kokeile (kolme komentoa)
@@ -88,8 +91,9 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | Tallennus (SQLite, tiedostot tiivisteen mukaan) | | [storage.md](docs/storage.md) |
 | HTTP-rajapinta ja komentoriviasiakas | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Avoin data (CC BY 4.0, embargo, pysyvät osoitteet) | `public` | [data-publication.md](docs/data-publication.md) |
+| Escrow-sopimus Base Sepolia -**testiverkkoon** (vaihe 2, kesken) | `forge test` | [escrow.md](docs/escrow.md) |
 
-Python-koodi on hakemistossa [`core/`](core). Simuloidut esimerkit ovat
+Python-koodi on hakemistossa [`core/`](core) ja Solidity-sopimukset hakemistossa [`contracts/`](contracts). Simuloidut esimerkit ovat
 hakemistossa [`examples/`](examples).
 
 ### Mikä on simuloitua
@@ -134,7 +138,7 @@ Koko aloitussuunnitelma: [docs/plan.fi.md](docs/plan.fi.md).
 - **Vaihe 1 (valmis, 0.2.0):** tilaukset tilakoneella, optimistinen tarkistus
   haastejaksolla ja 2/3-tarkistajakierroksella, API sekä pelkkiä pisteitä
   kirjaava ledger-tilityssovitin.
-- **Vaihe 2 (seuraavaksi):** tilitys EVM L2 -**testiverkossa**
+- **Vaihe 2 (käynnissä):** tilitys EVM L2 -**testiverkossa**
   EAS-attestaatioilla. Ei pääverkkoa, ei omaa tokenia.
 - **Vaihe 3:** verkkosovellus roolikohtaisine näkymineen.
 

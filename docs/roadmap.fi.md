@@ -22,8 +22,9 @@ Vaihe 0 julkaistiin
 sen ainoa avoin kriteeri, oikea julkinen IOD-esimerkki, on yhä avoinna
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
-**Seuraavaksi: vaihe 2.** Suunnitelma on alla; sen valinnat ovat ehdotettuja
-päätöksiä, jotka tarvitsevat hyväksynnän ennen koodia, kuten vaiheessa 1.
+**Nyt: vaihe 2**, tilitys testiverkossa. Sen päätökset hyväksyttiin
+11.11.2026; askel 2.1, sopimusprojekti ja escrow-runko, on valmis. Seuraavaksi
+askel 2.2, tilityssäännöt ketjussa.
 
 ## Seuraavat askeleet
 
@@ -77,9 +78,9 @@ testiverkkosovittimen on läpäistävä sama tilityksen skenaariosarja kuin
 ledgerin. Ei pääverkkoa, ei omaa tokenia eikä oikeaa rahaa: testi-USDC:llä ei
 ole arvoa.
 
-Suunnitelman valinnat ovat **ehdotettuja päätöksiä P2-01–P2-11** tiedostossa
-[decisions.md](decisions.md#proposed-decisions-for-phase-2) (englanniksi), ja ne
-tarvitsevat hyväksynnän ennen vaiheen 2.1 aloitusta ([#27](https://github.com/Haiko-Innovations/orbit-watch/issues/27)). Lyhyesti: **Base Sepolia**,
+Suunnitelman valinnat ovat **päätöksiä P2-01–P2-11** tiedostossa
+[decisions.md](decisions.md#phase-2-decisions) (englanniksi), ja ne
+hyväksyttiin 11.11.2026 ([#27](https://github.com/Haiko-Innovations/orbit-watch/issues/27)). Lyhyesti: **Base Sepolia**,
 Circlen **testi-USDC**, EAS esiasennetussa osoitteessaan, **Foundry** ja
 **OpenZeppelin Contracts**, päivittämätön escrow-sopimus, tarkistajarekisteri
 **Safe-monisignatuurin ja julkisen aikalukon** takana sekä Python-sovitin
@@ -87,7 +88,7 @@ Circlen **testi-USDC**, EAS esiasennetussa osoitteessaan, **Foundry** ja
 
 | Vaihe | Sisältö | Valmis, kun |
 |---|---|---|
-| **2.1 Sopimusprojekti** ([#28](https://github.com/Haiko-Innovations/orbit-watch/issues/28)) | `contracts/`-Foundry-projekti, OpenZeppelin kiinnitettynä, käännös ja testit `tarkistus`-tarkistuksessa; escrow-runko `fund`- ja `refund`-toiminnoilla; kieltäytyy toimimasta muussa ketjussa kuin Base Sepoliassa tai paikallisessa Anvilissa. | `forge test` ajetaan CI:ssä; rahoitus ja palautus toimivat paikallisessa ketjussa. |
+| ✅ **2.1 Sopimusprojekti** ([#28](https://github.com/Haiko-Innovations/orbit-watch/issues/28)) | `contracts/`-Foundry-projekti, OpenZeppelin kiinnitettynä, käännös ja testit `tarkistus`-tarkistuksessa; escrow-runko `fund`- ja `refund`-toiminnoilla; kieltäytyy toimimasta muussa ketjussa kuin Base Sepoliassa tai paikallisessa Anvilissa. | `forge test` ajetaan CI:ssä; rahoitus ja palautus toimivat paikallisessa ketjussa. |
 | **2.2 Tilityssäännöt ketjussa** ([#29](https://github.com/Haiko-Innovations/orbit-watch/issues/29)) | Vaiheen 1 tilityssäännöt Solidityllä: jako lukitaan rahoitettaessa, määräajat ketjussa, kenen tahansa käynnistettävä ja idempotentti tilitys, ylläpitäjillä ei pääsyä talletuksiin. | Fuzz- ja invarianttitestit: talletus = palkkiot + palautukset, tilaus tilitetään kerran, ulkopuolinen ei voi nostaa varoja. |
 | **2.3 Attestaatiot** ([#30](https://github.com/Haiko-Innovations/orbit-watch/issues/30)) | EAS-skeemat automaattiselle tulokselle ja tarkistajien äänille; escrow lukee automaattisen attestaation, avaa haastejakson ja laskee rekisteröityjen tarkistajien 2/3-äänet. | Haastamaton, haastettu-hyväksytty, haastettu-hylätty ja riita tilittyvät ketjussa attestaatioista. |
 | **2.4 Tarkistajarekisteri** ([#31](https://github.com/Haiko-Innovations/orbit-watch/issues/31)) | Tarkistajien osoitteiden rekisteri, jonka omistaa OpenZeppelinin TimelockController, ja sen ehdottajana Safe-monisignatuuri; oikeudet dokumentoidaan READMEen. | Tarkistajien lisäys ja poisto onnistuu vain monisignatuurin ja aikalukon kautta; testattu. |

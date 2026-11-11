@@ -17,7 +17,9 @@ that tells them how accurate their station is.
 > locally, with **no money and no blockchain**. Requests target civilian objects
 > only. **Simulated data is always labelled as simulated**, and automated
 > verification is a prototype, not production-ready scientific validation.
-> Next: phase 2 planning. See the [roadmap](docs/roadmap.md), the
+> Phase 2, settlement on the Base Sepolia **testnet**, has started: an escrow
+> contract skeleton is in [`contracts/`](contracts); it refuses every chain but
+> the testnet and a local one. See the [roadmap](docs/roadmap.md), the
 > [phase 1 summary](docs/phase-1-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)
@@ -85,8 +87,9 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Storage (SQLite, files by hash) | | [storage.md](docs/storage.md) |
 | HTTP API and command-line client | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Open data (CC BY 4.0, embargo, permanent URLs) | `public` | [data-publication.md](docs/data-publication.md) |
+| Escrow contract for the Base Sepolia **testnet** (phase 2, in progress) | `forge test` | [escrow.md](docs/escrow.md) |
 
-The Python code is in [`core/`](core). Simulated examples are in
+The Python code is in [`core/`](core) and the Solidity contracts in [`contracts/`](contracts). Simulated examples are in
 [`examples/`](examples).
 
 ### What is simulated
@@ -132,7 +135,7 @@ The full starting plan: [docs/plan.md](docs/plan.md).
 - **Phase 1 (done, 0.2.0):** requests with a state machine, optimistic
   verification with a challenge period and a 2-of-3 reviewer round, an API, and
   a points-only "ledger" settlement adapter.
-- **Phase 2 (next):** settlement on an EVM L2 **testnet** with EAS attestations.
+- **Phase 2 (in progress):** settlement on an EVM L2 **testnet** with EAS attestations.
   No mainnet, no token of our own.
 - **Phase 3:** a web application with role views.
 
