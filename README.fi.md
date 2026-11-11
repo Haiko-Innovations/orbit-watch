@@ -15,7 +15,9 @@ tarkistetaan automaattisesti ja toistettavasti julkista ratadataa vasten.
 Havaitsijat hyötyvät heti ensimmäisestä päivästä: laatumittari kertoo, kuinka
 tarkka heidän asemansa on.
 
-> **Tila: vaihe 0, avoin ydin.** Ei rahaa, ei lohkoketjua, ei palvelimia.
+> **Tila: vaihe 0, avoin ydin, on valmis (versio 0.1.0).** Seuraavaksi vaihe 1,
+> katso [tiekartta](docs/roadmap.fi.md) ja [muutosloki](CHANGELOG.md).
+> Ei rahaa, ei lohkoketjua, ei palvelimia.
 > Tilaukset koskevat vain siviilikohteita. **Simuloitu data on aina merkitty
 > simuloiduksi**, ja automaattinen tarkistus on prototyyppi, ei
 > tuotantovalmis tieteellinen validointi.
@@ -25,7 +27,7 @@ tarkka heidän asemansa on.
 Tarvitset Python 3.12:n tai uudemman.
 
 ```sh
-pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git#subdirectory=core"
+pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.1.0#subdirectory=core"
 orbit-watch demo
 cat orbit-watch-demo/datasets/wrong_target/report.txt
 ```
@@ -105,7 +107,9 @@ havaintoformaatti tai uusi simuloitu asemaprofiili. Aloita
 
 ## Tiekartta
 
-Koko suunnitelma on tiedostossa [docs/plan.fi.md](docs/plan.fi.md).
+Nykytila ja seuraavat askeleet: [docs/roadmap.fi.md](docs/roadmap.fi.md).
+Päätökset perusteluineen: [docs/decisions.md](docs/decisions.md) (englanniksi).
+Koko aloitussuunnitelma: [docs/plan.fi.md](docs/plan.fi.md).
 
 - **Vaihe 0 (nyt):** avoin ydin: formaatti, simulaattori, tarkistus, laatumittari, CLI.
 - **Vaihe 1:** tilaukset tilakoneella, optimistinen tarkistus haastejaksolla ja
