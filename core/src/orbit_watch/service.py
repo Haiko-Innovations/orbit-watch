@@ -25,12 +25,14 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from orbit_watch import calibration as cal
 from orbit_watch import lifecycle as lc
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.formats import Sites
 from orbit_watch.lifecycle import RequestRecord, Status, TransitionError
 from orbit_watch.reviewers import ReviewerError, ReviewerRegistry
 from orbit_watch.settlement import SettlementAdapter, SettlementError, settlement_plan
+from orbit_watch.timeutil import format_utc
 from orbit_watch.verify.engine import UsageError, VerificationInput, verify
 
 VERIFIER = "system:verifier"
@@ -77,6 +79,12 @@ class RequestService:
     files: dict[str, bytes] = field(default_factory=dict)  # content-addressed by SHA-256
     deliveries: dict[str, Delivered] = field(default_factory=dict)  # by request id
     settlements: dict[str, dict[str, Any]] = field(default_factory=dict)  # by request id
+    # Reviewer tasks (step 1.4). Task ids are opaque, so real tasks and known-answer
+    # calibration tasks cannot be told apart.
+    calibration_per_assignment: int = 1
+    task_salt: str = "orbit-watch-tasks"
+    real_tasks: dict[str, tuple[str, str]] = field(default_factory=dict)  # id -> request, reviewer
+    calibration_tasks: dict[str, cal.CalibrationTask] = field(default_factory=dict)
 
     # ------------------------------------------------------------------ helpers
 
@@ -130,6 +138,7 @@ class RequestService:
         if request_id in self.records:
             raise ServiceError("duplicate_request", f"request {request_id} already exists")
         self.request_documents[request_id] = request_bytes
+        self._store(request_bytes)
         self.records[request_id] = lc.create(parsed_terms, now)
         return self.records[request_id]
 
@@ -213,9 +222,12 @@ class RequestService:
         reviewers: tuple[str, ...] = ()
         if verdict == "inconclusive":
             reviewers = self._select(request_id, observations_sha256, challenger=None)
-        return self._apply(
+        record = self._apply(
             request_id, lc.RecordVerification(now, verdict, report_sha256, reviewers)
         )
+        if record.status is Status.IN_REVIEW:
+            self._assign(request_id, now)
+        return record
 
     # ------------------------------------------------------------------ challenges
 
@@ -241,7 +253,9 @@ class RequestService:
                 f"'challenge' is not allowed when the request is {self.records[request_id].status}",
             )
         reviewers = self._select(request_id, record.delivery_sha256 or "", challenger=party)
-        return self._apply(request_id, lc.Challenge(now, party, reviewers, reason))
+        record = self._apply(request_id, lc.Challenge(now, party, reviewers, reason))
+        self._assign(request_id, now)
+        return record
 
     def vote(
         self, request_id: str, reviewer: str, approve: bool, reason: str, now: datetime
@@ -259,6 +273,111 @@ class RequestService:
             key=f"{request_id}/vote/{reviewer}",
         )
         return record
+
+    # ------------------------------------------------------------------ reviewer tasks
+
+    def _task_id(self, *parts: str) -> str:
+        return "task-" + sha256_bytes("|".join((self.task_salt, *parts)).encode())[:20]
+
+    def _assign(self, request_id: str, now: datetime) -> None:
+        """Give each reviewer of the round its real task and its calibration tasks."""
+        record = self._record(request_id)
+        due = record.review_deadline or now
+        for reviewer in record.reviewers:
+            self.real_tasks[self._task_id("real", request_id, reviewer)] = (request_id, reviewer)
+            for number in range(self.calibration_per_assignment):
+                source = f"{request_id}|{reviewer}|{number}"
+                history = [t for t in self.calibration_tasks.values() if t.reviewer == reviewer]
+                kind = cal.choose_kind(reviewer, history, source)
+                request_bytes, observations, report, verdict = cal.build_files(kind, source)
+                task = cal.CalibrationTask(
+                    task_id=self._task_id("calibration", source),
+                    reviewer=reviewer,
+                    kind=kind,
+                    expected=cal.KINDS[kind],
+                    request_sha256=self._store(request_bytes),
+                    observations_sha256=self._store(observations),
+                    report_sha256=self._store(report),
+                    automated_verdict=verdict,
+                    challenge_reason=cal.challenge_text(kind, source),
+                    created_at=now,
+                    due_at=due,
+                )
+                self.calibration_tasks[task.task_id] = task
+
+    def assignments(self, reviewer: str, now: datetime) -> list[dict[str, Any]]:
+        """Open review tasks of a reviewer, real and calibration alike, in one shape."""
+        open_tasks = []
+        for task_id, (request_id, assigned) in self.real_tasks.items():
+            record = lc.advance(self._record(request_id), now)
+            voted = any(r == assigned for r, _ in record.votes)
+            if assigned != reviewer or record.status is not Status.IN_REVIEW or voted:
+                continue
+            delivered = self.deliveries[request_id]
+            open_tasks.append(
+                {
+                    "task_id": task_id,
+                    "request_sha256": sha256_bytes(self.request_documents[request_id]),
+                    "observations_sha256": delivered.observations_sha256,
+                    "report_sha256": delivered.report_sha256,
+                    "automated_verdict": delivered.verdict,
+                    "challenge_reason": record.challenge_reason
+                    or "The automated result was inconclusive.",
+                    "due": format_utc(record.review_deadline),
+                }
+            )
+        for task in self.calibration_tasks.values():
+            if task.reviewer != reviewer or task.answer is not None or task.due_at <= now:
+                continue
+            open_tasks.append(
+                {
+                    "task_id": task.task_id,
+                    "request_sha256": task.request_sha256,
+                    "observations_sha256": task.observations_sha256,
+                    "report_sha256": task.report_sha256,
+                    "automated_verdict": task.automated_verdict,
+                    "challenge_reason": task.challenge_reason,
+                    "due": format_utc(task.due_at),
+                }
+            )
+        return sorted(open_tasks, key=lambda t: t["task_id"])
+
+    def review(
+        self, task_id: str, reviewer: str, approve: bool, reason: str, now: datetime
+    ) -> dict[str, Any]:
+        """Answer a review task. The answer never says whether the task was real."""
+        if not reason.strip():
+            raise ServiceError("reason_required", "a review must give its reasons")
+        if task_id in self.real_tasks:
+            request_id, assigned = self.real_tasks[task_id]
+            if assigned != reviewer:
+                raise ServiceError("not_your_task", "this task belongs to another reviewer")
+            self.vote(request_id, reviewer, approve, reason, now)
+            return {"task_id": task_id, "recorded": True}
+        task = self.calibration_tasks.get(task_id)
+        if task is None:
+            raise ServiceError("unknown_task", f"no task {task_id!r}")
+        if task.reviewer != reviewer:
+            raise ServiceError("not_your_task", "this task belongs to another reviewer")
+        if task.answer is not None:
+            raise ServiceError("already_voted", f"{reviewer} has already voted")
+        if now >= task.due_at:
+            raise ServiceError("forbidden_in_status", "the review deadline has passed")
+        task.answer = "approve" if approve else "reject"
+        task.reason = reason
+        task.answered_at = now
+        return {"task_id": task_id, "recorded": True}
+
+    def reviewer_profile(self, reviewer: str, now: datetime) -> dict[str, Any]:
+        """Accuracy on calibration tasks and voting behaviour in real rounds."""
+        votes = []
+        for request_id in sorted(self.records):
+            record = self.records[request_id]
+            for voter, approve in record.votes:
+                if voter == reviewer:
+                    outcome = None if record.outcome is None else str(record.outcome)
+                    votes.append((approve, outcome))
+        return cal.profile(reviewer, list(self.calibration_tasks.values()), votes, now)
 
     # ------------------------------------------------------------------ time
 

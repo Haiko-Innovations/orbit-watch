@@ -69,7 +69,8 @@ See [decision D-13](decisions.md#d-13-optimistic-verification-rules).
 
 ## Not yet
 
-- Reviewer accuracy measured with known-answer datasets (step 1.4).
+- Reviewers see real and known-answer calibration tasks in one queue; their
+  accuracy is measured (step 1.4, [reviewer-accuracy.md](reviewer-accuracy.md)).
 - Bonds for challengers and reviewers (an open question of the plan).
 - Signed votes: EAS attestations in phase 2. In phase 1 the API keys of step
   1.6 identify reviewers.

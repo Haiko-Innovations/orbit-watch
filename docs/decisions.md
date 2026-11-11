@@ -179,3 +179,17 @@ Accepted · 2026-11-11 (with the pull request that implements step 1.3). See
 - One reviewer round per request. A rejected delivery ends the request; there
   is no re-opening in phase 1 (this settles the open point of D-11).
 - The service settles every outcome as soon as it is reached.
+
+### D-14 Reviewer accuracy
+
+Accepted · 2026-11-11 (with the pull request that implements step 1.4). See
+[reviewer-accuracy.md](reviewer-accuracy.md):
+
+- Every assignment to a real round comes with one known-answer calibration task
+  per reviewer, balanced between "approve" and "reject" answers.
+- Real and calibration tasks share one queue and one shape, with opaque task
+  ids; answers never reveal which was which.
+- Calibration answers move no points and are not attested.
+- Profiles show accuracy, approval rate and missed tasks, with flags. In
+  phase 1 they inform the maintainers only; they do not change selection or
+  payments.
