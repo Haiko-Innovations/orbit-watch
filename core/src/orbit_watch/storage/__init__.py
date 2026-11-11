@@ -54,7 +54,11 @@ class Database:
     def __init__(self, path: str | Path):
         self.path = str(path)
         try:
-            self.connection = sqlite3.connect(self.path, isolation_level=None, timeout=0)
+            # The connection may be used from a server's worker threads; callers
+            # serialise access (the API holds one lock around every call).
+            self.connection = sqlite3.connect(
+                self.path, isolation_level=None, timeout=0, check_same_thread=False
+            )
             self.connection.row_factory = sqlite3.Row
             self.connection.execute("PRAGMA foreign_keys = ON")
             self.connection.execute("PRAGMA locking_mode = EXCLUSIVE")
@@ -75,6 +79,10 @@ class Database:
 
     def __exit__(self, *exc: object) -> None:
         self.close()
+
+    @property
+    def in_transaction(self) -> bool:
+        return self._depth > 0
 
     @contextmanager
     def transaction(self) -> Iterator[None]:

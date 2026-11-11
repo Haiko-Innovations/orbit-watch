@@ -88,7 +88,9 @@ jobs:
           diff -r ../examples/simulated "$RUNNER_TEMP/demo-pip"
           diff -r ../examples/simulated "$RUNNER_TEMP/demo-3.15"
 
-      - name: Known vulnerabilities (runtime dependencies)
+      - name: Known vulnerabilities (runtime dependencies, including the API extra)
         run: |
+          uv export --locked --no-dev --all-extras --no-emit-project --format requirements-txt \
+            -o "$RUNNER_TEMP/requirements-all.txt"
           uv run --locked --python 3.12 pip-audit --disable-pip --require-hashes --strict \
-            -r "$RUNNER_TEMP/requirements.txt"
+            -r "$RUNNER_TEMP/requirements-all.txt"

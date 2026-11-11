@@ -18,7 +18,8 @@ Jokainen pull request, joka saa tiekartan vaiheen valmiiksi, päivittää myös 
 [versiona 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0).
 **Vaihe 1 on käynnissä:** päätökset on hyväksytty, ja vaiheet 1.1 (tilauksen
 elinkaari), 1.2 (tilitys ja pistekirjanpito), 1.3 (optimistinen tarkistus) ja
-1.4 (tarkistajien tarkkuus) ja 1.5 (tallennus) ovat valmiit.
+1.4 (tarkistajien tarkkuus), 1.5 (tallennus) ja 1.6 (HTTP-rajapinta) ovat
+valmiit.
 
 | Vaiheen 0 valmiskriteeri | Tila |
 |---|---|
@@ -61,7 +62,7 @@ testata kattavasti; tallennus ja API tulevat sen jälkeen.
 | ✅ **1.3 Optimistinen tarkistus** ([#13](https://github.com/Haiko-Innovations/orbit-watch/issues/13)) | Automaattinen raportti → haastejakso (oletus 24 h, kiinnitetään ehtoihin) → haastettaessa kolme ennalta hyväksyttyä tarkistajaa, 2/3 ratkaisee, kukaan ei tarkista omaa toimitustaan. Riitasääntö. Tarkistajat saavat palkkion tehdystä tarkistuksesta lopputuloksesta riippumatta. | Haastamaton, haastettu-hyväksytty, haastettu-hylätty ja ei enemmistöä (riita) testattu päästä päähän ledgerillä. |
 | ✅ **1.4 Tarkistajien tarkkuus** ([#14](https://github.com/Haiko-Innovations/orbit-watch/issues/14)) | Simulaattorin tunnetun vastauksen aineistoja sekoitetaan tarkistajien tehtäviin; tarkkuus tarkistajittain. | Kaiken hyväksyvän tarkistajan tarkkuus näkyy matalana; testattu. |
 | ✅ **1.5 Tallennus** ([#15](https://github.com/Haiko-Innovations/orbit-watch/issues/15)) | SQLite-skeema ja migraatiot tilauksille, varauksille, toimituksille, raporteille, haasteille ja ledgerin kirjauksille; tiivisteellä osoitettu tiedostovarasto. | Tila säilyy uudelleenkäynnistyksen yli; migraatiot testattu tyhjästä. |
-| **1.6 API** ([#16](https://github.com/Haiko-Innovations/orbit-watch/issues/16)) | HTTP-rajapinta elinkaarelle. Roolikohtaiset API-avaimet: aseman avaimella voi vain toimittaa, ei koskaan siirtää pisteitä. Idempotenssiavain jokaisessa muuttavassa kutsussa. | Kaksoistoimitus ja kaksoistilitys eivät vaikuta kahdesti; testattu API:n kautta. |
+| ✅ **1.6 API** ([#16](https://github.com/Haiko-Innovations/orbit-watch/issues/16)) | HTTP-rajapinta elinkaarelle. Roolikohtaiset API-avaimet: aseman avaimella voi vain toimittaa, ei koskaan siirtää pisteitä. Idempotenssiavain jokaisessa muuttavassa kutsussa. | Kaksoistoimitus ja kaksoistilitys eivät vaikuta kahdesti; testattu API:n kautta. |
 | **1.7 Komentorivi** ([#17](https://github.com/Haiko-Innovations/orbit-watch/issues/17)) | `submit` sekä uudet komennot tilauksille, varauksille, haasteille ja tarkistuksille API:a vasten. | Koko ketju toimii komentoriviltä. |
 | **1.8 Datan julkaisu ja vaiheen 1 demo** ([#18](https://github.com/Haiko-Innovations/orbit-watch/issues/18)) | Lisenssi (oletus CC BY 4.0), enintään 30 päivän embargo, tiedostojen säilytys ja pysyvät latausosoitteet. Vaiheen 1 demo ja raportti. | Vaiheen 1 valmiskriteerit tiedostossa [plan.fi.md](plan.fi.md) täyttyvät; julkaistaan 0.2.0. |
 
@@ -70,8 +71,9 @@ hyväksyttiin 11.11.2026 ([#10](https://github.com/Haiko-Innovations/orbit-watch
 Vaihe 1.1 on kuvattu tiedostossa [lifecycle.md](lifecycle.md), vaihe 1.2
 tiedostossa [settlement.md](settlement.md), vaihe 1.3 tiedostossa
 [optimistic-verification.md](optimistic-verification.md), vaihe 1.4
-tiedostossa [reviewer-accuracy.md](reviewer-accuracy.md) ja vaihe 1.5
-tiedostossa [storage.md](storage.md) (englanniksi).
+tiedostossa [reviewer-accuracy.md](reviewer-accuracy.md), vaihe 1.5
+tiedostossa [storage.md](storage.md) ja vaihe 1.6 tiedostossa [api.md](api.md)
+(englanniksi).
 
 ### Vaiheet 2 ja 3 (myöhemmin)
 

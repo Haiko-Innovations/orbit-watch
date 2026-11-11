@@ -289,6 +289,66 @@ def cmd_submit(args: argparse.Namespace) -> int:
     return EXIT_USAGE
 
 
+def _service_inputs(args: argparse.Namespace):
+    from orbit_watch.reviewers import ReviewerRegistry
+    from orbit_watch.service import VerificationContext
+
+    notes = []
+    catalog = Path(args.catalog).read_bytes() if args.catalog else _packaged("catalog.json")
+    policy = Path(args.policy).read_bytes() if args.policy else _packaged("target-policy.json")
+    reviewers = Path(args.reviewers).read_bytes() if args.reviewers else _packaged("reviewers.json")
+    for option, name in (
+        ("catalog", "reference orbits"),
+        ("policy", "allow-list"),
+        ("reviewers", "reviewer registry"),
+    ):
+        if getattr(args, option) is None:
+            notes.append(f"using the built-in SIMULATED {name}")
+    context = VerificationContext(catalog=catalog, policy=policy, sites=_load_sites(args.sites))
+    return ReviewerRegistry.parse(reviewers), context, notes
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    try:
+        import uvicorn
+
+        from orbit_watch.api import create_app
+    except ImportError:
+        _err('the API needs the optional "api" dependencies: pip install "orbit-watch[api]"')
+        return EXIT_USAGE
+    from orbit_watch.service import open_service
+
+    registry, context, notes = _service_inputs(args)
+    service = open_service(args.dir, registry, context)
+    for note in notes:
+        print(f"note: {note}")
+    print(f"Orbit Watch API {__version__} for {args.dir} on http://{args.host}:{args.port}/v1/")
+    print("Phase 1 prototype: local use only, no TLS. All bundled data is SIMULATED.")
+    try:
+        uvicorn.run(create_app(service), host=args.host, port=args.port)
+    finally:
+        service.storage.close()
+    return EXIT_OK
+
+
+def cmd_keys_create(args: argparse.Namespace) -> int:
+    from orbit_watch.api import keys
+    from orbit_watch.storage import Storage
+
+    storage = Storage(args.dir)
+    try:
+        with storage.db.transaction():
+            key = keys.create_key(storage.db, args.party, args.role, datetime.now(tz=UTC))
+    except keys.ApiKeyError as error:
+        _err(str(error))
+        return EXIT_USAGE
+    finally:
+        storage.close()
+    print(key)
+    _err(f"created a {args.role} key for {args.party}; it is shown only this once")
+    return EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="orbit-watch",
@@ -461,6 +521,37 @@ def build_parser() -> argparse.ArgumentParser:
     )
     submit.add_argument("delivery", help="delivery manifest")
     submit.set_defaults(handler=cmd_submit)
+
+    serve = commands.add_parser(
+        "serve",
+        help="run the phase 1 HTTP API for a service directory (local use only)",
+        description="Run the phase 1 HTTP API. The service's state lives in --dir. "
+        "Needs the optional api dependencies. Local use only: no TLS.",
+    )
+    serve.add_argument("--dir", required=True, help="service directory (created if missing)")
+    serve.add_argument("--host", default="127.0.0.1", help="address to listen on")
+    serve.add_argument("--port", type=int, default=8000, help="port (default 8000)")
+    serve.add_argument("--catalog", help="reference orbits (default: built-in SIMULATED)")
+    serve.add_argument("--policy", help="target allow-list (default: built-in SIMULATED)")
+    serve.add_argument("--reviewers", help="reviewer registry (default: built-in SIMULATED)")
+    serve.add_argument("--sites", help="sites file for IOD and TDM deliveries")
+    serve.set_defaults(handler=cmd_serve)
+
+    keys_parser = commands.add_parser(
+        "keys",
+        help="manage API keys of a service directory",
+        description="Manage API keys. Run while the server is stopped; a running server "
+        "holds the database.",
+    )
+    keys_commands = keys_parser.add_subparsers(dest="keys_command", metavar="command")
+    keys_commands.required = True
+    create = keys_commands.add_parser("create", help="create a key and print it once")
+    create.add_argument("--dir", required=True, help="service directory")
+    create.add_argument(
+        "--role", required=True, choices=["requester", "station", "reviewer", "admin"]
+    )
+    create.add_argument("--party", required=True, help="party, e.g. station:SIM-ESPOO")
+    create.set_defaults(handler=cmd_keys_create)
     return parser
 
 
