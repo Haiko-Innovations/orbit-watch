@@ -13,5 +13,8 @@
   verification reports, and in `quality/` three nights of a simulated station
   with the station quality meter's report. CI regenerates it and requires a
   byte-identical result.
+- [`phase1/`](phase1): the output of `orbit-watch demo --phase 1`: five
+  simulated requests through the whole request chain, with every outcome,
+  the points and the reviewer profiles. CI regenerates it too.
 - [`real-iod/`](real-iod): how to run the quality meter on real IOD
   observations, and why no real example is committed yet.

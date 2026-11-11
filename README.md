@@ -12,19 +12,20 @@ stations observe, and the delivery is verified automatically and reproducibly
 against public orbit data. Observers get value from day one: a quality meter
 that tells them how accurate their station is.
 
-> **Status: phase 0, the open core, is done (version 0.1.0).** Next: phase 1,
-> see the [roadmap](docs/roadmap.md) and the [changelog](CHANGELOG.md).
-> No money, no blockchain, no servers.
-> Requests target civilian objects only. **Simulated data is always labelled as
-> simulated**, and automated verification is a prototype, not production-ready
-> scientific validation.
+> **Status: phase 1 is done (version 0.2.0).** Requests, optimistic
+> verification, a points ledger, an HTTP API and a command-line client all run
+> locally, with **no money and no blockchain**. Requests target civilian objects
+> only. **Simulated data is always labelled as simulated**, and automated
+> verification is a prototype, not production-ready scientific validation.
+> Next: phase 2 planning. See the [roadmap](docs/roadmap.md), the
+> [phase 1 summary](docs/phase-1-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)
 
 You need Python 3.12 or newer.
 
 ```sh
-pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.1.0#subdirectory=core"
+pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.2.0#subdirectory=core"
 orbit-watch demo
 cat orbit-watch-demo/datasets/wrong_target/report.txt
 ```
@@ -44,6 +45,19 @@ Every report states the method and its version, the SHA-256 of every input and
 the reason for every check. The same input gives a byte-identical report, on
 any machine: CI checks this on two Python versions.
 
+### The whole request chain (phase 1)
+
+```sh
+orbit-watch demo --phase 1
+cat orbit-watch-demo-phase1/transcript.md
+```
+
+Five simulated requests on a simulated clock: accepted, rejected after a
+challenge, rejected without one, disputed, and expired. The transcript shows
+every step, the points and the reviewer profiles. To run the chain yourself
+through the HTTP API (`pip install "orbit-watch[api] @ …"`, then
+`orbit-watch serve`), see [docs/api.md](docs/api.md).
+
 ## Check your own station
 
 ```sh
@@ -56,7 +70,7 @@ that several objects share, and shows how your station develops night by
 night. See [docs/quality-meter.md](docs/quality-meter.md) and
 [examples/real-iod/](examples/real-iod).
 
-## What phase 0 contains
+## What is in it
 
 | Part | Command | Docs |
 |---|---|---|
@@ -65,7 +79,12 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Deterministic, versioned verification engine | `validate` | [verification.md](docs/verification.md) |
 | Station quality meter | `score-station` | [quality-meter.md](docs/quality-meter.md) |
 | Public orbit data and the civilian allow-list | `fetch-gp`, `allowlist build` | [data-sources.md](docs/data-sources.md) |
-| Sending to the API | `submit` | arrives in phase 1 |
+| Request lifecycle, optimistic verification, reviewer rounds | | [lifecycle.md](docs/lifecycle.md), [optimistic-verification.md](docs/optimistic-verification.md) |
+| Settlement rules and the points ledger | | [settlement.md](docs/settlement.md) |
+| Reviewer accuracy with known-answer tasks | | [reviewer-accuracy.md](docs/reviewer-accuracy.md) |
+| Storage (SQLite, files by hash) | | [storage.md](docs/storage.md) |
+| HTTP API and command-line client | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
+| Open data (CC BY 4.0, embargo, permanent URLs) | `public` | [data-publication.md](docs/data-publication.md) |
 
 The Python code is in [`core/`](core). Simulated examples are in
 [`examples/`](examples).
@@ -109,12 +128,12 @@ Current status and the next steps: [docs/roadmap.md](docs/roadmap.md).
 Decisions and their reasons: [docs/decisions.md](docs/decisions.md).
 The full starting plan: [docs/plan.md](docs/plan.md).
 
-- **Phase 0 (now):** open core: format, simulator, verification, quality meter, CLI.
-- **Phase 1:** requests with a state machine, optimistic verification with a
-  challenge period and a 2-of-3 reviewer round, an API, and a points-only
-  "ledger" settlement adapter.
-- **Phase 2:** settlement on an EVM L2 **testnet** with EAS attestations. No
-  mainnet, no token of our own.
+- **Phase 0 (done, 0.1.0):** open core: format, simulator, verification, quality meter, CLI.
+- **Phase 1 (done, 0.2.0):** requests with a state machine, optimistic
+  verification with a challenge period and a 2-of-3 reviewer round, an API, and
+  a points-only "ledger" settlement adapter.
+- **Phase 2 (next):** settlement on an EVM L2 **testnet** with EAS attestations.
+  No mainnet, no token of our own.
 - **Phase 3:** a web application with role views.
 
 ## Open questions

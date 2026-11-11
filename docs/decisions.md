@@ -223,3 +223,17 @@ by hand in [api.md](api.md). Other rules:
   stored in the same transaction; refused calls are not stored.
 - One lock serialises all calls (one writer, working state in memory).
 - Keys are `ow_` plus 256 random bits, stored as SHA-256, shown once.
+
+### D-17 Data publication rules
+
+Accepted · 2026-11-11 (with the pull request that implements step 1.8). See
+[data-publication.md](data-publication.md):
+
+- A request's files (request, observations, report) become public under
+  CC BY 4.0 when the request is settled and its embargo (0–30 days) has passed;
+  the embargo runs from settlement.
+- Until then only the request's parties and administrators can read them;
+  others get `404`.
+- Calibration files are never public.
+- Public files have permanent, content-addressed URLs and a licence link
+  header. The licence is fixed to CC BY 4.0 in phase 1.

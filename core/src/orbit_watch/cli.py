@@ -195,6 +195,20 @@ def cmd_validate(args: argparse.Namespace) -> int:
 def cmd_demo(args: argparse.Namespace) -> int:
     from orbit_watch.sim.scenarios import run_demo, summary_table
 
+    if args.phase == 1:
+        from orbit_watch.sim.phase1_demo import run_phase1_demo
+
+        out = args.out or "orbit-watch-demo-phase1"
+        summary = run_phase1_demo(out)
+        for request_id, item in summary["requests"].items():
+            print(
+                f"{request_id}  {item['summary']['outcome']:<10}data {item['publication']['state']}"
+            )
+        print(f"\nTranscript: {out}/transcript.md")
+        print(SIMULATION_NOTICE)
+        return EXIT_OK
+    args.out = args.out or "orbit-watch-demo"
+
     results = run_demo(args.out)
     sys.stdout.write(summary_table(results))
     print()
@@ -377,7 +391,19 @@ def build_parser() -> argparse.ArgumentParser:
         description="Generate the six SIMULATED test datasets (acceptable, invalid, late, "
         "duplicate, wrong target, too imprecise), verify each one and write the reports.",
     )
-    demo.add_argument("--out", default="orbit-watch-demo", help="output directory")
+    demo.add_argument(
+        "--out",
+        help="output directory (default: orbit-watch-demo, or "
+        "orbit-watch-demo-phase1 with --phase 1)",
+    )
+    demo.add_argument(
+        "--phase",
+        type=int,
+        choices=(0, 1),
+        default=0,
+        help="0: the six verification datasets (default); 1: five requests "
+        "through the whole request chain",
+    )
     demo.set_defaults(handler=cmd_demo)
 
     simulate = commands.add_parser(

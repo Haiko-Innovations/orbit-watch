@@ -168,6 +168,20 @@ def test_the_whole_chain_from_the_command_line(server, capsys):
     code, out, _ = run(server, requester, "request", "list", capsys=capsys)
     assert "SIM-REQ-0001" in out and "rejected" in out
 
+    # Settled with no embargo: anyone can read and download it, without a key.
+    assert main(["public", "list", "--api", server["api"]]) == 0
+    assert "SIM-REQ-0001" in capsys.readouterr().out
+    download = server["tmp"] / "download"
+    assert (
+        main(["public", "get", "SIM-REQ-0001", "--api", server["api"], "--download", str(download)])
+        == 0
+    )
+    out = capsys.readouterr().out
+    assert "CC-BY-4.0" in out and "SHA-256 checked" in out
+    assert (download / "SIM-REQ-0001-observations.dat").read_bytes() == (
+        SIMULATED / "datasets" / "wrong_target" / "observations.json"
+    ).read_bytes()
+
 
 def test_retries_with_the_same_key_are_safe(server, capsys):
     args = ("admin", "grant", REQUESTER, "50", "--idempotency-key", "budget-2026-11")

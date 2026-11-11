@@ -77,16 +77,21 @@ jobs:
           "$pip" install --no-deps --no-build-isolation .
           "$RUNNER_TEMP/pip-venv/bin/orbit-watch" --version
           "$RUNNER_TEMP/pip-venv/bin/orbit-watch" demo --out "$RUNNER_TEMP/demo-pip"
+          "$RUNNER_TEMP/pip-venv/bin/orbit-watch" demo --phase 1 --out "$RUNNER_TEMP/demo1-pip"
 
-      # Same input, byte-identical output: the demo (datasets and verification
-      # reports) must match the committed examples on both Python versions.
+      # Same input, byte-identical output: both demos (phase 0 datasets and
+      # reports, phase 1 request chain) must match the committed examples on
+      # both Python versions and from a plain pip install.
       - name: Determinism across Python versions
         env:
           UV_PROJECT_ENVIRONMENT: .venv-3.15
         run: |
           uv run --locked --python 3.15 orbit-watch demo --out "$RUNNER_TEMP/demo-3.15"
+          uv run --locked --python 3.15 orbit-watch demo --phase 1 --out "$RUNNER_TEMP/demo1-3.15"
           diff -r ../examples/simulated "$RUNNER_TEMP/demo-pip"
           diff -r ../examples/simulated "$RUNNER_TEMP/demo-3.15"
+          diff -r ../examples/phase1 "$RUNNER_TEMP/demo1-pip"
+          diff -r ../examples/phase1 "$RUNNER_TEMP/demo1-3.15"
 
       - name: Known vulnerabilities (runtime dependencies, including the API extra)
         run: |
