@@ -1,0 +1,26 @@
+Orbit Watch station quality meter 1.0.0
+Inputs include SIMULATED data.
+Station SIM-TAMPERE (61.4980, 23.7610, 120 m)
+96 observations of 3 object(s) on 3 night(s), 2026-11-01T18:55:08.000Z to 2026-11-03T20:05:29.000Z.
+
+Findings
+  - Your angle precision (cross-track scatter within passes) is 3.9″, well below the uncertainty you declare (12″). You could declare a smaller uncertainty.
+  - Your timing precision (along-track scatter within passes) is 0.009 s, well below the uncertainty you declare (0.02 s). You could declare a smaller uncertainty.
+  - 3 objects appear on average 0.25 s behind their predictions on the latest night. A shared offset points to your clock: your timestamps seem to run about 0.25 s ahead of UTC. Check the time synchronisation (GPS/PPS or NTP) and the exposure timing.
+  - The mean timing offset changed from +0.00 s (night of 2026-11-02) to -0.25 s (night of 2026-11-03).
+
+Per object
+  object   name                           passes  obs    angle   timing   offset
+  339001   SIM-CUBESAT-A (SIMULATED)           6   33     4.3″   0.009s  -0.092s
+  339002   SIM-CUBESAT-B (SIMULATED)           6   34     3.3″   0.010s  -0.085s
+  339003   SIM-ROCKET-BODY (SIMULATED)         5   29     4.1″   0.010s  -0.054s
+
+Per night (development over time)
+  night of     objects  obs    angle   timing   offset
+  2026-11-01         3   32     3.9″   0.010s  +0.001s
+  2026-11-02         3   34     4.0″   0.011s  +0.000s
+  2026-11-03         3   30     3.7″   0.008s  -0.249s
+
+angle = cross-track scatter within passes, timing = along-track scatter within passes,
+offset = mean along-track offset (positive: the object is ahead of its prediction).
+Note: Residuals include the error of the public reference orbit (about a kilometre at epoch, growing with age). Offsets shared by several objects point to the station; offsets of single objects are more likely orbit errors.

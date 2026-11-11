@@ -16,10 +16,11 @@ from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
 
-from orbit_watch import SIMULATION_NOTICE
+from orbit_watch import SIMULATION_NOTICE, quality
 from orbit_watch.canonical import dumps_pretty, sha256_bytes, write_text
 from orbit_watch.catalog import parse_catalog
-from orbit_watch.formats import owjson
+from orbit_watch.formats import iod, load_observation_sets, owjson
+from orbit_watch.formats.sites import Sites
 from orbit_watch.sim.simulator import load_profile, simulate
 from orbit_watch.timeutil import parse_utc
 from orbit_watch.verify.engine import VerificationInput, render_text, verify
@@ -253,8 +254,62 @@ def run_demo(out_dir: str | Path) -> list[dict]:
             }
         )
     write_text(out / "summary.txt", summary_table(results))
+    build_quality_example(out / "quality", ctx["catalog"])
     write_text(out / "README.md", _readme(results))
     return results
+
+
+QUALITY_OBJECTS = (339001, 339002, 339003)
+QUALITY_NIGHTS = ("2026-11-01", "2026-11-02", "2026-11-03")
+
+
+def build_quality_example(out: Path, catalog) -> dict:
+    """A SIMULATED station whose clock starts running 0.25 s ahead of UTC on the third night.
+
+    Writes observations.iod (three objects, three nights), sites.json and the
+    quality meter report.
+    """
+    import dataclasses
+    from datetime import timedelta
+
+    out.mkdir(parents=True, exist_ok=True)
+    profile = load_profile("sim-clock-offset")
+    fixed = dataclasses.replace(profile, clock_offset_s=0.0)
+    sets = []
+    for night_index, night in enumerate(QUALITY_NIGHTS):
+        start = parse_utc(f"{night}T15:00:00Z")
+        end = start + timedelta(hours=12)
+        for object_index, norad_id in enumerate(QUALITY_OBJECTS):
+            sets.append(
+                simulate(
+                    catalog,
+                    norad_id,
+                    fixed if night_index < 2 else profile,
+                    start,
+                    end,
+                    seed=200 + 10 * night_index + object_index,
+                    max_passes=2,
+                )
+            )
+    iod_text = iod.write_iod(sets)
+    write_text(out / "observations.iod", iod_text)
+    station = profile.station
+    sites = {
+        "format": "orbit-watch/sites",
+        "format_version": "1.0",
+        "simulated": True,
+        "sites": [{**station.to_document(), "simulated": True}],
+    }
+    write_text(out / "sites.json", dumps_pretty(sites, sort_keys=False))
+    loaded = load_observation_sets(
+        out / "observations.iod",
+        data=iod_text.encode("utf-8"),
+        sites=Sites.load(out / "sites.json"),
+    )
+    report = quality.score_station(loaded.sets, catalog)
+    write_text(out / "report.json", dumps_pretty(report, sort_keys=False))
+    write_text(out / "report.txt", quality.render_text(report))
+    return report
 
 
 def summary_table(results: list[dict]) -> str:
@@ -297,11 +352,22 @@ byte for byte with the same software versions.
 |---|---|---|---|
 {rows}
 
+`quality/` holds a SIMULATED station whose clock is fine for two nights and
+runs 0.25 s ahead of UTC on the third: `observations.iod`, `sites.json` and
+the station quality meter's `report.txt` and `report.json`.
+
 To verify one delivery yourself:
 
 ```sh
 orbit-watch validate datasets/wrong_target/delivery.json --request request.json \\
   --catalog catalog.json --policy target-policy.json \\
   --previous datasets/acceptable/observations.json
+```
+
+To run the station quality meter:
+
+```sh
+orbit-watch score-station quality/observations.iod --sites quality/sites.json \\
+  --catalog catalog.json
 ```
 """

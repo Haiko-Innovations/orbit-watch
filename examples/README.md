@@ -10,4 +10,8 @@
   generated from the JSON file with `orbit-watch convert`; a test keeps them in sync.
 - [`simulated/`](simulated): the output of `orbit-watch demo`: a simulated
   request, reference orbits, allow-list and the six test deliveries with their
-  verification reports. CI regenerates it and requires a byte-identical result.
+  verification reports, and in `quality/` three nights of a simulated station
+  with the station quality meter's report. CI regenerates it and requires a
+  byte-identical result.
+- [`real-iod/`](real-iod): how to run the quality meter on real IOD
+  observations, and why no real example is committed yet.

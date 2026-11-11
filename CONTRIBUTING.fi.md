@@ -24,7 +24,7 @@ Osallistumalla sitoudut noudattamaan [toimintaohjetta](CODE_OF_CONDUCT.md) (engl
 
 ## Perussäännöt
 
-Nämä tulevat [projektisuunnitelmasta](README.fi.md), eikä niistä neuvotella yksittäisessä PR:ssä:
+Nämä tulevat [projektisuunnitelmasta](docs/plan.fi.md), eikä niistä neuvotella yksittäisessä PR:ssä:
 
 1. **Vain siviilikohteet.** Tilaukset saavat kohdistua vain sallittujen listalla
    oleviin kohteisiin, ja lista muodostetaan julkisesta GP-luettelosta. Älä lisää

@@ -72,3 +72,23 @@ def test_simulate_unknown_object(tmp_path):
         )
         == 2
     )
+
+
+def test_score_station_command(tmp_path, capsys, examples_dir):
+    sim = examples_dir / "simulated"
+    report = tmp_path / "q.json"
+    code = main(
+        [
+            "score-station",
+            str(sim / "quality" / "observations.iod"),
+            "--sites",
+            str(sim / "quality" / "sites.json"),
+            "--catalog",
+            str(sim / "catalog.json"),
+            "--report",
+            str(report),
+        ]
+    )
+    assert code == 0
+    assert "0.25 s ahead of UTC" in capsys.readouterr().out
+    assert report.read_bytes() == (sim / "quality" / "report.json").read_bytes()

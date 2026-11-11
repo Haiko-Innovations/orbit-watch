@@ -22,10 +22,21 @@ byte for byte with the same software versions.
 | [`wrong_target`](datasets/wrong_target/report.txt) | Positions of the neighbouring CubeSat, labelled as the requested one | fail | orbit_residuals |
 | [`too_imprecise`](datasets/too_imprecise/report.txt) | Visual observer with binoculars and a stopwatch | fail | declared_uncertainty |
 
+`quality/` holds a SIMULATED station whose clock is fine for two nights and
+runs 0.25 s ahead of UTC on the third: `observations.iod`, `sites.json` and
+the station quality meter's `report.txt` and `report.json`.
+
 To verify one delivery yourself:
 
 ```sh
 orbit-watch validate datasets/wrong_target/delivery.json --request request.json \
   --catalog catalog.json --policy target-policy.json \
   --previous datasets/acceptable/observations.json
+```
+
+To run the station quality meter:
+
+```sh
+orbit-watch score-station quality/observations.iod --sites quality/sites.json \
+  --catalog catalog.json
 ```
