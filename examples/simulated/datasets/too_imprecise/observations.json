@@ -1,0 +1,112 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.0",
+  "simulated": true,
+  "station": {
+    "id": "SIM-OULU",
+    "latitude_deg": 65.012,
+    "longitude_deg": 25.465,
+    "altitude_m": 15.0,
+    "name": "Simulated station near Oulu, Finland",
+    "iod_station_number": 9902
+  },
+  "target": {
+    "norad_id": 339001
+  },
+  "observations": [
+    {
+      "time": "2026-11-01T17:21:49.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 82.4281843,
+      "dec_deg": 28.33042406,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T17:22:49.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 102.4574805,
+      "dec_deg": 35.11998285,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T17:23:19.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 113.77597103,
+      "dec_deg": 37.17817912,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T18:55:23.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 49.467451,
+      "dec_deg": 33.86511676,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T18:55:53.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 62.99881036,
+      "dec_deg": 48.68055872,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T18:56:23.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 90.31639102,
+      "dec_deg": 61.76486092,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T18:56:53.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 129.50256317,
+      "dec_deg": 64.61019573,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T20:30:18.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 312.14813811,
+      "dec_deg": 23.36084635,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T20:30:48.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 297.26601279,
+      "dec_deg": 30.65883588,
+      "angle_uncertainty_arcsec": 900.0
+    },
+    {
+      "time": "2026-11-01T20:31:18.000Z",
+      "time_uncertainty_s": 0.5,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 281.45460028,
+      "dec_deg": 35.3502399,
+      "angle_uncertainty_arcsec": 900.0
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.1.0.dev0 simulator",
+    "notes": "SIMULATED by the Orbit Watch simulator: profile sim-visual-binoculars, seed 104. Not real observations."
+  }
+}

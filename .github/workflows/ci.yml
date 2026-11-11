@@ -76,8 +76,17 @@ jobs:
             -r "$RUNNER_TEMP/build-requirements.txt"
           "$pip" install --no-deps --no-build-isolation .
           "$RUNNER_TEMP/pip-venv/bin/orbit-watch" --version
-          "$RUNNER_TEMP/pip-venv/bin/orbit-watch" convert ../examples/formats/observation-set.json \
-            -o "$RUNNER_TEMP/example.tdm"
+          "$RUNNER_TEMP/pip-venv/bin/orbit-watch" demo --out "$RUNNER_TEMP/demo-pip"
+
+      # Same input, byte-identical output: the demo (datasets and verification
+      # reports) must match the committed examples on both Python versions.
+      - name: Determinism across Python versions
+        env:
+          UV_PROJECT_ENVIRONMENT: .venv-3.15
+        run: |
+          uv run --locked --python 3.15 orbit-watch demo --out "$RUNNER_TEMP/demo-3.15"
+          diff -r ../examples/simulated "$RUNNER_TEMP/demo-pip"
+          diff -r ../examples/simulated "$RUNNER_TEMP/demo-3.15"
 
       - name: Known vulnerabilities (runtime dependencies)
         run: |

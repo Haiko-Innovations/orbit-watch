@@ -1,0 +1,20 @@
+{
+  "format": "orbit-watch/target-policy",
+  "format_version": "1.0",
+  "simulated": true,
+  "description": "SIMULATED allow-list for the demo catalogue. SIM-RESTRICTED-PAYLOAD (339009) is deliberately missing: it stands for an object that requests may not target.",
+  "allow": [
+    {
+      "norad_id": 339001,
+      "name": "SIM-CUBESAT-A (SIMULATED)"
+    },
+    {
+      "norad_id": 339002,
+      "name": "SIM-CUBESAT-B (SIMULATED)"
+    },
+    {
+      "norad_id": 339003,
+      "name": "SIM-ROCKET-BODY (SIMULATED)"
+    }
+  ]
+}

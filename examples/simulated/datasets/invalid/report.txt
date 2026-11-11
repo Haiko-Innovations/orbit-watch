@@ -1,0 +1,30 @@
+Orbit Watch verification (orbit-watch-automated-verification 1.0.0)
+Inputs include SIMULATED data.
+Request SIM-REQ-0001: object 339001, window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z
+FAIL: 1 check(s) failed: required fields and format.
+
+  FAIL  Required fields and format
+        The file is not a valid Orbit Watch JSON file: /observations/1: 'time' is a required property (and 2 more problem(s)).
+          - /observations/1: 'time' is a required property
+          - /observations/3/dec_deg: 95.5 is greater than the maximum of 90
+          - /observations/5/angle_type: 'ra-dec' is not one of ['radec', 'azel']
+  SKIP  Simulation labels are consistent
+        Not evaluated because the file could not be read.
+  SKIP  Target is on the allow-list
+        Not evaluated because the file could not be read.
+  SKIP  Target matches the request
+        Not evaluated because the file could not be read.
+  SKIP  Observations are inside the time window
+        Not evaluated because the file could not be read.
+  SKIP  Minimum number of observations
+        Not evaluated because the file could not be read.
+  SKIP  Declared uncertainty meets the requirements
+        Not evaluated because the file could not be read.
+  SKIP  File matches the declared hash
+        Not evaluated because the file could not be read.
+  SKIP  No duplicates or resubmissions
+        Not evaluated because the file could not be read.
+  SKIP  Residuals against the public reference orbit
+        Not evaluated because the file could not be read.
+
+Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.

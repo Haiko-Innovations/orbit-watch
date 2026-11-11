@@ -1,0 +1,26 @@
+{
+  "format": "orbit-watch/station-profile",
+  "format_version": "1.0",
+  "simulated": true,
+  "id": "sim-clock-offset",
+  "description": "SIMULATED: a good CMOS station whose computer clock runs 0.25 s ahead of UTC. Used to show how the quality meter finds systematic timing errors.",
+  "station": {
+    "id": "SIM-TAMPERE",
+    "name": "Simulated station near Tampere, Finland",
+    "latitude_deg": 61.498,
+    "longitude_deg": 23.761,
+    "altitude_m": 120.0,
+    "iod_station_number": 9903
+  },
+  "angle_type": "radec",
+  "frame": "ICRF",
+  "angle_noise_arcsec": 4.0,
+  "time_noise_s": 0.01,
+  "clock_offset_s": 0.25,
+  "declared_angle_uncertainty_arcsec": 8.0,
+  "declared_time_uncertainty_s": 0.02,
+  "cadence_s": 10.0,
+  "points_per_pass": 6,
+  "min_elevation_deg": 20.0,
+  "dropout_probability": 0.05
+}

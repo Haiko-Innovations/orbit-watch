@@ -1,0 +1,166 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.0",
+  "simulated": true,
+  "station": {
+    "id": "SIM-ESPOO",
+    "latitude_deg": 60.205,
+    "longitude_deg": 24.655,
+    "altitude_m": 40.0,
+    "name": "Simulated station near Espoo, Finland",
+    "iod_station_number": 9901
+  },
+  "target": {
+    "norad_id": 339001
+  },
+  "observations": [
+    {
+      "time": "2026-11-01T18:54:29.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 68.11239612,
+      "dec_deg": 31.09493668,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:54:39.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 71.9833171,
+      "dec_deg": 34.54875559,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:54:49.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 76.35707946,
+      "dec_deg": 37.94609197,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:54:59.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 81.28909718,
+      "dec_deg": 41.20216726,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:55:09.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 86.78431131,
+      "dec_deg": 44.21318161,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:55:19.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 92.83401663,
+      "dec_deg": 46.87545277,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:55:29.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 99.36243482,
+      "dec_deg": 49.11125358,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:55:39.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 106.22748276,
+      "dec_deg": 50.85619927,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T20:28:42.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 326.40441963,
+      "dec_deg": 17.54402122,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T20:28:52.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 322.36246203,
+      "dec_deg": 20.96341036,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T20:29:02.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 317.93998963,
+      "dec_deg": 24.37606747,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T20:29:12.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 313.1236982,
+      "dec_deg": 27.69754025,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T20:29:22.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 307.95524649,
+      "dec_deg": 30.82720044,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T20:29:32.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 302.45967913,
+      "dec_deg": 33.68057704,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T20:29:42.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 296.73024909,
+      "dec_deg": 36.17900424,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T20:29:52.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 290.86483211,
+      "dec_deg": 38.27163031,
+      "angle_uncertainty_arcsec": 10.0
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.1.0.dev0 simulator",
+    "notes": "SIMULATED resubmission: the observations of the acceptable dataset, delivered again."
+  }
+}

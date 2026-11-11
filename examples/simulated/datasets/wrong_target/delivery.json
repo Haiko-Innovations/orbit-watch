@@ -1,0 +1,12 @@
+{
+  "format": "orbit-watch/delivery",
+  "format_version": "1.0",
+  "simulated": true,
+  "delivery_id": "SIM-DEL-wrong-target",
+  "request_id": "SIM-REQ-0001",
+  "observations": {
+    "file": "observations.json",
+    "format": "json",
+    "sha256": "132799c375cdc5f7bec0681b7a64fb30a49bdc0ee33ea85a582c5c44a7f7eb42"
+  }
+}

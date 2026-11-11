@@ -62,3 +62,5 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+# Arcminute and arcsecond signs are intended in report texts.
+allowed-confusables = ["′", "″"]
