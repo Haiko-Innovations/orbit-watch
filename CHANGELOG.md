@@ -8,6 +8,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-11
+
+Phase 1: requests, optimistic verification and API. Still no money and no
+blockchain: points are bookkeeping, and all bundled data is simulated.
+
 ### Added
 
 - Request lifecycle (phase 1, step 1.1): a pure state machine from draft through
@@ -47,6 +52,16 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   (manifest hash checked, sent as `Content-SHA256`). Standard library only;
   address and key from `--api`/`--key` or `ORBIT_WATCH_API`/`ORBIT_WATCH_KEY`;
   printed idempotency keys make retries safe.
+- Data publication (phase 1, step 1.8): a request's request document,
+  observations and report become public under CC BY 4.0 once it is settled and
+  its embargo (0–30 days) has passed; until then only its parties and admins can
+  read them; calibration files are never public. Public endpoints without a key
+  (`/v1/public/…`) with permanent, content-addressed file URLs and a licence
+  link header; `orbit-watch public list|get --download`. See
+  `docs/data-publication.md`.
+- Phase 1 demo: `orbit-watch demo --phase 1` runs five simulated requests
+  through every outcome; the output is committed in `examples/phase1/` and
+  checked byte for byte in CI. Phase 1 summary in `docs/phase-1-summary.md`.
 
 ## [0.1.0] - 2026-11-11
 
@@ -81,5 +96,6 @@ is simulated and labelled as such.
 - Apache 2.0 licence, Contributor Covenant 3.0, contributing guide and README in
   English and Finnish, issue templates, roadmap, decision log and release process.
 
-[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0

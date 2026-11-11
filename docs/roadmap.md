@@ -12,24 +12,17 @@ Every pull request that finishes a roadmap step also updates this page.
 
 ## Status (2026-11-11)
 
-**Phase 0, the open core, is done** and released as
-[version 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0).
-**Phase 1 is in progress:** the decisions are approved; steps 1.1 (the request
-lifecycle), 1.2 (settlement and the points ledger), 1.3 (optimistic
-verification), 1.4 (reviewer accuracy), 1.5 (storage), 1.6 (the HTTP API) and
-1.7 (the command-line client) are done.
+**Phase 1 is done** and released as version 0.2.0: requests, optimistic
+verification, the points ledger, reviewer accuracy, storage, the HTTP API, the
+command-line client and data publication. See the
+[phase 1 summary](phase-1-summary.md). Phase 0 was released as
+[version 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0);
+its one open criterion, a real public IOD example, is still open
+([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
-| Phase 0 completion criterion | Status |
-|---|---|
-| `pip install` and one command produce a simulated dataset and a verification report | ✅ `orbit-watch demo` |
-| All six test datasets get the correct result and an understandable explanation | ✅ checked in CI, byte for byte, on Python 3.12 and 3.15 |
-| The quality meter works with simulated data | ✅ |
-| …and with one real public IOD example | ❌ open: see [#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8) |
-| README, CONTRIBUTING, code of conduct, issue templates, good first issues | ✅ |
-
-The missing real example is a data problem, not a code problem: recent public
-IOD observations are almost all of classified objects, which Orbit Watch does
-not handle. It does not block phase 1.
+**Next:** plan phase 2 in detail. Its choices (testnet, EAS schemas, contract
+tooling, multisig and timelock) are proposed in a decision issue before any
+code, as in phase 1.
 
 ## Next steps
 
@@ -62,7 +55,7 @@ the API come after.
 | ✅ **1.5 Storage** ([#15](https://github.com/Haiko-Innovations/orbit-watch/issues/15)) | SQLite schema and migrations for requests, reservations, deliveries, reports, challenges and the ledger journal; content-addressed file storage. | State survives a restart; migrations tested from empty. |
 | ✅ **1.6 API** ([#16](https://github.com/Haiko-Innovations/orbit-watch/issues/16)) | HTTP API for the lifecycle. Role-scoped API keys: a station key can only deliver, never move points. Idempotency keys on every mutating call. | Double delivery and double settlement have no double effect; tested through the API. |
 | ✅ **1.7 CLI** ([#17](https://github.com/Haiko-Innovations/orbit-watch/issues/17)) | `submit` and new commands for requests, reservations, challenges and reviews against the API. | The whole chain runs from the command line. |
-| **1.8 Data publication and phase 1 demo** ([#18](https://github.com/Haiko-Innovations/orbit-watch/issues/18)) | Licence (CC BY 4.0 by default), embargo of at most 30 days, file retention and permanent download URLs. A phase 1 demo and the phase 1 report. | The phase 1 completion criteria in [plan.md](plan.md#phase-1-requests-optimistic-verification-and-api-python-or-typescript-lightweight-database) are met; release 0.2.0. |
+| ✅ **1.8 Data publication and phase 1 demo** ([#18](https://github.com/Haiko-Innovations/orbit-watch/issues/18)) | Licence (CC BY 4.0 by default), embargo of at most 30 days, file retention and permanent download URLs. A phase 1 demo and the phase 1 report. | The phase 1 completion criteria in [plan.md](plan.md#phase-1-requests-optimistic-verification-and-api-python-or-typescript-lightweight-database) are met; release 0.2.0. |
 
 The decisions P-01 to P-07 in [decisions.md](decisions.md#phase-1-decisions) were
 approved on 2026-11-11 ([#10](https://github.com/Haiko-Innovations/orbit-watch/issues/10)).
@@ -70,7 +63,8 @@ Step 1.1 is described in [lifecycle.md](lifecycle.md), step 1.2 in
 [settlement.md](settlement.md), step 1.3 in
 [optimistic-verification.md](optimistic-verification.md), step 1.4 in
 [reviewer-accuracy.md](reviewer-accuracy.md), step 1.5 in [storage.md](storage.md),
-steps 1.6 and 1.7 in [api.md](api.md).
+steps 1.6 and 1.7 in [api.md](api.md), step 1.8 in
+[data-publication.md](data-publication.md).
 
 ### Phase 2 and phase 3 (later)
 

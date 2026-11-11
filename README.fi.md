@@ -15,19 +15,20 @@ tarkistetaan automaattisesti ja toistettavasti julkista ratadataa vasten.
 Havaitsijat hyötyvät heti ensimmäisestä päivästä: laatumittari kertoo, kuinka
 tarkka heidän asemansa on.
 
-> **Tila: vaihe 0, avoin ydin, on valmis (versio 0.1.0).** Seuraavaksi vaihe 1,
-> katso [tiekartta](docs/roadmap.fi.md) ja [muutosloki](CHANGELOG.md).
-> Ei rahaa, ei lohkoketjua, ei palvelimia.
-> Tilaukset koskevat vain siviilikohteita. **Simuloitu data on aina merkitty
-> simuloiduksi**, ja automaattinen tarkistus on prototyyppi, ei
-> tuotantovalmis tieteellinen validointi.
+> **Tila: vaihe 1 on valmis (versio 0.2.0).** Tilaukset, optimistinen
+> tarkistus, pistekirjanpito, HTTP-rajapinta ja komentoriviasiakas toimivat
+> paikallisesti, **ilman rahaa ja ilman lohkoketjua**. Tilaukset koskevat vain
+> siviilikohteita. **Simuloitu data on aina merkitty simuloiduksi**, ja
+> automaattinen tarkistus on prototyyppi, ei tuotantovalmis tieteellinen
+> validointi. Seuraavaksi vaiheen 2 suunnittelu. Katso [tiekartta](docs/roadmap.fi.md),
+> [vaiheen 1 yhteenveto](docs/phase-1-summary.fi.md) ja [muutosloki](CHANGELOG.md).
 
 ## Kokeile (kolme komentoa)
 
 Tarvitset Python 3.12:n tai uudemman.
 
 ```sh
-pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.1.0#subdirectory=core"
+pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.2.0#subdirectory=core"
 orbit-watch demo
 cat orbit-watch-demo/datasets/wrong_target/report.txt
 ```
@@ -47,6 +48,19 @@ Jokainen raportti kertoo menetelmän ja sen version, jokaisen syötteen SHA-256-
 ja jokaisen tarkistuksen perustelun. Sama syöte tuottaa tavulleen saman
 raportin millä tahansa koneella: CI tarkistaa tämän kahdella Python-versiolla.
 
+### Koko tilauksen ketju (vaihe 1)
+
+```sh
+orbit-watch demo --phase 1
+cat orbit-watch-demo-phase1/transcript.md
+```
+
+Viisi simuloitua tilausta simuloidulla kellolla: hyväksytty, haasteen jälkeen
+hylätty, ilman haastetta hylätty, riidanalainen ja vanhentunut. Loki näyttää
+jokaisen askeleen, pisteet ja tarkistajien profiilit. Ketjun voi ajaa itse
+HTTP-rajapinnan kautta (`pip install "orbit-watch[api] @ …"`, sitten
+`orbit-watch serve`); katso [docs/api.md](docs/api.md) (englanniksi).
+
 ## Tarkista oma asemasi
 
 ```sh
@@ -59,7 +73,7 @@ näkyvät useassa kohteessa yhtä aikaa, ja näyttää, miten asemasi kehittyy y
 yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 [examples/real-iod/](examples/real-iod) (englanniksi).
 
-## Mitä vaihe 0 sisältää
+## Mitä siinä on
 
 | Osa | Komento | Dokumentaatio (englanniksi) |
 |---|---|---|
@@ -68,7 +82,12 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | Deterministinen, versioitu tarkistusmoottori | `validate` | [verification.md](docs/verification.md) |
 | Aseman laatumittari | `score-station` | [quality-meter.md](docs/quality-meter.md) |
 | Julkinen ratadata ja siviilikohteiden sallittu lista | `fetch-gp`, `allowlist build` | [data-sources.md](docs/data-sources.md) |
-| Lähetys API:in | `submit` | tulee vaiheessa 1 |
+| Tilauksen elinkaari, optimistinen tarkistus, tarkistajakierrokset | | [lifecycle.md](docs/lifecycle.md), [optimistic-verification.md](docs/optimistic-verification.md) |
+| Tilityssäännöt ja pistekirjanpito | | [settlement.md](docs/settlement.md) |
+| Tarkistajien tarkkuus tunnetun vastauksen tehtävillä | | [reviewer-accuracy.md](docs/reviewer-accuracy.md) |
+| Tallennus (SQLite, tiedostot tiivisteen mukaan) | | [storage.md](docs/storage.md) |
+| HTTP-rajapinta ja komentoriviasiakas | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
+| Avoin data (CC BY 4.0, embargo, pysyvät osoitteet) | `public` | [data-publication.md](docs/data-publication.md) |
 
 Python-koodi on hakemistossa [`core/`](core). Simuloidut esimerkit ovat
 hakemistossa [`examples/`](examples).
@@ -111,12 +130,12 @@ Nykytila ja seuraavat askeleet: [docs/roadmap.fi.md](docs/roadmap.fi.md).
 Päätökset perusteluineen: [docs/decisions.md](docs/decisions.md) (englanniksi).
 Koko aloitussuunnitelma: [docs/plan.fi.md](docs/plan.fi.md).
 
-- **Vaihe 0 (nyt):** avoin ydin: formaatti, simulaattori, tarkistus, laatumittari, CLI.
-- **Vaihe 1:** tilaukset tilakoneella, optimistinen tarkistus haastejaksolla ja
-  2/3-tarkistajakierroksella, API sekä pelkkiä pisteitä kirjaava
-  ledger-tilityssovitin.
-- **Vaihe 2:** tilitys EVM L2 -**testiverkossa** EAS-attestaatioilla. Ei
-  pääverkkoa, ei omaa tokenia.
+- **Vaihe 0 (valmis, 0.1.0):** avoin ydin: formaatti, simulaattori, tarkistus, laatumittari, CLI.
+- **Vaihe 1 (valmis, 0.2.0):** tilaukset tilakoneella, optimistinen tarkistus
+  haastejaksolla ja 2/3-tarkistajakierroksella, API sekä pelkkiä pisteitä
+  kirjaava ledger-tilityssovitin.
+- **Vaihe 2 (seuraavaksi):** tilitys EVM L2 -**testiverkossa**
+  EAS-attestaatioilla. Ei pääverkkoa, ei omaa tokenia.
 - **Vaihe 3:** verkkosovellus roolikohtaisine näkymineen.
 
 ## Avoimet kysymykset

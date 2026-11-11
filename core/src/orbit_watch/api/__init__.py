@@ -220,7 +220,11 @@ class Api:
 
     def _record_view(self, request_id: str) -> dict[str, Any]:
         record = self.service.records[request_id]
-        return {"summary": self.service.summary(request_id), "record": record.to_document()}
+        return {
+            "summary": self.service.summary(request_id),
+            "record": record.to_document(),
+            "publication": self.service.publication(request_id, self.clock()),
+        }
 
     # ------------------------------------------------------------------ handlers
 
@@ -318,14 +322,62 @@ class Api:
         return self._record_view(request_id)
 
     def get_report(self, principal, request, body, now):
-        report = self.service.report(request.path_params["request_id"])
+        request_id = request.path_params["request_id"]
+        if request_id not in self.service.records or not self.service.can_read_request_data(
+            request_id, principal.party, principal.role, now
+        ):
+            raise ApiError("no_report", f"no report for {request_id!r} that you may read")
+        report = self.service.report(request_id)
         return Response(report, media_type="application/json")
 
     def get_file(self, principal, request, body, now):
         sha256 = request.path_params["sha256"]
-        if sha256 not in self.service.files:
-            raise ApiError("unknown_file", f"no file {sha256}")
+        if not self.service.can_read_file(sha256, principal.party, principal.role, now):
+            raise ApiError("unknown_file", f"no file {sha256} that you may read")
         return Response(self.service.files[sha256], media_type="application/octet-stream")
+
+    # ------------------------------------------------------------------ public (no key)
+
+    def public(self, work: Callable[..., Any]):
+        async def handler(request: Request) -> Response:
+            return await run_in_threadpool(self._run_public, request, work)
+
+        return handler
+
+    def _run_public(self, request: Request, work: Callable[..., Any]) -> Response:
+        with self.lock:
+            return self._respond(work(request, self.clock()))
+
+    def public_requests(self, request, now):
+        return {"requests": self.service.published(now)}
+
+    def public_request(self, request, now):
+        request_id = request.path_params["request_id"]
+        if request_id not in self.service.records:
+            raise ApiError("not_found", f"no published request {request_id!r}")
+        publication = self.service.publication(request_id, now)
+        if publication["state"] != "published":
+            raise ApiError("not_found", f"no published request {request_id!r}")
+        return {"publication": publication, "summary": self.service.summary(request_id)}
+
+    def public_file(self, request, now):
+        sha256 = request.path_params["sha256"]
+        if not self.service.can_read_file(sha256, None, None, now):
+            raise ApiError("unknown_file", f"no published file {sha256}")
+        licence = next(
+            (
+                self.service.publication(rid, now)["licence_url"]
+                for rid in sorted(self.service.records)
+                if any(d == sha256 for _, d in self.service.request_files(rid))
+            ),
+            None,
+        )
+        headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+        if licence:
+            headers["Link"] = f'<{licence}>; rel="license"'
+        return Response(
+            self.service.files[sha256], media_type="application/octet-stream", headers=headers
+        )
 
     def tasks(self, principal, request, body, now):
         self._require(principal, "reviewer")
@@ -428,6 +480,10 @@ def create_app(
             methods=["POST"],
         ),
         Route("/v1/admin/tick", change(api.tick), methods=["POST"]),
+        # Public, no key: settled requests whose embargo has passed (step 1.8).
+        Route("/v1/public/requests", api.public(api.public_requests), methods=["GET"]),
+        Route("/v1/public/requests/{request_id}", api.public(api.public_request), methods=["GET"]),
+        Route("/v1/public/files/{sha256}", api.public(api.public_file), methods=["GET"]),
     ]
     handlers = {
         ApiError: _handle_api_error,

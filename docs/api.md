@@ -61,8 +61,8 @@ refusal.
 | `POST /v1/requests/{id}/reserve` | station | | reserve the request |
 | `POST /v1/requests/{id}/deliveries?format=json\|iod\|tdm` | station | the observation file as is | deliver and verify at once; an optional `Content-SHA256` header must match the body |
 | `POST /v1/requests/{id}/challenge` | requester, station | `{"reason": "…"}` | challenge the automated result |
-| `GET /v1/requests/{id}/report` | any | | the automated verification report |
-| `GET /v1/files/{sha256}` | any | | a stored file |
+| `GET /v1/requests/{id}/report` | the request's parties, admin; anyone once published | | the automated verification report |
+| `GET /v1/files/{sha256}` | the file's request parties (or calibration reviewer), admin; anyone once published | | a stored file |
 | `GET /v1/tasks` | reviewer | | the reviewer's open tasks (real and calibration alike) |
 | `POST /v1/tasks/{task_id}/review` | reviewer | `{"approve": true, "reason": "…"}` | answer a task |
 | `GET /v1/reviewers/{party}/profile` | that reviewer, admin | | accuracy profile |
@@ -70,6 +70,9 @@ refusal.
 | `POST /v1/admin/grants` | admin | `{"party": "…", "points": 1000}` | give points (phase 1 budgets) |
 | `POST /v1/admin/keys` | admin | `{"party": "…", "role": "…"}` | create a key; shown once (a replay returns `"key": null`) |
 | `POST /v1/admin/tick` | admin | | apply passed deadlines and settle finished requests |
+| `GET /v1/public/requests` | none | | published requests ([data-publication.md](data-publication.md)) |
+| `GET /v1/public/requests/{id}` | none | | one published request |
+| `GET /v1/public/files/{sha256}` | none | | a published file, with its licence in a `Link` header |
 
 Deadlines move on and finished requests are settled when an admin (or a
 scheduler with an admin key) calls `tick`. Calls on a request already take its
@@ -111,6 +114,7 @@ export ORBIT_WATCH_KEY=$(cat requester.key)
 | reviewer | `review list`, `review answer TASK --approve\|--reject --reason TEXT`, `review profile REVIEWER` |
 | admin | `admin grant PARTY POINTS`, `admin key PARTY ROLE [-o FILE]`, `admin tick` |
 | anyone with a key | `request list`, `request show ID`, `request report ID [-o FILE]`, `balance PARTY` |
+| anyone, no key | `public list`, `public get ID [--download DIR]` |
 
 Every command takes `--json` to print the API's answer as is. Changes print
 their idempotency key; running the same command again with
@@ -145,5 +149,4 @@ curl -s -X POST -H "Authorization: Bearer $STATION_KEY" -H "Idempotency-Key: del
 
 ## Not yet
 
-- Public reads, licence and embargo rules for files and reports (step 1.8).
 - TLS, rate limits, key rotation and a public deployment (later, see P-03).

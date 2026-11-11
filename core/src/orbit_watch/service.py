@@ -28,7 +28,7 @@ import functools
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +45,7 @@ from orbit_watch.verify.engine import UsageError, VerificationInput, verify
 
 VERIFIER = "system:verifier"
 PLATFORM = "platform:orbit-watch"
+LICENCE_URLS = {"CC-BY-4.0": "https://creativecommons.org/licenses/by/4.0/"}
 
 
 def _atomic[F: Callable[..., Any]](method: F) -> F:
@@ -557,6 +558,99 @@ class RequestService:
             return self.files[self.deliveries[request_id].report_sha256]
         except KeyError:
             raise ServiceError("no_report", f"request {request_id} has no report yet") from None
+
+    # ------------------------------------------------------------------ publication (1.8)
+
+    def request_files(self, request_id: str) -> list[tuple[str, str]]:
+        """(role, SHA-256) of the files that belong to a request."""
+        files = [("request", sha256_bytes(self.request_documents[request_id]))]
+        delivered = self.deliveries.get(request_id)
+        if delivered is not None:
+            files += [
+                ("observations", delivered.observations_sha256),
+                ("report", delivered.report_sha256),
+            ]
+        return files
+
+    def publication(self, request_id: str, now: datetime) -> dict[str, Any]:
+        """When and under which licence a request's files are public.
+
+        Files become public once the request is settled and its embargo (0 to 30
+        days, fixed in the terms) has passed. Until then only the parties of the
+        request and administrators can read them.
+        """
+        record = self._record(request_id)
+        terms = record.terms
+        settled = next((h.at for h in reversed(record.history) if h.event == "settle"), None)
+        public_from = None if settled is None else settled + timedelta(days=terms.embargo_days)
+        if public_from is None:
+            state = "pending"
+        elif now >= public_from:
+            state = "published"
+        else:
+            state = "embargoed"
+        observer = record.observer
+        attribution = (
+            f"Observations by {observer} for {record.requester}, request {request_id}, "
+            "published through Orbit Watch"
+            if observer
+            else f"Request {request_id} by {record.requester}, published through Orbit Watch"
+        )
+        return {
+            "request_id": request_id,
+            "state": state,
+            "licence": terms.licence,
+            "licence_url": LICENCE_URLS.get(terms.licence),
+            "embargo_days": terms.embargo_days,
+            "public_from": None if public_from is None else format_utc(public_from),
+            "attribution": attribution,
+            "files": [
+                {
+                    "role": role,
+                    "sha256": digest,
+                    "size": len(self.files[digest]),
+                    "url": f"/v1/public/files/{digest}",
+                }
+                for role, digest in self.request_files(request_id)
+            ],
+            "simulated": bool(json.loads(self.request_documents[request_id]).get("simulated")),
+        }
+
+    def published(self, now: datetime) -> list[dict[str, Any]]:
+        return [
+            self.publication(rid, now)
+            for rid in sorted(self.records)
+            if self.publication(rid, now)["state"] == "published"
+        ]
+
+    def parties(self, request_id: str) -> set[str]:
+        record = self._record(request_id)
+        return {p for p in (record.requester, record.observer, *record.reviewers) if p}
+
+    def can_read_request_data(self, request_id: str, party: str, role: str, now: datetime) -> bool:
+        return (
+            role == "admin"
+            or party in self.parties(request_id)
+            or self.publication(request_id, now)["state"] == "published"
+        )
+
+    def can_read_file(
+        self, sha256: str, party: str | None, role: str | None, now: datetime
+    ) -> bool:
+        """Who may download a stored file. Calibration files are never public."""
+        if role == "admin":
+            return sha256 in self.files
+        for request_id in sorted(self.records):
+            if any(digest == sha256 for _, digest in self.request_files(request_id)):
+                if self.publication(request_id, now)["state"] == "published":
+                    return True
+                if party is not None and party in self.parties(request_id):
+                    return True
+        return any(
+            task.reviewer == party
+            and sha256 in (task.request_sha256, task.observations_sha256, task.report_sha256)
+            for task in self.calibration_tasks.values()
+        )
 
     def summary(self, request_id: str) -> dict[str, Any]:
         record = self._record(request_id)

@@ -296,6 +296,58 @@ def cmd_balance(args: argparse.Namespace) -> int:
     return 0
 
 
+# ------------------------------------------------------------------ public data (no key)
+
+
+def cmd_public_list(args: argparse.Namespace) -> int:
+    result = _client(args).request("GET", "/v1/public/requests", auth=False).json()
+    lines = [
+        f"{p['request_id']:<20}{p['licence']:<12}public since {p['public_from']}"
+        for p in result["requests"]
+    ] or ["no published requests"]
+    _print(args, result, "\n".join(lines))
+    return 0
+
+
+def cmd_public_get(args: argparse.Namespace) -> int:
+    client = _client(args)
+    view = client.request("GET", f"/v1/public/requests/{args.request_id}", auth=False).json()
+    publication = view["publication"]
+    lines = [
+        f"{args.request_id}: {view['summary']['outcome']}, {publication['licence']} "
+        f"({publication['licence_url']})",
+        f"  attribution: {publication['attribution']}",
+    ]
+    if publication["simulated"]:
+        lines.append("  SIMULATED data")
+    if args.download:
+        target = Path(args.download)
+        target.mkdir(parents=True, exist_ok=True)
+        for item in publication["files"]:
+            data = client.request("GET", item["url"], auth=False).body
+            if sha256_bytes(data) != item["sha256"]:
+                raise ValueError(f"downloaded {item['role']} does not match its SHA-256")
+            path = target / f"{args.request_id}-{item['role']}.{_suffix(item['role'])}"
+            path.write_bytes(data)
+            lines.append(f"  {item['role']}: {path} (SHA-256 checked)")
+        write_text(
+            target / f"{args.request_id}-LICENCE.txt",
+            f"{publication['licence']} {publication['licence_url']}\n"
+            f"Attribution: {publication['attribution']}\n",
+        )
+    else:
+        lines += [
+            f"  {item['role']}: {item['url']} ({item['size']} bytes)"
+            for item in publication["files"]
+        ]
+    _print(args, view, "\n".join(lines))
+    return 0
+
+
+def _suffix(role: str) -> str:
+    return "json" if role in ("request", "report") else "dat"
+
+
 # ------------------------------------------------------------------ parser
 
 
@@ -405,6 +457,17 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
     sub.add_parser("tick", parents=[common], help="apply passed deadlines").set_defaults(
         handler=cmd_admin_tick
     )
+
+    public = commands.add_parser("public", help="published requests and files (no key needed)")
+    sub = public.add_subparsers(dest="public_command", metavar="command")
+    sub.required = True
+    sub.add_parser("list", parents=[common], help="published requests").set_defaults(
+        handler=cmd_public_list
+    )
+    get = sub.add_parser("get", parents=[common], help="a published request and its files")
+    get.add_argument("request_id")
+    get.add_argument("--download", help="download the files (hash-checked) into this directory")
+    get.set_defaults(handler=cmd_public_get)
 
     balance = commands.add_parser("balance", parents=[common], help="points held (API client)")
     balance.add_argument("party")

@@ -14,24 +14,17 @@ Jokainen pull request, joka saa tiekartan vaiheen valmiiksi, päivittää myös 
 
 ## Tilanne (11.11.2026)
 
-**Vaihe 0, avoin ydin, on valmis** ja julkaistu
-[versiona 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0).
-**Vaihe 1 on käynnissä:** päätökset on hyväksytty, ja vaiheet 1.1 (tilauksen
-elinkaari), 1.2 (tilitys ja pistekirjanpito), 1.3 (optimistinen tarkistus) ja
-1.4 (tarkistajien tarkkuus), 1.5 (tallennus), 1.6 (HTTP-rajapinta) ja 1.7
-(komentoriviasiakas) ovat valmiit.
+**Vaihe 1 on valmis** ja julkaistu versiona 0.2.0: tilaukset, optimistinen
+tarkistus, pistekirjanpito, tarkistajien tarkkuus, tallennus, HTTP-rajapinta,
+komentoriviasiakas ja datan julkaisu. Katso [vaiheen 1 yhteenveto](phase-1-summary.fi.md).
+Vaihe 0 julkaistiin
+[versiona 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0);
+sen ainoa avoin kriteeri, oikea julkinen IOD-esimerkki, on yhä avoinna
+([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
-| Vaiheen 0 valmiskriteeri | Tila |
-|---|---|
-| `pip install` ja yksi komento tuottavat simuloidun aineiston ja tarkistusraportin | ✅ `orbit-watch demo` |
-| Kaikki kuusi testiaineistoa saavat oikean tuloksen ja ymmärrettävän selityksen | ✅ tarkistetaan CI:ssä tavulleen Python 3.12:lla ja 3.15:llä |
-| Laatumittari toimii simuloidulla datalla | ✅ |
-| …ja yhdellä oikealla julkisella IOD-esimerkillä | ❌ avoin: katso [#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8) |
-| README, CONTRIBUTING, toimintaohje, issue-pohjat, good first issuet | ✅ |
-
-Puuttuva oikea esimerkki on dataongelma, ei koodiongelma: tuoreet julkiset
-IOD-havainnot koskevat lähes kaikki salaisia kohteita, joita Orbit Watch ei
-käsittele. Se ei estä vaihetta 1.
+**Seuraavaksi:** vaihe 2 suunnitellaan tarkemmin. Sen valinnat (testiverkko,
+EAS-skeemat, sopimustyökalut, monisignatuuri ja aikalukko) ehdotetaan
+päätösissuessa ennen koodia, kuten vaiheessa 1.
 
 ## Seuraavat askeleet
 
@@ -64,7 +57,7 @@ testata kattavasti; tallennus ja API tulevat sen jälkeen.
 | ✅ **1.5 Tallennus** ([#15](https://github.com/Haiko-Innovations/orbit-watch/issues/15)) | SQLite-skeema ja migraatiot tilauksille, varauksille, toimituksille, raporteille, haasteille ja ledgerin kirjauksille; tiivisteellä osoitettu tiedostovarasto. | Tila säilyy uudelleenkäynnistyksen yli; migraatiot testattu tyhjästä. |
 | ✅ **1.6 API** ([#16](https://github.com/Haiko-Innovations/orbit-watch/issues/16)) | HTTP-rajapinta elinkaarelle. Roolikohtaiset API-avaimet: aseman avaimella voi vain toimittaa, ei koskaan siirtää pisteitä. Idempotenssiavain jokaisessa muuttavassa kutsussa. | Kaksoistoimitus ja kaksoistilitys eivät vaikuta kahdesti; testattu API:n kautta. |
 | ✅ **1.7 Komentorivi** ([#17](https://github.com/Haiko-Innovations/orbit-watch/issues/17)) | `submit` sekä uudet komennot tilauksille, varauksille, haasteille ja tarkistuksille API:a vasten. | Koko ketju toimii komentoriviltä. |
-| **1.8 Datan julkaisu ja vaiheen 1 demo** ([#18](https://github.com/Haiko-Innovations/orbit-watch/issues/18)) | Lisenssi (oletus CC BY 4.0), enintään 30 päivän embargo, tiedostojen säilytys ja pysyvät latausosoitteet. Vaiheen 1 demo ja raportti. | Vaiheen 1 valmiskriteerit tiedostossa [plan.fi.md](plan.fi.md) täyttyvät; julkaistaan 0.2.0. |
+| ✅ **1.8 Datan julkaisu ja vaiheen 1 demo** ([#18](https://github.com/Haiko-Innovations/orbit-watch/issues/18)) | Lisenssi (oletus CC BY 4.0), enintään 30 päivän embargo, tiedostojen säilytys ja pysyvät latausosoitteet. Vaiheen 1 demo ja raportti. | Vaiheen 1 valmiskriteerit tiedostossa [plan.fi.md](plan.fi.md) täyttyvät; julkaistaan 0.2.0. |
 
 Päätökset P-01–P-07 tiedostossa [decisions.md](decisions.md#phase-1-decisions)
 hyväksyttiin 11.11.2026 ([#10](https://github.com/Haiko-Innovations/orbit-watch/issues/10)).
@@ -72,8 +65,9 @@ Vaihe 1.1 on kuvattu tiedostossa [lifecycle.md](lifecycle.md), vaihe 1.2
 tiedostossa [settlement.md](settlement.md), vaihe 1.3 tiedostossa
 [optimistic-verification.md](optimistic-verification.md), vaihe 1.4
 tiedostossa [reviewer-accuracy.md](reviewer-accuracy.md), vaihe 1.5
-tiedostossa [storage.md](storage.md) ja vaiheet 1.6 ja 1.7 tiedostossa
-[api.md](api.md) (englanniksi).
+tiedostossa [storage.md](storage.md), vaiheet 1.6 ja 1.7 tiedostossa
+[api.md](api.md) ja vaihe 1.8 tiedostossa [data-publication.md](data-publication.md)
+(englanniksi).
 
 ### Vaiheet 2 ja 3 (myöhemmin)
 
