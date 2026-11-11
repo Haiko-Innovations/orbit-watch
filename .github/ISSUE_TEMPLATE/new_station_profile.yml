@@ -1,0 +1,23 @@
+name: New simulated station profile
+description: Propose a new simulated station profile for the station simulator.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: station
+    attributes:
+      label: What kind of station?
+      description: Equipment and observing method (for example a video camera with GPS timing, or a visual observer with binoculars).
+    validations:
+      required: true
+  - type: textarea
+    id: parameters
+    attributes:
+      label: Typical parameters
+      description: Angle noise, timing noise, clock offset, cadence, missing observations, angle type. Give sources if you have them.
+    validations:
+      required: true
+  - type: textarea
+    id: use
+    attributes:
+      label: Why is it useful?
+      description: What does this profile let us test or demonstrate?

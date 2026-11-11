@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # New versions wait 14 days before they are proposed (supply-chain protection:
+  # a compromised release is usually detected and pulled within that time).
+  # Security updates do not wait: the cooldown does not apply to them.
+  # core/pyproject.toml also sets uv's exclude-newer to 14 days, so the lock file
+  # follows the same rule.
+  - package-ecosystem: uv
+    directory: /core
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Helsinki
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 5
+    groups:
+      python:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        patterns: ["*"]

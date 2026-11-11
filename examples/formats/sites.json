@@ -1,0 +1,16 @@
+{
+  "format": "orbit-watch/sites",
+  "format_version": "1.0",
+  "simulated": true,
+  "sites": [
+    {
+      "id": "SIM-ESPOO",
+      "name": "Simulated station near Espoo, Finland (illustrative coordinates)",
+      "latitude_deg": 60.205,
+      "longitude_deg": 24.655,
+      "altitude_m": 40.0,
+      "iod_station_number": 9901,
+      "simulated": true
+    }
+  ]
+}
