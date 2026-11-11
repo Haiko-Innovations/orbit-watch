@@ -16,6 +16,7 @@ STATION = "station:SIM-ESPOO"
 OTHER_STATION = "station:SIM-TAMPERE"
 REVIEWERS = ("reviewer:r1", "reviewer:r2", "reviewer:r3")
 SHA = "a" * 64
+SPLIT = lc.RewardSplit(observer=100, reviewer=10)
 
 
 def minutes(n: float):
@@ -47,7 +48,7 @@ def run(*events, terms=None):
 PATHS = {
     Status.DRAFT: [],
     Status.OPEN: [lc.Open(minutes(1))],
-    Status.FUNDED: [lc.Open(minutes(1)), lc.Fund(minutes(2), 100)],
+    Status.FUNDED: [lc.Open(minutes(1)), lc.Fund(minutes(2), SPLIT)],
     Status.RESERVED: [lc.Open(minutes(1)), lc.Reserve(minutes(3), STATION)],
     Status.DELIVERED: [
         lc.Open(minutes(1)),
@@ -104,7 +105,7 @@ def valid_event(kind, record: lc.RequestRecord):
     return {
         lc.ReviseTerms: lambda: lc.ReviseTerms(at, make_terms(embargo_days=7)),
         lc.Open: lambda: lc.Open(at),
-        lc.Fund: lambda: lc.Fund(at, 50),
+        lc.Fund: lambda: lc.Fund(at, SPLIT),
         lc.Reserve: lambda: lc.Reserve(at, STATION),
         lc.Deliver: lambda: lc.Deliver(at, record.reserved_by or STATION, SHA),
         lc.RecordVerification: lambda: lc.RecordVerification(at, "fail", SHA),
@@ -213,7 +214,10 @@ def test_late_vote_is_refused():
 def test_reservation_lapses_and_another_station_can_reserve():
     terms = make_terms(reservation_hours=2)
     record = run(
-        lc.Open(minutes(1)), lc.Fund(minutes(2), 10), lc.Reserve(minutes(3), STATION), terms=terms
+        lc.Open(minutes(1)),
+        lc.Fund(minutes(2), SPLIT),
+        lc.Reserve(minutes(3), STATION),
+        terms=terms,
     )
     assert record.reservation_expires_at == minutes(123)
     with pytest.raises(TransitionError):
@@ -254,7 +258,7 @@ def test_no_delivery_expires_and_stuck_verification_expires():
             ],
             "not_reserved_by_station",
         ),
-        ([lc.Open(minutes(1)), lc.Fund(minutes(2), 0)], "invalid_amount"),
+        ([lc.Open(minutes(1)), lc.Fund(minutes(2), lc.RewardSplit(0, 0))], "invalid_amount"),
         ([lc.Open(minutes(1)), lc.Cancel(minutes(2), STATION)], "not_requester"),
         (
             [
@@ -292,7 +296,7 @@ def test_no_delivery_expires_and_stuck_verification_expires():
             [*PATHS[Status.DELIVERED], lc.RecordVerification(minutes(910), "maybe", SHA)],
             "invalid_verdict",
         ),
-        ([lc.Open(minutes(1)), lc.Fund(minutes(0), 5)], "out_of_order"),
+        ([lc.Open(minutes(1)), lc.Fund(minutes(0), SPLIT)], "out_of_order"),
     ],
 )
 def test_guards(events, code):
@@ -364,7 +368,7 @@ def random_event(kind, now, rng, parties):
     if kind is lc.ReviseTerms:
         return lc.ReviseTerms(now, make_terms(embargo_days=rng.randint(0, 30)))
     if kind is lc.Fund:
-        return lc.Fund(now, rng.randint(1, 100))
+        return lc.Fund(now, lc.RewardSplit(rng.randint(1, 100), rng.randint(0, 10)))
     if kind is lc.Reserve:
         return lc.Reserve(now, rng.choice(parties))
     if kind is lc.Deliver:
@@ -440,3 +444,22 @@ def test_diagram_matches_the_rules():
         label = rest.split(": ", 1)[1]
         if label in event_kinds:
             assert event_kinds[label] in lc.ALLOWED[Status(source)], line
+
+
+@pytest.mark.parametrize(
+    ("split", "message"),
+    [
+        (lc.RewardSplit(-1, 5), "observer"),
+        (lc.RewardSplit(10, 1.5), "reviewer"),
+        (lc.RewardSplit(0, 0, 0), "at least one point"),
+    ],
+)
+def test_invalid_split_is_refused(split, message):
+    with pytest.raises(TransitionError, match=message):
+        run(lc.Open(minutes(1)), lc.Fund(minutes(2), split))
+
+
+def test_split_is_locked_at_funding():
+    record = reach(Status.FUNDED)
+    assert record.split == SPLIT and record.funded_points == 100 + 3 * 10
+    assert record.to_document()["split"]["challenge_reserve"] == 30

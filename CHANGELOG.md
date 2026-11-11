@@ -13,9 +13,14 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 - Request lifecycle (phase 1, step 1.1): a pure state machine from draft through
   open, funded, reserved, delivered, challenge period and reviewer round to
   accepted, rejected, disputed, expired or cancelled, and finally settled.
-  Terms are frozen and hashed when a request opens; deadlines (reservation,
+  Terms are frozen and hashed when a request opens, and funding locks a reward
+  split (observer, per-review reward, platform fee); deadlines (reservation,
   delivery, verification, challenge, review) are applied at their exact time.
   See `docs/lifecycle.md`.
+- Settlement (phase 1, step 1.2): shared settlement rules 1.0, the adapter
+  interface (`fund`, `reserve`, `attest`, `settle`, `refund`) with idempotency
+  keys, the points-only double-entry ledger adapter, and a scenario suite that
+  every adapter must pass. See `docs/settlement.md`.
 
 ## [0.1.0] - 2026-11-11
 
