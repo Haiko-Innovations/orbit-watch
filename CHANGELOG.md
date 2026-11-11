@@ -37,6 +37,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   (never deleted, checked on every read). One transaction per call, a refused
   call changes nothing, one process per directory, and a SQLite points ledger
   that passes the settlement scenario suite. See `docs/storage.md`.
+- HTTP API (phase 1, step 1.6): Starlette application for the whole request
+  chain, with role-scoped API keys stored as hashes, an `Idempotency-Key` on
+  every change (replays return the stored response), stable JSON error codes,
+  and `orbit-watch serve` / `orbit-watch keys create`. Optional `api` extra
+  (Starlette, uvicorn). Migration 0002. See `docs/api.md`.
 
 ## [0.1.0] - 2026-11-11
 

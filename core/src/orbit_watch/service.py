@@ -52,7 +52,9 @@ def _atomic[F: Callable[..., Any]](method: F) -> F:
 
     @functools.wraps(method)
     def wrapper(self: RequestService, *args: Any, **kwargs: Any) -> Any:
-        if self.storage is None:
+        if self.storage is None or self.storage.db.in_transaction:
+            # Without storage there is nothing to roll back; inside an outer
+            # transaction (the API) the outer caller rolls back and reloads.
             return method(self, *args, **kwargs)
         try:
             with self.storage.db.transaction():

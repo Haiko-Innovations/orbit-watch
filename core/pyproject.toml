@@ -24,6 +24,13 @@ dependencies = [
     "skyfield>=1.55",
 ]
 
+[project.optional-dependencies]
+# The phase 1 HTTP API (decision D-16). Not needed for the command-line tools.
+api = [
+    "starlette>=1.10",
+    "uvicorn>=0.54",
+]
+
 [project.urls]
 Homepage = "https://github.com/Haiko-Innovations/orbit-watch"
 Issues = "https://github.com/Haiko-Innovations/orbit-watch/issues"
@@ -33,6 +40,8 @@ orbit-watch = "orbit_watch.cli:main"
 
 [dependency-groups]
 dev = [
+    "httpx2>=2.16",  # used by Starlette's TestClient
+    "orbit-watch[api]",
     "pip-audit>=2.10",
     "pytest>=9.2",
     "ruff>=0.17",

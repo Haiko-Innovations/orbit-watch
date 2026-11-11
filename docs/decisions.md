@@ -207,3 +207,19 @@ Accepted · 2026-11-11 (with the pull request that implements step 1.5). See
 - One process per service directory, enforced with SQLite's exclusive locking.
 - Files are kept by SHA-256 and never deleted; every read checks the hash.
 - Migrations are checked by hash and never edited after they are applied.
+
+### D-16 Starlette for the HTTP API
+
+Accepted · 2026-11-11 (with the pull request that implements step 1.6). P-01
+left the framework open. Checked on 2026-11-11: FastAPI 0.162 now depends on
+Pydantic (a Rust extension), OpenTelemetry and further packages; Litestar 2.25
+on about fifteen packages; Starlette 1.10 (BSD-3-Clause), which FastAPI is built
+on, only on AnyIO. Orbit Watch already validates its documents with its own
+JSON Schemas, so the API uses **Starlette**, served by **uvicorn**, as an
+optional `api` extra. The cost: no generated OpenAPI page; the API is described
+by hand in [api.md](api.md). Other rules:
+
+- Every change needs an `Idempotency-Key`; the first successful response is
+  stored in the same transaction; refused calls are not stored.
+- One lock serialises all calls (one writer, working state in memory).
+- Keys are `ow_` plus 256 random bits, stored as SHA-256, shown once.
