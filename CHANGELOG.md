@@ -8,6 +8,15 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+### Added
+
+- Request lifecycle (phase 1, step 1.1): a pure state machine from draft through
+  open, funded, reserved, delivered, challenge period and reviewer round to
+  accepted, rejected, disputed, expired or cancelled, and finally settled.
+  Terms are frozen and hashed when a request opens; deadlines (reservation,
+  delivery, verification, challenge, review) are applied at their exact time.
+  See `docs/lifecycle.md`.
+
 ## [0.1.0] - 2026-11-11
 
 Phase 0: the open core. No money, no blockchain, no servers. All bundled data
