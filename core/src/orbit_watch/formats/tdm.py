@@ -35,7 +35,7 @@ from datetime import UTC, datetime, timedelta
 
 from orbit_watch.ids import format_alpha5, parse_catalog_number
 from orbit_watch.model import Observation, ObservationSet, Station, Target
-from orbit_watch.timeutil import format_utc
+from orbit_watch.timeutil import format_utc, make_utc
 
 _TIME_RE = re.compile(
     r"^(\d{4})-(?:(\d{2})-(\d{2})|(\d{3}))T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z?$"
@@ -72,11 +72,16 @@ def parse_time(text: str) -> datetime:
     year, month, day, doy, hour, minute, second, frac = match.groups()
     frac = (frac or "0")[:6].ljust(6, "0")
     if doy is not None:
+        if not 1 <= int(doy) <= 366:
+            raise TdmError(f"day of year out of range in {text!r}")
         base = datetime(int(year), 1, 1, tzinfo=UTC) + timedelta(days=int(doy) - 1)
         month, day = base.month, base.day
-    return datetime(
-        int(year), int(month), int(day), int(hour), int(minute), int(second), int(frac), tzinfo=UTC
-    )
+    try:
+        return make_utc(
+            int(year), int(month), int(day), int(hour), int(minute), int(second), int(frac)
+        )
+    except ValueError as exc:
+        raise TdmError(str(exc)) from None
 
 
 def _split_kv(line: str, number: int) -> tuple[str, str]:

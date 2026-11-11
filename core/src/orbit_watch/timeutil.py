@@ -20,9 +20,30 @@ def parse_utc(text: str) -> datetime:
         raise ValueError(f"not a UTC timestamp of the form YYYY-MM-DDThh:mm:ss[.ffffff]Z: {text!r}")
     year, month, day, hour, minute, second, frac = match.groups()
     micro = int((frac or "0").ljust(6, "0"))
-    return datetime(
-        int(year), int(month), int(day), int(hour), int(minute), int(second), micro, tzinfo=UTC
-    )
+    return make_utc(int(year), int(month), int(day), int(hour), int(minute), int(second), micro)
+
+
+def make_utc(
+    year: int,
+    month: int,
+    day: int,
+    hour: int = 0,
+    minute: int = 0,
+    second: int = 0,
+    microsecond: int = 0,
+) -> datetime:
+    """Build a UTC datetime with an error message that does not depend on the Python version.
+
+    Error texts end up in verification reports, which must be byte-identical
+    across supported Python versions.
+    """
+    try:
+        return datetime(year, month, day, hour, minute, second, microsecond, tzinfo=UTC)
+    except ValueError:
+        raise ValueError(
+            f"not a valid calendar date and time: {year:04d}-{month:02d}-{day:02d} "
+            f"{hour:02d}:{minute:02d}:{second:02d}"
+        ) from None
 
 
 def format_utc(moment: datetime) -> str:

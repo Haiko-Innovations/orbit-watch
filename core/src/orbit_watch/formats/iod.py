@@ -45,6 +45,7 @@ from datetime import UTC, datetime
 
 from orbit_watch.ids import format_alpha5, parse_catalog_number
 from orbit_watch.model import Observation, ObservationSet, Station, Target
+from orbit_watch.timeutil import make_utc
 
 SIMULATED_MARKER = "# orbit-watch: simulated=true"
 
@@ -124,9 +125,9 @@ def _parse_time(date_text: str, time_text: str) -> datetime:
     hour, minute, second = int(time_digits[0:2]), int(time_digits[2:4]), int(time_digits[4:6])
     millis = int(time_digits[6:9])
     try:
-        return datetime(year, month, day, hour, minute, second, millis * 1000, tzinfo=UTC)
+        return make_utc(year, month, day, hour, minute, second, millis * 1000)
     except ValueError as exc:
-        raise IodLineError(f"invalid date/time {date_text}{time_text}: {exc}") from None
+        raise IodLineError(str(exc)) from None
 
 
 def _parse_angles(fmt: int, a1: str, sign: str, a2: str) -> tuple[float, float]:

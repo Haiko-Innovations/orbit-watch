@@ -42,7 +42,10 @@ def problems_for(document):
         (lambda d: d["observations"][0].update(angle_uncertainty_arcsec=0), "/observations/0"),
         (lambda d: d["target"].update(norad_id="25544"), "/target/norad_id"),
         (lambda d: d.update(extra=True), "Additional properties"),
-        (lambda d: d["observations"][0].update(time="2026-02-30T00:00:00Z"), "day is out of range"),
+        (
+            lambda d: d["observations"][0].update(time="2026-02-30T00:00:00Z"),
+            "not a valid calendar date",
+        ),
     ],
 )
 def test_invalid_documents_have_clear_problems(example, mutate, expected):
