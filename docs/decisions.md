@@ -80,7 +80,8 @@ next one starts after the previous one is merged.
 
 These need a maintainer's approval before step 1.1 of the
 [roadmap](roadmap.md#phase-1-requests-optimistic-verification-and-api-target-version-020)
-starts. Each lists the recommendation and the main alternative.
+starts. Approval is given in
+[#10](https://github.com/Haiko-Innovations/orbit-watch/issues/10). Each lists the recommendation and the main alternative.
 
 ### P-01 The phase 1 API is written in Python
 
