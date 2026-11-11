@@ -12,7 +12,9 @@ stations observe, and the delivery is verified automatically and reproducibly
 against public orbit data. Observers get value from day one: a quality meter
 that tells them how accurate their station is.
 
-> **Status: phase 0, the open core.** No money, no blockchain, no servers.
+> **Status: phase 0, the open core, is done (version 0.1.0).** Next: phase 1,
+> see the [roadmap](docs/roadmap.md) and the [changelog](CHANGELOG.md).
+> No money, no blockchain, no servers.
 > Requests target civilian objects only. **Simulated data is always labelled as
 > simulated**, and automated verification is a prototype, not production-ready
 > scientific validation.
@@ -22,7 +24,7 @@ that tells them how accurate their station is.
 You need Python 3.12 or newer.
 
 ```sh
-pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git#subdirectory=core"
+pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.1.0#subdirectory=core"
 orbit-watch demo
 cat orbit-watch-demo/datasets/wrong_target/report.txt
 ```
@@ -103,7 +105,9 @@ format or a new simulated station profile. Start with
 
 ## Roadmap
 
-The full plan is in [docs/plan.md](docs/plan.md).
+Current status and the next steps: [docs/roadmap.md](docs/roadmap.md).
+Decisions and their reasons: [docs/decisions.md](docs/decisions.md).
+The full starting plan: [docs/plan.md](docs/plan.md).
 
 - **Phase 0 (now):** open core: format, simulator, verification, quality meter, CLI.
 - **Phase 1:** requests with a state machine, optimistic verification with a

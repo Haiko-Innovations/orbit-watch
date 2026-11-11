@@ -11,6 +11,8 @@ By participating you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Where to start
 
+- The [roadmap](docs/roadmap.md) shows the current status and the next steps;
+  the [decision log](docs/decisions.md) explains why things are the way they are.
 - Issues labelled [`good first issue`](https://github.com/Haiko-Innovations/orbit-watch/labels/good%20first%20issue)
   are small and self-contained. Typical examples:
   - **a new verification check** (for example a check on observation cadence),
@@ -73,6 +75,9 @@ pytest
   supported Python, a plain `pip install`, secret scanning and a vulnerability audit.
 - Add or update tests. Every bug fix should come with a test that fails without it.
 - Keep PRs focused. A new check, a new format or a new station profile is a good size.
+- Add a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) for every
+  user-visible change. Versions and releases are described in
+  [docs/releasing.md](docs/releasing.md).
 - Do not commit secrets, API keys or personal data. Real observations from other
   people need their permission and attribution before they go into the repository.
 

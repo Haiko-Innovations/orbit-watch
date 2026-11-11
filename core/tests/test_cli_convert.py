@@ -44,3 +44,23 @@ def test_invalid_json_is_explained(tmp_path, capsys):
 
 def test_license_copy_matches_root(repo_root):
     assert (repo_root / "core" / "LICENSE").read_bytes() == (repo_root / "LICENSE").read_bytes()
+
+
+def test_version_is_the_same_everywhere(repo_root):
+    import tomllib
+    from importlib import metadata
+
+    from orbit_watch import __version__
+
+    pyproject = tomllib.loads((repo_root / "core" / "pyproject.toml").read_text())
+    assert pyproject["project"]["version"] == __version__
+    assert metadata.version("orbit-watch") == __version__
+
+
+def test_changelog_has_unreleased_and_current_version(repo_root):
+    from orbit_watch import __version__
+
+    changelog = (repo_root / "CHANGELOG.md").read_text()
+    assert "## [Unreleased]" in changelog
+    if ".dev" not in __version__:
+        assert f"## [{__version__}] - " in changelog

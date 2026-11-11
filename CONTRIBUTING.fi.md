@@ -13,6 +13,8 @@ Osallistumalla sitoudut noudattamaan [toimintaohjetta](CODE_OF_CONDUCT.md) (engl
 
 ## Mistä aloittaa
 
+- [Tiekartta](docs/roadmap.fi.md) kertoo nykytilan ja seuraavat askeleet;
+  [päätösloki](docs/decisions.md) (englanniksi) kertoo, miksi asiat on tehty näin.
 - [`good first issue`](https://github.com/Haiko-Innovations/orbit-watch/labels/good%20first%20issue)
   -merkityt tehtävät ovat pieniä ja itsenäisiä. Tyypillisiä esimerkkejä:
   - **uusi tarkistus** (esimerkiksi havaintotiheyden tarkistus),
@@ -76,6 +78,9 @@ pytest
   skannaus ja haavoittuvuustarkistus.
 - Lisää tai päivitä testit. Jokaiseen virhekorjaukseen kuuluu testi, joka epäonnistuu ilman korjausta.
 - Pidä PR:t rajattuina. Uusi tarkistus, uusi formaatti tai uusi asemaprofiili on hyvä koko.
+- Lisää jokaisesta käyttäjälle näkyvästä muutoksesta rivi [CHANGELOG.md](CHANGELOG.md):n
+  `## [Unreleased]`-osioon. Versiot ja julkaisut on kuvattu tiedostossa
+  [docs/releasing.md](docs/releasing.md) (englanniksi).
 - Älä commitoi salaisuuksia, API-avaimia tai henkilötietoja. Muiden ihmisten
   oikeat havainnot tarvitsevat luvan ja lähdemerkinnän ennen kuin ne lisätään repositorioon.
 
