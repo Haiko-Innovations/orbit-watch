@@ -91,7 +91,48 @@ stable; the HTTP status follows from the code:
 | 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers` |
 | 503 | `verification_unavailable` |
 
-## Example
+## Command-line client
+
+Phase 1, step 1.7. The `orbit-watch` command is also a client for the API
+(standard library only, no extra dependencies). The address and key come from
+`--api` and `--key`, or better from the environment, which keeps keys out of
+the shell history:
+
+```sh
+export ORBIT_WATCH_API=http://127.0.0.1:8000
+export ORBIT_WATCH_KEY=$(cat requester.key)
+```
+
+| Role | Commands |
+|---|---|
+| requester | `request create FILE [--delivery-deadline …] [--embargo-days N]`, `request open ID`, `request fund ID --observer N --reviewer N [--platform-fee N]`, `request cancel ID` |
+| station | `reserve ID`, `submit MANIFEST` (or `submit FILE --request ID`) |
+| requester, station | `challenge ID --reason TEXT` |
+| reviewer | `review list`, `review answer TASK --approve\|--reject --reason TEXT`, `review profile REVIEWER` |
+| admin | `admin grant PARTY POINTS`, `admin key PARTY ROLE [-o FILE]`, `admin tick` |
+| anyone with a key | `request list`, `request show ID`, `request report ID [-o FILE]`, `balance PARTY` |
+
+Every command takes `--json` to print the API's answer as is. Changes print
+their idempotency key; running the same command again with
+`--idempotency-key KEY` is safe and reports that nothing changed. `submit`
+checks the delivery manifest's hash before sending and sends it as
+`Content-SHA256`. `admin key -o FILE` writes the new key to a file readable
+only by you. The client warns when it would send a key over plain HTTP to a
+host other than this machine.
+
+A whole request from the command line (all data SIMULATED):
+
+```sh
+orbit-watch request create examples/simulated/request.json         # requester
+orbit-watch request open SIM-REQ-0001
+orbit-watch request fund SIM-REQ-0001 --observer 100 --reviewer 10
+orbit-watch reserve SIM-REQ-0001                                    # station
+orbit-watch submit examples/simulated/datasets/acceptable/delivery.json
+orbit-watch request show SIM-REQ-0001                               # anyone
+orbit-watch admin tick                                              # after the challenge period
+```
+
+## Example with curl
 
 ```sh
 H="Authorization: Bearer $REQUESTER_KEY"
@@ -105,5 +146,4 @@ curl -s -X POST -H "Authorization: Bearer $STATION_KEY" -H "Idempotency-Key: del
 ## Not yet
 
 - Public reads, licence and embargo rules for files and reports (step 1.8).
-- A command-line client for the whole chain (step 1.7).
 - TLS, rate limits, key rotation and a public deployment (later, see P-03).

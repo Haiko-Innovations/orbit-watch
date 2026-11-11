@@ -119,9 +119,9 @@ def test_cli_allowlist_and_submit(tmp_path, capsys, examples_dir):
     assert main(["allowlist", "build", "--include", str(include), "-o", str(out)]) == 0
     assert json.loads(out.read_text())["allow"] == [{"norad_id": 1, "name": "CUBESAT ONE"}]
     delivery = examples_dir / "simulated" / "datasets" / "acceptable" / "delivery.json"
-    assert main(["submit", str(delivery)]) == 2
-    captured = capsys.readouterr()
-    assert "matches the manifest" in captured.out and "phase 1" in captured.err
+    # Port 9 (discard) has no API server: the client reports that clearly.
+    assert main(["submit", str(delivery), "--api", "http://127.0.0.1:9", "--key", "ow_x"]) == 2
+    assert "is the server running" in capsys.readouterr().err
 
 
 def test_cli_fetch_requires_one_query(tmp_path):

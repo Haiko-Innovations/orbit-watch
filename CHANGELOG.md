@@ -42,6 +42,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   every change (replays return the stored response), stable JSON error codes,
   and `orbit-watch serve` / `orbit-watch keys create`. Optional `api` extra
   (Starlette, uvicorn). Migration 0002. See `docs/api.md`.
+- Command-line client (phase 1, step 1.7): `request`, `reserve`, `challenge`,
+  `review`, `admin` and `balance` commands, and `submit` now sends a delivery
+  (manifest hash checked, sent as `Content-SHA256`). Standard library only;
+  address and key from `--api`/`--key` or `ORBIT_WATCH_API`/`ORBIT_WATCH_KEY`;
+  printed idempotency keys make retries safe.
 
 ## [0.1.0] - 2026-11-11
 

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from orbit_watch import SIMULATION_NOTICE, __version__
 from orbit_watch.canonical import dumps_pretty, write_text
+from orbit_watch.client import ClientError
 from orbit_watch.formats import FORMATS, FormatError, Sites, load_observation_sets, owjson
 from orbit_watch.formats import iod as iod_format
 from orbit_watch.formats import tdm as tdm_format
@@ -273,22 +274,6 @@ def cmd_allowlist_build(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def cmd_submit(args: argparse.Namespace) -> int:
-    from orbit_watch.canonical import sha256_bytes
-    from orbit_watch.documents import Delivery
-
-    source = Path(args.delivery)
-    delivery = Delivery.parse(source.read_bytes())
-    actual = sha256_bytes((source.parent / delivery.file).read_bytes())
-    state = "matches" if actual == delivery.sha256 else "DOES NOT match"
-    print(
-        f"Delivery {delivery.delivery_id} for request {delivery.request_id}: the file hash "
-        f"{state} the manifest."
-    )
-    _err("the Orbit Watch API arrives in phase 1; nothing was sent")
-    return EXIT_USAGE
-
-
 def _service_inputs(args: argparse.Namespace):
     from orbit_watch.reviewers import ReviewerRegistry
     from orbit_watch.service import VerificationContext
@@ -353,8 +338,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="orbit-watch",
         description=(
-            "Orbit Watch phase 0: observation formats, station simulator, verification "
-            "engine and station quality meter. Simulated data is always labelled as such."
+            "Orbit Watch: observation formats, station simulator, verification engine, "
+            "station quality meter, and the phase 1 request API (server and client). "
+            "Simulated data is always labelled as such."
         ),
     )
     parser.add_argument("--version", action="version", version=f"orbit-watch {__version__}")
@@ -513,14 +499,9 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("-o", "--output", required=True, help="output target policy file")
     build.set_defaults(handler=cmd_allowlist_build)
 
-    submit = commands.add_parser(
-        "submit",
-        help="send a delivery to the Orbit Watch API (available from phase 1)",
-        description="Checks the delivery manifest locally. The API arrives in phase 1; "
-        "nothing is sent yet.",
-    )
-    submit.add_argument("delivery", help="delivery manifest")
-    submit.set_defaults(handler=cmd_submit)
+    from orbit_watch.cli_client import add_commands
+
+    add_commands(commands)
 
     serve = commands.add_parser(
         "serve",
@@ -565,6 +546,9 @@ def main(argv: list[str] | None = None) -> int:
         for problem in exc.problems[:50]:
             _err(f"  {problem}")
         return EXIT_USAGE
+    except ClientError as exc:
+        _err(f"{exc.code}: {exc}")
+        return EXIT_FAILED if exc.status else EXIT_USAGE
     except (OSError, ValueError) as exc:
         _err(str(exc))
         return EXIT_USAGE
