@@ -203,6 +203,92 @@ def cmd_demo(args: argparse.Namespace) -> int:
     return EXIT_OK if all(r["as_expected"] for r in results) else EXIT_FAILED
 
 
+def cmd_score_station(args: argparse.Namespace) -> int:
+    from orbit_watch import quality
+    from orbit_watch.catalog import parse_catalog
+
+    catalog = parse_catalog(Path(args.catalog).read_bytes())
+    sites = _load_sites(args.sites)
+    sets = []
+    for name in args.inputs:
+        loaded = load_observation_sets(Path(name), input_format=args.input_format, sites=sites)
+        for message in loaded.warnings:
+            _err(f"warning: {message}")
+        for message in loaded.skipped:
+            _err(f"skipped: {message}")
+        sets.extend(loaded.sets)
+    stations = sorted({s.station.id for s in sets})
+    if args.station:
+        sets = [s for s in sets if s.station.id == args.station]
+    elif len(stations) > 1:
+        raise FormatError(
+            f"the input has several stations ({', '.join(stations)}); choose one with --station"
+        )
+    if not sets:
+        raise FormatError("no observations for the chosen station")
+    report = quality.score_station(sets, catalog)
+    if args.report:
+        write_text(args.report, dumps_pretty(report, sort_keys=False))
+    if args.json:
+        sys.stdout.write(dumps_pretty(report, sort_keys=False))
+    else:
+        sys.stdout.write(quality.render_text(report))
+    return EXIT_OK
+
+
+def cmd_fetch_gp(args: argparse.Namespace) -> int:
+    from orbit_watch.fetch import FetchError, fetch_gp
+
+    queries = [
+        (k, v)
+        for k, v in (("CATNR", args.catnr), ("GROUP", args.group), ("INTDES", args.intdes))
+        if v
+    ]
+    if len(queries) != 1:
+        raise FormatError("give exactly one of --catnr, --group or --intdes")
+    key, value = queries[0]
+    try:
+        print(fetch_gp(key, value, Path(args.output), force=args.force))
+    except FetchError as exc:
+        _err(str(exc))
+        return EXIT_FAILED
+    print(
+        "Source: CelesTrak (https://celestrak.org), GP data from the US Space Force. "
+        "Please follow the CelesTrak usage policy: https://celestrak.org/usage-policy.php"
+    )
+    return EXIT_OK
+
+
+def cmd_allowlist_build(args: argparse.Namespace) -> int:
+    from orbit_watch.allowlist import build_policy
+
+    policy = build_policy(
+        [Path(p).read_bytes() for p in args.include],
+        [Path(p).read_bytes() for p in args.exclude],
+        use_default_patterns=not args.no_default_patterns,
+        extra_patterns=tuple(args.exclude_name),
+    )
+    write_text(args.output, dumps_pretty(policy, sort_keys=False))
+    print(f"wrote {args.output}: {policy['description']}")
+    return EXIT_OK
+
+
+def cmd_submit(args: argparse.Namespace) -> int:
+    from orbit_watch.canonical import sha256_bytes
+    from orbit_watch.documents import Delivery
+
+    source = Path(args.delivery)
+    delivery = Delivery.parse(source.read_bytes())
+    actual = sha256_bytes((source.parent / delivery.file).read_bytes())
+    state = "matches" if actual == delivery.sha256 else "DOES NOT match"
+    print(
+        f"Delivery {delivery.delivery_id} for request {delivery.request_id}: the file hash "
+        f"{state} the manifest."
+    )
+    _err("the Orbit Watch API arrives in phase 1; nothing was sent")
+    return EXIT_USAGE
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="orbit-watch",
@@ -296,6 +382,85 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--report", help="write the JSON report to this file")
     validate.add_argument("--json", action="store_true", help="print the JSON report")
     validate.set_defaults(handler=cmd_validate)
+
+    score = commands.add_parser(
+        "score-station",
+        help="station quality meter: accuracy, timing errors and development over time",
+        description="Compare your own observations with public reference orbits: measurement "
+        "scatter, systematic timing offsets (clock errors) and how they develop night by night.",
+    )
+    score.add_argument("inputs", nargs="+", help="observation files (.json, .iod, .tdm)")
+    score.add_argument("--catalog", required=True, help="reference orbits (GP data, OMM JSON/CSV)")
+    score.add_argument("--sites", help="sites file with station coordinates (IOD and TDM)")
+    score.add_argument("--station", help="station to score when the input has several")
+    score.add_argument("--from", dest="input_format", choices=FORMATS, help="input format")
+    score.add_argument("--report", help="write the JSON report to this file")
+    score.add_argument("--json", action="store_true", help="print the JSON report")
+    score.set_defaults(handler=cmd_score_station)
+
+    fetch = commands.add_parser(
+        "fetch-gp",
+        help="download public GP orbit data from CelesTrak (one request, no retries)",
+        description="Download current GP element sets in OMM JSON form from CelesTrak. "
+        "Makes exactly one request, never retries, and does not download the same file "
+        "again within two hours (CelesTrak updates GP data every two hours).",
+    )
+    fetch.add_argument("--catnr", help="catalogue number")
+    fetch.add_argument("--group", help="CelesTrak group, e.g. cubesat, amateur, science")
+    fetch.add_argument("--intdes", help="international designator, e.g. 2026-123")
+    fetch.add_argument("-o", "--output", required=True, help="output file (.json)")
+    fetch.add_argument(
+        "--force", action="store_true", help="download even if the file is younger than two hours"
+    )
+    fetch.set_defaults(handler=cmd_fetch_gp)
+
+    allowlist = commands.add_parser(
+        "allowlist",
+        help="build the target allow-list from public GP data",
+        description="Build a target policy (allow-list) for civilian objects.",
+    )
+    allowlist_commands = allowlist.add_subparsers(dest="allowlist_command", metavar="command")
+    allowlist_commands.required = True
+    build = allowlist_commands.add_parser(
+        "build",
+        help="allow the objects of some GP files, minus others",
+        description="Allow the objects in the --include GP files, minus those in the --exclude "
+        "GP files and those whose names match conservative military/intelligence patterns.",
+    )
+    build.add_argument(
+        "--include",
+        action="append",
+        required=True,
+        help="GP file whose objects are allowed (repeatable)",
+    )
+    build.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="GP file whose objects are never allowed (repeatable)",
+    )
+    build.add_argument(
+        "--exclude-name",
+        action="append",
+        default=[],
+        help="extra regular expression for names to exclude (repeatable)",
+    )
+    build.add_argument(
+        "--no-default-patterns",
+        action="store_true",
+        help="do not apply the built-in name exclusion patterns",
+    )
+    build.add_argument("-o", "--output", required=True, help="output target policy file")
+    build.set_defaults(handler=cmd_allowlist_build)
+
+    submit = commands.add_parser(
+        "submit",
+        help="send a delivery to the Orbit Watch API (available from phase 1)",
+        description="Checks the delivery manifest locally. The API arrives in phase 1; "
+        "nothing is sent yet.",
+    )
+    submit.add_argument("delivery", help="delivery manifest")
+    submit.set_defaults(handler=cmd_submit)
     return parser
 
 

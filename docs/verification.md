@@ -88,7 +88,8 @@ kilometres away, the reference orbit error alone allows tens of arcminutes. The
 residual check therefore catches **wrong objects, wrong times and gross
 errors** (degrees, or seconds along the track). It cannot certify
 arcsecond-level accuracy, because the public reference orbit is not that good.
-The station quality meter looks at systematic errors in more detail.
+The [station quality meter](quality-meter.md) looks at systematic errors in
+more detail.
 
 ## Known limitations (method 1.0.0)
 
@@ -97,8 +98,9 @@ The station quality meter looks at systematic errors in more detail.
 - Atmospheric refraction is not modelled for azimuth/elevation data.
 - Only the newest element set per object in the catalogue is used.
 - One reference orbit source per run; no orbit determination of our own.
-- The allow-list is a plain list of catalogue numbers; it has to be built from
-  civilian groups of the public catalogue.
+- The allow-list is a plain list of catalogue numbers. `orbit-watch allowlist
+  build` builds it from civilian groups of the public catalogue (see the
+  [README](../README.md#allow-list-civilian-objects-only)).
 
 ## Versioning
 

@@ -1,0 +1,16 @@
+{
+  "format": "orbit-watch/sites",
+  "format_version": "1.0",
+  "simulated": true,
+  "sites": [
+    {
+      "id": "SIM-TAMPERE",
+      "latitude_deg": 61.498,
+      "longitude_deg": 23.761,
+      "altitude_m": 120.0,
+      "name": "Simulated station near Tampere, Finland",
+      "iod_station_number": 9903,
+      "simulated": true
+    }
+  ]
+}

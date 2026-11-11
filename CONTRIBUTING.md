@@ -22,7 +22,7 @@ By participating you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Ground rules
 
-These follow from the [project plan](README.md) and are not up for debate in a single PR:
+These follow from the [project plan](docs/plan.md) and are not up for debate in a single PR:
 
 1. **Civilian objects only.** Requests may only target objects on the allow-list,
    built from the public GP catalogue. Do not add support for military,
