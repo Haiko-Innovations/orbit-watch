@@ -1,0 +1,26 @@
+{
+  "format": "orbit-watch/station-profile",
+  "format_version": "1.0",
+  "simulated": true,
+  "id": "sim-visual-binoculars",
+  "description": "SIMULATED: a visual observer estimating positions against stars with binoculars and a stopwatch.",
+  "station": {
+    "id": "SIM-OULU",
+    "name": "Simulated station near Oulu, Finland",
+    "latitude_deg": 65.012,
+    "longitude_deg": 25.465,
+    "altitude_m": 15.0,
+    "iod_station_number": 9902
+  },
+  "angle_type": "radec",
+  "frame": "ICRF",
+  "angle_noise_arcsec": 900.0,
+  "time_noise_s": 0.3,
+  "clock_offset_s": 0.0,
+  "declared_angle_uncertainty_arcsec": 900.0,
+  "declared_time_uncertainty_s": 0.5,
+  "cadence_s": 30.0,
+  "points_per_pass": 4,
+  "min_elevation_deg": 15.0,
+  "dropout_probability": 0.1
+}

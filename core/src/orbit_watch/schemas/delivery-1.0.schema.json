@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Haiko-Innovations/orbit-watch/schemas/delivery-1.0.schema.json",
+  "title": "Orbit Watch delivery manifest, format version 1.0",
+  "description": "Says which observation file answers which request, with the SHA-256 of the file. The hash binds the delivery to the exact bytes; it does not replace keeping the file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "format_version",
+    "simulated",
+    "delivery_id",
+    "request_id",
+    "observations"
+  ],
+  "properties": {
+    "format": {
+      "const": "orbit-watch/delivery"
+    },
+    "format_version": {
+      "const": "1.0"
+    },
+    "simulated": {
+      "type": "boolean"
+    },
+    "delivery_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{1,64}$"
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{1,64}$"
+    },
+    "observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "sha256"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]{1,128}$",
+          "description": "File name relative to the manifest."
+        },
+        "format": {
+          "enum": [
+            "json",
+            "iod",
+            "tdm"
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "format": "orbit-watch/station-profile",
+  "format_version": "1.0",
+  "simulated": true,
+  "id": "sim-cmos-gps",
+  "description": "SIMULATED: CMOS camera with a wide lens and GPS (PPS) timing. Typical of video and still-camera stations in the amateur community.",
+  "station": {
+    "id": "SIM-ESPOO",
+    "name": "Simulated station near Espoo, Finland",
+    "latitude_deg": 60.205,
+    "longitude_deg": 24.655,
+    "altitude_m": 40.0,
+    "iod_station_number": 9901
+  },
+  "angle_type": "radec",
+  "frame": "ICRF",
+  "angle_noise_arcsec": 5.0,
+  "time_noise_s": 0.005,
+  "clock_offset_s": 0.0,
+  "declared_angle_uncertainty_arcsec": 10.0,
+  "declared_time_uncertainty_s": 0.01,
+  "cadence_s": 10.0,
+  "points_per_pass": 8,
+  "min_elevation_deg": 20.0,
+  "dropout_probability": 0.05
+}

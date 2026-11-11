@@ -1,0 +1,27 @@
+Orbit Watch verification (orbit-watch-automated-verification 1.0.0)
+Inputs include SIMULATED data.
+Request SIM-REQ-0001: object 339001, window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z
+FAIL: 1 check(s) failed: no duplicates or resubmissions.
+
+  PASS  Required fields and format
+        Valid Orbit Watch JSON with 16 observation(s) from station SIM-ESPOO.
+  PASS  Simulation labels are consistent
+        Both the request and the observations are marked as simulated.
+  PASS  Target is on the allow-list
+        Target 339001, SIM-CUBESAT-A (SIMULATED), is on the allow-list.
+  PASS  Target matches the request
+        The delivery is for object 339001, as requested.
+  PASS  Observations are inside the time window
+        All 16 observations are inside the requested window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z.
+  PASS  Minimum number of observations
+        16 observations inside the window; the request needs at least 6.
+  PASS  Declared uncertainty meets the requirements
+        Declared uncertainties meet the requirements: largest angle uncertainty 10″ (limit 60″), largest time uncertainty 0.01 s (limit 0.1 s).
+  PASS  File matches the declared hash
+        The SHA-256 of the observation file matches the declared hash.
+  FAIL  No duplicates or resubmissions
+        Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 42e18f52f6200a87...).
+  PASS  Residuals against the public reference orbit
+        16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 10.2″ against a typical limit of 24.30′.
+
+Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.

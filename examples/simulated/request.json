@@ -1,0 +1,24 @@
+{
+  "format": "orbit-watch/request",
+  "format_version": "1.0",
+  "simulated": true,
+  "request_id": "SIM-REQ-0001",
+  "title": "SIMULATED: identify and track SIM-CUBESAT-A after deployment",
+  "target": {
+    "norad_id": 339001,
+    "name": "SIM-CUBESAT-A (SIMULATED)"
+  },
+  "window": {
+    "start": "2026-11-01T00:00:00.000Z",
+    "end": "2026-11-02T00:00:00.000Z"
+  },
+  "requirements": {
+    "min_observations": 6,
+    "max_angle_uncertainty_arcsec": 60.0,
+    "max_time_uncertainty_s": 0.1,
+    "angle_types": [
+      "radec",
+      "azel"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "format": "orbit-watch/station-profile",
+  "format_version": "1.0",
+  "simulated": true,
+  "id": "sim-azel-mount",
+  "description": "SIMULATED: a tracking mount reporting azimuth and elevation from its encoders.",
+  "station": {
+    "id": "SIM-KUOPIO",
+    "name": "Simulated station near Kuopio, Finland",
+    "latitude_deg": 62.892,
+    "longitude_deg": 27.678,
+    "altitude_m": 100.0,
+    "iod_station_number": 9904
+  },
+  "angle_type": "azel",
+  "angle_noise_arcsec": 30.0,
+  "time_noise_s": 0.02,
+  "clock_offset_s": 0.0,
+  "declared_angle_uncertainty_arcsec": 45.0,
+  "declared_time_uncertainty_s": 0.05,
+  "cadence_s": 15.0,
+  "points_per_pass": 6,
+  "min_elevation_deg": 25.0,
+  "dropout_probability": 0.05
+}

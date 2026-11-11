@@ -1,0 +1,9 @@
+SIMULATED DATA - Orbit Watch phase 0 demo
+
+dataset        expected  verdict       failed checks                       ok
+acceptable     pass      pass          -                                   yes
+invalid        fail      fail          format                              yes
+late           fail      fail          time_window, min_observations       yes
+duplicate      fail      fail          duplicates                          yes
+wrong_target   fail      fail          orbit_residuals                     yes
+too_imprecise  fail      fail          declared_uncertainty                yes

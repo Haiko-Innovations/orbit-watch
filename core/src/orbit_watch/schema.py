@@ -12,6 +12,10 @@ from jsonschema import Draft202012Validator
 SCHEMA_FILES = {
     "observation-set": "observation-set-1.0.schema.json",
     "sites": "sites-1.0.schema.json",
+    "request": "request-1.0.schema.json",
+    "delivery": "delivery-1.0.schema.json",
+    "target-policy": "target-policy-1.0.schema.json",
+    "station-profile": "station-profile-1.0.schema.json",
 }
 
 
