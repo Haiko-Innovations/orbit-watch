@@ -24,7 +24,12 @@ from typing import Any
 
 from orbit_watch import lifecycle as lc
 from orbit_watch.lifecycle import Status
-from orbit_watch.settlement import SettlementAdapter, SettlementError, settlement_plan
+from orbit_watch.settlement import (
+    RULES_VERSION,
+    SettlementAdapter,
+    SettlementError,
+    settlement_plan,
+)
 from orbit_watch.timeutil import parse_utc
 
 T0 = parse_utc("2026-11-01T12:00:00Z")
@@ -329,6 +334,113 @@ def check_adapter(factory: AdapterFactory) -> list[str]:
     return problems
 
 
+def _seconds(when: datetime) -> int:
+    delta = (when - T0).total_seconds()
+    if delta != int(delta):  # pragma: no cover - the scenarios use whole seconds
+        raise ValueError(f"{when} is not a whole number of seconds after T0")
+    return int(delta)
+
+
+def _hours_to_seconds(hours: float) -> int:
+    seconds = hours * 3600
+    if seconds != int(seconds):  # pragma: no cover - the scenarios use whole seconds
+        raise ValueError(f"{hours} hours is not a whole number of seconds")
+    return int(seconds)
+
+
+def _fixture_step(step: Step, requester: str) -> dict[str, Any]:
+    if isinstance(step, Advance):
+        return {"action": "wait", "at": _seconds(step.to)}
+    at = _seconds(step.at)
+    if isinstance(step, lc.Open):
+        return {"action": "open", "at": at}
+    if isinstance(step, lc.Fund):
+        return {"action": "fund", "at": at, "party": requester}
+    if isinstance(step, lc.Reserve):
+        return {"action": "reserve", "at": at, "party": step.station}
+    if isinstance(step, lc.Deliver):
+        return {"action": "deliver", "at": at, "party": step.station}
+    if isinstance(step, lc.RecordVerification):
+        return {
+            "action": "verify",
+            "at": at,
+            "verdict": step.verdict,
+            "reviewers": list(step.reviewers),
+        }
+    if isinstance(step, lc.Challenge):
+        return {
+            "action": "challenge",
+            "at": at,
+            "party": step.party,
+            "reviewers": list(step.reviewers),
+        }
+    if isinstance(step, lc.Vote):
+        return {"action": "vote", "at": at, "party": step.reviewer, "approve": step.approve}
+    if isinstance(step, lc.Cancel):
+        return {"action": "cancel", "at": at, "party": step.party}
+    raise TypeError(f"no fixture form for {step!r}")  # pragma: no cover
+
+
+def contract_fixture() -> dict[str, Any]:
+    """The suite as data, for the Solidity tests of the escrow contract (phase 2).
+
+    The contract tests replay every funded scenario on chain and check the same outcome
+    and net changes, so the escrow and the ledger follow the same rules. Times are whole
+    seconds after ``T0``. Write it with ``python -m orbit_watch.settlement.scenarios``.
+    """
+    scenarios = []
+    for scenario in SCENARIOS:
+        terms = scenario_terms(f"SIM-{scenario.name}")
+        scenarios.append(
+            {
+                "name": scenario.name,
+                "description": scenario.description,
+                "funded": scenario.funded,
+                "requester": terms.requester,
+                "terms": {
+                    "delivery_deadline": _seconds(terms.delivery_deadline),
+                    "reservation_seconds": _hours_to_seconds(terms.reservation_hours),
+                    "verification_timeout_seconds": _hours_to_seconds(
+                        terms.verification_timeout_hours
+                    ),
+                    "challenge_seconds": _hours_to_seconds(terms.challenge_period_hours),
+                    "review_seconds": _hours_to_seconds(terms.review_hours),
+                },
+                "steps": [_fixture_step(step, terms.requester) for step in scenario.steps],
+                "outcome": str(scenario.outcome),
+                "net": [
+                    {"party": party, "change": change}
+                    for party, change in sorted(scenario.net.items())
+                ],
+            }
+        )
+    return {
+        "about": (
+            "SIMULATED settlement scenarios for the escrow contract tests. Generated from "
+            "core/src/orbit_watch/settlement/scenarios.py with "
+            "`python -m orbit_watch.settlement.scenarios`; do not edit by hand."
+        ),
+        "simulated": True,
+        "rules_version": RULES_VERSION,
+        "t0": int(T0.timestamp()),
+        "budget": BUDGET,
+        "split": {
+            "observer": SPLIT.observer,
+            "reviewer": SPLIT.reviewer,
+            "platform_fee": SPLIT.platform_fee,
+        },
+        "platform": PLATFORM,
+        "parties": list(PARTIES),
+        "scenarios": scenarios,
+    }
+
+
+def contract_fixture_json() -> str:
+    import json
+
+    return json.dumps(contract_fixture(), indent=2, ensure_ascii=False) + "\n"
+
+
 def ledger_factory(budgets: dict[str, int]):
     from orbit_watch.settlement.ledger import LedgerAdapter
 
@@ -336,3 +448,9 @@ def ledger_factory(budgets: dict[str, int]):
     for party, points in sorted(budgets.items()):
         ledger.grant(party, points, key=f"budget/{party}")
     return ledger
+
+
+if __name__ == "__main__":  # pragma: no cover - exercised by the fixture test
+    import sys
+
+    sys.stdout.write(contract_fixture_json())

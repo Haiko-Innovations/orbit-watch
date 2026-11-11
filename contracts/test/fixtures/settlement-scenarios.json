@@ -1,0 +1,626 @@
+{
+  "about": "SIMULATED settlement scenarios for the escrow contract tests. Generated from core/src/orbit_watch/settlement/scenarios.py with `python -m orbit_watch.settlement.scenarios`; do not edit by hand.",
+  "simulated": true,
+  "rules_version": "1.0",
+  "t0": 1793534400,
+  "budget": 1000,
+  "split": {
+    "observer": 100,
+    "reviewer": 10,
+    "platform_fee": 5
+  },
+  "platform": "platform:orbit-watch",
+  "parties": [
+    "requester:alice",
+    "station:SIM-ESPOO",
+    "station:SIM-TAMPERE",
+    "reviewer:r1",
+    "reviewer:r2",
+    "reviewer:r3",
+    "platform:orbit-watch"
+  ],
+  "scenarios": [
+    {
+      "name": "accepted_unchallenged",
+      "description": "Automated verification passes and nobody challenges.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "deliver",
+          "at": 18000,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "verify",
+          "at": 18600,
+          "verdict": "pass",
+          "reviewers": []
+        },
+        {
+          "action": "wait",
+          "at": 105060
+        }
+      ],
+      "outcome": "accepted",
+      "net": [
+        {
+          "party": "platform:orbit-watch",
+          "change": 5
+        },
+        {
+          "party": "requester:alice",
+          "change": -105
+        },
+        {
+          "party": "station:SIM-ESPOO",
+          "change": 100
+        }
+      ]
+    },
+    {
+      "name": "rejected_unchallenged",
+      "description": "Automated verification fails and nobody challenges: full refund.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "deliver",
+          "at": 18000,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "verify",
+          "at": 18600,
+          "verdict": "fail",
+          "reviewers": []
+        },
+        {
+          "action": "wait",
+          "at": 105060
+        }
+      ],
+      "outcome": "rejected",
+      "net": []
+    },
+    {
+      "name": "challenged_and_accepted",
+      "description": "The observer challenges a failed result; two reviewers approve.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "deliver",
+          "at": 18000,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "verify",
+          "at": 18600,
+          "verdict": "fail",
+          "reviewers": []
+        },
+        {
+          "action": "challenge",
+          "at": 19200,
+          "party": "station:SIM-ESPOO",
+          "reviewers": [
+            "reviewer:r1",
+            "reviewer:r2",
+            "reviewer:r3"
+          ]
+        },
+        {
+          "action": "vote",
+          "at": 19800,
+          "party": "reviewer:r1",
+          "approve": true
+        },
+        {
+          "action": "vote",
+          "at": 20400,
+          "party": "reviewer:r2",
+          "approve": true
+        }
+      ],
+      "outcome": "accepted",
+      "net": [
+        {
+          "party": "platform:orbit-watch",
+          "change": 5
+        },
+        {
+          "party": "requester:alice",
+          "change": -125
+        },
+        {
+          "party": "reviewer:r1",
+          "change": 10
+        },
+        {
+          "party": "reviewer:r2",
+          "change": 10
+        },
+        {
+          "party": "station:SIM-ESPOO",
+          "change": 100
+        }
+      ]
+    },
+    {
+      "name": "challenged_and_rejected",
+      "description": "The requester challenges a pass; the reviewers reject 2-1. All three are paid.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "deliver",
+          "at": 18000,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "verify",
+          "at": 18600,
+          "verdict": "pass",
+          "reviewers": []
+        },
+        {
+          "action": "challenge",
+          "at": 19200,
+          "party": "requester:alice",
+          "reviewers": [
+            "reviewer:r1",
+            "reviewer:r2",
+            "reviewer:r3"
+          ]
+        },
+        {
+          "action": "vote",
+          "at": 19800,
+          "party": "reviewer:r1",
+          "approve": false
+        },
+        {
+          "action": "vote",
+          "at": 20400,
+          "party": "reviewer:r2",
+          "approve": true
+        },
+        {
+          "action": "vote",
+          "at": 21000,
+          "party": "reviewer:r3",
+          "approve": false
+        }
+      ],
+      "outcome": "rejected",
+      "net": [
+        {
+          "party": "requester:alice",
+          "change": -30
+        },
+        {
+          "party": "reviewer:r1",
+          "change": 10
+        },
+        {
+          "party": "reviewer:r2",
+          "change": 10
+        },
+        {
+          "party": "reviewer:r3",
+          "change": 10
+        }
+      ]
+    },
+    {
+      "name": "disputed",
+      "description": "One reviewer votes before the deadline: dispute. The one review is paid, the observer gets nothing, the rest is refunded.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "deliver",
+          "at": 18000,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "verify",
+          "at": 18600,
+          "verdict": "pass",
+          "reviewers": []
+        },
+        {
+          "action": "challenge",
+          "at": 19200,
+          "party": "requester:alice",
+          "reviewers": [
+            "reviewer:r1",
+            "reviewer:r2",
+            "reviewer:r3"
+          ]
+        },
+        {
+          "action": "vote",
+          "at": 19800,
+          "party": "reviewer:r1",
+          "approve": true
+        },
+        {
+          "action": "wait",
+          "at": 192060
+        }
+      ],
+      "outcome": "disputed",
+      "net": [
+        {
+          "party": "requester:alice",
+          "change": -10
+        },
+        {
+          "party": "reviewer:r1",
+          "change": 10
+        }
+      ]
+    },
+    {
+      "name": "inconclusive_then_accepted",
+      "description": "An inconclusive result goes to reviewers, who approve.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "deliver",
+          "at": 18000,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "verify",
+          "at": 18600,
+          "verdict": "inconclusive",
+          "reviewers": [
+            "reviewer:r1",
+            "reviewer:r2",
+            "reviewer:r3"
+          ]
+        },
+        {
+          "action": "vote",
+          "at": 19800,
+          "party": "reviewer:r2",
+          "approve": true
+        },
+        {
+          "action": "vote",
+          "at": 20400,
+          "party": "reviewer:r3",
+          "approve": true
+        }
+      ],
+      "outcome": "accepted",
+      "net": [
+        {
+          "party": "platform:orbit-watch",
+          "change": 5
+        },
+        {
+          "party": "requester:alice",
+          "change": -125
+        },
+        {
+          "party": "reviewer:r2",
+          "change": 10
+        },
+        {
+          "party": "reviewer:r3",
+          "change": 10
+        },
+        {
+          "party": "station:SIM-ESPOO",
+          "change": 100
+        }
+      ]
+    },
+    {
+      "name": "expired_without_delivery",
+      "description": "A station reserves but never delivers: full refund after the deadline.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "wait",
+          "at": 140401
+        }
+      ],
+      "outcome": "expired",
+      "net": []
+    },
+    {
+      "name": "cancelled_after_funding",
+      "description": "The requester cancels before anyone reserves: full refund.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "cancel",
+          "at": 300,
+          "party": "requester:alice"
+        }
+      ],
+      "outcome": "cancelled",
+      "net": []
+    },
+    {
+      "name": "lapsed_reservation_then_other_station",
+      "description": "The first reservation lapses; another station delivers and is paid.",
+      "funded": true,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "fund",
+          "at": 120,
+          "party": "requester:alice"
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "wait",
+          "at": 21840
+        },
+        {
+          "action": "reserve",
+          "at": 24000,
+          "party": "station:SIM-TAMPERE"
+        },
+        {
+          "action": "deliver",
+          "at": 30000,
+          "party": "station:SIM-TAMPERE"
+        },
+        {
+          "action": "verify",
+          "at": 30600,
+          "verdict": "pass",
+          "reviewers": []
+        },
+        {
+          "action": "wait",
+          "at": 117060
+        }
+      ],
+      "outcome": "accepted",
+      "net": [
+        {
+          "party": "platform:orbit-watch",
+          "change": 5
+        },
+        {
+          "party": "requester:alice",
+          "change": -105
+        },
+        {
+          "party": "station:SIM-TAMPERE",
+          "change": 100
+        }
+      ]
+    },
+    {
+      "name": "unfunded_accepted",
+      "description": "A volunteer request without points: nothing moves.",
+      "funded": false,
+      "requester": "requester:alice",
+      "terms": {
+        "delivery_deadline": 140400,
+        "reservation_seconds": 21600,
+        "verification_timeout_seconds": 86400,
+        "challenge_seconds": 86400,
+        "review_seconds": 172800
+      },
+      "steps": [
+        {
+          "action": "open",
+          "at": 60
+        },
+        {
+          "action": "reserve",
+          "at": 180,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "deliver",
+          "at": 18000,
+          "party": "station:SIM-ESPOO"
+        },
+        {
+          "action": "verify",
+          "at": 18600,
+          "verdict": "pass",
+          "reviewers": []
+        },
+        {
+          "action": "wait",
+          "at": 105060
+        }
+      ],
+      "outcome": "accepted",
+      "net": []
+    }
+  ]
+}

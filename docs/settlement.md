@@ -82,6 +82,11 @@ an unfunded request. For each it checks:
 - replaying every call with the same keys changes nothing;
 - a second settlement under a new key is refused.
 
-`check_adapter(factory)` returns an empty list for a correct adapter. The tests
+`check_adapter(factory)` returns an empty list for a correct adapter.
+
+The same scenarios run against the phase 2 escrow contract: `python -m
+orbit_watch.settlement.scenarios` exports them to
+[`contracts/test/fixtures/settlement-scenarios.json`](../contracts/test/fixtures/settlement-scenarios.json),
+and the contract tests replay every funded one ([escrow.md](escrow.md#tests)). The tests
 also run it against deliberately broken ledgers (one that ignores keys, one
 that pays twice, one that settles twice) to show that the suite catches them.
