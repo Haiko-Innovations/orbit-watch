@@ -237,3 +237,128 @@ Accepted · 2026-11-11 (with the pull request that implements step 1.8). See
 - Calibration files are never public.
 - Public files have permanent, content-addressed URLs and a licence link
   header. The licence is fixed to CC BY 4.0 in phase 1.
+
+## Proposed decisions for phase 2
+
+These need a maintainer's approval before step 2.1 of the
+[roadmap](roadmap.md#phase-2-settlement-on-a-testnet-target-version-030)
+starts. Approval is given in
+[#27](https://github.com/Haiko-Innovations/orbit-watch/issues/27). Facts were checked on 2026-11-11; the sources are listed under each
+proposal. Versions and addresses are settings, re-checked when they are used.
+
+### P2-01 Base Sepolia as the testnet
+
+Proposed. Base Sepolia (chain ID 84532) over Optimism Sepolia (11155420).
+Both have EAS, Circle's testnet USDC and Safe 1.4.1. Base Sepolia has the newer
+EAS deployment (1.2.0 against 1.0.2 on Optimism Sepolia), documents EAS as a
+predeploy in its own protocol docs, and has more faucets, including one that
+gives both testnet ETH and USDC. Optimism Sepolia is due for an interop upgrade
+on 2026-12-03 (pending governance), which could change behaviour during the
+phase. The public RPC endpoints of both are rate-limited and best-effort, which
+is enough for a demo. Mainnet is never used: the code refuses any chain ID
+other than 84532 or a local Anvil chain (31337).
+Sources: [EAS deployments](https://github.com/ethereum-attestation-service/eas-contracts#deployments),
+[Base: connecting](https://docs.base.org/base-chain/quickstart/connecting-to-base),
+[Base: predeploys](https://docs.base.org/specifications/base-protocol/execution/predeploys),
+[Base: faucets](https://docs.base.org/base-chain/tools/network-faucets),
+[OP: faucets](https://docs.optimism.io/app-developers/tools-sdks/faucets.md),
+[OP: interop notice](https://docs.optimism.io/notices/interop-prep.md),
+[Safe deployments](https://github.com/safe-global/safe-deployments).
+
+### P2-02 Circle's testnet USDC, no token of our own
+
+Proposed. Deposits and rewards are in Circle's testnet USDC on Base Sepolia
+(`0x036CbD53842c5426634e7929541eC2318f3dCF7e` at the time of checking; a
+setting, and the decimals are read from the contract). Circle states that
+testnet USDC has no financial value. Anyone can get 20 USDC per address every
+two hours from Circle's public faucet, without an account. Alternative: a
+worthless test token deployed by Orbit Watch, which would be easier to hand out
+but would look like a token of our own, which the plan rules out.
+Sources: [USDC addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses),
+[Circle faucet](https://faucet.circle.com/).
+
+### P2-03 EAS attestations with two schemas
+
+Proposed. Use EAS at its Base Sepolia predeploy (`EAS`
+`0x4200000000000000000000000000000000000021`, `SchemaRegistry`
+`0x4200000000000000000000000000000000000020`). Two schemas, registered once and
+kept as settings:
+
+- **automated result**: request ID, delivery SHA-256, report SHA-256, verdict,
+  verification method and version; attested by the Orbit Watch verifier key;
+- **review vote**: request ID, delivery SHA-256, approve or reject, SHA-256 of
+  the reason; attested by the reviewer's own address.
+
+Attestations are not revocable: a vote, once cast, stands. Anyone can read and
+reuse them without Orbit Watch code, which is the point of using EAS.
+
+### P2-04 Solidity with Foundry and OpenZeppelin Contracts
+
+Proposed. Contracts in `contracts/` as a Foundry project; Foundry pinned to
+1.8.6 (the newest release older than 14 days; Apache-2.0 and MIT) and
+OpenZeppelin Contracts 5.7.0 (MIT), pinned by commit. Custom money-handling
+code is kept to the escrow's own rules; transfers go through OpenZeppelin's
+`SafeERC20`. CI installs Foundry with the SHA-pinned `foundry-rs/foundry-toolchain`
+action (v1.9.2) inside the `tarkistus` check.
+Sources: [Foundry releases](https://github.com/foundry-rs/foundry/releases),
+[OpenZeppelin releases](https://github.com/OpenZeppelin/openzeppelin-contracts/releases).
+
+### P2-05 One non-upgradeable escrow contract
+
+Proposed. One escrow contract holds all requests, each with its own deposit,
+locked split, deadlines and state. No proxy and no upgrade path: a new version
+is a new contract, and existing requests settle in the old one. No function
+lets anyone, administrators included, take a deposit; money leaves only by the
+settlement rules. Settlement can be triggered by anyone once its conditions
+hold, and it happens once. Alternative: a separate contract per request (clean
+isolation, more gas and more moving parts).
+
+### P2-06 The phase 1 rules, on chain
+
+Proposed. The escrow implements settlement rules 1.0 exactly
+([D-12](#d-12-settlement-rules-10)): observer reward and platform fee (0 by
+default, recipient a setting) only when accepted, every completed review paid,
+the rest refunded, nothing locked. Challenge, review and delivery deadlines are
+checked against block time with the request's terms. The phase 1 scenario
+suite is the acceptance test.
+
+### P2-07 Reviewer registry behind a Safe and a timelock
+
+Proposed. An on-chain registry of reviewer addresses, owned by an OpenZeppelin
+`TimelockController` with a public minimum delay of 48 hours, whose only
+proposer is a Safe multisig (2 of 3 signers). Every change is visible for two
+days before it takes effect. **Open:** who the three signers are.
+
+### P2-08 Python adapter on web3.py
+
+Proposed. The `evm-testnet` settlement adapter is Python, using web3.py 8.0
+(MIT), so the request service stays one program. It passes the settlement
+scenario suite against a local Anvil chain in CI. CI never talks to a public
+testnet and holds no keys. Alternative: a TypeScript service with viem, which
+phase 3's web application may use anyway, at the cost of a second runtime now.
+Source: [web3.py on PyPI](https://pypi.org/project/web3/).
+
+### P2-09 Keys and wallets
+
+Proposed. Every party has its own address and signs its own transactions:
+requesters fund, reviewers attest their votes. Orbit Watch never asks for seed
+phrases or private keys. The command line signs with an encrypted keystore that
+the user creates (for example with Foundry's `cast wallet import`), or prints an
+unsigned transaction for an external wallet. The service holds one key, the
+verifier key for automated attestations, read from a secret file outside the
+repository. Keys for test automation are separate, used only on testnets and
+funded only from faucets.
+
+### P2-10 The chain decides payment status
+
+Proposed. The chain, not the database, is the primary source of payment
+status. The service mirrors it and shows pending, confirmed and failed
+transactions apart, each with a block explorer link
+(`https://sepolia.basescan.org`). Every chain-related output says "Base Sepolia
+testnet, no real value".
+
+### P2-11 Phase 2 has no public deployment
+
+Proposed. As in phase 1 (P-03), the service runs locally; only the contracts
+and attestations are public, on the testnet. A public demo service is decided
+separately.

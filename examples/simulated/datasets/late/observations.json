@@ -160,7 +160,7 @@
     }
   ],
   "source": {
-    "software": "orbit-watch 0.2.0 simulator",
+    "software": "orbit-watch 0.3.0.dev0 simulator",
     "notes": "SIMULATED by the Orbit Watch simulator: profile sim-cmos-gps, seed 102. Not real observations. Observed one day after the requested window closed."
   }
 }
