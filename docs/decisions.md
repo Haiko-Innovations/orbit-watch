@@ -148,3 +148,18 @@ that P-01 to P-07 left open, chosen to keep the first version simple and strict:
 - A rejected delivery ends the request; re-opening for other stations is
   decided in step 1.3.
 - Requests can be cancelled only before a reservation.
+
+### D-12 Settlement rules 1.0
+
+Accepted · 2026-11-11 (with the pull request that implements step 1.2). The
+plan fixed the dispute rule; these fix the rest, see [settlement.md](settlement.md):
+
+- The deposit is observer reward + three reviewer rewards (the challenge-round
+  reserve) + platform fee, locked at funding.
+- The observer reward and the platform fee are paid only when a request is
+  accepted.
+- Each reviewer who cast a vote is paid, whatever the outcome; a reviewer who
+  had not voted when the round was decided is not.
+- Everything else goes back to the requester; nothing stays in escrow.
+- The rules are a pure function shared by every adapter. An adapter is correct
+  only if it passes the scenario suite.

@@ -163,6 +163,51 @@ def terms_from_request(
     )
 
 
+# --------------------------------------------------------------------------- rewards
+
+
+@dataclass(frozen=True)
+class RewardSplit:
+    """How the deposit of a funded request is divided. Locked when it is funded (P-06).
+
+    The deposit is ``observer + REVIEWERS_PER_ROUND * reviewer + platform_fee``
+    points. The reviewer share is the challenge-round reserve: it pays the
+    reviewers if there is a reviewer round, and goes back to the requester if
+    there is not.
+    """
+
+    observer: int
+    reviewer: int  # per completed review
+    platform_fee: int = 0
+
+    @property
+    def challenge_reserve(self) -> int:
+        return REVIEWERS_PER_ROUND * self.reviewer
+
+    @property
+    def total(self) -> int:
+        return self.observer + self.challenge_reserve + self.platform_fee
+
+    def problems(self) -> list[str]:
+        found = []
+        for name in ("observer", "reviewer", "platform_fee"):
+            value = getattr(self, name)
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                found.append(f"{name} must be a whole number of points, zero or more")
+        if not found and self.total <= 0:
+            found.append("the deposit must be at least one point")
+        return found
+
+    def to_document(self) -> dict[str, int]:
+        return {
+            "observer": self.observer,
+            "reviewer": self.reviewer,
+            "platform_fee": self.platform_fee,
+            "challenge_reserve": self.challenge_reserve,
+            "total": self.total,
+        }
+
+
 # --------------------------------------------------------------------------- events
 
 
@@ -180,7 +225,7 @@ class Open:
 @dataclass(frozen=True)
 class Fund:
     at: datetime
-    points: int
+    split: RewardSplit
 
 
 @dataclass(frozen=True)
@@ -297,6 +342,7 @@ class RequestRecord:
     updated_at: datetime
     terms_sha256: str | None = None
     funded_points: int = 0
+    split: RewardSplit | None = None
     reserved_by: str | None = None
     reservation_expires_at: datetime | None = None
     observer: str | None = None
@@ -329,6 +375,7 @@ class RequestRecord:
             "created_at": t(self.created_at),
             "updated_at": t(self.updated_at),
             "funded_points": self.funded_points,
+            "split": None if self.split is None else self.split.to_document(),
             "reserved_by": self.reserved_by,
             "reservation_expires_at": t(self.reservation_expires_at),
             "observer": self.observer,
@@ -548,10 +595,17 @@ def apply(record: RequestRecord, event: Event) -> RequestRecord:
         )
 
     if isinstance(event, Fund):
-        if event.points <= 0:
-            raise TransitionError("invalid_amount", "funding must be a positive number of points")
+        problems = event.split.problems()
+        if problems:
+            raise TransitionError("invalid_amount", "; ".join(problems))
         return _move(
-            record, at, name, Status.FUNDED, f"{event.points} points", funded_points=event.points
+            record,
+            at,
+            name,
+            Status.FUNDED,
+            f"{event.split.total} points",
+            funded_points=event.split.total,
+            split=event.split,
         )
 
     if isinstance(event, Reserve):

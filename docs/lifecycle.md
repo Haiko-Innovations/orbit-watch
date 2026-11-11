@@ -8,9 +8,9 @@ applying an event returns a new record and never reads a clock, a database or
 the network. Time comes from the events, and deadlines are applied at the exact
 moment they pass. The same events always give the same record.
 
-Money and points are not handled here. What each outcome pays or refunds comes
-with the settlement adapter (step 1.2); how reviewers are chosen comes with
-step 1.3.
+Points are not moved here. What each outcome pays or refunds is decided by the
+settlement rules ([settlement.md](settlement.md), step 1.2); how reviewers are
+chosen comes with step 1.3.
 
 ## Diagram
 
@@ -69,7 +69,7 @@ stateDiagram-v2
 |---|---|---|---|
 | `revise_terms` | draft | requester | Request id and requester cannot change. |
 | `open` | draft | requester | Terms must be valid (below); freezes them. |
-| `fund` | open | requester | A positive number of points. |
+| `fund` | open | requester | A reward split; the deposit is locked (see [settlement.md](settlement.md)). |
 | `reserve` | open, funded | station | Not the requester. Lasts `reservation_hours`, never past the delivery deadline. |
 | `deliver` | reserved | the reserving station | The file's SHA-256. |
 | `record_verification` | delivered | system | `pass` or `fail` starts the challenge period; `inconclusive` goes straight to three reviewers. |
