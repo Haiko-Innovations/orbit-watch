@@ -1,6 +1,6 @@
 Orbit Watch verification (orbit-watch-automated-verification 1.0.0)
 Inputs include SIMULATED data.
-Request SIM-REQ-0001: object 339001, window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z
+Request SIM-REQ-0001: object 339001, window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z
 FAIL: 1 check(s) failed: no duplicates or resubmissions.
 
   PASS  Required fields and format
@@ -12,7 +12,7 @@ FAIL: 1 check(s) failed: no duplicates or resubmissions.
   PASS  Target matches the request
         The delivery is for object 339001, as requested.
   PASS  Observations are inside the time window
-        All 16 observations are inside the requested window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z.
+        All 16 observations are inside the requested window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z.
   PASS  Minimum number of observations
         16 observations inside the window; the request needs at least 6.
   PASS  Declared uncertainty meets the requirements
@@ -20,8 +20,8 @@ FAIL: 1 check(s) failed: no duplicates or resubmissions.
   PASS  File matches the declared hash
         The SHA-256 of the observation file matches the declared hash.
   FAIL  No duplicates or resubmissions
-        Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 42e18f52f6200a87...).
+        Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 fab249d8ebd5581d...).
   PASS  Residuals against the public reference orbit
-        16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 10.2″ against a typical limit of 24.30′.
+        16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 8.5″ against a typical limit of 20.09′.
 
 Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.

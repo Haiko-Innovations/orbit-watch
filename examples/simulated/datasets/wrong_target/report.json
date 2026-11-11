@@ -30,21 +30,21 @@
     "numpy": "2.5.4"
   },
   "inputs": {
-    "request_sha256": "35b35a12468213f2ecf273381d4ccc8d83acb1abdb9caac54375107d3d01e09e",
-    "observations_sha256": "742ac85bcb0fe8197905a333a2371dfc66dc8ca1e9f40f68b73e6f4921a803db",
+    "request_sha256": "ed503008700f8f6be8bd0c9dfc0c9083c247dd9d74c85406c4e9569483df203a",
+    "observations_sha256": "132799c375cdc5f7bec0681b7a64fb30a49bdc0ee33ea85a582c5c44a7f7eb42",
     "observations_format": "json",
-    "declared_sha256": "742ac85bcb0fe8197905a333a2371dfc66dc8ca1e9f40f68b73e6f4921a803db",
+    "declared_sha256": "132799c375cdc5f7bec0681b7a64fb30a49bdc0ee33ea85a582c5c44a7f7eb42",
     "reference_catalog_sha256": "2924282be9c9c79af1c034f43da75502d043a9c04185ba700903abe7b5790d5c",
     "target_policy_sha256": "866f9d582d155fab0810417a7644573501fa282b3bdc93ffc22b15ed96434f95",
     "previous_deliveries_sha256": [
-      "42e18f52f6200a872c6f42e687711f45722d7fa02d9cb1d6ca9410ed9692b381"
+      "fab249d8ebd5581d7509ac61cc3cbfefc782431a264a3a5f6cebb5fd30e46a41"
     ]
   },
   "request": {
     "request_id": "SIM-REQ-0001",
     "target_norad_id": 339001,
-    "window_start": "2026-11-01T00:00:00.000Z",
-    "window_end": "2026-11-02T00:00:00.000Z",
+    "window_start": "2026-11-01T15:00:00.000Z",
+    "window_end": "2026-11-02T03:00:00.000Z",
     "min_observations": 6,
     "max_angle_uncertainty_arcsec": 60.0,
     "max_time_uncertainty_s": 0.1
@@ -85,7 +85,7 @@
       "id": "time_window",
       "title": "Observations are inside the time window",
       "result": "pass",
-      "reason": "All 16 observations are inside the requested window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z."
+      "reason": "All 16 observations are inside the requested window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z."
     },
     {
       "id": "min_observations",
@@ -119,179 +119,179 @@
       "id": "orbit_residuals",
       "title": "Residuals against the public reference orbit",
       "result": "fail",
-      "reason": "Only 0 of 16 observations (0%) lie within their limits (needed 80%). Median residual 4.52° against a typical limit of 23.69′. The residuals lie mostly along the track: the object is on average 7.87 s behind the prediction. That points to a different object in a similar orbit or to a timing error.",
+      "reason": "Only 0 of 16 observations (0%) lie within their limits (needed 80%). Median residual 3.93° against a typical limit of 19.85′. The residuals lie mostly along the track: the object is on average 7.88 s behind the prediction. That points to a different object in a similar orbit or to a timing error.",
       "details": {
         "statistics": {
           "observations": 16,
           "within_limit": 0,
           "fraction_within_limit": 0.0,
-          "median_residual_arcsec": 16286.975,
-          "max_residual_arcsec": 23321.751,
-          "rms_cross_track_arcsec": 473.112,
-          "mean_along_track_s": -7.8657,
-          "std_along_track_s": 0.1765,
-          "median_limit_arcsec": 1421.39,
-          "reference_epoch_max_age_days": 0.7887
+          "median_residual_arcsec": 14146.725,
+          "max_residual_arcsec": 15617.079,
+          "rms_cross_track_arcsec": 267.318,
+          "mean_along_track_s": -7.8764,
+          "std_along_track_s": 0.1224,
+          "median_limit_arcsec": 1191.243,
+          "reference_epoch_max_age_days": 0.8542
         },
         "per_observation": [
           {
-            "time": "2026-11-01T09:38:11.000Z",
-            "residual_arcsec": 19785.91,
-            "along_track_arcsec": -19746.135,
-            "cross_track_arcsec": -610.817,
-            "along_track_s": -7.5529,
-            "limit_arcsec": 1812.151,
-            "range_km": 569.713,
-            "within_limit": false
-          },
-          {
-            "time": "2026-11-01T09:38:21.000Z",
-            "residual_arcsec": 21523.605,
-            "along_track_arcsec": -21475.144,
-            "cross_track_arcsec": -636.183,
-            "along_track_s": -7.6253,
-            "limit_arcsec": 1883.939,
-            "range_km": 548.035,
-            "within_limit": false
-          },
-          {
-            "time": "2026-11-01T09:38:31.000Z",
-            "residual_arcsec": 22789.818,
-            "along_track_arcsec": -22733.758,
-            "cross_track_arcsec": -664.851,
-            "along_track_s": -7.7276,
-            "limit_arcsec": 1927.262,
-            "range_km": 535.735,
-            "within_limit": false
-          },
-          {
-            "time": "2026-11-01T09:38:41.000Z",
-            "residual_arcsec": 23321.751,
-            "along_track_arcsec": -23262.228,
-            "cross_track_arcsec": -677.488,
-            "along_track_s": -7.8427,
-            "limit_arcsec": 1935.48,
-            "range_km": 533.465,
-            "within_limit": false
-          },
-          {
-            "time": "2026-11-01T09:38:51.000Z",
-            "residual_arcsec": 23015.57,
-            "along_track_arcsec": -22957.564,
-            "cross_track_arcsec": -686.966,
-            "along_track_s": -7.9615,
-            "limit_arcsec": 1907.242,
-            "range_km": 541.35,
-            "within_limit": false
-          },
-          {
-            "time": "2026-11-01T09:39:01.000Z",
-            "residual_arcsec": 21910.075,
-            "along_track_arcsec": -21859.03,
-            "cross_track_arcsec": -656.786,
-            "along_track_s": -8.0609,
-            "limit_arcsec": 1847.06,
-            "range_km": 558.961,
-            "within_limit": false
-          },
-          {
-            "time": "2026-11-01T09:39:11.000Z",
-            "residual_arcsec": 20273.643,
-            "along_track_arcsec": -20230.843,
-            "cross_track_arcsec": -641.644,
-            "along_track_s": -8.1508,
-            "limit_arcsec": 1763.47,
-            "range_km": 585.419,
-            "within_limit": false
-          },
-          {
-            "time": "2026-11-01T09:39:21.000Z",
-            "residual_arcsec": 18369.067,
-            "along_track_arcsec": -18334.543,
-            "cross_track_arcsec": -613.248,
-            "along_track_s": -8.2296,
-            "limit_arcsec": 1666.103,
-            "range_km": 619.59,
-            "within_limit": false
-          },
-          {
             "time": "2026-11-01T18:54:37.000Z",
-            "residual_arcsec": 13402.297,
-            "along_track_arcsec": -13391.994,
-            "cross_track_arcsec": 153.047,
-            "along_track_s": -7.7534,
+            "residual_arcsec": 13393.787,
+            "along_track_arcsec": -13383.522,
+            "cross_track_arcsec": 151.311,
+            "along_track_s": -7.7485,
             "limit_arcsec": 1147.423,
             "range_km": 900.035,
             "within_limit": false
           },
           {
             "time": "2026-11-01T18:54:47.000Z",
-            "residual_arcsec": 13828.901,
-            "along_track_arcsec": -13817.631,
-            "cross_track_arcsec": 158.782,
-            "along_track_s": -7.7704,
+            "residual_arcsec": 13814.857,
+            "along_track_arcsec": -13803.681,
+            "cross_track_arcsec": 153.232,
+            "along_track_s": -7.7625,
             "limit_arcsec": 1164.98,
             "range_km": 886.487,
             "within_limit": false
           },
           {
             "time": "2026-11-01T18:54:57.000Z",
-            "residual_arcsec": 14113.221,
-            "along_track_arcsec": -14101.325,
-            "cross_track_arcsec": 158.119,
-            "along_track_s": -7.8015,
+            "residual_arcsec": 14097.579,
+            "along_track_arcsec": -14085.666,
+            "cross_track_arcsec": 162.768,
+            "along_track_s": -7.7928,
             "limit_arcsec": 1174.935,
             "range_km": 878.985,
             "within_limit": false
           },
           {
             "time": "2026-11-01T18:55:07.000Z",
-            "residual_arcsec": 14204.884,
-            "along_track_arcsec": -14192.701,
-            "cross_track_arcsec": 164.855,
-            "along_track_s": -7.8296,
+            "residual_arcsec": 14190.324,
+            "along_track_arcsec": -14178.153,
+            "cross_track_arcsec": 166.694,
+            "along_track_s": -7.8216,
             "limit_arcsec": 1176.677,
             "range_km": 877.686,
             "within_limit": false
           },
           {
             "time": "2026-11-01T18:55:17.000Z",
-            "residual_arcsec": 14106.944,
-            "along_track_arcsec": -14094.878,
-            "cross_track_arcsec": 173.779,
-            "along_track_s": -7.8596,
+            "residual_arcsec": 14103.125,
+            "along_track_arcsec": -14091.089,
+            "cross_track_arcsec": 172.072,
+            "along_track_s": -7.8575,
             "limit_arcsec": 1170.095,
             "range_km": 882.617,
             "within_limit": false
           },
           {
             "time": "2026-11-01T18:55:27.000Z",
-            "residual_arcsec": 13782.734,
-            "along_track_arcsec": -13771.529,
-            "cross_track_arcsec": 161.754,
-            "along_track_s": -7.8649,
+            "residual_arcsec": 13788.0,
+            "along_track_arcsec": -13776.771,
+            "cross_track_arcsec": 162.942,
+            "along_track_s": -7.8679,
             "limit_arcsec": 1155.6,
             "range_km": 893.674,
             "within_limit": false
           },
           {
             "time": "2026-11-01T18:55:37.000Z",
-            "residual_arcsec": 13356.98,
-            "along_track_arcsec": -13346.674,
-            "cross_track_arcsec": 161.134,
-            "along_track_s": -7.9017,
+            "residual_arcsec": 13343.7,
+            "along_track_arcsec": -13333.306,
+            "cross_track_arcsec": 170.417,
+            "along_track_s": -7.8937,
             "limit_arcsec": 1134.054,
             "range_km": 910.633,
             "within_limit": false
           },
           {
             "time": "2026-11-01T18:55:47.000Z",
-            "residual_arcsec": 12774.463,
-            "along_track_arcsec": -12765.19,
-            "cross_track_arcsec": 168.23,
-            "along_track_s": -7.919,
+            "residual_arcsec": 12771.956,
+            "along_track_arcsec": -12762.467,
+            "cross_track_arcsec": 184.162,
+            "along_track_s": -7.9173,
             "limit_arcsec": 1106.636,
             "range_km": 933.171,
+            "within_limit": false
+          },
+          {
+            "time": "2026-11-01T20:28:50.000Z",
+            "residual_arcsec": 14411.167,
+            "along_track_arcsec": -14395.518,
+            "cross_track_arcsec": 336.26,
+            "along_track_s": -7.7013,
+            "limit_arcsec": 1259.191,
+            "range_km": 820.073,
+            "within_limit": false
+          },
+          {
+            "time": "2026-11-01T20:29:00.000Z",
+            "residual_arcsec": 15016.613,
+            "along_track_arcsec": -14999.539,
+            "cross_track_arcsec": 338.199,
+            "along_track_s": -7.7555,
+            "limit_arcsec": 1281.84,
+            "range_km": 805.602,
+            "within_limit": false
+          },
+          {
+            "time": "2026-11-01T20:29:10.000Z",
+            "residual_arcsec": 15444.96,
+            "along_track_arcsec": -15426.697,
+            "cross_track_arcsec": 343.921,
+            "along_track_s": -7.8259,
+            "limit_arcsec": 1294.675,
+            "range_km": 797.626,
+            "within_limit": false
+          },
+          {
+            "time": "2026-11-01T20:29:20.000Z",
+            "residual_arcsec": 15617.079,
+            "along_track_arcsec": -15598.268,
+            "cross_track_arcsec": 348.568,
+            "along_track_s": -7.8888,
+            "limit_arcsec": 1296.767,
+            "range_km": 796.34,
+            "within_limit": false
+          },
+          {
+            "time": "2026-11-01T20:29:30.000Z",
+            "residual_arcsec": 15548.483,
+            "along_track_arcsec": -15530.003,
+            "cross_track_arcsec": 341.697,
+            "along_track_s": -7.9579,
+            "limit_arcsec": 1287.961,
+            "range_km": 801.778,
+            "within_limit": false
+          },
+          {
+            "time": "2026-11-01T20:29:40.000Z",
+            "residual_arcsec": 15211.783,
+            "along_track_arcsec": -15194.16,
+            "cross_track_arcsec": 341.501,
+            "along_track_s": -8.0117,
+            "limit_arcsec": 1268.908,
+            "range_km": 813.801,
+            "within_limit": false
+          },
+          {
+            "time": "2026-11-01T20:29:50.000Z",
+            "residual_arcsec": 14708.311,
+            "along_track_arcsec": -14691.918,
+            "cross_track_arcsec": 339.897,
+            "along_track_s": -8.0846,
+            "limit_arcsec": 1240.935,
+            "range_km": 832.123,
+            "within_limit": false
+          },
+          {
+            "time": "2026-11-01T20:30:00.000Z",
+            "residual_arcsec": 14008.491,
+            "along_track_arcsec": -13993.886,
+            "cross_track_arcsec": 327.763,
+            "along_track_s": -8.1347,
+            "limit_arcsec": 1205.808,
+            "range_km": 856.337,
             "within_limit": false
           }
         ]

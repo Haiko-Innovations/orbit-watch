@@ -9,8 +9,8 @@
     "name": "SIM-CUBESAT-A (SIMULATED)"
   },
   "window": {
-    "start": "2026-11-01T00:00:00.000Z",
-    "end": "2026-11-02T00:00:00.000Z"
+    "start": "2026-11-01T15:00:00.000Z",
+    "end": "2026-11-02T03:00:00.000Z"
   },
   "requirements": {
     "min_observations": 6,

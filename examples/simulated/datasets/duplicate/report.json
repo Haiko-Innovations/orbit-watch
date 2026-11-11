@@ -30,21 +30,21 @@
     "numpy": "2.5.4"
   },
   "inputs": {
-    "request_sha256": "35b35a12468213f2ecf273381d4ccc8d83acb1abdb9caac54375107d3d01e09e",
-    "observations_sha256": "199d3e1124501156e191b9ae60ef1e5ab13d3b07d443636ee57e580f7f900539",
+    "request_sha256": "ed503008700f8f6be8bd0c9dfc0c9083c247dd9d74c85406c4e9569483df203a",
+    "observations_sha256": "320289aae7c0122fd5bd8394a0f72038f2163fd2edc9d37cc82f8cf68c915ede",
     "observations_format": "json",
-    "declared_sha256": "199d3e1124501156e191b9ae60ef1e5ab13d3b07d443636ee57e580f7f900539",
+    "declared_sha256": "320289aae7c0122fd5bd8394a0f72038f2163fd2edc9d37cc82f8cf68c915ede",
     "reference_catalog_sha256": "2924282be9c9c79af1c034f43da75502d043a9c04185ba700903abe7b5790d5c",
     "target_policy_sha256": "866f9d582d155fab0810417a7644573501fa282b3bdc93ffc22b15ed96434f95",
     "previous_deliveries_sha256": [
-      "42e18f52f6200a872c6f42e687711f45722d7fa02d9cb1d6ca9410ed9692b381"
+      "fab249d8ebd5581d7509ac61cc3cbfefc782431a264a3a5f6cebb5fd30e46a41"
     ]
   },
   "request": {
     "request_id": "SIM-REQ-0001",
     "target_norad_id": 339001,
-    "window_start": "2026-11-01T00:00:00.000Z",
-    "window_end": "2026-11-02T00:00:00.000Z",
+    "window_start": "2026-11-01T15:00:00.000Z",
+    "window_end": "2026-11-02T03:00:00.000Z",
     "min_observations": 6,
     "max_angle_uncertainty_arcsec": 60.0,
     "max_time_uncertainty_s": 0.1
@@ -85,7 +85,7 @@
       "id": "time_window",
       "title": "Observations are inside the time window",
       "result": "pass",
-      "reason": "All 16 observations are inside the requested window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z."
+      "reason": "All 16 observations are inside the requested window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z."
     },
     {
       "id": "min_observations",
@@ -113,11 +113,11 @@
       "id": "duplicates",
       "title": "No duplicates or resubmissions",
       "result": "fail",
-      "reason": "Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 42e18f52f6200a87...).",
+      "reason": "Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 fab249d8ebd5581d...).",
       "details": {
         "internal_duplicates": 0,
         "overlap_with_earlier": {
-          "42e18f52f6200a872c6f42e687711f45722d7fa02d9cb1d6ca9410ed9692b381": 16
+          "fab249d8ebd5581d7509ac61cc3cbfefc782431a264a3a5f6cebb5fd30e46a41": 16
         },
         "identical_earlier_files": 0
       }
@@ -126,179 +126,179 @@
       "id": "orbit_residuals",
       "title": "Residuals against the public reference orbit",
       "result": "pass",
-      "reason": "16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 10.2″ against a typical limit of 24.30′.",
+      "reason": "16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 8.5″ against a typical limit of 20.09′.",
       "details": {
         "statistics": {
           "observations": 16,
           "within_limit": 16,
           "fraction_within_limit": 1.0,
-          "median_residual_arcsec": 10.244,
-          "max_residual_arcsec": 20.964,
-          "rms_cross_track_arcsec": 3.816,
-          "mean_along_track_s": 0.0007,
-          "std_along_track_s": 0.006,
-          "median_limit_arcsec": 1458.267,
-          "reference_epoch_max_age_days": 0.7886
+          "median_residual_arcsec": 8.522,
+          "max_residual_arcsec": 16.307,
+          "rms_cross_track_arcsec": 4.381,
+          "mean_along_track_s": 0.0004,
+          "std_along_track_s": 0.0049,
+          "median_limit_arcsec": 1205.221,
+          "reference_epoch_max_age_days": 0.8541
         },
         "per_observation": [
           {
-            "time": "2026-11-01T09:38:03.000Z",
-            "residual_arcsec": 17.639,
-            "along_track_arcsec": 15.786,
-            "cross_track_arcsec": -7.869,
-            "along_track_s": 0.0065,
-            "limit_arcsec": 1740.514,
-            "range_km": 593.13,
-            "within_limit": true
-          },
-          {
-            "time": "2026-11-01T09:38:13.000Z",
-            "residual_arcsec": 6.051,
-            "along_track_arcsec": -5.112,
-            "cross_track_arcsec": 3.237,
-            "along_track_s": -0.0019,
-            "limit_arcsec": 1828.35,
-            "range_km": 564.673,
-            "within_limit": true
-          },
-          {
-            "time": "2026-11-01T09:38:23.000Z",
-            "residual_arcsec": 10.455,
-            "along_track_arcsec": -10.25,
-            "cross_track_arcsec": -2.064,
-            "along_track_s": -0.0036,
-            "limit_arcsec": 1895.153,
-            "range_km": 544.798,
-            "within_limit": true
-          },
-          {
-            "time": "2026-11-01T09:38:33.000Z",
-            "residual_arcsec": 1.966,
-            "along_track_arcsec": -1.465,
-            "cross_track_arcsec": 1.312,
-            "along_track_s": -0.0005,
-            "limit_arcsec": 1931.845,
-            "range_km": 534.467,
-            "within_limit": true
-          },
-          {
-            "time": "2026-11-01T09:38:43.000Z",
-            "residual_arcsec": 18.568,
-            "along_track_arcsec": -17.968,
-            "cross_track_arcsec": -4.679,
-            "along_track_s": -0.0061,
-            "limit_arcsec": 1932.683,
-            "range_km": 534.235,
-            "within_limit": true
-          },
-          {
-            "time": "2026-11-01T09:38:53.000Z",
-            "residual_arcsec": 9.34,
-            "along_track_arcsec": -9.336,
-            "cross_track_arcsec": -0.27,
-            "along_track_s": -0.0033,
-            "limit_arcsec": 1897.528,
-            "range_km": 544.117,
-            "within_limit": true
-          },
-          {
-            "time": "2026-11-01T09:39:03.000Z",
-            "residual_arcsec": 2.722,
-            "along_track_arcsec": 2.483,
-            "cross_track_arcsec": 1.114,
-            "along_track_s": 0.0009,
-            "limit_arcsec": 1831.904,
-            "range_km": 563.579,
-            "within_limit": true
-          },
-          {
-            "time": "2026-11-01T09:39:13.000Z",
-            "residual_arcsec": 20.964,
-            "along_track_arcsec": -20.565,
-            "cross_track_arcsec": 4.071,
-            "along_track_s": -0.0085,
-            "limit_arcsec": 1744.802,
-            "range_km": 591.675,
-            "within_limit": true
-          },
-          {
             "time": "2026-11-01T18:54:29.000Z",
-            "residual_arcsec": 17.341,
-            "along_track_arcsec": 17.286,
-            "cross_track_arcsec": 1.379,
-            "along_track_s": 0.0103,
+            "residual_arcsec": 9.389,
+            "along_track_arcsec": -0.839,
+            "cross_track_arcsec": 9.351,
+            "along_track_s": -0.0005,
             "limit_arcsec": 1128.575,
             "range_km": 915.049,
             "within_limit": true
           },
           {
             "time": "2026-11-01T18:54:39.000Z",
-            "residual_arcsec": 14.75,
-            "along_track_arcsec": 14.727,
-            "cross_track_arcsec": 0.821,
-            "along_track_s": 0.0085,
+            "residual_arcsec": 1.98,
+            "along_track_arcsec": 0.32,
+            "cross_track_arcsec": -1.954,
+            "along_track_s": 0.0002,
             "limit_arcsec": 1151.499,
             "range_km": 896.853,
             "within_limit": true
           },
           {
             "time": "2026-11-01T18:54:49.000Z",
-            "residual_arcsec": 9.098,
-            "along_track_arcsec": 9.017,
-            "cross_track_arcsec": -1.216,
-            "along_track_s": 0.005,
+            "residual_arcsec": 16.307,
+            "along_track_arcsec": -16.102,
+            "cross_track_arcsec": -2.581,
+            "along_track_s": -0.009,
             "limit_arcsec": 1167.606,
             "range_km": 884.496,
             "within_limit": true
           },
           {
             "time": "2026-11-01T18:54:59.000Z",
-            "residual_arcsec": 19.262,
-            "along_track_arcsec": 18.748,
-            "cross_track_arcsec": -4.421,
-            "along_track_s": 0.0104,
+            "residual_arcsec": 6.033,
+            "along_track_arcsec": -4.782,
+            "cross_track_arcsec": -3.679,
+            "along_track_s": -0.0026,
             "limit_arcsec": 1175.952,
             "range_km": 878.226,
             "within_limit": true
           },
           {
             "time": "2026-11-01T18:55:09.000Z",
-            "residual_arcsec": 7.403,
-            "along_track_arcsec": 5.913,
-            "cross_track_arcsec": -4.455,
-            "along_track_s": 0.0033,
+            "residual_arcsec": 10.428,
+            "along_track_arcsec": -5.937,
+            "cross_track_arcsec": 8.573,
+            "along_track_s": -0.0033,
             "limit_arcsec": 1176.021,
             "range_km": 878.175,
             "within_limit": true
           },
           {
             "time": "2026-11-01T18:55:19.000Z",
-            "residual_arcsec": 1.16,
-            "along_track_arcsec": -0.238,
-            "cross_track_arcsec": 1.135,
-            "along_track_s": -0.0001,
+            "residual_arcsec": 6.827,
+            "along_track_arcsec": -6.815,
+            "cross_track_arcsec": -0.403,
+            "along_track_s": -0.0038,
             "limit_arcsec": 1167.807,
             "range_km": 884.343,
             "within_limit": true
           },
           {
             "time": "2026-11-01T18:55:29.000Z",
-            "residual_arcsec": 10.511,
-            "along_track_arcsec": -8.69,
-            "cross_track_arcsec": 5.914,
-            "along_track_s": -0.005,
+            "residual_arcsec": 2.06,
+            "along_track_arcsec": 1.524,
+            "cross_track_arcsec": -1.386,
+            "along_track_s": 0.0009,
             "limit_arcsec": 1151.821,
             "range_km": 896.603,
             "within_limit": true
           },
           {
             "time": "2026-11-01T18:55:39.000Z",
-            "residual_arcsec": 10.032,
-            "along_track_arcsec": -8.098,
-            "cross_track_arcsec": 5.921,
-            "along_track_s": -0.0048,
+            "residual_arcsec": 7.271,
+            "along_track_arcsec": -7.122,
+            "cross_track_arcsec": 1.464,
+            "along_track_s": -0.0043,
             "limit_arcsec": 1128.998,
             "range_km": 914.706,
+            "within_limit": true
+          },
+          {
+            "time": "2026-11-01T20:28:42.000Z",
+            "residual_arcsec": 15.775,
+            "along_track_arcsec": 15.095,
+            "cross_track_arcsec": -4.584,
+            "along_track_s": 0.0084,
+            "limit_arcsec": 1235.019,
+            "range_km": 836.105,
+            "within_limit": true
+          },
+          {
+            "time": "2026-11-01T20:28:52.000Z",
+            "residual_arcsec": 14.102,
+            "along_track_arcsec": 13.863,
+            "cross_track_arcsec": -2.588,
+            "along_track_s": 0.0074,
+            "limit_arcsec": 1264.439,
+            "range_km": 816.674,
+            "within_limit": true
+          },
+          {
+            "time": "2026-11-01T20:29:02.000Z",
+            "residual_arcsec": 7.298,
+            "along_track_arcsec": -0.747,
+            "cross_track_arcsec": -7.26,
+            "along_track_s": -0.0004,
+            "limit_arcsec": 1285.232,
+            "range_km": 803.478,
+            "within_limit": true
+          },
+          {
+            "time": "2026-11-01T20:29:12.000Z",
+            "residual_arcsec": 13.824,
+            "along_track_arcsec": 13.813,
+            "cross_track_arcsec": -0.547,
+            "along_track_s": 0.007,
+            "limit_arcsec": 1295.97,
+            "range_km": 796.83,
+            "within_limit": true
+          },
+          {
+            "time": "2026-11-01T20:29:22.000Z",
+            "residual_arcsec": 8.371,
+            "along_track_arcsec": -7.179,
+            "cross_track_arcsec": -4.305,
+            "along_track_s": -0.0036,
+            "limit_arcsec": 1295.868,
+            "range_km": 796.892,
+            "within_limit": true
+          },
+          {
+            "time": "2026-11-01T20:29:32.000Z",
+            "residual_arcsec": 8.674,
+            "along_track_arcsec": 7.995,
+            "cross_track_arcsec": 3.363,
+            "along_track_s": 0.0041,
+            "limit_arcsec": 1284.936,
+            "range_km": 803.663,
+            "within_limit": true
+          },
+          {
+            "time": "2026-11-01T20:29:42.000Z",
+            "residual_arcsec": 8.817,
+            "along_track_arcsec": 8.526,
+            "cross_track_arcsec": 2.245,
+            "along_track_s": 0.0045,
+            "limit_arcsec": 1263.975,
+            "range_km": 816.973,
+            "within_limit": true
+          },
+          {
+            "time": "2026-11-01T20:29:52.000Z",
+            "residual_arcsec": 3.783,
+            "along_track_arcsec": 3.459,
+            "cross_track_arcsec": -1.531,
+            "along_track_s": 0.0019,
+            "limit_arcsec": 1234.421,
+            "range_km": 836.509,
             "within_limit": true
           }
         ]

@@ -1,6 +1,6 @@
 Orbit Watch verification (orbit-watch-automated-verification 1.0.0)
 Inputs include SIMULATED data.
-Request SIM-REQ-0001: object 339001, window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z
+Request SIM-REQ-0001: object 339001, window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z
 FAIL: 1 check(s) failed: residuals against the public reference orbit.
 
   PASS  Required fields and format
@@ -12,7 +12,7 @@ FAIL: 1 check(s) failed: residuals against the public reference orbit.
   PASS  Target matches the request
         The delivery is for object 339001, as requested.
   PASS  Observations are inside the time window
-        All 16 observations are inside the requested window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z.
+        All 16 observations are inside the requested window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z.
   PASS  Minimum number of observations
         16 observations inside the window; the request needs at least 6.
   PASS  Declared uncertainty meets the requirements
@@ -22,6 +22,6 @@ FAIL: 1 check(s) failed: residuals against the public reference orbit.
   PASS  No duplicates or resubmissions
         No repeated observations in the file and no overlap with 1 earlier delivery.
   FAIL  Residuals against the public reference orbit
-        Only 0 of 16 observations (0%) lie within their limits (needed 80%). Median residual 4.52° against a typical limit of 23.69′. The residuals lie mostly along the track: the object is on average 7.87 s behind the prediction. That points to a different object in a similar orbit or to a timing error.
+        Only 0 of 16 observations (0%) lie within their limits (needed 80%). Median residual 3.93° against a typical limit of 19.85′. The residuals lie mostly along the track: the object is on average 7.88 s behind the prediction. That points to a different object in a similar orbit or to a timing error.
 
 Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.

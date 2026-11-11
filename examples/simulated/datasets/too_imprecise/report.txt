@@ -1,6 +1,6 @@
 Orbit Watch verification (orbit-watch-automated-verification 1.0.0)
 Inputs include SIMULATED data.
-Request SIM-REQ-0001: object 339001, window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z
+Request SIM-REQ-0001: object 339001, window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z
 FAIL: 1 check(s) failed: declared uncertainty meets the requirements.
 
   PASS  Required fields and format
@@ -12,7 +12,7 @@ FAIL: 1 check(s) failed: declared uncertainty meets the requirements.
   PASS  Target matches the request
         The delivery is for object 339001, as requested.
   PASS  Observations are inside the time window
-        All 10 observations are inside the requested window 2026-11-01T00:00:00.000Z to 2026-11-02T00:00:00.000Z.
+        All 10 observations are inside the requested window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z.
   PASS  Minimum number of observations
         10 observations inside the window; the request needs at least 6.
   FAIL  Declared uncertainty meets the requirements
@@ -22,6 +22,6 @@ FAIL: 1 check(s) failed: declared uncertainty meets the requirements.
   PASS  No duplicates or resubmissions
         No repeated observations in the file and no overlap with 1 earlier delivery.
   PASS  Residuals against the public reference orbit
-        10 of 10 observations (100%) lie within their limits (needed 80%). Median residual 13.36′ against a typical limit of 59.80′.
+        10 of 10 observations (100%) lie within their limits (needed 80%). Median residual 20.53′ against a typical limit of 1.10°.
 
 Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.

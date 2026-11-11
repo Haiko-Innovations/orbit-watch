@@ -63,7 +63,8 @@ in use in 2026.
 ## The six test datasets
 
 `orbit-watch demo` builds one delivery per scenario for the request "observe
-SIM-CUBESAT-A on 2026-11-01" and verifies each. The committed output is in
+SIM-CUBESAT-A on the night of 1–2 November 2026" (15:00–03:00 UTC, evening and
+night in Finland) and verifies each. The committed output is in
 [`examples/simulated/`](../examples/simulated).
 
 | Dataset | Built how | Expected |
