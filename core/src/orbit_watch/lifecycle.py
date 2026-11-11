@@ -265,6 +265,7 @@ class Vote:
     at: datetime
     reviewer: str
     approve: bool
+    reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -354,6 +355,8 @@ class RequestRecord:
     challenger: str | None = None
     reviewers: tuple[str, ...] = ()
     votes: tuple[tuple[str, bool], ...] = ()
+    vote_reasons: tuple[tuple[str, str], ...] = ()
+    challenge_reason: str | None = None
     review_deadline: datetime | None = None
     outcome: Status | None = None
     outcome_reason: str | None = None
@@ -387,6 +390,8 @@ class RequestRecord:
             "challenger": self.challenger,
             "reviewers": list(self.reviewers),
             "votes": [[reviewer, approve] for reviewer, approve in self.votes],
+            "vote_reasons": [[reviewer, reason] for reviewer, reason in self.vote_reasons],
+            "challenge_reason": self.challenge_reason,
             "review_deadline": t(self.review_deadline),
             "outcome": None if self.outcome is None else str(self.outcome),
             "outcome_reason": self.outcome_reason,
@@ -679,6 +684,7 @@ def apply(record: RequestRecord, event: Event) -> RequestRecord:
             Status.IN_REVIEW,
             f"by {event.party}",
             challenger=event.party,
+            challenge_reason=event.reason,
             reviewers=event.reviewers,
             review_deadline=at + _hours(terms.review_hours),
         )
@@ -689,6 +695,7 @@ def apply(record: RequestRecord, event: Event) -> RequestRecord:
         if any(reviewer == event.reviewer for reviewer, _ in record.votes):
             raise TransitionError("already_voted", f"{event.reviewer} has already voted")
         votes = (*record.votes, (event.reviewer, event.approve))
+        reasons = (*record.vote_reasons, (event.reviewer, event.reason))
         approvals = sum(1 for _, approve in votes if approve)
         rejections = len(votes) - approvals
         detail = f"{event.reviewer}: {'approve' if event.approve else 'reject'}"
@@ -700,6 +707,7 @@ def apply(record: RequestRecord, event: Event) -> RequestRecord:
                 Status.ACCEPTED,
                 f"reviewers approved {approvals}-{rejections}",
                 votes=votes,
+                vote_reasons=reasons,
             )
         if rejections >= VOTES_TO_DECIDE:
             return _finish(
@@ -709,8 +717,9 @@ def apply(record: RequestRecord, event: Event) -> RequestRecord:
                 Status.REJECTED,
                 f"reviewers rejected {rejections}-{approvals}",
                 votes=votes,
+                vote_reasons=reasons,
             )
-        return _move(record, at, name, Status.IN_REVIEW, detail, votes=votes)
+        return _move(record, at, name, Status.IN_REVIEW, detail, votes=votes, vote_reasons=reasons)
 
     if isinstance(event, Cancel):
         if event.party != record.requester:

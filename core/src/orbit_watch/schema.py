@@ -16,6 +16,7 @@ SCHEMA_FILES = {
     "delivery": "delivery-1.0.schema.json",
     "target-policy": "target-policy-1.0.schema.json",
     "station-profile": "station-profile-1.0.schema.json",
+    "reviewer-registry": "reviewer-registry-1.0.schema.json",
 }
 
 

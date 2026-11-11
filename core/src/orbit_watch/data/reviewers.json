@@ -1,0 +1,41 @@
+{
+  "format": "orbit-watch/reviewer-registry",
+  "format_version": "1.0",
+  "simulated": true,
+  "reviewers": [
+    {
+      "id": "reviewer:sim-aino",
+      "name": "SIMULATED reviewer Aino",
+      "affiliations": []
+    },
+    {
+      "id": "reviewer:sim-bertil",
+      "name": "SIMULATED reviewer Bertil",
+      "affiliations": [
+        "station:SIM-ESPOO"
+      ]
+    },
+    {
+      "id": "reviewer:sim-chen",
+      "name": "SIMULATED reviewer Chen",
+      "affiliations": []
+    },
+    {
+      "id": "reviewer:sim-dana",
+      "name": "SIMULATED reviewer Dana",
+      "affiliations": [
+        "requester:sim-cubesat-team"
+      ]
+    },
+    {
+      "id": "reviewer:sim-eero",
+      "name": "SIMULATED reviewer Eero",
+      "affiliations": []
+    },
+    {
+      "id": "reviewer:sim-fatima",
+      "name": "SIMULATED reviewer Fatima",
+      "affiliations": []
+    }
+  ]
+}
