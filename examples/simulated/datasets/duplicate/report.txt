@@ -20,7 +20,7 @@ FAIL: 1 check(s) failed: no duplicates or resubmissions.
   PASS  File matches the declared hash
         The SHA-256 of the observation file matches the declared hash.
   FAIL  No duplicates or resubmissions
-        Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 cece8a5bfc4c67bc...).
+        Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 83b676eb88c29be5...).
   PASS  Residuals against the public reference orbit
         16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 8.5″ against a typical limit of 20.09′.
 
