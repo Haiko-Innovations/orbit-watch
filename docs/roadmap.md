@@ -12,7 +12,10 @@ Every pull request that finishes a roadmap step also updates this page.
 
 ## Status (2026-11-11)
 
-**Phase 0, the open core, is done.** Version 0.1.0 is being released.
+**Phase 0, the open core, is done** and released as
+[version 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0).
+**Phase 1 is in progress:** the decisions are approved, and step 1.1 (the
+request lifecycle) is done.
 
 | Phase 0 completion criterion | Status |
 |---|---|
@@ -32,7 +35,7 @@ not handle. It does not block phase 1.
 
 In parallel with phase 1, mostly for the community:
 
-- Release 0.1.0 and pin the repository on the Haiko Innovations profile.
+- ✅ Release 0.1.0. Pin the repository on the Haiko Innovations profile.
 - A real IOD example of a civilian object, shared with permission ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 - Good first issues: older IOD equinoxes ([#4](https://github.com/Haiko-Innovations/orbit-watch/issues/4)),
   a track-order check ([#5](https://github.com/Haiko-Innovations/orbit-watch/issues/5)),
@@ -50,7 +53,7 @@ the API come after.
 
 | Step | Content | Done when |
 |---|---|---|
-| **1.1 Request lifecycle** ([#11](https://github.com/Haiko-Innovations/orbit-watch/issues/11)) | State machine: draft → open → (funded) → reserved → delivered → verified → challenge period → accepted / rejected / disputed → settled, plus expired. Terms snapshot with a hash. Injected clock for timeouts. | Every transition and every forbidden transition is tested; state diagram in the docs. |
+| ✅ **1.1 Request lifecycle** ([#11](https://github.com/Haiko-Innovations/orbit-watch/issues/11)) | State machine: draft → open → (funded) → reserved → delivered → verified → challenge period → accepted / rejected / disputed → settled, plus expired. Terms snapshot with a hash. Injected clock for timeouts. | Every transition and every forbidden transition is tested; state diagram in the docs. |
 | **1.2 Settlement adapter and ledger** ([#12](https://github.com/Haiko-Innovations/orbit-watch/issues/12)) | Interface `fund`, `reserve`, `attest`, `settle`, `refund`. Ledger adapter: integer points, double-entry journal, idempotency keys. A scenario suite that any adapter must pass. | Deposit = rewards + refunds in every scenario; a repeated settle has no second effect. |
 | **1.3 Optimistic verification** ([#13](https://github.com/Haiko-Innovations/orbit-watch/issues/13)) | Automated report → challenge period (default 24 h, fixed in the terms) → if challenged, three pre-approved reviewers, 2 of 3 decides, nobody reviews their own delivery. Dispute rule. Reviewers are paid for completed reviews whatever the outcome. | Unchallenged, challenged-accepted, challenged-rejected and no-majority (dispute) cases tested end to end with the ledger. |
 | **1.4 Reviewer accuracy** ([#14](https://github.com/Haiko-Innovations/orbit-watch/issues/14)) | Known-answer datasets from the simulator are mixed into reviewer assignments; accuracy per reviewer. | A reviewer who approves everything shows low accuracy; tested. |
@@ -59,9 +62,9 @@ the API come after.
 | **1.7 CLI** ([#17](https://github.com/Haiko-Innovations/orbit-watch/issues/17)) | `submit` and new commands for requests, reservations, challenges and reviews against the API. | The whole chain runs from the command line. |
 | **1.8 Data publication and phase 1 demo** ([#18](https://github.com/Haiko-Innovations/orbit-watch/issues/18)) | Licence (CC BY 4.0 by default), embargo of at most 30 days, file retention and permanent download URLs. A phase 1 demo and the phase 1 report. | The phase 1 completion criteria in [plan.md](plan.md#phase-1-requests-optimistic-verification-and-api-python-or-typescript-lightweight-database) are met; release 0.2.0. |
 
-Before step 1.1 starts, the proposed decisions P-01 to P-07 in
-[decisions.md](decisions.md#proposed-decisions-for-phase-1) need approval
-([#10](https://github.com/Haiko-Innovations/orbit-watch/issues/10)).
+The decisions P-01 to P-07 in [decisions.md](decisions.md#phase-1-decisions) were
+approved on 2026-11-11 ([#10](https://github.com/Haiko-Innovations/orbit-watch/issues/10)).
+Step 1.1 is described in [lifecycle.md](lifecycle.md).
 
 ### Phase 2 and phase 3 (later)
 
