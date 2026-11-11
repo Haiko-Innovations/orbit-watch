@@ -1,7 +1,11 @@
 """Settlement rules, the ledger adapter and the adapter scenario suite (step 1.2)."""
 
+import json
 import random
+import subprocess
+import sys
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 
@@ -233,3 +237,48 @@ def test_points_are_never_created_or_lost(seed):
     held = sum(ledger.balance(p) for p in [*parties, sc.PLATFORM])
     assert held + ledger.escrow(driver.record.request_id) == sc.BUDGET
     assert ledger.total() == 0
+
+
+# ------------------------------------------------------------------ contract fixture
+
+CONTRACT_FIXTURE = (
+    Path(__file__).resolve().parents[2] / "contracts/test/fixtures/settlement-scenarios.json"
+)
+
+
+def test_the_contract_fixture_is_current():
+    """The escrow contract's tests replay this suite. Regenerate the file in ``core/`` with
+    ``uv run python -m orbit_watch.settlement.scenarios > <the fixture path>``."""
+    assert CONTRACT_FIXTURE.read_text(encoding="utf-8") == sc.contract_fixture_json()
+
+
+def test_the_contract_fixture_covers_every_scenario():
+    fixture = json.loads(sc.contract_fixture_json())
+    assert fixture["simulated"] is True and fixture["rules_version"] == "1.0"
+    assert [s["name"] for s in fixture["scenarios"]] == [s.name for s in sc.SCENARIOS]
+    for scenario, exported in zip(sc.SCENARIOS, fixture["scenarios"], strict=True):
+        assert len(exported["steps"]) == len(scenario.steps)
+        assert {n["party"]: n["change"] for n in exported["net"]} == scenario.net
+        assert sum(n["change"] for n in exported["net"]) == 0
+    actions = {step["action"] for s in fixture["scenarios"] for step in s["steps"]}
+    assert actions == {
+        "open",
+        "fund",
+        "reserve",
+        "deliver",
+        "verify",
+        "challenge",
+        "vote",
+        "cancel",
+        "wait",
+    }
+
+
+def test_the_fixture_command_prints_the_fixture():
+    printed = subprocess.run(
+        [sys.executable, "-m", "orbit_watch.settlement.scenarios"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert printed == sc.contract_fixture_json()

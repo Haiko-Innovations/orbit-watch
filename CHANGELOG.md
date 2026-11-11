@@ -17,12 +17,21 @@ mainnet or real money.
   (Solidity 0.8.38, OpenZeppelin Contracts 5.7.0 and forge-std 1.17.0 as
   submodules pinned to release commits). `OrbitWatchEscrow` holds testnet USDC
   deposits per request: `fund` locks the split (observer reward, three review
-  rewards, platform fee) and the hash of the request's terms, and `refund`
-  returns the whole deposit to the requester after the delivery deadline. It
-  refuses every chain except Base Sepolia and a local Anvil chain. Unit, fuzz
-  and invariant tests run in the `tarkistus` check together with `forge fmt`
-  and `forge lint`. See `docs/escrow.md` and `contracts/README.md`.
-- Phase 2 decisions P2-01 to P2-11 accepted, and D-18 on the contract project.
+  rewards, platform fee) and the hash of the request's terms. It refuses every
+  chain except Base Sepolia and a local Anvil chain. Unit, fuzz and invariant
+  tests run in the `tarkistus` check together with `forge fmt` and
+  `forge lint`. See `docs/escrow.md` and `contracts/README.md`.
+- Settlement rules on chain (phase 2, step 2.2): the escrow follows the phase 1
+  lifecycle from funding to settlement (`cancel`, `reserve`, `deliver`,
+  permissionless `settle`), applies deadlines at the current block time and
+  pays by settlement rules 1.0. Payouts are credited and each party withdraws
+  its own (`withdraw`). The automated result, challenges and votes are internal
+  until step 2.3. The phase 1 settlement scenario suite is exported to
+  `contracts/test/fixtures/settlement-scenarios.json`
+  (`python -m orbit_watch.settlement.scenarios`) and replayed against the
+  contract; invariant tests check every settlement against the rules.
+- Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project and
+  D-19 on settlement on chain.
 
 ## [0.2.0] - 2026-11-11
 

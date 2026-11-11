@@ -387,3 +387,26 @@ Accepted · 2026-11-11 (with the pull request that implements step 2.1). See
 - Format (`forge fmt`), lint with warnings as errors (`forge lint`), build and
   tests, including fuzz and invariant tests, run in the `tarkistus` check.
   Lint findings that are intentional are silenced line by line with a reason.
+
+### D-19 Settlement on chain
+
+Accepted · 2026-11-11 (with the pull request that implements step 2.2). See
+[escrow.md](escrow.md):
+
+- **Pull payments.** Settling credits each party, and each party withdraws its
+  own credit. USDC can block addresses; with direct transfers, one blocked
+  recipient would make the whole settlement fail and lock the deposit, which
+  the dispute rule forbids.
+- **Lazy deadlines.** The status is computed at the current block time with
+  every passed deadline applied, as in phase 1, so no keeper is needed and
+  anyone can settle.
+- **Whole seconds.** The time limits are passed in seconds when funding; the
+  terms must convert to whole seconds.
+- Cancelling settles at once. The platform fee recipient is fixed at
+  deployment; without one, fees must be zero.
+- Unfunded requests never touch the chain.
+- Recording the automated result, challenges and votes are internal functions
+  until step 2.3 connects them to attestations and the reviewer registry.
+- The phase 1 settlement scenario suite is exported from Python to a fixture
+  that the contract tests replay; a Python test keeps the fixture current, so
+  the two implementations cannot drift apart unnoticed.
