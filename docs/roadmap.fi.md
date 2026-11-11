@@ -17,7 +17,8 @@ Jokainen pull request, joka saa tiekartan vaiheen valmiiksi, päivittää myös 
 **Vaihe 0, avoin ydin, on valmis** ja julkaistu
 [versiona 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0).
 **Vaihe 1 on käynnissä:** päätökset on hyväksytty, ja vaiheet 1.1 (tilauksen
-elinkaari) ja 1.2 (tilitys ja pistekirjanpito) ovat valmiit.
+elinkaari), 1.2 (tilitys ja pistekirjanpito) ja 1.3 (optimistinen tarkistus)
+ovat valmiit.
 
 | Vaiheen 0 valmiskriteeri | Tila |
 |---|---|
@@ -57,7 +58,7 @@ testata kattavasti; tallennus ja API tulevat sen jälkeen.
 |---|---|---|
 | ✅ **1.1 Tilauksen elinkaari** ([#11](https://github.com/Haiko-Innovations/orbit-watch/issues/11)) | Tilakone: luonnos → avoin → (rahoitettu) → varattu → toimitettu → tarkistettu → haastejakso → hyväksytty / hylätty / riidanalainen → tilitetty, sekä vanhentunut. Ehtojen tilannekuva tiivisteineen. Ulkoa annettava kello aikakatkaisuja varten. | Jokainen sallittu ja kielletty siirtymä on testattu; tilakaavio dokumentaatiossa. |
 | ✅ **1.2 Tilityssovitin ja ledger** ([#12](https://github.com/Haiko-Innovations/orbit-watch/issues/12)) | Rajapinta `fund`, `reserve`, `attest`, `settle`, `refund`. Ledger-sovitin: kokonaislukupisteet, kahdenkertainen kirjanpito, idempotenssiavaimet. Skenaariosarja, joka jokaisen sovittimen on läpäistävä. | Talletus = palkkiot + palautukset jokaisessa skenaariossa; toistettu tilitys ei vaikuta toista kertaa. |
-| **1.3 Optimistinen tarkistus** ([#13](https://github.com/Haiko-Innovations/orbit-watch/issues/13)) | Automaattinen raportti → haastejakso (oletus 24 h, kiinnitetään ehtoihin) → haastettaessa kolme ennalta hyväksyttyä tarkistajaa, 2/3 ratkaisee, kukaan ei tarkista omaa toimitustaan. Riitasääntö. Tarkistajat saavat palkkion tehdystä tarkistuksesta lopputuloksesta riippumatta. | Haastamaton, haastettu-hyväksytty, haastettu-hylätty ja ei enemmistöä (riita) testattu päästä päähän ledgerillä. |
+| ✅ **1.3 Optimistinen tarkistus** ([#13](https://github.com/Haiko-Innovations/orbit-watch/issues/13)) | Automaattinen raportti → haastejakso (oletus 24 h, kiinnitetään ehtoihin) → haastettaessa kolme ennalta hyväksyttyä tarkistajaa, 2/3 ratkaisee, kukaan ei tarkista omaa toimitustaan. Riitasääntö. Tarkistajat saavat palkkion tehdystä tarkistuksesta lopputuloksesta riippumatta. | Haastamaton, haastettu-hyväksytty, haastettu-hylätty ja ei enemmistöä (riita) testattu päästä päähän ledgerillä. |
 | **1.4 Tarkistajien tarkkuus** ([#14](https://github.com/Haiko-Innovations/orbit-watch/issues/14)) | Simulaattorin tunnetun vastauksen aineistoja sekoitetaan tarkistajien tehtäviin; tarkkuus tarkistajittain. | Kaiken hyväksyvän tarkistajan tarkkuus näkyy matalana; testattu. |
 | **1.5 Tallennus** ([#15](https://github.com/Haiko-Innovations/orbit-watch/issues/15)) | SQLite-skeema ja migraatiot tilauksille, varauksille, toimituksille, raporteille, haasteille ja ledgerin kirjauksille; tiivisteellä osoitettu tiedostovarasto. | Tila säilyy uudelleenkäynnistyksen yli; migraatiot testattu tyhjästä. |
 | **1.6 API** ([#16](https://github.com/Haiko-Innovations/orbit-watch/issues/16)) | HTTP-rajapinta elinkaarelle. Roolikohtaiset API-avaimet: aseman avaimella voi vain toimittaa, ei koskaan siirtää pisteitä. Idempotenssiavain jokaisessa muuttavassa kutsussa. | Kaksoistoimitus ja kaksoistilitys eivät vaikuta kahdesti; testattu API:n kautta. |
@@ -66,8 +67,9 @@ testata kattavasti; tallennus ja API tulevat sen jälkeen.
 
 Päätökset P-01–P-07 tiedostossa [decisions.md](decisions.md#phase-1-decisions)
 hyväksyttiin 11.11.2026 ([#10](https://github.com/Haiko-Innovations/orbit-watch/issues/10)).
-Vaihe 1.1 on kuvattu tiedostossa [lifecycle.md](lifecycle.md) ja vaihe 1.2
-tiedostossa [settlement.md](settlement.md) (englanniksi).
+Vaihe 1.1 on kuvattu tiedostossa [lifecycle.md](lifecycle.md), vaihe 1.2
+tiedostossa [settlement.md](settlement.md) ja vaihe 1.3 tiedostossa
+[optimistic-verification.md](optimistic-verification.md) (englanniksi).
 
 ### Vaiheet 2 ja 3 (myöhemmin)
 

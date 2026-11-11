@@ -73,8 +73,8 @@ stateDiagram-v2
 | `reserve` | open, funded | station | Not the requester. Lasts `reservation_hours`, never past the delivery deadline. |
 | `deliver` | reserved | the reserving station | The file's SHA-256. |
 | `record_verification` | delivered | system | `pass` or `fail` starts the challenge period; `inconclusive` goes straight to three reviewers. |
-| `challenge` | challenge_period | requester or observer | Names three different reviewers; none of them may be the requester or the observer. |
-| `vote` | in_review | an assigned reviewer | One vote each; two equal votes decide. |
+| `challenge` | challenge_period | requester or observer | Carries a reason and three different reviewers, chosen by the service ([optimistic-verification.md](optimistic-verification.md#who-reviews)); none may be the requester or the observer. |
+| `vote` | in_review | an assigned reviewer | One vote each, with a reason; two equal votes decide. |
 | `cancel` | draft, open, funded | requester | Not after a reservation. |
 | `settle` | any outcome | system | Moves to `settled`. |
 
@@ -117,8 +117,8 @@ and hashed; later changes to the defaults never affect an open request.
 
 ## Not decided yet
 
-- A rejected delivery ends the request. Whether the request should re-open for
-  other stations while time is left is an open question for step 1.3.
+- A rejected delivery ends the request; step 1.3 decided not to re-open it
+  ([D-13](decisions.md#d-13-optimistic-verification-rules)).
 - Who may challenge is limited to the requester and the observer. Whether
   others (for example other stations) may challenge, and with what bond, is
   an open question of the plan.

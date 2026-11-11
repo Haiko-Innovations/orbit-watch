@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Haiko-Innovations/orbit-watch/schemas/reviewer-registry-1.0.schema.json",
+  "title": "Orbit Watch reviewer registry, format version 1.0",
+  "description": "Pre-approved reviewers. A reviewer never reviews a request whose requester, observer or challenger is the reviewer or one of the reviewer's affiliations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "format_version",
+    "reviewers"
+  ],
+  "properties": {
+    "format": {
+      "const": "orbit-watch/reviewer-registry"
+    },
+    "format_version": {
+      "const": "1.0"
+    },
+    "simulated": {
+      "type": "boolean"
+    },
+    "reviewers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9:._-]{1,128}$"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "affiliations": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9:._-]{1,128}$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

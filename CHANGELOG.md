@@ -21,6 +21,13 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   interface (`fund`, `reserve`, `attest`, `settle`, `refund`) with idempotency
   keys, the points-only double-entry ledger adapter, and a scenario suite that
   every adapter must pass. See `docs/settlement.md`.
+- Optimistic verification (phase 1, step 1.3): a request service that runs
+  automated verification on delivery, publishes and attests the result, opens
+  a challenge period, starts a reviewer round on a challenge or an inconclusive
+  result, and settles every outcome. Pre-approved reviewer registry with
+  affiliations (format 1.0) and a deterministic, recomputable reviewer
+  selection; challenges and votes carry reasons. See
+  `docs/optimistic-verification.md`.
 
 ## [0.1.0] - 2026-11-11
 

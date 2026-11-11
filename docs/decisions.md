@@ -163,3 +163,19 @@ plan fixed the dispute rule; these fix the rest, see [settlement.md](settlement.
 - Everything else goes back to the requester; nothing stays in escrow.
 - The rules are a pure function shared by every adapter. An adapter is correct
   only if it passes the scenario suite.
+
+### D-13 Optimistic verification rules
+
+Accepted · 2026-11-11 (with the pull request that implements step 1.3). See
+[optimistic-verification.md](optimistic-verification.md):
+
+- Reviewers are pre-approved in a registry and declare affiliations. A round's
+  three reviewers are the eligible ones with the lowest SHA-256 score over the
+  request, the delivery and the reviewer; nobody chooses them and anyone can
+  recompute the choice.
+- Neither the requester, the observer, the challenger nor anyone affiliated with
+  them can review.
+- Challenges and votes must give reasons, which are part of the public record.
+- One reviewer round per request. A rejected delivery ends the request; there
+  is no re-opening in phase 1 (this settles the open point of D-11).
+- The service settles every outcome as soon as it is reached.
