@@ -84,6 +84,46 @@ class CalibrationTask:
     def correct(self) -> bool | None:
         return None if self.answer is None else self.answer == self.expected
 
+    def to_document(self) -> dict[str, Any]:
+        def t(value: datetime | None) -> str | None:
+            return None if value is None else format_utc(value)
+
+        return {
+            "task_id": self.task_id,
+            "reviewer": self.reviewer,
+            "kind": self.kind,
+            "expected": self.expected,
+            "request_sha256": self.request_sha256,
+            "observations_sha256": self.observations_sha256,
+            "report_sha256": self.report_sha256,
+            "automated_verdict": self.automated_verdict,
+            "challenge_reason": self.challenge_reason,
+            "created_at": t(self.created_at),
+            "due_at": t(self.due_at),
+            "answer": self.answer,
+            "reason": self.reason,
+            "answered_at": t(self.answered_at),
+        }
+
+    @classmethod
+    def from_document(cls, doc: dict[str, Any]) -> CalibrationTask:
+        return cls(
+            task_id=doc["task_id"],
+            reviewer=doc["reviewer"],
+            kind=doc["kind"],
+            expected=doc["expected"],
+            request_sha256=doc["request_sha256"],
+            observations_sha256=doc["observations_sha256"],
+            report_sha256=doc["report_sha256"],
+            automated_verdict=doc["automated_verdict"],
+            challenge_reason=doc["challenge_reason"],
+            created_at=parse_utc(doc["created_at"]),
+            due_at=parse_utc(doc["due_at"]),
+            answer=doc["answer"],
+            reason=doc["reason"],
+            answered_at=None if doc["answered_at"] is None else parse_utc(doc["answered_at"]),
+        )
+
 
 def choose_kind(reviewer: str, history: list[CalibrationTask], source: str) -> str:
     """Balance the kinds per reviewer; break ties by a hash of the source."""

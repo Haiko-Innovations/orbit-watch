@@ -32,6 +32,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   by the simulator are mixed into every reviewer's queue in the same shape as
   real tasks; reviewer profiles show accuracy, approval rate and missed tasks,
   with flags for rubber-stamping. See `docs/reviewer-accuracy.md`.
+- Storage (phase 1, step 1.5): `open_service` keeps a service's state in SQLite
+  (numbered plain-SQL migrations checked by hash) and its files by SHA-256
+  (never deleted, checked on every read). One transaction per call, a refused
+  call changes nothing, one process per directory, and a SQLite points ledger
+  that passes the settlement scenario suite. See `docs/storage.md`.
 
 ## [0.1.0] - 2026-11-11
 

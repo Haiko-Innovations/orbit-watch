@@ -31,9 +31,10 @@ people look at it.
    outcome, a dispute pays the completed reviews, gives the observer nothing and
    refunds the rest. Nothing is ever locked.
 
-The service takes the time from its callers and keeps everything in memory.
-`tick(now)` applies passed deadlines to every request and settles finished
-ones. Storage comes in step 1.5, the HTTP API in step 1.6.
+The service takes the time from its callers. `tick(now)` applies passed
+deadlines to every request and settles finished ones. With `open_service` the
+state is stored in SQLite and files ([storage.md](storage.md), step 1.5); the
+HTTP API comes in step 1.6.
 
 ## Who reviews
 

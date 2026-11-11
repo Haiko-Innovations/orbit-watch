@@ -1,5 +1,6 @@
 """The request lifecycle state machine (phase 1, step 1.1)."""
 
+import contextlib
 import random
 from datetime import timedelta
 
@@ -17,6 +18,14 @@ OTHER_STATION = "station:SIM-TAMPERE"
 REVIEWERS = ("reviewer:r1", "reviewer:r2", "reviewer:r3")
 SHA = "a" * 64
 SPLIT = lc.RewardSplit(observer=100, reviewer=10)
+PARTIES = [
+    REQUESTER,
+    "station:SIM-ESPOO",
+    "station:SIM-TAMPERE",
+    "reviewer:r1",
+    "reviewer:r2",
+    "reviewer:r3",
+]
 
 
 def minutes(n: float):
@@ -463,3 +472,27 @@ def test_split_is_locked_at_funding():
     record = reach(Status.FUNDED)
     assert record.split == SPLIT and record.funded_points == 100 + 3 * 10
     assert record.to_document()["split"]["challenge_reserve"] == 30
+
+
+@pytest.mark.parametrize("status", list(Status), ids=str)
+def test_records_survive_a_json_round_trip(status):
+    import json
+
+    record = reach(status)
+    text = json.dumps(record.to_document())
+    assert lc.record_from_document(json.loads(text)) == record
+
+
+@pytest.mark.parametrize("seed", range(40))
+def test_random_records_survive_a_round_trip(seed):
+    import json
+
+    rng = random.Random(seed)
+    record = lc.create(make_terms(), T0)
+    now = T0
+    for _ in range(25):
+        now += timedelta(minutes=rng.choice([1, 60, 900]))
+        with contextlib.suppress(TransitionError):
+            record = lc.apply(record, random_event(rng.choice(EVENT_KINDS), now, rng, PARTIES))
+        restored = lc.record_from_document(json.loads(json.dumps(record.to_document())))
+        assert restored == record
