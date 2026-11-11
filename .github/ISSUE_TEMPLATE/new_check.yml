@@ -1,0 +1,30 @@
+name: New verification check
+description: Propose a new automated check for observation deliveries.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does the check catch?
+      description: Describe a kind of bad, suspicious or low-quality delivery that the current checks miss.
+    validations:
+      required: true
+  - type: textarea
+    id: rule
+    attributes:
+      label: Proposed rule
+      description: |
+        The exact rule, its thresholds and how the result is explained in the report.
+        Remember that checks must be deterministic: same input, byte-identical report.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test datasets
+      description: Which simulated datasets should pass and which should fail?
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Papers, standards or community practice the rule is based on.

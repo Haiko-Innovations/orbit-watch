@@ -1,0 +1,29 @@
+name: New observation format
+description: Propose support for another observation format, or a missing part of IOD or CCSDS TDM.
+labels: ["enhancement"]
+body:
+  - type: input
+    id: format
+    attributes:
+      label: Format
+      description: Name of the format and a link to its current official specification.
+    validations:
+      required: true
+  - type: textarea
+    id: users
+    attributes:
+      label: Who uses it?
+      description: Which observers, networks or software produce or consume this format?
+    validations:
+      required: true
+  - type: textarea
+    id: mapping
+    attributes:
+      label: Mapping to the Orbit Watch JSON format
+      description: How do its fields map to `docs/observation-format.md`? What cannot be represented?
+  - type: textarea
+    id: sample
+    attributes:
+      label: Example data
+      description: A small example. Use synthetic data, or real data only with permission.
+      render: text

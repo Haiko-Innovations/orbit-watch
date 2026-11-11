@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: the pipeline only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The job name is the required status check in the main ruleset.
+  tarkistus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Use only the interpreters installed by setup-python.
+      UV_PYTHON_DOWNLOADS: never
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      # Actions are pinned to commit SHAs (supply-chain protection). Dependabot updates them.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # gitleaks scans the whole history
+          persist-credentials: false
+
+      - name: Secrets (gitleaks)
+        working-directory: .
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" \
+            ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            git /repo --redact --no-banner
+
+      # Oldest and newest supported Python. The last one listed is the default.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: |
+            3.15
+            3.12
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.16"
+
+      - name: Lint and formatting (ruff)
+        run: |
+          uv run --locked --python 3.12 ruff check .
+          uv run --locked --python 3.12 ruff format --check .
+
+      - name: Tests (Python 3.12)
+        run: uv run --locked --python 3.12 pytest
+
+      - name: Tests (Python 3.15)
+        env:
+          UV_PROJECT_ENVIRONMENT: .venv-3.15
+        run: uv run --locked --python 3.15 pytest
+
+      # The README promises that a plain `pip install` works. Install exactly the
+      # locked, hash-checked dependencies and build without fetching anything else.
+      - name: Plain pip install
+        run: |
+          uv export --locked --no-dev --no-emit-project --format requirements-txt \
+            -o "$RUNNER_TEMP/requirements.txt"
+          uv export --locked --only-group build --no-emit-project --format requirements-txt \
+            -o "$RUNNER_TEMP/build-requirements.txt"
+          python3.12 -m venv "$RUNNER_TEMP/pip-venv"
+          pip="$RUNNER_TEMP/pip-venv/bin/pip"
+          "$pip" install --require-hashes -r "$RUNNER_TEMP/requirements.txt" \
+            -r "$RUNNER_TEMP/build-requirements.txt"
+          "$pip" install --no-deps --no-build-isolation .
+          "$RUNNER_TEMP/pip-venv/bin/orbit-watch" --version
+          "$RUNNER_TEMP/pip-venv/bin/orbit-watch" convert ../examples/formats/observation-set.json \
+            -o "$RUNNER_TEMP/example.tdm"
+
+      - name: Known vulnerabilities (runtime dependencies)
+        run: |
+          uv run --locked --python 3.12 pip-audit --disable-pip --require-hashes --strict \
+            -r "$RUNNER_TEMP/requirements.txt"
