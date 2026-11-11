@@ -18,3 +18,9 @@ orbit-watch-demo/
 .idea/
 .vscode/
 .DS_Store
+
+# Foundry (contracts/)
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+.env

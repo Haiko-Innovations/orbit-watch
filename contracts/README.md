@@ -1,0 +1,46 @@
+# Orbit Watch contracts (phase 2)
+
+> **Testnet only.** The escrow refuses every chain except Base Sepolia
+> (chain ID 84532) and a local Anvil chain (31337). Its settlement token is
+> Circle's testnet USDC, which has no financial value.
+
+Solidity contracts for settlement on the Base Sepolia testnet
+([roadmap](../docs/roadmap.md#phase-2-settlement-on-a-testnet-target-version-030),
+[escrow design](../docs/escrow.md)).
+
+## Build and test
+
+You need [Foundry](https://getfoundry.sh) **1.8.6** (the version CI uses).
+
+```sh
+git submodule update --init          # contracts/lib: forge-std, OpenZeppelin
+cd contracts
+forge fmt --check && forge lint --deny warnings
+forge build --sizes
+forge test                           # unit, fuzz and invariant tests
+```
+
+## Pinned versions
+
+| What | Version | Pinned how |
+|---|---|---|
+| Solidity | 0.8.38 | `solc_version` in `foundry.toml` |
+| EVM | Cancun | `evm_version` in `foundry.toml` (Base Sepolia has had Dencun since 2024-02-21) |
+| Foundry | 1.8.6 | CI (`foundry-rs/foundry-toolchain`, SHA-pinned) |
+| OpenZeppelin Contracts | 5.7.0 | submodule at the release commit `cab19933…` |
+| forge-std | 1.17.0 | submodule at the release commit `f3dae6e6…` |
+
+### Updating a library
+
+Dependabot is not used for the submodules: it would move them to the newest
+commit of the default branch, which is not a release. To update:
+
+1. Pick a release that is **at least 14 days old** (the same rule as Dependabot's cooldown).
+2. `git -C contracts/lib/openzeppelin-contracts fetch --tags && git -C contracts/lib/openzeppelin-contracts checkout vX.Y.Z`
+3. Run the tests, update this table and the changelog, and open a pull request.
+
+## Licences
+
+The Orbit Watch contracts are Apache-2.0, like the rest of the project.
+OpenZeppelin Contracts and forge-std are MIT (forge-std also Apache-2.0).
+`test/mocks/TestUSD.sol` is a worthless token for local tests only and is never deployed.

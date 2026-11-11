@@ -8,6 +8,22 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+Phase 2: settlement on a testnet. Testnet only: nothing here touches a
+mainnet or real money.
+
+### Added
+
+- Contracts project (phase 2, step 2.1): `contracts/` is a Foundry project
+  (Solidity 0.8.38, OpenZeppelin Contracts 5.7.0 and forge-std 1.17.0 as
+  submodules pinned to release commits). `OrbitWatchEscrow` holds testnet USDC
+  deposits per request: `fund` locks the split (observer reward, three review
+  rewards, platform fee) and the hash of the request's terms, and `refund`
+  returns the whole deposit to the requester after the delivery deadline. It
+  refuses every chain except Base Sepolia and a local Anvil chain. Unit, fuzz
+  and invariant tests run in the `tarkistus` check together with `forge fmt`
+  and `forge lint`. See `docs/escrow.md` and `contracts/README.md`.
+- Phase 2 decisions P2-01 to P2-11 accepted, and D-18 on the contract project.
+
 ## [0.2.0] - 2026-11-11
 
 Phase 1: requests, optimistic verification and API. Still no money and no
