@@ -14,15 +14,22 @@ The service ties the parts together the way the phase 1 API will use them:
 6. every outcome is settled at once through the settlement adapter, by the
    shared settlement rules.
 
-The service holds everything in memory and takes the time from its callers
-(an injected clock, decision P-05), so it is deterministic and easy to test.
-Storage comes in step 1.5 and the HTTP API in step 1.6.
+The service takes the time from its callers (an injected clock, decision
+P-05), so it is deterministic and easy to test. It keeps its working state in
+memory; with ``open_service`` it also writes every change to SQLite and the
+file store (step 1.5), one transaction per call. A refused call (any
+``ServiceError``) changes nothing: the transaction is rolled back and the
+state reloaded. The HTTP API comes in step 1.6.
 """
 
 from __future__ import annotations
 
+import functools
+import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from orbit_watch import calibration as cal
@@ -32,11 +39,29 @@ from orbit_watch.formats import Sites
 from orbit_watch.lifecycle import RequestRecord, Status, TransitionError
 from orbit_watch.reviewers import ReviewerError, ReviewerRegistry
 from orbit_watch.settlement import SettlementAdapter, SettlementError, settlement_plan
+from orbit_watch.storage import Storage, StoredFiles
 from orbit_watch.timeutil import format_utc
 from orbit_watch.verify.engine import UsageError, VerificationInput, verify
 
 VERIFIER = "system:verifier"
 PLATFORM = "platform:orbit-watch"
+
+
+def _atomic[F: Callable[..., Any]](method: F) -> F:
+    """One transaction per call when the service is stored; reload on failure."""
+
+    @functools.wraps(method)
+    def wrapper(self: RequestService, *args: Any, **kwargs: Any) -> Any:
+        if self.storage is None:
+            return method(self, *args, **kwargs)
+        try:
+            with self.storage.db.transaction():
+                return method(self, *args, **kwargs)
+        except BaseException:
+            self._reload()
+            raise
+
+    return wrapper  # type: ignore[return-value]
 
 
 class ServiceError(ValueError):
@@ -85,6 +110,116 @@ class RequestService:
     task_salt: str = "orbit-watch-tasks"
     real_tasks: dict[str, tuple[str, str]] = field(default_factory=dict)  # id -> request, reviewer
     calibration_tasks: dict[str, cal.CalibrationTask] = field(default_factory=dict)
+    storage: Storage | None = None
+
+    # ------------------------------------------------------------------ persistence
+
+    def _save_record(self, record: RequestRecord) -> RequestRecord:
+        self.records[record.request_id] = record
+        if self.storage is not None:
+            self.storage.db.execute(
+                "INSERT INTO requests (request_id, requester, status, request_sha256, "
+                "record_json, updated_at) VALUES (?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT (request_id) DO UPDATE SET status = excluded.status, "
+                "record_json = excluded.record_json, updated_at = excluded.updated_at",
+                (
+                    record.request_id,
+                    record.requester,
+                    str(record.status),
+                    sha256_bytes(self.request_documents[record.request_id]),
+                    json.dumps(record.to_document(), sort_keys=True),
+                    format_utc(record.updated_at),
+                ),
+            )
+        return record
+
+    def _save_delivery(self, delivered: Delivered) -> None:
+        self.deliveries[delivered.request_id] = delivered
+        if self.storage is not None:
+            self.storage.db.execute(
+                "INSERT INTO deliveries (request_id, station, observations_sha256, "
+                "observations_format, report_sha256, verdict) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    delivered.request_id,
+                    delivered.station,
+                    delivered.observations_sha256,
+                    delivered.observations_format,
+                    delivered.report_sha256,
+                    delivered.verdict,
+                ),
+            )
+
+    def _save_settlement(self, request_id: str, settlement: dict[str, Any]) -> None:
+        self.settlements[request_id] = settlement
+        if self.storage is not None:
+            self.storage.db.execute(
+                "INSERT INTO settlements (request_id, plan_json, reference) VALUES (?, ?, ?)",
+                (
+                    request_id,
+                    json.dumps(settlement["plan"], sort_keys=True),
+                    settlement["reference"],
+                ),
+            )
+
+    def _save_real_task(self, task_id: str, request_id: str, reviewer: str) -> None:
+        self.real_tasks[task_id] = (request_id, reviewer)
+        if self.storage is not None:
+            self.storage.db.execute(
+                "INSERT INTO review_tasks (task_id, reviewer, kind, request_id) "
+                "VALUES (?, ?, 'real', ?) ON CONFLICT (task_id) DO NOTHING",
+                (task_id, reviewer, request_id),
+            )
+
+    def _save_calibration_task(self, task: cal.CalibrationTask) -> None:
+        self.calibration_tasks[task.task_id] = task
+        if self.storage is not None:
+            self.storage.db.execute(
+                "INSERT INTO review_tasks (task_id, reviewer, kind, calibration_json) "
+                "VALUES (?, ?, 'calibration', ?) ON CONFLICT (task_id) DO UPDATE SET "
+                "calibration_json = excluded.calibration_json",
+                (task.task_id, task.reviewer, json.dumps(task.to_document(), sort_keys=True)),
+            )
+
+    def _reload(self) -> None:
+        """Rebuild the working state from storage (after a rollback or on start)."""
+        if self.storage is None:  # pragma: no cover - only called when stored
+            return
+        db = self.storage.db
+        self.files = StoredFiles(self.storage)  # type: ignore[assignment]
+        self.request_documents = {
+            row["request_id"]: self.storage.files.get(row["request_sha256"])
+            for row in db.query("SELECT request_id, request_sha256 FROM requests")
+        }
+        self.records = {
+            row["request_id"]: lc.record_from_document(json.loads(row["record_json"]))
+            for row in db.query("SELECT request_id, record_json FROM requests ORDER BY request_id")
+        }
+        self.deliveries = {
+            row["request_id"]: Delivered(
+                row["request_id"],
+                row["station"],
+                row["observations_sha256"],
+                row["observations_format"],
+                row["report_sha256"],
+                row["verdict"],
+            )
+            for row in db.query("SELECT * FROM deliveries ORDER BY request_id")
+        }
+        self.settlements = {
+            row["request_id"]: {"plan": json.loads(row["plan_json"]), "reference": row["reference"]}
+            for row in db.query("SELECT * FROM settlements ORDER BY request_id")
+        }
+        self.real_tasks = {}
+        self.calibration_tasks = {}
+        for row in db.query("SELECT * FROM review_tasks ORDER BY task_id"):
+            if row["kind"] == "real":
+                self.real_tasks[row["task_id"]] = (row["request_id"], row["reviewer"])
+            else:
+                task = cal.CalibrationTask.from_document(json.loads(row["calibration_json"]))
+                self.calibration_tasks[task.task_id] = task
+        reload = getattr(self.adapter, "reload", None)
+        if reload is not None:
+            reload()
 
     # ------------------------------------------------------------------ helpers
 
@@ -99,10 +234,12 @@ class RequestService:
             record = lc.apply(self._record(request_id), event)
         except TransitionError as error:
             raise ServiceError(error.code, str(error)) from None
-        self.records[request_id] = record
+        self._save_record(record)
         return self._settle_if_finished(request_id, event.at)
 
     def _store(self, data: bytes) -> str:
+        if self.storage is not None:
+            return self.storage.put_file(data)
         digest = sha256_bytes(data)
         self.files.setdefault(digest, data)
         return digest
@@ -120,13 +257,15 @@ class RequestService:
                 receipt = self.adapter.settle(plan, key=key)
         except SettlementError as error:  # pragma: no cover - the rules keep these consistent
             raise ServiceError(error.code, str(error)) from None
-        self.settlements[request_id] = {"plan": plan.to_document(), "reference": receipt.reference}
+        self._save_settlement(
+            request_id, {"plan": plan.to_document(), "reference": receipt.reference}
+        )
         record = lc.apply(record, lc.Settle(max(now, record.updated_at)))
-        self.records[request_id] = record
-        return record
+        return self._save_record(record)
 
     # ------------------------------------------------------------------ requester
 
+    @_atomic
     def create(
         self, request_bytes: bytes, requester: str, now: datetime, **terms: Any
     ) -> RequestRecord:
@@ -139,17 +278,18 @@ class RequestService:
             raise ServiceError("duplicate_request", f"request {request_id} already exists")
         self.request_documents[request_id] = request_bytes
         self._store(request_bytes)
-        self.records[request_id] = lc.create(parsed_terms, now)
-        return self.records[request_id]
+        return self._save_record(lc.create(parsed_terms, now))
 
     def _require_requester(self, request_id: str, party: str) -> None:
         if party != self._record(request_id).requester:
             raise ServiceError("not_requester", "only the requester can do this")
 
+    @_atomic
     def open(self, request_id: str, party: str, now: datetime) -> RequestRecord:
         self._require_requester(request_id, party)
         return self._apply(request_id, lc.Open(now))
 
+    @_atomic
     def fund(
         self, request_id: str, party: str, split: lc.RewardSplit, now: datetime
     ) -> RequestRecord:
@@ -159,21 +299,24 @@ class RequestService:
         try:
             self.adapter.fund(request_id, party, split.total, key=f"{request_id}/fund")
         except SettlementError as error:
-            self.records[request_id] = before  # keep the lifecycle and the books in step
+            self._save_record(before)  # keep the lifecycle and the books in step
             raise ServiceError(error.code, str(error)) from None
         return record
 
+    @_atomic
     def cancel(self, request_id: str, party: str, now: datetime) -> RequestRecord:
         return self._apply(request_id, lc.Cancel(now, party))
 
     # ------------------------------------------------------------------ station
 
+    @_atomic
     def reserve(self, request_id: str, station: str, now: datetime) -> RequestRecord:
         record = self._apply(request_id, lc.Reserve(now, station))
         count = sum(1 for h in record.history if h.event == "reserve")
         self.adapter.reserve(request_id, station, key=f"{request_id}/reserve/{count}")
         return record
 
+    @_atomic
     def deliver(
         self,
         request_id: str,
@@ -208,8 +351,15 @@ class RequestService:
         report_bytes = dumps_pretty(report, sort_keys=False).encode("utf-8")
         report_sha256 = self._store(report_bytes)
         verdict = report["verdict"]
-        self.deliveries[request_id] = Delivered(
-            request_id, station, observations_sha256, observations_format, report_sha256, verdict
+        self._save_delivery(
+            Delivered(
+                request_id,
+                station,
+                observations_sha256,
+                observations_format,
+                report_sha256,
+                verdict,
+            )
         )
         self.adapter.attest(
             request_id,
@@ -241,22 +391,23 @@ class RequestService:
         except ReviewerError as error:
             raise ServiceError(error.code, str(error)) from None
 
+    @_atomic
     def challenge(self, request_id: str, party: str, reason: str, now: datetime) -> RequestRecord:
         if not reason.strip():
             raise ServiceError("reason_required", "a challenge must say why")
         record = lc.advance(self._record(request_id), now)
-        self.records[request_id] = record
         if record.status is not Status.CHALLENGE_PERIOD:
-            self._settle_if_finished(request_id, now)
             raise ServiceError(
                 "forbidden_in_status",
-                f"'challenge' is not allowed when the request is {self.records[request_id].status}",
+                f"'challenge' is not allowed when the request is {record.status}",
             )
+        self._save_record(record)
         reviewers = self._select(request_id, record.delivery_sha256 or "", challenger=party)
         record = self._apply(request_id, lc.Challenge(now, party, reviewers, reason))
         self._assign(request_id, now)
         return record
 
+    @_atomic
     def vote(
         self, request_id: str, reviewer: str, approve: bool, reason: str, now: datetime
     ) -> RequestRecord:
@@ -284,7 +435,7 @@ class RequestService:
         record = self._record(request_id)
         due = record.review_deadline or now
         for reviewer in record.reviewers:
-            self.real_tasks[self._task_id("real", request_id, reviewer)] = (request_id, reviewer)
+            self._save_real_task(self._task_id("real", request_id, reviewer), request_id, reviewer)
             for number in range(self.calibration_per_assignment):
                 source = f"{request_id}|{reviewer}|{number}"
                 history = [t for t in self.calibration_tasks.values() if t.reviewer == reviewer]
@@ -303,7 +454,7 @@ class RequestService:
                     created_at=now,
                     due_at=due,
                 )
-                self.calibration_tasks[task.task_id] = task
+                self._save_calibration_task(task)
 
     def assignments(self, reviewer: str, now: datetime) -> list[dict[str, Any]]:
         """Open review tasks of a reviewer, real and calibration alike, in one shape."""
@@ -342,6 +493,7 @@ class RequestService:
             )
         return sorted(open_tasks, key=lambda t: t["task_id"])
 
+    @_atomic
     def review(
         self, task_id: str, reviewer: str, approve: bool, reason: str, now: datetime
     ) -> dict[str, Any]:
@@ -366,6 +518,7 @@ class RequestService:
         task.answer = "approve" if approve else "reject"
         task.reason = reason
         task.answered_at = now
+        self._save_calibration_task(task)
         return {"task_id": task_id, "recorded": True}
 
     def reviewer_profile(self, reviewer: str, now: datetime) -> dict[str, Any]:
@@ -381,6 +534,7 @@ class RequestService:
 
     # ------------------------------------------------------------------ time
 
+    @_atomic
     def tick(self, now: datetime) -> list[str]:
         """Apply passed deadlines to every request and settle finished ones."""
         changed = []
@@ -388,7 +542,7 @@ class RequestService:
             before = self.records[request_id]
             if before.status is Status.SETTLED:
                 continue
-            self.records[request_id] = lc.advance(before, now)
+            self._save_record(lc.advance(before, now))
             after = self._settle_if_finished(request_id, now)
             if after != before:
                 changed.append(request_id)
@@ -415,3 +569,24 @@ class RequestService:
             "votes": [[r, a] for r, a in record.votes],
             "settlement": self.settlements.get(request_id),
         }
+
+
+def open_service(
+    directory: str | Path,
+    reviewers: ReviewerRegistry,
+    context: VerificationContext,
+    **options: Any,
+) -> RequestService:
+    """A service whose state lives in ``directory`` (SQLite and files) and survives restarts.
+
+    Opening the same directory from a second process fails with
+    ``StorageError("in_use")``.
+    """
+    from orbit_watch.settlement.sqlite_ledger import SqliteLedgerAdapter
+
+    storage = Storage(directory)
+    service = RequestService(
+        SqliteLedgerAdapter(storage.db), reviewers, context, storage=storage, **options
+    )
+    service._reload()
+    return service

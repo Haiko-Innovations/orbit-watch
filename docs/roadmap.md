@@ -16,7 +16,7 @@ Every pull request that finishes a roadmap step also updates this page.
 [version 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0).
 **Phase 1 is in progress:** the decisions are approved; steps 1.1 (the request
 lifecycle), 1.2 (settlement and the points ledger), 1.3 (optimistic
-verification) and 1.4 (reviewer accuracy) are done.
+verification), 1.4 (reviewer accuracy) and 1.5 (storage) are done.
 
 | Phase 0 completion criterion | Status |
 |---|---|
@@ -58,7 +58,7 @@ the API come after.
 | ✅ **1.2 Settlement adapter and ledger** ([#12](https://github.com/Haiko-Innovations/orbit-watch/issues/12)) | Interface `fund`, `reserve`, `attest`, `settle`, `refund`. Ledger adapter: integer points, double-entry journal, idempotency keys. A scenario suite that any adapter must pass. | Deposit = rewards + refunds in every scenario; a repeated settle has no second effect. |
 | ✅ **1.3 Optimistic verification** ([#13](https://github.com/Haiko-Innovations/orbit-watch/issues/13)) | Automated report → challenge period (default 24 h, fixed in the terms) → if challenged, three pre-approved reviewers, 2 of 3 decides, nobody reviews their own delivery. Dispute rule. Reviewers are paid for completed reviews whatever the outcome. | Unchallenged, challenged-accepted, challenged-rejected and no-majority (dispute) cases tested end to end with the ledger. |
 | ✅ **1.4 Reviewer accuracy** ([#14](https://github.com/Haiko-Innovations/orbit-watch/issues/14)) | Known-answer datasets from the simulator are mixed into reviewer assignments; accuracy per reviewer. | A reviewer who approves everything shows low accuracy; tested. |
-| **1.5 Storage** ([#15](https://github.com/Haiko-Innovations/orbit-watch/issues/15)) | SQLite schema and migrations for requests, reservations, deliveries, reports, challenges and the ledger journal; content-addressed file storage. | State survives a restart; migrations tested from empty. |
+| ✅ **1.5 Storage** ([#15](https://github.com/Haiko-Innovations/orbit-watch/issues/15)) | SQLite schema and migrations for requests, reservations, deliveries, reports, challenges and the ledger journal; content-addressed file storage. | State survives a restart; migrations tested from empty. |
 | **1.6 API** ([#16](https://github.com/Haiko-Innovations/orbit-watch/issues/16)) | HTTP API for the lifecycle. Role-scoped API keys: a station key can only deliver, never move points. Idempotency keys on every mutating call. | Double delivery and double settlement have no double effect; tested through the API. |
 | **1.7 CLI** ([#17](https://github.com/Haiko-Innovations/orbit-watch/issues/17)) | `submit` and new commands for requests, reservations, challenges and reviews against the API. | The whole chain runs from the command line. |
 | **1.8 Data publication and phase 1 demo** ([#18](https://github.com/Haiko-Innovations/orbit-watch/issues/18)) | Licence (CC BY 4.0 by default), embargo of at most 30 days, file retention and permanent download URLs. A phase 1 demo and the phase 1 report. | The phase 1 completion criteria in [plan.md](plan.md#phase-1-requests-optimistic-verification-and-api-python-or-typescript-lightweight-database) are met; release 0.2.0. |
@@ -68,7 +68,7 @@ approved on 2026-11-11 ([#10](https://github.com/Haiko-Innovations/orbit-watch/i
 Step 1.1 is described in [lifecycle.md](lifecycle.md), step 1.2 in
 [settlement.md](settlement.md), step 1.3 in
 [optimistic-verification.md](optimistic-verification.md), step 1.4 in
-[reviewer-accuracy.md](reviewer-accuracy.md).
+[reviewer-accuracy.md](reviewer-accuracy.md), step 1.5 in [storage.md](storage.md).
 
 ### Phase 2 and phase 3 (later)
 

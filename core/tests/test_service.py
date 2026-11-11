@@ -249,6 +249,9 @@ def test_challenge_after_the_deadline_is_refused_and_the_result_stands(datasets)
     with pytest.raises(ServiceError) as error:
         service.challenge(rid, REQUESTER, "Too late?", h(25))
     assert error.value.code == "forbidden_in_status"
+    # A refused call changes nothing; the clock settles the request.
+    assert service.records[rid].status is Status.CHALLENGE_PERIOD
+    service.tick(h(25))
     assert service.records[rid].status is Status.SETTLED
     assert ledger.balance(STATION) == 100
 

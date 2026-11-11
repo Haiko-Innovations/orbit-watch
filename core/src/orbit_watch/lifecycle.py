@@ -30,7 +30,7 @@ from enum import StrEnum
 from typing import Any
 
 from orbit_watch.canonical import dumps_compact, sha256_bytes
-from orbit_watch.timeutil import format_utc
+from orbit_watch.timeutil import format_utc, parse_utc
 
 LIFECYCLE_VERSION = "1.0"
 MAX_EMBARGO_DAYS = 30
@@ -136,6 +136,25 @@ class Terms:
     def sha256(self) -> str:
         return sha256_bytes(dumps_compact(self.to_document()).encode("utf-8"))
 
+    @classmethod
+    def from_document(cls, doc: dict[str, Any]) -> Terms:
+        return cls(
+            request_id=doc["request_id"],
+            request_sha256=doc["request_sha256"],
+            requester=doc["requester"],
+            target_norad_id=int(doc["target_norad_id"]),
+            window_start=parse_utc(doc["window_start"]),
+            window_end=parse_utc(doc["window_end"]),
+            delivery_deadline=parse_utc(doc["delivery_deadline"]),
+            reservation_hours=doc["reservation_hours"],
+            challenge_period_hours=doc["challenge_period_hours"],
+            review_hours=doc["review_hours"],
+            verification_timeout_hours=doc["verification_timeout_hours"],
+            embargo_days=int(doc["embargo_days"]),
+            licence=doc["licence"],
+            verification_method=doc["verification_method"],
+        )
+
 
 def terms_from_request(
     request_bytes: bytes,
@@ -197,6 +216,10 @@ class RewardSplit:
         if not found and self.total <= 0:
             found.append("the deposit must be at least one point")
         return found
+
+    @classmethod
+    def from_document(cls, doc: dict[str, int]) -> RewardSplit:
+        return cls(int(doc["observer"]), int(doc["reviewer"]), int(doc["platform_fee"]))
 
     def to_document(self) -> dict[str, int]:
         return {
@@ -406,6 +429,49 @@ class RequestRecord:
                 for h in self.history
             ],
         }
+
+
+def record_from_document(doc: dict[str, Any]) -> RequestRecord:
+    """Inverse of ``RequestRecord.to_document`` (used by storage)."""
+    if doc.get("lifecycle_version") != LIFECYCLE_VERSION:
+        raise ValueError(f"unsupported lifecycle version {doc.get('lifecycle_version')!r}")
+
+    def t(value: str | None) -> datetime | None:
+        return None if value is None else parse_utc(value)
+
+    return RequestRecord(
+        request_id=doc["request_id"],
+        requester=doc["requester"],
+        status=Status(doc["status"]),
+        terms=Terms.from_document(doc["terms"]),
+        created_at=parse_utc(doc["created_at"]),
+        updated_at=parse_utc(doc["updated_at"]),
+        terms_sha256=doc["terms_sha256"],
+        funded_points=int(doc["funded_points"]),
+        split=None if doc["split"] is None else RewardSplit.from_document(doc["split"]),
+        reserved_by=doc["reserved_by"],
+        reservation_expires_at=t(doc["reservation_expires_at"]),
+        observer=doc["observer"],
+        delivery_sha256=doc["delivery_sha256"],
+        delivered_at=t(doc["delivered_at"]),
+        automated_verdict=doc["automated_verdict"],
+        report_sha256=doc["report_sha256"],
+        challenge_deadline=t(doc["challenge_deadline"]),
+        challenger=doc["challenger"],
+        reviewers=tuple(doc["reviewers"]),
+        votes=tuple((reviewer, bool(approve)) for reviewer, approve in doc["votes"]),
+        vote_reasons=tuple((reviewer, reason) for reviewer, reason in doc["vote_reasons"]),
+        challenge_reason=doc["challenge_reason"],
+        review_deadline=t(doc["review_deadline"]),
+        outcome=None if doc["outcome"] is None else Status(doc["outcome"]),
+        outcome_reason=doc["outcome_reason"],
+        history=tuple(
+            HistoryEntry(
+                parse_utc(h["at"]), h["event"], Status(h["from"]), Status(h["to"]), h["detail"]
+            )
+            for h in doc["history"]
+        ),
+    )
 
 
 def create(terms: Terms, at: datetime) -> RequestRecord:

@@ -193,3 +193,17 @@ Accepted · 2026-11-11 (with the pull request that implements step 1.4). See
 - Profiles show accuracy, approval rate and missed tasks, with flags. In
   phase 1 they inform the maintainers only; they do not change selection or
   payments.
+
+### D-15 Storage consistency
+
+Accepted · 2026-11-11 (with the pull request that implements step 1.5). See
+[storage.md](storage.md):
+
+- Each service call is one database transaction; the service keeps a working
+  copy in memory and writes every change through.
+- Any failure rolls the transaction back and reloads the state, so a refused
+  call has no side effects. (A late challenge is now refused without settling
+  the request; the next clock tick settles it.)
+- One process per service directory, enforced with SQLite's exclusive locking.
+- Files are kept by SHA-256 and never deleted; every read checks the hash.
+- Migrations are checked by hash and never edited after they are applied.
