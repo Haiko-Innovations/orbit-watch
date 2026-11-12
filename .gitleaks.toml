@@ -1,0 +1,10 @@
+# gitleaks: the built-in rules, plus one narrow exception (CI job tarkistus).
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = """Public EVM addresses (0x and 40 hex digits), for example the contract and \
+wallet addresses in contracts/deployments/, are public identifiers, not secrets. Only a \
+secret that is exactly an address is allowed; a private key (64 hex digits) still matches."""
+targetRules = ["generic-api-key"]
+regexes = ['''^0x[0-9a-fA-F]{40}$''']
