@@ -37,6 +37,8 @@ uv run python -m orbit_watch.settlement.scenarios > ../contracts/test/fixtures/s
 | Foundry | 1.8.6 | CI (`foundry-rs/foundry-toolchain`, SHA-pinned) |
 | OpenZeppelin Contracts | 5.7.0 | submodule at the release commit `cab19933…` |
 | forge-std | 1.17.0 | submodule at the release commit `f3dae6e6…` |
+| eas-contracts (interfaces only) | 1.4.0 | submodule at the tag commit `d223e172…` |
+| EAS and SchemaRegistry code for tests | Base Sepolia, 1.4.1-beta.3 and 1.3.1-beta.2 | bytecode in `test/fixtures/base-sepolia-eas/`, checked by hash |
 
 ### Updating a library
 
@@ -50,7 +52,8 @@ commit of the default branch, which is not a release. To update:
 ## Licences
 
 The Orbit Watch contracts are Apache-2.0, like the rest of the project.
-OpenZeppelin Contracts and forge-std are MIT (forge-std also Apache-2.0).
-`test/mocks/TestUSD.sol` is a worthless token for local tests only, and
-`test/helpers/EscrowHarness.sol` exposes functions without authorisation for
-tests; neither is ever deployed.
+OpenZeppelin Contracts, eas-contracts and forge-std are MIT (forge-std also
+Apache-2.0). The EAS bytecode in the test fixtures is the MIT-licensed code
+deployed on Base Sepolia.
+`test/mocks/TestUSD.sol` is a worthless token for local tests only and is
+never deployed.

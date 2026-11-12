@@ -3,6 +3,11 @@ pragma solidity 0.8.38;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Attestation} from "eas-contracts/Common.sol";
+import {IEAS} from "eas-contracts/IEAS.sol";
+import {ISchemaRegistry} from "eas-contracts/ISchemaRegistry.sol";
+import {ISchemaResolver} from "eas-contracts/resolver/ISchemaResolver.sol";
+import {OrbitWatchReviewerRegistry} from "./OrbitWatchReviewerRegistry.sol";
 
 /// @title Orbit Watch escrow
 /// @notice Holds TESTNET deposits for Orbit Watch requests and pays them out by settlement
@@ -18,16 +23,34 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /// Payouts are credited and then withdrawn by each party (`withdraw`), so a transfer that
 /// fails for one party can never block a settlement or another party's money (decision D-19).
 ///
-/// Step 2.2 has the parties' own actions (fund, cancel, reserve, deliver), settlement and
-/// withdrawal. Recording the automated result, challenges and votes are internal functions
-/// here; step 2.3 connects them to EAS attestations.
-contract OrbitWatchEscrow {
+/// The automated result and the reviewers' votes are EAS attestations (decision P2-03). The
+/// escrow is the resolver of both schemas, which it registers itself: EAS calls it with every
+/// new attestation, and an attestation the rules refuse is never created. Challenges are
+/// direct calls by the requester or the observer. Each round's three reviewers are chosen
+/// on chain from the reviewer registry; nobody picks them (decision D-20).
+contract OrbitWatchEscrow is ISchemaResolver {
     using SafeERC20 for IERC20;
 
     uint256 public constant BASE_SEPOLIA_CHAIN_ID = 84_532;
     uint256 public constant ANVIL_CHAIN_ID = 31_337;
     uint256 public constant REVIEWERS_PER_ROUND = 3;
     uint256 public constant VOTES_TO_DECIDE = 2;
+
+    /// @notice This contract's version (ISemver). Step 2.7 sets 1.0.0 for the first deployment.
+    string public constant version = "1.0.0-dev";
+
+    /// @notice The automated verification result, attested by the Orbit Watch verifier key.
+    /// `verdict` is "pass", "fail" or "inconclusive"; the recipient is the observer.
+    string public constant RESULT_SCHEMA = "string requestId,bytes32 deliverySha256,"
+        "bytes32 reportSha256,string verdict,string method,string methodVersion";
+
+    /// @notice A reviewer's vote, attested by the reviewer's own address. The recipient is the
+    /// observer, and `refUID` is the automated result's attestation.
+    string public constant VOTE_SCHEMA =
+        "string requestId,bytes32 deliverySha256,bool approve,bytes32 reasonSha256";
+
+    /// @notice Domain of the reviewer selection score (see `_selectReviewers`).
+    string public constant SELECTION_DOMAIN = "orbit-watch-reviewers/evm/1";
 
     /// @notice A request's status. `Disputed` and `Expired` are only ever reached through a
     /// deadline, so `statusOf` returns them but they are never stored.
@@ -97,6 +120,7 @@ contract OrbitWatchEscrow {
         uint128 platformFee;
         bytes32 termsHash;
         bytes32 deliverySha256;
+        bytes32 resultAttestation; // UID of the automated result's attestation
         address[3] reviewers;
     }
 
@@ -106,6 +130,19 @@ contract OrbitWatchEscrow {
     /// @notice Who receives platform fees; fixed at deployment. With no recipient (the zero
     /// address) every request must have a zero fee.
     address public immutable feeRecipient;
+
+    /// @notice The EAS contract (the predeploy 0x4200…0021 on Base Sepolia).
+    IEAS public immutable eas;
+
+    /// @notice Where each round's reviewers come from.
+    OrbitWatchReviewerRegistry public immutable registry;
+
+    /// @notice The Orbit Watch verifier key, the only attester of automated results.
+    address public immutable verifier;
+
+    /// @notice The UIDs of the two schemas, registered with this contract as their resolver.
+    bytes32 public immutable resultSchemaUid;
+    bytes32 public immutable voteSchemaUid;
 
     /// @notice Deposits of requests that are not settled yet.
     uint256 public totalHeld;
@@ -119,7 +156,8 @@ contract OrbitWatchEscrow {
     mapping(bytes32 requestId => Request) private _requests;
 
     error UnsupportedChain(uint256 chainId);
-    error InvalidToken();
+    error NotAContract(address account);
+    error InvalidVerifier();
     error InvalidSplit();
     error InvalidTerms();
     error FeeWithoutRecipient();
@@ -132,11 +170,20 @@ contract OrbitWatchEscrow {
     error InvalidDelivery();
     error InvalidVerdict();
     error NotAParty(bytes32 requestId, address challenger);
-    error InvalidReviewers();
-    error ConflictOfInterest(address reviewer);
+    error MissingReason();
+    error NotEnoughReviewers(bytes32 requestId);
+    error NotAReviewer(address account);
     error NotAssigned(bytes32 requestId, address reviewer);
     error AlreadyVoted(bytes32 requestId, address reviewer);
     error NothingToWithdraw();
+    error NotEAS();
+    error NotPayable();
+    error UnknownSchema(bytes32 schema);
+    error NotTheVerifier(address attester);
+    error WrongDelivery(bytes32 requestId);
+    error WrongRecipient(address recipient);
+    error InvalidAttestation();
+    error BatchNotSupported();
 
     event Funded(
         bytes32 indexed requestId,
@@ -148,24 +195,43 @@ contract OrbitWatchEscrow {
     event Cancelled(bytes32 indexed requestId);
     event Reserved(bytes32 indexed requestId, address indexed station, uint64 until);
     event Delivered(bytes32 indexed requestId, address indexed station, bytes32 deliverySha256);
-    event VerificationRecorded(bytes32 indexed requestId, Verdict verdict);
+    event VerificationRecorded(bytes32 indexed requestId, Verdict verdict, bytes32 attestation);
+    event Challenged(bytes32 indexed requestId, address indexed challenger, bytes32 reasonSha256);
     event ReviewStarted(
         bytes32 indexed requestId, address indexed challenger, address[3] reviewers, uint64 until
     );
-    event Voted(bytes32 indexed requestId, address indexed reviewer, bool approve);
+    event Voted(
+        bytes32 indexed requestId, address indexed reviewer, bool approve, bytes32 attestation
+    );
     event Settled(bytes32 indexed requestId, Status outcome);
     event Credited(bytes32 indexed requestId, address indexed party, uint256 amount, Reason reason);
     event Withdrawn(address indexed party, uint256 amount);
 
-    // A zero fee recipient is allowed on purpose: it means no platform fees.
-    // forge-lint: disable-next-line(missing-zero-check)
-    constructor(IERC20 token_, address feeRecipient_) {
+    constructor(
+        IERC20 token_,
+        // A zero fee recipient is allowed on purpose: it means no platform fees.
+        // forge-lint: disable-next-line(missing-zero-check)
+        address feeRecipient_,
+        IEAS eas_,
+        OrbitWatchReviewerRegistry registry_,
+        address verifier_
+    ) {
         if (block.chainid != BASE_SEPOLIA_CHAIN_ID && block.chainid != ANVIL_CHAIN_ID) {
             revert UnsupportedChain(block.chainid);
         }
-        if (address(token_).code.length == 0) revert InvalidToken();
+        _requireContract(address(token_));
+        _requireContract(address(eas_));
+        _requireContract(address(registry_));
+        if (verifier_ == address(0)) revert InvalidVerifier();
         token = token_;
         feeRecipient = feeRecipient_;
+        eas = eas_;
+        registry = registry_;
+        verifier = verifier_;
+        // Non-revocable: a result or a vote, once attested, stands (P2-03).
+        ISchemaRegistry schemas = eas_.getSchemaRegistry();
+        resultSchemaUid = schemas.register(RESULT_SCHEMA, ISchemaResolver(address(this)), false);
+        voteSchemaUid = schemas.register(VOTE_SCHEMA, ISchemaResolver(address(this)), false);
     }
 
     // ------------------------------------------------------------------ views
@@ -278,6 +344,19 @@ contract OrbitWatchEscrow {
         _settle(requestId, r, outcome);
     }
 
+    /// @notice Challenge the automated result during the challenge period, as the requester
+    /// or the observer, with the SHA-256 of the reason. Three reviewers are chosen at once.
+    function challenge(bytes32 requestId, bytes32 reasonSha256) external {
+        Request storage r = _known(requestId);
+        _expect(requestId, r, Status.ChallengePeriod);
+        if (msg.sender != r.requester && msg.sender != r.station) {
+            revert NotAParty(requestId, msg.sender);
+        }
+        if (reasonSha256 == bytes32(0)) revert MissingReason();
+        emit Challenged(requestId, msg.sender, reasonSha256);
+        _startReview(requestId, r, msg.sender);
+    }
+
     /// @notice Transfer everything credited to the caller.
     function withdraw() external returns (uint256 amount) {
         amount = owed[msg.sender];
@@ -288,42 +367,111 @@ contract OrbitWatchEscrow {
         emit Withdrawn(msg.sender, amount);
     }
 
-    // ------------------------------------------------------------------ verification (step 2.3)
+    // ------------------------------------------------------------------ EAS resolver
+
+    /// @notice The schemas take no payments.
+    function isPayable() external pure returns (bool) {
+        return false;
+    }
+
+    /// @notice Called by EAS with each new attestation of the two schemas. Reverts, so that
+    /// the attestation is not created, unless the rules accept it.
+    function attest(Attestation calldata attestation) external payable returns (bool) {
+        _onlyEAS();
+        _onAttest(attestation);
+        return true;
+    }
+
+    /// @notice Batches of two or more attestations are refused: attest one at a time. (EAS
+    /// passes a batch of one to `attest`.)
+    function multiAttest(Attestation[] calldata, uint256[] calldata)
+        external
+        payable
+        returns (bool)
+    {
+        _onlyEAS();
+        revert BatchNotSupported();
+    }
+
+    /// @notice Nothing can be revoked (the schemas are not revocable either).
+    function revoke(Attestation calldata) external payable returns (bool) {
+        _onlyEAS();
+        return false;
+    }
+
+    function multiRevoke(Attestation[] calldata, uint256[] calldata)
+        external
+        payable
+        returns (bool)
+    {
+        _onlyEAS();
+        return false;
+    }
+
+    function _onAttest(Attestation calldata a) private {
+        if (a.expirationTime != 0) revert InvalidAttestation();
+        if (a.schema == resultSchemaUid) {
+            if (a.attester != verifier) revert NotTheVerifier(a.attester);
+            (string memory id, bytes32 delivery, bytes32 report, string memory verdict,,) =
+                abi.decode(a.data, (string, bytes32, bytes32, string, string, string));
+            bytes32 requestId = keccak256(bytes(id));
+            Request storage r = _attested(requestId, a, Status.Delivered, delivery);
+            if (report == bytes32(0)) revert InvalidAttestation();
+            _recordVerification(requestId, r, _verdict(verdict), a.uid);
+        } else if (a.schema == voteSchemaUid) {
+            (string memory id, bytes32 delivery, bool approve, bytes32 reason) =
+                abi.decode(a.data, (string, bytes32, bool, bytes32));
+            bytes32 requestId = keccak256(bytes(id));
+            Request storage r = _attested(requestId, a, Status.InReview, delivery);
+            if (reason == bytes32(0)) revert MissingReason();
+            if (a.refUID != r.resultAttestation) revert InvalidAttestation();
+            if (!registry.isReviewer(a.attester)) revert NotAReviewer(a.attester);
+            _vote(requestId, r, a.attester, approve, a.uid);
+        } else {
+            revert UnknownSchema(a.schema);
+        }
+    }
+
+    /// @dev The request an attestation is about, in the expected status, for its delivery and
+    /// with the observer as the recipient.
+    function _attested(bytes32 requestId, Attestation calldata a, Status expected, bytes32 delivery)
+        private
+        view
+        returns (Request storage r)
+    {
+        r = _known(requestId);
+        _expect(requestId, r, expected);
+        if (delivery != r.deliverySha256) revert WrongDelivery(requestId);
+        if (a.recipient != r.station) revert WrongRecipient(a.recipient);
+    }
 
     /// @dev The automated result. Pass or fail starts the challenge period; inconclusive
-    /// goes straight to the three reviewers.
-    function _recordVerification(bytes32 requestId, Verdict verdict, address[3] memory reviewers)
-        internal
-    {
-        Request storage r = _known(requestId);
-        _expect(requestId, r, Status.Delivered);
-        if (verdict == Verdict.None) revert InvalidVerdict();
+    /// goes straight to three reviewers.
+    function _recordVerification(
+        bytes32 requestId,
+        Request storage r,
+        Verdict verdict,
+        bytes32 attestation
+    ) private {
         r.verdict = verdict;
-        emit VerificationRecorded(requestId, verdict);
+        r.resultAttestation = attestation;
+        emit VerificationRecorded(requestId, verdict, attestation);
         if (verdict == Verdict.Inconclusive) {
-            _startReview(requestId, r, address(0), reviewers);
+            _startReview(requestId, r, address(0));
         } else {
             r.status = Status.ChallengePeriod;
             r.stageEndsAt = _after(r.challengeSeconds);
         }
     }
 
-    /// @dev A challenge by the requester or the observer during the challenge period.
-    function _challenge(bytes32 requestId, address challenger, address[3] memory reviewers)
-        internal
-    {
-        Request storage r = _known(requestId);
-        _expect(requestId, r, Status.ChallengePeriod);
-        if (challenger != r.requester && challenger != r.station) {
-            revert NotAParty(requestId, challenger);
-        }
-        _startReview(requestId, r, challenger, reviewers);
-    }
-
     /// @dev A vote by one of the round's reviewers. Two equal votes decide.
-    function _vote(bytes32 requestId, address reviewer, bool approve) internal {
-        Request storage r = _known(requestId);
-        _expect(requestId, r, Status.InReview);
+    function _vote(
+        bytes32 requestId,
+        Request storage r,
+        address reviewer,
+        bool approve,
+        bytes32 attestation
+    ) private {
         uint8 bit = 0;
         for (uint256 i; i < REVIEWERS_PER_ROUND; ++i) {
             if (r.reviewers[i] == reviewer) {
@@ -336,7 +484,7 @@ contract OrbitWatchEscrow {
         if (r.voted & bit != 0) revert AlreadyVoted(requestId, reviewer);
         r.voted |= bit;
         if (approve) r.approved |= bit;
-        emit Voted(requestId, reviewer, approve);
+        emit Voted(requestId, reviewer, approve, attestation);
 
         uint256 votes = _count(r.voted);
         uint256 approvals = _count(r.approved);
@@ -349,28 +497,44 @@ contract OrbitWatchEscrow {
 
     // ------------------------------------------------------------------ internals
 
-    function _startReview(
-        bytes32 requestId,
-        Request storage r,
-        address challenger,
-        address[3] memory reviewers
-    ) private {
-        (address a, address b, address c) = (reviewers[0], reviewers[1], reviewers[2]);
-        if (a == address(0) || b == address(0) || c == address(0) || a == b || a == c || b == c) {
-            revert InvalidReviewers();
-        }
-        _checkIndependent(r, a);
-        _checkIndependent(r, b);
-        _checkIndependent(r, c);
+    function _startReview(bytes32 requestId, Request storage r, address challenger) private {
+        address[3] memory reviewers = _selectReviewers(requestId, r);
         r.status = Status.InReview;
         r.reviewers = reviewers;
         r.stageEndsAt = _after(r.reviewSeconds);
         emit ReviewStarted(requestId, challenger, reviewers, r.stageEndsAt);
     }
 
-    /// @dev Neither the requester nor the observer can review their own request.
-    function _checkIndependent(Request storage r, address reviewer) private view {
-        if (reviewer == r.requester || reviewer == r.station) revert ConflictOfInterest(reviewer);
+    /// @dev The round's reviewers: of the registered reviewers who are neither the requester
+    /// nor the observer and affiliated with neither, the three with the lowest
+    /// keccak256(abi.encode(SELECTION_DOMAIN, requestId, deliverySha256, reviewer)). Nobody
+    /// picks them, and anyone can recompute the choice.
+    function _selectReviewers(bytes32 requestId, Request storage r)
+        private
+        view
+        returns (address[3] memory chosen)
+    {
+        address[] memory candidates = registry.eligibleReviewers(r.requester, r.station);
+        uint256[3] memory scores;
+        uint256 n = 0;
+        for (uint256 k; k < candidates.length; ++k) {
+            address candidate = candidates[k];
+            if (candidate == r.requester || candidate == r.station) continue;
+            uint256 score = uint256(
+                keccak256(abi.encode(SELECTION_DOMAIN, requestId, r.deliverySha256, candidate))
+            );
+            if (n == REVIEWERS_PER_ROUND && score >= scores[2]) continue;
+            uint256 i = n < REVIEWERS_PER_ROUND ? n : REVIEWERS_PER_ROUND - 1;
+            while (i > 0 && scores[i - 1] > score) {
+                scores[i] = scores[i - 1];
+                chosen[i] = chosen[i - 1];
+                --i;
+            }
+            scores[i] = score;
+            chosen[i] = candidate;
+            if (n < REVIEWERS_PER_ROUND) ++n;
+        }
+        if (n < REVIEWERS_PER_ROUND) revert NotEnoughReviewers(requestId);
     }
 
     /// @dev Settlement rules 1.0 (D-12): the observer reward and the platform fee only when
@@ -425,6 +589,23 @@ contract OrbitWatchEscrow {
             return r.verdict == Verdict.Pass ? Status.Accepted : Status.Rejected;
         }
         if (s == Status.InReview) return Status.Disputed;
+    }
+
+    function _verdict(string memory verdict) private pure returns (Verdict) {
+        bytes32 v = keccak256(bytes(verdict));
+        if (v == keccak256("pass")) return Verdict.Pass;
+        if (v == keccak256("fail")) return Verdict.Fail;
+        if (v == keccak256("inconclusive")) return Verdict.Inconclusive;
+        revert InvalidVerdict();
+    }
+
+    function _onlyEAS() private view {
+        if (msg.sender != address(eas)) revert NotEAS();
+        if (msg.value != 0) revert NotPayable();
+    }
+
+    function _requireContract(address account) private view {
+        if (account.code.length == 0) revert NotAContract(account);
     }
 
     function _known(bytes32 requestId) private view returns (Request storage r) {

@@ -30,8 +30,16 @@ mainnet or real money.
   `contracts/test/fixtures/settlement-scenarios.json`
   (`python -m orbit_watch.settlement.scenarios`) and replayed against the
   contract; invariant tests check every settlement against the rules.
-- Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project and
-  D-19 on settlement on chain.
+- Attestations and reviewer rounds on chain (phase 2, step 2.3): the automated
+  result and reviewer votes are EAS attestations with two schemas that the
+  escrow registers and resolves itself, so an attestation the rules refuse is
+  never created. Challenges are transactions by the requester or the observer.
+  Each round's three reviewers are chosen on chain from the new
+  `OrbitWatchReviewerRegistry` by the phase 1 rule, honouring affiliations.
+  Tests run against the EAS bytecode of Base Sepolia's predeploys (checked by
+  hash), with interfaces from eas-contracts v1.4.0. See `docs/attestations.md`.
+- Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project,
+  D-19 on settlement on chain and D-20 on attestations.
 
 ## [0.2.0] - 2026-11-11
 

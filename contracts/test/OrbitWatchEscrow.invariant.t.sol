@@ -3,18 +3,23 @@ pragma solidity 0.8.38;
 
 import {StdInvariant} from "forge-std/StdInvariant.sol";
 import {Test} from "forge-std/Test.sol";
+import {IEAS, AttestationRequest, AttestationRequestData} from "eas-contracts/IEAS.sol";
 import {OrbitWatchEscrow} from "../src/OrbitWatchEscrow.sol";
-import {EscrowHarness} from "./helpers/EscrowHarness.sol";
+import {OrbitWatchReviewerRegistry} from "../src/OrbitWatchReviewerRegistry.sol";
+import {BaseSepoliaEas} from "./helpers/BaseSepoliaEas.sol";
 import {TestUSD} from "./mocks/TestUSD.sol";
 
 /// @notice Drives many requests at once through random but valid histories: funding,
 /// cancelling, reserving, delivering, automated results, challenges, votes, settling,
-/// withdrawing and time passing. Every settlement is checked against settlement rules 1.0,
-/// and a stranger keeps trying to take money.
+/// withdrawing and time passing. Results and votes are EAS attestations. Every settlement is
+/// checked against settlement rules 1.0, and a stranger keeps trying to take money or to
+/// attest.
 contract EscrowHandler is Test {
-    EscrowHarness public immutable escrow;
+    OrbitWatchEscrow public immutable escrow;
     TestUSD public immutable usd;
+    IEAS public immutable eas;
     address public immutable platform;
+    address public immutable verifier;
     address public immutable stranger = makeAddr("stranger");
 
     address[2] internal requesters = [makeAddr("requester A"), makeAddr("requester B")];
@@ -30,19 +35,32 @@ contract EscrowHandler is Test {
     uint256 public minted;
 
     bytes32[] public keys;
+    mapping(bytes32 requestId => string id) internal names;
     mapping(bytes32 requestId => uint256 count) public settlements;
     string public violation; // empty while every check holds
 
-    constructor(EscrowHarness escrow_, TestUSD usd_, address platform_) {
+    constructor(
+        OrbitWatchEscrow escrow_,
+        TestUSD usd_,
+        IEAS eas_,
+        address platform_,
+        address verifier_
+    ) {
         escrow = escrow_;
         usd = usd_;
+        eas = eas_;
         platform = platform_;
+        verifier = verifier_;
         for (uint256 i; i < requesters.length; ++i) {
             usd.mint(requesters[i], START_BALANCE);
             minted += START_BALANCE;
             vm.prank(requesters[i]);
             usd.approve(address(escrow), type(uint256).max);
         }
+    }
+
+    function reviewersInPool() external view returns (address[4] memory) {
+        return reviewerPool;
     }
 
     // ------------------------------------------------------------------ actions
@@ -62,10 +80,12 @@ contract EscrowHandler is Test {
             challengeSeconds: uint32(bound(timing >> 128, 1 hours, 2 days)),
             reviewSeconds: uint32(bound(timing >> 160, 1 hours, 3 days))
         });
-        bytes32 id = keccak256(abi.encode("request", keys.length));
+        string memory name = string.concat("SIM-REQ-", vm.toString(keys.length));
+        bytes32 id = keccak256(bytes(name));
         vm.prank(requesters[who % requesters.length]);
         escrow.fund(id, terms, OrbitWatchEscrow.Split(observer, reviewer, fee));
         keys.push(id);
+        names[id] = name;
     }
 
     function cancel(uint256 k) external {
@@ -89,22 +109,24 @@ contract EscrowHandler is Test {
         (bytes32 id, bool found) = _pick(k);
         if (!found || escrow.statusOf(id) != OrbitWatchEscrow.Status.Reserved) return;
         vm.prank(escrow.getRequest(id).station);
-        escrow.deliver(id, keccak256(abi.encode("delivery", id)));
+        escrow.deliver(id, _delivery(id));
     }
 
-    function verify(uint256 k, uint256 verdict, uint256 skipReviewer) external {
+    function verify(uint256 k, uint256 verdict) external {
         (bytes32 id, bool found) = _pick(k);
         if (!found || escrow.statusOf(id) != OrbitWatchEscrow.Status.Delivered) return;
-        escrow.recordVerification(
-            id, OrbitWatchEscrow.Verdict(1 + verdict % 3), _round(skipReviewer)
-        );
+        string[3] memory verdicts = ["pass", "fail", "inconclusive"];
+        AttestationRequest memory request = _resultRequest(id, verdicts[verdict % 3]);
+        vm.prank(verifier);
+        eas.attest(request);
     }
 
-    function challenge(uint256 k, bool byRequester, uint256 skipReviewer) external {
+    function challenge(uint256 k, bool byRequester) external {
         (bytes32 id, bool found) = _pick(k);
         if (!found || escrow.statusOf(id) != OrbitWatchEscrow.Status.ChallengePeriod) return;
         OrbitWatchEscrow.Request memory r = escrow.getRequest(id);
-        escrow.challenge(id, byRequester ? r.requester : r.station, _round(skipReviewer));
+        vm.prank(byRequester ? r.requester : r.station);
+        escrow.challenge(id, keccak256("reason"));
     }
 
     function vote(uint256 k, uint256 which, bool approve) external {
@@ -113,7 +135,9 @@ contract EscrowHandler is Test {
         OrbitWatchEscrow.Request memory r = escrow.getRequest(id);
         uint256 i = which % 3;
         if (r.voted & (uint256(1) << i) != 0) return;
-        escrow.vote(id, r.reviewers[i], approve);
+        AttestationRequest memory request = _voteRequest(id, approve);
+        vm.prank(r.reviewers[i]);
+        eas.attest(request);
     }
 
     function settle(uint256 k) external {
@@ -154,22 +178,33 @@ contract EscrowHandler is Test {
         }
     }
 
-    /// @dev A stranger tries everything that could move someone else's money.
+    /// @dev A stranger tries everything that could move someone else's money or decide a
+    /// request: withdraw, cancel, deliver, attest a result and vote.
     function strangerTries(uint256 k) external {
         (bytes32 id, bool found) = _pick(k);
-        vm.startPrank(stranger);
+        vm.prank(stranger);
         try escrow.withdraw() {
             _fail("a stranger withdrew");
         } catch {}
-        if (found) {
-            try escrow.cancel(id) {
-                _fail("a stranger cancelled");
-            } catch {}
-            try escrow.deliver(id, keccak256("forged")) {
-                _fail("a stranger delivered");
-            } catch {}
-        }
-        vm.stopPrank();
+        if (!found) return;
+        vm.prank(stranger);
+        try escrow.cancel(id) {
+            _fail("a stranger cancelled");
+        } catch {}
+        vm.prank(stranger);
+        try escrow.deliver(id, keccak256("forged")) {
+            _fail("a stranger delivered");
+        } catch {}
+        AttestationRequest memory result = _resultRequest(id, "pass");
+        vm.prank(stranger);
+        try eas.attest(result) {
+            _fail("a stranger attested a result");
+        } catch {}
+        AttestationRequest memory ballot = _voteRequest(id, true);
+        vm.prank(stranger);
+        try eas.attest(ballot) {
+            _fail("a stranger voted");
+        } catch {}
     }
 
     function wait(uint256 seconds_) external {
@@ -188,6 +223,10 @@ contract EscrowHandler is Test {
         settlements[id] += 1;
         bool accepted = outcome == OrbitWatchEscrow.Status.Accepted;
         uint256 deposit = uint256(r.observerReward) + 3 * uint256(r.reviewerReward) + r.platformFee;
+        uint256 votes;
+        for (uint256 i; i < 3; ++i) {
+            if (r.voted & (uint256(1) << i) != 0) ++votes;
+        }
         address[] memory everyone = allParties();
         uint256 total;
         for (uint256 p; p < everyone.length; ++p) {
@@ -201,10 +240,6 @@ contract EscrowHandler is Test {
                 }
             }
             if (party == r.requester) {
-                uint256 votes;
-                for (uint256 i; i < 3; ++i) {
-                    if (r.voted & (uint256(1) << i) != 0) ++votes;
-                }
                 expected += deposit - votes * r.reviewerReward
                     - (accepted ? uint256(r.observerReward) + r.platformFee : 0);
             }
@@ -226,13 +261,45 @@ contract EscrowHandler is Test {
         return (keys[k % keys.length], true);
     }
 
-    /// @dev Three different reviewers from the pool of four, leaving one out.
-    function _round(uint256 skipReviewer) internal view returns (address[3] memory round) {
-        uint256 left = skipReviewer % reviewerPool.length;
-        uint256 n;
-        for (uint256 i; i < reviewerPool.length; ++i) {
-            if (i != left) round[n++] = reviewerPool[i];
-        }
+    function _delivery(bytes32 id) internal pure returns (bytes32) {
+        return keccak256(abi.encode("delivery", id));
+    }
+
+    function _resultRequest(bytes32 id, string memory verdict)
+        internal
+        view
+        returns (AttestationRequest memory)
+    {
+        bytes memory data =
+            abi.encode(names[id], _delivery(id), keccak256("report"), verdict, "method", "1");
+        return _request(escrow.resultSchemaUid(), id, bytes32(0), data);
+    }
+
+    function _voteRequest(bytes32 id, bool approve)
+        internal
+        view
+        returns (AttestationRequest memory)
+    {
+        bytes memory data = abi.encode(names[id], _delivery(id), approve, keccak256("reason"));
+        return _request(escrow.voteSchemaUid(), id, escrow.getRequest(id).resultAttestation, data);
+    }
+
+    function _request(bytes32 schema, bytes32 id, bytes32 refUid, bytes memory data)
+        internal
+        view
+        returns (AttestationRequest memory)
+    {
+        return AttestationRequest({
+            schema: schema,
+            data: AttestationRequestData({
+                recipient: escrow.getRequest(id).station,
+                expirationTime: 0,
+                revocable: false,
+                refUID: refUid,
+                data: data,
+                value: 0
+            })
+        });
     }
 
     function _owedNow() internal view returns (uint256[] memory owed) {
@@ -262,15 +329,22 @@ contract EscrowHandler is Test {
 }
 
 /// @notice Properties that hold after any sequence of the handler's actions.
-contract OrbitWatchEscrowInvariantTest is StdInvariant, Test {
+contract OrbitWatchEscrowInvariantTest is StdInvariant, BaseSepoliaEas {
     TestUSD internal usd;
-    EscrowHarness internal escrow;
+    OrbitWatchEscrow internal escrow;
     EscrowHandler internal handler;
 
     function setUp() public {
+        IEAS eas = _installEas();
         usd = new TestUSD();
-        escrow = new EscrowHarness(usd, makeAddr("platform"));
-        handler = new EscrowHandler(escrow, usd, makeAddr("platform"));
+        OrbitWatchReviewerRegistry registry = new OrbitWatchReviewerRegistry(address(this));
+        escrow =
+            new OrbitWatchEscrow(usd, makeAddr("platform"), eas, registry, makeAddr("verifier"));
+        handler = new EscrowHandler(escrow, usd, eas, makeAddr("platform"), makeAddr("verifier"));
+        address[4] memory pool = handler.reviewersInPool();
+        for (uint256 i; i < pool.length; ++i) {
+            registry.addReviewer(pool[i]);
+        }
         bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = EscrowHandler.fund.selector;
         selectors[1] = EscrowHandler.cancel.selector;
@@ -288,7 +362,7 @@ contract OrbitWatchEscrowInvariantTest is StdInvariant, Test {
     }
 
     /// @notice Every settlement paid each party exactly what the rules say, nobody withdrew
-    /// more or less than they were owed, and the stranger moved no money.
+    /// more or less than they were owed, and the stranger moved no money and decided nothing.
     function invariant_EveryCheckHolds() public view {
         assertEq(handler.violation(), "");
     }

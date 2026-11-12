@@ -410,3 +410,33 @@ Accepted · 2026-11-11 (with the pull request that implements step 2.2). See
 - The phase 1 settlement scenario suite is exported from Python to a fixture
   that the contract tests replay; a Python test keeps the fixture current, so
   the two implementations cannot drift apart unnoticed.
+
+### D-20 Attestations and reviewer rounds on chain
+
+Accepted · 2026-11-12 (with the pull request that implements step 2.3). See
+[attestations.md](attestations.md):
+
+- **The escrow is the EAS resolver** of both schemas and registers them itself,
+  not revocable. EAS calls it with each new attestation, so a result or a vote
+  the rules refuse is never created, and the public record holds only
+  attestations that counted.
+- **Readable fields.** The request ID is a string, and the verdict is `pass`,
+  `fail` or `inconclusive`, so attestations can be read without Orbit Watch
+  code. The recipient is the observer, and a vote references the automated
+  result (`refUID`).
+- **Reviewers are chosen on chain** from the reviewer registry by the phase 1
+  rule (lowest score over the request, the delivery and the reviewer;
+  Keccak-256 over addresses). Affiliations are kept in the registry. A removed
+  reviewer's vote no longer counts. Challenges are plain transactions by the
+  requester or the observer.
+- **The verifier key is fixed at deployment.** A compromised verifier can only
+  attest results that the requester or the observer can still challenge.
+- **One attestation at a time.** Batches of two or more are refused. Nothing
+  needs them, and it keeps loops over outside input out of the escrow.
+- **Tested against Base Sepolia's EAS code.** The tests place the bytecode of
+  the implementations behind Base Sepolia's EAS predeploys (EAS 1.4.1-beta.3,
+  SchemaRegistry 1.3.1-beta.2, hashes checked) at the predeploy addresses. The
+  interfaces come from eas-contracts v1.4.0 (MIT), a submodule pinned by
+  commit and updated by hand like the others (D-18).
+- Open: an observer could grind the delivered file to steer reviewer
+  selection, as in phase 1.
