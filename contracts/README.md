@@ -39,6 +39,7 @@ uv run python -m orbit_watch.settlement.scenarios > ../contracts/test/fixtures/s
 | forge-std | 1.17.0 | submodule at the release commit `f3dae6e6…` |
 | eas-contracts (interfaces only) | 1.4.0 | submodule at the tag commit `d223e172…` |
 | EAS and SchemaRegistry code for tests | Base Sepolia, 1.4.1-beta.3 and 1.3.1-beta.2 | bytecode in `test/fixtures/base-sepolia-eas/`, checked by hash |
+| Safe code for tests | SafeL2 and SafeProxyFactory 1.4.1 (canonical) | bytecode in `test/fixtures/base-sepolia-safe/`, checked by hash |
 
 ### Updating a library
 
@@ -49,11 +50,35 @@ commit of the default branch, which is not a release. To update:
 2. `git -C contracts/lib/openzeppelin-contracts fetch --tags && git -C contracts/lib/openzeppelin-contracts checkout vX.Y.Z`
 3. Run the tests, update this table and the changelog, and open a pull request.
 
+## Privileges: who can change what
+
+Phase 2 runs on the Base Sepolia **testnet** only. Decisions
+[P2-05](../docs/decisions.md#p2-05-one-non-upgradeable-escrow-contract),
+[P2-07](../docs/decisions.md#p2-07-reviewer-registry-behind-a-safe-and-a-timelock)
+and [D-21](../docs/decisions.md#d-21-governance-of-the-reviewer-registry).
+
+| Contract | Privileged role | What it can do | What it cannot do |
+|---|---|---|---|
+| `OrbitWatchEscrow` | **none**: no owner, no administrator, no upgrade | | Nobody can take a deposit, change a request's split or terms, or change the token, the fee recipient, the EAS contract, the registry or the verifier key. Money leaves only by settlement rules 1.0, to the party it is owed to. |
+| `OrbitWatchEscrow` | the **verifier key** (fixed at deployment) | Attest the automated result of a delivered request. | Anything else. A wrong result can be challenged by the requester or the observer. |
+| `OrbitWatchReviewerRegistry` | its **owner**, the timelock | Add and remove reviewers (at most 64) and set affiliations. A removed reviewer's votes stop counting at once, also in rounds under way. | Choose a round's reviewers (the escrow does that by formula), vote, or touch any money. |
+| `TimelockController` (OpenZeppelin) | **proposer and canceller**: the Safe | Schedule a change, which can be carried out **48 hours** later at the earliest; cancel a scheduled change. | Shorten the 48 hours or change roles, except through the same 48-hour process. |
+| | **executor**: anyone | Carry out a scheduled change once its delay has passed. | Anything not scheduled. |
+| | **administrator**: none but the timelock itself | | |
+| Safe 1.4.1 (2 of 3) | its **three signers** | Any two together propose or cancel changes through the timelock. | One signer alone: nothing. |
+
+Every change to the reviewer list is therefore signed by two of the three
+signers and visible on chain for 48 hours before it takes effect.
+`script/OrbitWatchGovernance.sol` deploys this set-up, and the tests use the
+same function. It refuses a Safe that is not 2-of-3. The signers are chosen
+before the testnet deployment (step 2.7).
+
 ## Licences
 
 The Orbit Watch contracts are Apache-2.0, like the rest of the project.
 OpenZeppelin Contracts, eas-contracts and forge-std are MIT (forge-std also
 Apache-2.0). The EAS bytecode in the test fixtures is the MIT-licensed code
-deployed on Base Sepolia.
+deployed on Base Sepolia. The Safe bytecode in the test fixtures is LGPL-3.0
+and is used only in tests.
 `test/mocks/TestUSD.sol` is a worthless token for local tests only and is
 never deployed.

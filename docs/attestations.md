@@ -79,8 +79,10 @@ attestation. It starts a reviewer round at once.
 
 Reviewers are listed in the reviewer registry, each with optional
 **affiliations**: parties whose requests and deliveries they must never review
-([D-13](decisions.md#d-13-optimistic-verification-rules)). Step 2.4 puts the
-registry behind a Safe multisig and a 48-hour public timelock.
+([D-13](decisions.md#d-13-optimistic-verification-rules)). The registry is
+owned by a 48-hour public timelock whose only proposer is a Safe 2-of-3
+multisig, so every change needs two signers and is visible for two days first
+(see [who can change what](../contracts/README.md#privileges-who-can-change-what)).
 
 When a round starts, the eligible reviewers are the registered ones who are
 neither the requester nor the observer and are affiliated with neither. The

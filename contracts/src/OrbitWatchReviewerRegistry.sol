@@ -8,9 +8,11 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 /// @title Orbit Watch reviewer registry
 /// @notice The pre-approved reviewers and their declared affiliations (decision D-13), on the
 /// TESTNET. The escrow chooses each round's reviewers from this list.
-/// @dev The owner adds and removes reviewers and affiliations. Step 2.4 makes the owner an
-/// OpenZeppelin TimelockController whose proposer is a Safe multisig (decision P2-07), so
-/// every change is public for 48 hours before it takes effect.
+/// @dev The owner adds and removes reviewers and affiliations. On the testnet the owner is an
+/// OpenZeppelin TimelockController whose only proposer is a Safe 2-of-3 multisig (decisions
+/// P2-07 and D-21), so every change needs two signers and is public for 48 hours before it
+/// takes effect. The initial reviewers are set at deployment, so no single person ever owns
+/// the registry (see script/OrbitWatchGovernance.sol).
 contract OrbitWatchReviewerRegistry is Ownable2Step {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -32,9 +34,20 @@ contract OrbitWatchReviewerRegistry is Ownable2Step {
     event ReviewerRemoved(address indexed reviewer);
     event AffiliationSet(address indexed reviewer, address indexed party, bool affiliated);
 
-    constructor(address owner_) Ownable(owner_) {}
+    constructor(address owner_, address[] memory initialReviewers) Ownable(owner_) {
+        for (uint256 i; i < initialReviewers.length; ++i) {
+            _add(initialReviewers[i]);
+        }
+    }
 
     function addReviewer(address reviewer) external onlyOwner {
+        _add(reviewer);
+    }
+
+    // The constructor adds the initial reviewers in a loop; a bad entry must make the whole
+    // deployment fail, so these refusals inside that loop are intended.
+    // forge-lint: disable-next-item(require-revert-in-loop)
+    function _add(address reviewer) private {
         if (reviewer == address(0)) revert InvalidAddress();
         if (_reviewers.length() >= MAX_REVIEWERS) revert TooManyReviewers();
         if (!_reviewers.add(reviewer)) revert AlreadyListed(reviewer);

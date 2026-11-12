@@ -38,8 +38,16 @@ mainnet or real money.
   `OrbitWatchReviewerRegistry` by the phase 1 rule, honouring affiliations.
   Tests run against the EAS bytecode of Base Sepolia's predeploys (checked by
   hash), with interfaces from eas-contracts v1.4.0. See `docs/attestations.md`.
+- Governance of the reviewer registry (phase 2, step 2.4): the registry is
+  owned from its deployment by an OpenZeppelin `TimelockController` with a
+  48-hour minimum delay, whose only proposer and canceller is a Safe 2-of-3
+  multisig; anyone may execute a change after its delay, and the timelock has
+  no administrator. `script/OrbitWatchGovernance.sol` deploys the set-up and
+  refuses any other Safe. Tests run against the canonical Safe 1.4.1 bytecode.
+  The privileges are listed in `contracts/README.md`. The registry's
+  constructor now takes the initial reviewers.
 - Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project,
-  D-19 on settlement on chain and D-20 on attestations.
+  D-19 on settlement on chain, D-20 on attestations and D-21 on governance.
 
 ## [0.2.0] - 2026-11-11
 
