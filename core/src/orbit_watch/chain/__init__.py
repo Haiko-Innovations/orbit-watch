@@ -1,14 +1,20 @@
-"""Talking to the Orbit Watch contracts (phase 2, step 2.5).
+"""Talking to the Orbit Watch contracts (phase 2, steps 2.5 and 2.6).
 
 **Testnet only.** Everything here refuses every chain except Base Sepolia
 (chain ID 84532) and a local Anvil chain (31337). Needs the ``evm`` extra
 (web3.py, decision P2-08): ``pip install "orbit-watch[evm]"``.
 
-* ``OrbitWatchChain`` (in ``orbit_watch.chain.client``) reads the escrow and
-  sends transactions and EAS attestations, each signed by the party's own
-  account.
+* ``OrbitWatchChain`` (in ``orbit_watch.chain.client``) reads the escrow,
+  builds unsigned transactions and sends transactions and EAS attestations,
+  each signed by the party's own account.
+* ``orbit_watch.chain.link`` puts the request service on the chain (step 2.6):
+  the parties sign, the service follows the escrow's events.
+* ``orbit_watch.chain.wallet`` signs on the user's side, with an encrypted
+  keystore (step 2.6).
 * ``orbit_watch.settlement.evm`` builds the ``evm-testnet`` settlement adapter
-  on top of it.
+  on top of the client.
+
+This module itself imports no web3 code except where a function says so.
 """
 
 from __future__ import annotations
@@ -27,6 +33,9 @@ SUPPORTED_CHAINS = {
 EXPLORERS = {BASE_SEPOLIA_CHAIN_ID: "https://sepolia.basescan.org"}
 # Shown with every chain-related output (decision P2-10).
 TESTNET_NOTICE = "Base Sepolia testnet, no real value"
+LOCAL_NOTICE = "local Anvil test chain, no real value"
+# Parties that act on chain from an address no party has registered (step 2.6).
+WALLET_PREFIX = "wallet:"
 
 # Names of the escrow's enums, in their Solidity order.
 STATUSES = (
@@ -108,3 +117,17 @@ def snake_case(name: str) -> str:
 def explorer_link(chain_id: int, tx_hash: str) -> str | None:
     base = EXPLORERS.get(chain_id)
     return f"{base}/tx/{tx_hash}" if base else None
+
+
+def notice(chain_id: int) -> str:
+    """The label every chain-related output carries (decision P2-10)."""
+    return TESTNET_NOTICE if chain_id == BASE_SEPOLIA_CHAIN_ID else LOCAL_NOTICE
+
+
+def wallet_message(party: str, chain_id: int, escrow: str) -> str:
+    """What a party signs (EIP-191, as ``cast wallet sign`` does) to register its wallet.
+
+    It names the party, the chain and the escrow, so a signature cannot register the
+    address for another party or another deployment.
+    """
+    return f"Orbit Watch wallet for {party} on chain {chain_id}, escrow {escrow}"

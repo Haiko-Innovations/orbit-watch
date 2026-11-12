@@ -54,9 +54,24 @@ mainnet or real money.
   settlement scenario suite on a local Anvil chain, which now runs in CI.
   `orbit_watch.chain` holds the contract client and the ABIs, which a test
   keeps equal to the Foundry build. See `docs/evm-adapter.md`.
+- The service, API and command line on a testnet chain (phase 2, step 2.6).
+  `orbit-watch serve --chain-rpc … --escrow … --verifier-keystore …` settles
+  funded requests on the escrow. Every party registers its own wallet with a
+  signature and signs its own transactions: the API answers with unsigned
+  transactions (`202`), and the command line signs them with the user's
+  encrypted keystore (`--keystore`, for example from `cast wallet import`) or
+  prints them for another wallet (`--unsigned`). The service holds only the
+  verifier key. It follows the escrow's events, which decide reviewer rounds
+  and payments, and shows pending, confirmed and failed transactions with
+  explorer links. Events that do not fit a request are shown as conflicts.
+  New endpoints `/v1/chain`, `/v1/wallet`, `/v1/wallet/withdraw` and
+  `/v1/transactions`, and new commands `chain`, `wallet` and `tx`. Storage
+  migration 0003 adds the chain's tables. Tests on a local chain include the
+  whole chain from the command line and a check that no key, keystore or
+  password ever reaches the server. See `docs/chain-service.md`.
 - Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project,
-  D-19 on settlement on chain, D-20 on attestations, D-21 on governance and
-  D-22 on the adapter interface.
+  D-19 on settlement on chain, D-20 on attestations, D-21 on governance,
+  D-22 on the adapter interface and D-23 on the service on a chain.
 
 ### Changed
 
@@ -64,6 +79,8 @@ mainnet or real money.
   lifecycle record (`record=`), and `deliver` and `challenge` are new calls.
   The points ledger ignores the record and journals nothing for the new calls,
   so phase 1 behaves and exports exactly as before.
+- `request fund` on the command line takes token amounts such as `1.5` when
+  the API runs on a chain; with points it still takes whole numbers.
 
 ## [0.2.0] - 2026-11-11
 

@@ -35,6 +35,7 @@ migrations ([decision P-02](decisions.md#p-02-sqlite-with-plain-sql-migrations))
 | `review_tasks` | real and calibration review tasks |
 | `ledger_entries`, `ledger_postings` | the double-entry points journal |
 | `ledger_settled`, `attestations` | settled requests and recorded attestations |
+| `chain_settings`, `wallets`, `transactions`, `chain_events`, `chain_texts`, `chain_uploads`, `chain_conflicts` | on a testnet chain only (migration 0003, step 2.6): the chain followed, each party's wallet, watched transactions, the escrow events applied, reasons by SHA-256, uploaded files and conflicts ([chain-service.md](chain-service.md)) |
 
 ## Files
 

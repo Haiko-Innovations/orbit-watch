@@ -48,7 +48,7 @@ Each call needs the request's lifecycle record right after the event it
 mirrors (`record=`). It holds the terms, the split, the delivery, the
 reviewers and the time. When the escrow chooses a round's reviewers, the
 adapter checks that they are the record's reviewers (`reviewers_differ`
-otherwise). From step 2.6 the service takes the round from the chain instead.
+otherwise). The service on a chain takes the round from the chain instead.
 
 Refusals carry the contract's custom error in snake case, for example
 `requester_cannot_reserve`, `already_funded` or `not_the_verifier`. A second
@@ -56,8 +56,8 @@ settlement is `already_settled`.
 
 **Idempotency.** A key seen before, with the same arguments, returns the
 first receipt without a new transaction; with other arguments it is
-`key_reused`. In this step the keys are kept in memory; the service stores
-them from step 2.6.
+`key_reused`. The adapter keeps the keys in memory; the service on a chain
+does not need them (D-23).
 
 ## Tests on a local chain
 
@@ -95,10 +95,13 @@ checks that the ABIs shipped in the package
 ([`core/src/orbit_watch/chain/abi/`](../core/src/orbit_watch/chain/abi)) match
 the contracts.
 
-## Not yet
+## The adapter and the service
 
-- The service, the API and the command line still use the points ledger.
-  Step 2.6 adds wallets per party, pending, confirmed and failed
-  transactions, the chain as the source of truth for payments, and signing
-  with the user's own wallet or keystore.
-- Deployment to Base Sepolia comes with step 2.7.
+The service itself does not settle through this adapter: on a chain, each
+party signs its own transactions with its own wallet, and the service follows
+the escrow's events ([chain-service.md](chain-service.md), step 2.6). The
+adapter stays the tested bridge between the phase 1 rules and the escrow: the
+settlement scenario suite runs through it, and the service checks every
+settlement against the same `settlement_plan`.
+
+Deployment to Base Sepolia comes with step 2.7.

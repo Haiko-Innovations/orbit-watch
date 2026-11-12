@@ -22,6 +22,7 @@ SOURCES: dict[str, tuple[str, str]] = {
     "OrbitWatchReviewerRegistry": ("OrbitWatchReviewerRegistry.sol", "OrbitWatchReviewerRegistry"),
     "IEAS": ("IEAS.sol", "IEAS"),
     "IERC20": ("IERC20.sol", "IERC20"),
+    "IERC20Metadata": ("IERC20Metadata.sol", "IERC20Metadata"),
     "IERC20Errors": ("draft-IERC6093.sol", "IERC20Errors"),
 }
 

@@ -1,4 +1,4 @@
-"""Command-line client for the phase 1 API (step 1.7).
+"""Command-line client for the request API (steps 1.7 and 2.6).
 
 Commands follow the API's roles: ``request`` (requester), ``reserve`` and
 ``submit`` (station), ``challenge`` (requester or station), ``review``
@@ -6,19 +6,28 @@ Commands follow the API's roles: ``request`` (requester), ``reserve`` and
 ``--key`` (or ``ORBIT_WATCH_API`` / ``ORBIT_WATCH_KEY``) and ``--json``.
 Changes are sent with an idempotency key; it is printed, and passing it again
 with ``--idempotency-key`` makes a retry safe.
+
+**On a testnet chain** (step 2.6) the API answers a change to a funded request
+with transactions to sign. The command line signs them with the user's own
+encrypted keystore (``--keystore``, for example one made with ``cast wallet
+import``), sends them through ``--rpc`` and reports each hash to the API; the
+key never leaves this process. With ``--unsigned`` it prints them instead, for
+another wallet. ``wallet``, ``tx`` and ``chain`` manage the rest.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import uuid
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
 from orbit_watch.canonical import sha256_bytes, write_text
-from orbit_watch.client import ApiClient, Reply
+from orbit_watch.client import ApiClient, ClientError, Reply
 
 
 def _client(args: argparse.Namespace) -> ApiClient:
@@ -49,6 +58,95 @@ def _post(
     return reply
 
 
+def _chain_info(args: argparse.Namespace) -> dict[str, Any] | None:
+    """The API's chain, or None if it does not run on one."""
+    if not hasattr(args, "_chain"):
+        try:
+            args._chain = _client(args).request("GET", "/v1/chain", auth=False).json()
+        except ClientError as error:
+            if error.code != "not_on_chain":
+                raise
+            args._chain = None
+    return args._chain
+
+
+def _wallet(args: argparse.Namespace, *, send: bool = True):
+    """The user's own wallet: an encrypted keystore, opened in this process only."""
+    try:
+        from orbit_watch.chain.wallet import Wallet, load_keystore, open_wallet, read_password
+    except ImportError:
+        raise ValueError(
+            'signing needs the optional "evm" dependencies: pip install "orbit-watch[evm]"'
+        ) from None
+    keystore = args.keystore or os.environ.get("ORBIT_WATCH_KEYSTORE")
+    rpc = args.rpc or os.environ.get("ORBIT_WATCH_RPC")
+    if not keystore or (send and not rpc):
+        raise ValueError(
+            "to sign, give your encrypted keystore (--keystore or $ORBIT_WATCH_KEYSTORE, for "
+            "example one made with 'cast wallet import') and the chain's RPC endpoint (--rpc "
+            "or $ORBIT_WATCH_RPC); or use --unsigned to sign with another wallet"
+        )
+    if not send:
+        return Wallet(None, load_keystore(keystore, read_password(args.password_file)))  # type: ignore[arg-type]
+    return open_wallet(rpc, keystore, args.password_file)
+
+
+def _report(args: argparse.Namespace, tx_hash: str) -> dict[str, Any]:
+    reply = _client(args).request(
+        "POST",
+        "/v1/transactions",
+        body=json.dumps({"tx_hash": tx_hash}).encode("utf-8"),
+        idempotency_key=f"report-{tx_hash}",
+    )
+    result = reply.json()
+    print(describe_transaction(result["transaction"]), file=sys.stderr)
+    return result
+
+
+def _finish(args: argparse.Namespace, reply: Reply) -> Any:
+    """The API's answer. When it asks for signatures (202), sign each transaction with the
+    user's own keystore, send it and report it; with ``--unsigned``, print them instead."""
+    if reply.status != 202:
+        return reply.json()
+    prepared = reply.json()
+    print(f"orbit-watch: {prepared['notice']}", file=sys.stderr)
+    if args.unsigned:
+        sys.stdout.write(json.dumps(prepared, indent=2) + "\n")
+        for item in prepared["sign"]:
+            tx = item["transaction"]
+            print(
+                f"to sign: {item['action']} from {tx['from']}, for example: cast send "
+                f"{tx['to']} --data {tx['data']} --rpc-url <RPC> --account <name>",
+                file=sys.stderr,
+            )
+        print(
+            "send them in this order, then report each hash: orbit-watch tx report <hash>",
+            file=sys.stderr,
+        )
+        return None
+    wallet = _wallet(args)
+    result = None
+    for item in prepared["sign"]:
+        tx_hash = wallet.send(item["transaction"])
+        print(f"sent {item['action']}: {tx_hash}", file=sys.stderr)
+        result = _report(args, tx_hash)
+    return result
+
+
+def _show(args: argparse.Namespace, result: Any, human: str | None = None) -> int:
+    """Print a request view, or what reporting a transaction gave."""
+    if result is None:  # printed for an external wallet
+        return 0
+    if "transaction" in result and "request" in result:
+        view = result["request"]
+        if view is None:
+            _print(args, result, describe_transaction(result["transaction"]))
+            return 0
+        result = view
+    _print(args, result, human or describe_request(result))
+    return 0
+
+
 def _print(args: argparse.Namespace, document: Any, human: str) -> None:
     if args.json:
         sys.stdout.write(json.dumps(document, indent=2, ensure_ascii=False) + "\n")
@@ -56,8 +154,25 @@ def _print(args: argparse.Namespace, document: Any, human: str) -> None:
         print(human)
 
 
+def amount(value: int, token: dict[str, Any] | None) -> str:
+    """Points, or token units with the token's decimals (``135 TESTUSD``)."""
+    if token is None:
+        return f"{value} points"
+    whole = Decimal(value).scaleb(-int(token["decimals"])).normalize()
+    return f"{whole:f} {token['symbol']}"
+
+
+def describe_transaction(transaction: dict[str, Any]) -> str:
+    where = transaction["explorer"] or transaction["tx_hash"]
+    error = f" ({transaction['error']})" if transaction["error"] else ""
+    request = f" for {transaction['request_id']}" if transaction["request_id"] else ""
+    return f"{transaction['status']}: {transaction['action']}{request} {where}{error}"
+
+
 def describe_request(view: dict[str, Any]) -> str:
     summary, record = view["summary"], view["record"]
+    chain = view.get("chain")
+    token = chain["token"] if chain else None
     lines = [
         f"Request {summary['request_id']}: {summary['status']}"
         + (f" ({summary['outcome']})" if summary["outcome"] else "")
@@ -66,10 +181,17 @@ def describe_request(view: dict[str, Any]) -> str:
         lines.append(f"  reason: {summary['outcome_reason']}")
     if record.get("split"):
         split = record["split"]
-        lines.append(
-            f"  deposit: {split['total']} points (observer {split['observer']}, "
-            f"reviewer {split['reviewer']} each, platform fee {split['platform_fee']})"
-        )
+        if token is None:
+            lines.append(
+                f"  deposit: {split['total']} points (observer {split['observer']}, "
+                f"reviewer {split['reviewer']} each, platform fee {split['platform_fee']})"
+            )
+        else:
+            lines.append(
+                f"  deposit: {amount(split['total'], token)} (observer "
+                f"{amount(split['observer'], token)}, reviewer {amount(split['reviewer'], token)}"
+                f" each, platform fee {amount(split['platform_fee'], token)})"
+            )
     if record.get("reserved_by"):
         lines.append(
             f"  reserved by {record['reserved_by']} until {record['reservation_expires_at']}"
@@ -88,13 +210,22 @@ def describe_request(view: dict[str, Any]) -> str:
         )
     if summary["settlement"]:
         payouts = summary["settlement"]["plan"]["payouts"]
-        lines.append(
-            "  settled: "
-            + (
-                ", ".join(f"{p['party']} +{p['points']} ({p['reason']})" for p in payouts)
-                or "no points moved"
+        moved = [
+            f"{p['party']} +{p['points'] if token is None else amount(p['points'], token)}"
+            f" ({p['reason']})"
+            for p in payouts
+        ]
+        nothing = "no points moved" if token is None else "nothing moved"
+        lines.append("  settled: " + (", ".join(moved) or nothing))
+    if chain:
+        lines.append(f"  on chain ({chain['notice']}): {chain['status'] or 'not funded on chain'}")
+        for event in chain["events"]:
+            lines.append(
+                f"    {event['event']:<21} block {event['block']:<6} "
+                f"{event['explorer'] or event['tx_hash']}"
             )
-        )
+        lines += [f"    {describe_transaction(t)}" for t in chain["transactions"]]
+        lines += [f"    conflict: {c['code']}: {c['message']}" for c in chain["conflicts"]]
     return "\n".join(lines)
 
 
@@ -120,18 +251,29 @@ def cmd_request_create(args: argparse.Namespace) -> int:
     return 0
 
 
+def _split(args: argparse.Namespace) -> dict[str, int]:
+    """Whole points, or token amounts (``1.5``) in the token's smallest units on a chain."""
+    chain = _chain_info(args)
+    decimals = int(chain["token"]["decimals"]) if chain else 0
+    split = {}
+    for name in ("observer", "reviewer", "platform_fee"):
+        text = getattr(args, name)
+        try:
+            value = Decimal(text).scaleb(decimals)
+        except InvalidOperation:
+            raise ValueError(f"--{name.replace('_', '-')}: not a number: {text!r}") from None
+        if value != value.to_integral_value() or value < 0:
+            unit = f"{chain['token']['symbol']} with {decimals} decimals" if chain else "points"
+            raise ValueError(f"--{name.replace('_', '-')}: {text} is not a whole amount of {unit}")
+        split[name] = int(value)
+    return split
+
+
 def _request_action(action: str):
     def run(args: argparse.Namespace) -> int:
-        document = None
-        if action == "fund":
-            document = {
-                "observer": args.observer,
-                "reviewer": args.reviewer,
-                "platform_fee": args.platform_fee,
-            }
-        view = _post(args, f"/v1/requests/{args.request_id}/{action}", document).json()
-        _print(args, view, describe_request(view))
-        return 0
+        document = _split(args) if action == "fund" else None
+        reply = _post(args, f"/v1/requests/{args.request_id}/{action}", document)
+        return _show(args, _finish(args, reply))
 
     return run
 
@@ -171,9 +313,7 @@ def cmd_request_report(args: argparse.Namespace) -> int:
 
 
 def cmd_reserve(args: argparse.Namespace) -> int:
-    view = _post(args, f"/v1/requests/{args.request_id}/reserve").json()
-    _print(args, view, describe_request(view))
-    return 0
+    return _show(args, _finish(args, _post(args, f"/v1/requests/{args.request_id}/reserve")))
 
 
 def cmd_submit(args: argparse.Namespace) -> int:
@@ -195,21 +335,19 @@ def cmd_submit(args: argparse.Namespace) -> int:
     if not request_id:
         raise ValueError("give --request for a plain observation file, or submit a manifest")
     path = f"/v1/requests/{request_id}/deliveries" + (f"?format={fmt}" if fmt else "")
-    view = _post(
+    reply = _post(
         args,
         path,
         body=data,
         content_type="application/octet-stream",
         headers={"Content-SHA256": declared or sha256_bytes(data)},
-    ).json()
-    _print(args, view, describe_request(view))
-    return 0
+    )
+    return _show(args, _finish(args, reply))
 
 
 def cmd_challenge(args: argparse.Namespace) -> int:
-    view = _post(args, f"/v1/requests/{args.request_id}/challenge", {"reason": args.reason}).json()
-    _print(args, view, describe_request(view))
-    return 0
+    reply = _post(args, f"/v1/requests/{args.request_id}/challenge", {"reason": args.reason})
+    return _show(args, _finish(args, reply))
 
 
 # ------------------------------------------------------------------ reviewer
@@ -234,8 +372,11 @@ def cmd_review_answer(args: argparse.Namespace) -> int:
         f"/v1/tasks/{args.task_id}/review",
         {"approve": args.decision == "approve", "reason": args.reason},
     )
-    _print(args, reply.json(), f"recorded your answer to {args.task_id}")
-    return 0
+    result = _finish(args, reply)
+    if result is not None and "recorded" in result:
+        _print(args, result, f"recorded your answer to {args.task_id}")
+        return 0
+    return _show(args, result)
 
 
 def cmd_review_profile(args: argparse.Namespace) -> int:
@@ -292,8 +433,76 @@ def cmd_admin_tick(args: argparse.Namespace) -> int:
 
 def cmd_balance(args: argparse.Namespace) -> int:
     result = _client(args).get(f"/v1/balances/{args.party}")
-    _print(args, result, f"{result['party']}: {result['points']} points")
+    if "points" in result:
+        _print(args, result, f"{result['party']}: {result['points']} points")
+    elif result["address"] is None:
+        _print(args, result, f"{result['party']}: no wallet registered ({result['notice']})")
+    else:
+        token = result["token"]
+        _print(
+            args,
+            result,
+            f"{result['party']}: {amount(result['balance'], token)} in {result['address']}, "
+            f"{amount(result['withdrawable'], token)} to withdraw ({result['notice']})",
+        )
     return 0
+
+
+# ------------------------------------------------------------------ chain (step 2.6)
+
+
+def cmd_chain(args: argparse.Namespace) -> int:
+    info = _chain_info(args)
+    if info is None:
+        print("this API does not run on a chain: payments are points")
+        return 0
+    token = info["token"]
+    lines = [
+        f"{info['network']} (chain {info['chain_id']}): {info['notice']}",
+        f"  escrow    {info['escrow']}",
+        f"  token     {token['symbol']} {token['address']} ({token['decimals']} decimals)",
+        f"  EAS       {info['eas']}",
+        f"  schemas   result {info['result_schema']}",
+        f"            vote   {info['vote_schema']}",
+        f"  verifier  {info['verifier']}",
+        f"  explorer  {info['explorer'] or 'none (local chain)'}",
+        f"  read up to block {info['synced_block']}",
+    ]
+    _print(args, info, "\n".join(lines))
+    return 0
+
+
+def cmd_wallet_register(args: argparse.Namespace) -> int:
+    view = _client(args).get("/v1/wallet")
+    if args.print_message:
+        print(view["message"])
+        return 0
+    if args.address or args.signature:
+        if not (args.address and args.signature):
+            raise ValueError("give --address and --signature together (from another wallet)")
+        address, signature = args.address, args.signature
+    else:
+        wallet = _wallet(args, send=False)
+        address, signature = wallet.address, wallet.sign_message(view["message"])
+    result = _post(args, "/v1/wallet", {"address": address, "signature": signature}).json()
+    _print(args, result, f"{result['party']}: wallet {result['address']} ({result['notice']})")
+    return 0
+
+
+def cmd_wallet_withdraw(args: argparse.Namespace) -> int:
+    return _show(args, _finish(args, _post(args, "/v1/wallet/withdraw")))
+
+
+def cmd_tx_list(args: argparse.Namespace) -> int:
+    path = "/v1/transactions" + (f"?request={args.request}" if args.request else "")
+    result = _client(args).get(path)
+    lines = [describe_transaction(t) for t in result["transactions"]] or ["no transactions"]
+    _print(args, result, "\n".join([*lines, f"({result['notice']})"]))
+    return 0
+
+
+def cmd_tx_report(args: argparse.Namespace) -> int:
+    return _show(args, _report(args, args.tx_hash))
 
 
 # ------------------------------------------------------------------ public data (no key)
@@ -363,6 +572,23 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
     )
     common.add_argument("--json", action="store_true", help="print the API's JSON answer")
     common.add_argument("--idempotency-key", help="reuse to retry a change safely")
+    signing = common.add_argument_group("signing on a testnet chain")
+    signing.add_argument(
+        "--keystore",
+        help="your encrypted keystore, e.g. ~/.foundry/keystores/<name> "
+        "(default $ORBIT_WATCH_KEYSTORE); the key never leaves this process",
+    )
+    signing.add_argument(
+        "--password-file",
+        help="file with the keystore's password (default $ORBIT_WATCH_PASSWORD_FILE; "
+        "otherwise it is asked for)",
+    )
+    signing.add_argument("--rpc", help="the chain's RPC endpoint (default $ORBIT_WATCH_RPC)")
+    signing.add_argument(
+        "--unsigned",
+        action="store_true",
+        help="print the transactions to sign with another wallet instead",
+    )
 
     request = commands.add_parser(
         "request", help="requests: create, open, fund, cancel, list, show, report (API client)"
@@ -384,11 +610,17 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
         parser = sub.add_parser(action, parents=[common], help=text)
         parser.add_argument("request_id")
         parser.set_defaults(handler=_request_action(action))
-    fund = sub.add_parser("fund", parents=[common], help="lock a reward split and deposit points")
+    fund = sub.add_parser(
+        "fund",
+        parents=[common],
+        help="lock a reward split and deposit it (points, or testnet tokens on a chain)",
+    )
     fund.add_argument("request_id")
-    fund.add_argument("--observer", type=int, required=True, help="points for the observer")
-    fund.add_argument("--reviewer", type=int, required=True, help="points per completed review")
-    fund.add_argument("--platform-fee", type=int, default=0)
+    fund.add_argument(
+        "--observer", required=True, help="for the observer (points, or e.g. 1.5 on a chain)"
+    )
+    fund.add_argument("--reviewer", required=True, help="per completed review")
+    fund.add_argument("--platform-fee", default="0")
     fund.set_defaults(handler=_request_action("fund"))
     listing = sub.add_parser("list", parents=[common], help="list requests")
     listing.set_defaults(handler=cmd_request_list)
@@ -469,6 +701,43 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
     get.add_argument("--download", help="download the files (hash-checked) into this directory")
     get.set_defaults(handler=cmd_public_get)
 
-    balance = commands.add_parser("balance", parents=[common], help="points held (API client)")
+    balance = commands.add_parser(
+        "balance", parents=[common], help="points held, or a wallet's tokens (API client)"
+    )
     balance.add_argument("party")
     balance.set_defaults(handler=cmd_balance)
+
+    commands.add_parser(
+        "chain", parents=[common], help="the testnet chain the API runs on (API client)"
+    ).set_defaults(handler=cmd_chain)
+
+    wallet = commands.add_parser("wallet", help="your wallet on a testnet chain (API client)")
+    sub = wallet.add_subparsers(dest="wallet_command", metavar="command")
+    sub.required = True
+    register = sub.add_parser(
+        "register",
+        parents=[common],
+        help="register your wallet address, proven by a signature",
+        description="Sign the API's registration message with your keystore, or print it "
+        "(--print-message) to sign with another wallet (for example 'cast wallet sign') and "
+        "pass --address and --signature.",
+    )
+    register.add_argument("--print-message", action="store_true")
+    register.add_argument("--address", help="with --signature: a signature from another wallet")
+    register.add_argument("--signature")
+    register.set_defaults(handler=cmd_wallet_register)
+    sub.add_parser(
+        "withdraw", parents=[common], help="transfer everything credited to you"
+    ).set_defaults(handler=cmd_wallet_withdraw)
+
+    tx = commands.add_parser("tx", help="transactions on a testnet chain (API client)")
+    sub = tx.add_subparsers(dest="tx_command", metavar="command")
+    sub.required = True
+    listing = sub.add_parser("list", parents=[common], help="pending, confirmed and failed")
+    listing.add_argument("--request", help="only this request's")
+    listing.set_defaults(handler=cmd_tx_list)
+    report = sub.add_parser(
+        "report", parents=[common], help="report a transaction sent with another wallet"
+    )
+    report.add_argument("tx_hash")
+    report.set_defaults(handler=cmd_tx_report)

@@ -18,6 +18,14 @@ changes nothing; reusing the key for a different call is refused
 
 One lock serialises all calls: the service holds its working state in memory
 and the database admits one writer.
+
+**On a testnet chain** (step 2.6) the API never sees a party's key. A change
+to a funded request is answered with ``202 Accepted`` and the unsigned
+transactions to sign (``sign``); the party signs and sends them with its own
+wallet and reports each hash (``POST /v1/transactions``). The service follows
+the chain, which decides: every call first applies the escrow's new events.
+Every chain-related answer carries a ``notice`` ("Base Sepolia testnet, no
+real value").
 """
 
 from __future__ import annotations
@@ -60,19 +68,31 @@ STATUS = {
     "not_a_party": 403,
     "not_your_task": 403,
     "not_yourself": 403,
+    "not_your_transaction": 403,
     "unknown_request": 404,
     "unknown_task": 404,
     "no_report": 404,
     "unknown_file": 404,
     "not_found": 404,
+    "unknown_transaction": 404,
+    "not_on_chain": 404,
     "forbidden_in_status": 409,
     "already_voted": 409,
     "already_funded": 409,
     "already_settled": 409,
     "duplicate_request": 409,
     "key_reused": 409,
+    "sign_on_chain": 409,
+    "already_on_chain": 409,
+    "no_wallet": 409,
+    "wallet_already_set": 409,
+    "address_taken": 409,
+    "nothing_to_withdraw": 409,
+    "insufficient_balance": 409,
+    "points_not_used": 409,
     "too_large": 413,
     "verification_unavailable": 503,
+    "chain_unavailable": 503,
 }
 
 
@@ -117,6 +137,7 @@ class Api:
         self.service = service
         self.db = service.storage.db
         self.clock = clock
+        self.chain = service.chain  # an orbit_watch.chain.link.ChainLink, or None
         self.lock = threading.Lock()
 
     # ------------------------------------------------------------------ plumbing
@@ -164,6 +185,7 @@ class Api:
     ) -> Response:
         with self.lock:
             principal = self._principal(request)
+            self._follow_chain()
             now = self.clock()
             if not mutating:
                 return self._respond(work(principal, request, body, now))
@@ -212,6 +234,24 @@ class Api:
                 raise
             return JSONResponse(payload, status_code=status)
 
+    def _follow_chain(self) -> None:
+        """Apply the escrow's new events before anything else: the chain decides."""
+        if self.chain is None:
+            return
+        try:
+            self.chain.sync()
+        except Exception as error:  # the node is down, or answers nonsense
+            raise ApiError("chain_unavailable", f"cannot read the chain: {error}") from None
+
+    def _require_chain(self) -> Any:
+        if self.chain is None:
+            raise ApiError("not_on_chain", "this service does not run on a chain")
+        return self.chain
+
+    @staticmethod
+    def _signing(prepared: Any) -> tuple[int, dict[str, Any]]:
+        return 202, prepared.to_document()
+
     @staticmethod
     def _respond(result: Any) -> Response:
         if isinstance(result, Response):
@@ -220,22 +260,24 @@ class Api:
 
     def _record_view(self, request_id: str) -> dict[str, Any]:
         record = self.service.records[request_id]
-        return {
+        view = {
             "summary": self.service.summary(request_id),
             "record": record.to_document(),
             "publication": self.service.publication(request_id, self.clock()),
         }
+        if self.chain is not None:
+            view["chain"] = self.chain.request_view(request_id)
+        return view
 
     # ------------------------------------------------------------------ handlers
 
     def health(self, request: Request) -> Response:
-        return JSONResponse(
-            {
-                "status": "ok",
-                "version": __version__,
-                "notice": "Phase 1 prototype. All bundled data is SIMULATED.",
-            }
-        )
+        notice = "Phase 1 prototype. All bundled data is SIMULATED."
+        if self.chain is not None:
+            notice = (
+                f"Phase 2 prototype on a chain: {self.chain.notice}. All bundled data is SIMULATED."
+            )
+        return JSONResponse({"status": "ok", "version": __version__, "notice": notice})
 
     def create_request(self, principal, request, body, now, key):
         self._require(principal, "requester")
@@ -262,10 +304,14 @@ class Api:
         def work(principal, request, body, now, key):
             self._require(principal, "requester")
             request_id = request.path_params["request_id"]
+            party = principal.party
             if action == "open":
-                self.service.open(request_id, principal.party, now)
+                self.service.open(request_id, party, now)
             elif action == "cancel":
-                self.service.cancel(request_id, principal.party, now)
+                if self.service.on_chain(request_id):
+                    self.service._require_requester(request_id, party)
+                    return self._signing(self.chain.prepare_cancel(request_id, party, now))
+                self.service.cancel(request_id, party, now)
             else:
                 document = _json(body)
                 split = lc.RewardSplit(
@@ -273,7 +319,10 @@ class Api:
                     _field(document, "reviewer", int),
                     document.get("platform_fee", 0),
                 )
-                self.service.fund(request_id, principal.party, split, now)
+                if self.chain is not None:
+                    self.service._require_requester(request_id, party)
+                    return self._signing(self.chain.prepare_fund(request_id, party, split, now))
+                self.service.fund(request_id, party, split, now)
             return 200, self._record_view(request_id)
 
         return work
@@ -281,6 +330,8 @@ class Api:
     def reserve(self, principal, request, body, now, key):
         self._require(principal, "station")
         request_id = request.path_params["request_id"]
+        if self.service.on_chain(request_id):
+            return self._signing(self.chain.prepare_reserve(request_id, principal.party, now))
         self.service.reserve(request_id, principal.party, now)
         return 200, self._record_view(request_id)
 
@@ -293,6 +344,11 @@ class Api:
         fmt = request.query_params.get("format")
         if fmt not in (None, "json", "iod", "tdm"):
             raise ApiError("invalid_format", "format must be json, iod or tdm")
+        if self.service.on_chain(request_id):
+            prepared = self.chain.prepare_delivery(request_id, principal.party, body, now, fmt)
+            if prepared is not None:
+                return self._signing(prepared)
+            return 200, self._record_view(request_id)
         self.service.deliver(request_id, principal.party, body, now, observations_format=fmt)
         return 200, self._record_view(request_id)
 
@@ -300,6 +356,12 @@ class Api:
         self._require(principal, "requester", "station")
         request_id = request.path_params["request_id"]
         reason = _field(_json(body), "reason", str)
+        if self.service.on_chain(request_id):
+            if not reason.strip():
+                raise ApiError("reason_required", "a challenge must say why")
+            return self._signing(
+                self.chain.prepare_challenge(request_id, principal.party, reason, now)
+            )
         self.service.challenge(request_id, principal.party, reason, now)
         return 200, self._record_view(request_id)
 
@@ -346,6 +408,7 @@ class Api:
 
     def _run_public(self, request: Request, work: Callable[..., Any]) -> Response:
         with self.lock:
+            self._follow_chain()
             return self._respond(work(request, self.clock()))
 
     def public_requests(self, request, now):
@@ -386,13 +449,20 @@ class Api:
     def review(self, principal, request, body, now, key):
         self._require(principal, "reviewer")
         document = _json(body)
-        result = self.service.review(
-            request.path_params["task_id"],
-            principal.party,
-            _field(document, "approve", bool),
-            _field(document, "reason", str),
-            now,
-        )
+        task_id = request.path_params["task_id"]
+        approve, reason = _field(document, "approve", bool), _field(document, "reason", str)
+        real = self.service.real_tasks.get(task_id)
+        if real is not None and self.service.on_chain(real[0]):
+            # On chain a vote is the reviewer's own public attestation, so a real task
+            # differs from a calibration task here (decision D-23).
+            if real[1] != principal.party:
+                raise ApiError("not_your_task", "this task belongs to another reviewer")
+            if not reason.strip():
+                raise ApiError("reason_required", "a review must give its reasons")
+            return self._signing(
+                self.chain.prepare_vote(real[0], principal.party, approve, reason, now)
+            )
+        result = self.service.review(task_id, principal.party, approve, reason, now)
         return 200, result
 
     def profile(self, principal, request, body, now):
@@ -405,10 +475,17 @@ class Api:
         party = request.path_params["party"]
         if principal.role != "admin" and principal.party != party:
             raise ApiError("not_yourself", "only the party or an admin can see this balance")
+        if self.chain is not None:
+            return self.chain.balance(party)
         return {"party": party, "points": self.service.adapter.balance(party)}
 
     def grant(self, principal, request, body, now, key):
         self._require(principal, "admin")
+        if self.chain is not None:
+            raise ApiError(
+                "points_not_used",
+                "on chain, deposits are testnet tokens from a faucet, not points",
+            )
         document = _json(body)
         party = _field(document, "party", str)
         points = _field(document, "points", int)
@@ -431,14 +508,62 @@ class Api:
 
     def tick(self, principal, request, body, now, key):
         self._require(principal, "admin")
-        return 200, {"changed": self.service.tick(now)}
+        result: dict[str, Any] = {"changed": self.service.tick(now)}
+        if self.chain is not None:
+            result["sent"] = self.chain.follow_up()
+            result["notice"] = self.chain.notice
+        return 200, result
+
+    # ------------------------------------------------------------------ chain (step 2.6)
+
+    def chain_info(self, request, now):
+        return self._require_chain().info()
+
+    def get_wallet(self, principal, request, body, now):
+        return self._require_chain().wallet_view(principal.party)
+
+    def register_wallet(self, principal, request, body, now, key):
+        chain = self._require_chain()
+        document = _json(body)
+        return 200, chain.register_wallet(
+            principal.party,
+            _field(document, "address", str),
+            _field(document, "signature", str),
+            now,
+        )
+
+    def withdraw(self, principal, request, body, now, key):
+        return self._signing(self._require_chain().prepare_withdraw(principal.party))
+
+    def report_transaction(self, principal, request, body, now, key):
+        chain = self._require_chain()
+        tx_hash = _field(_json(body), "tx_hash", str)
+        view = chain.report(principal.party, tx_hash, now, admin=principal.role == "admin")
+        request_id = view["request_id"]
+        return 200, {
+            "transaction": view,
+            "request": self._record_view(request_id) if request_id else None,
+            "notice": chain.notice,
+        }
+
+    def list_transactions(self, principal, request, body, now):
+        chain = self._require_chain()
+        party = None if principal.role == "admin" else principal.party
+        request_id = request.query_params.get("request")
+        return {
+            "transactions": chain.transactions(party=party, request_id=request_id),
+            "notice": chain.notice,
+        }
 
 
 def create_app(
     service: RequestService, *, clock: Callable[[], datetime] | None = None
 ) -> Starlette:
     """The ASGI application for a stored service."""
-    api = Api(service, clock or (lambda: datetime.now(tz=UTC)))
+    if clock is None:
+        # On a chain the service keeps the chain's time, which its deadlines use.
+        clock = service.chain.now if service.chain is not None else lambda: datetime.now(tz=UTC)
+    api = Api(service, clock)
     read, change = (
         lambda f: api.endpoint(f, mutating=False),
         lambda f, **kw: api.endpoint(f, mutating=True, **kw),
@@ -480,6 +605,13 @@ def create_app(
             methods=["POST"],
         ),
         Route("/v1/admin/tick", change(api.tick), methods=["POST"]),
+        # On a testnet chain (step 2.6).
+        Route("/v1/chain", api.public(api.chain_info), methods=["GET"]),
+        Route("/v1/wallet", read(api.get_wallet), methods=["GET"]),
+        Route("/v1/wallet", change(api.register_wallet), methods=["POST"]),
+        Route("/v1/wallet/withdraw", change(api.withdraw), methods=["POST"]),
+        Route("/v1/transactions", read(api.list_transactions), methods=["GET"]),
+        Route("/v1/transactions", change(api.report_transaction), methods=["POST"]),
         # Public, no key: settled requests whose embargo has passed (step 1.8).
         Route("/v1/public/requests", api.public(api.public_requests), methods=["GET"]),
         Route("/v1/public/requests/{request_id}", api.public(api.public_request), methods=["GET"]),

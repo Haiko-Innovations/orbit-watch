@@ -486,3 +486,49 @@ Accepted · 2026-11-12 (with the pull request that implements step 2.5). See
   clock to the record's time, are possible only on a local Anvil chain.
 - The adapter keeps its idempotency keys in memory. The service persists them
   in step 2.6, which also makes the chain the source of reviewer rounds.
+
+### D-23 The service on a chain
+
+Accepted · 2026-11-12 (with the pull request that implements step 2.6). See
+[chain-service.md](chain-service.md):
+
+- **The parties sign; the service prepares.** For a funded request the API
+  answers with the unsigned transactions (`202`), which the party signs with
+  its own wallet or keystore and sends itself, and then reports by hash. They
+  carry no nonce, gas or fees, so a replayed answer stays valid. The service
+  never receives a party's key, and it trusts nothing a party reports: it
+  reads every transaction and event from the chain. Alternative: the service
+  relays signed transactions. It would still have to follow the chain for
+  wallets that send on their own, and it would handle more than it needs.
+- **The chain decides; the service follows.** Every API call first applies the
+  escrow's new events to the lifecycle records, at their block times, one
+  transaction at a time. The service's clock is the latest block's time. A
+  request is on chain from a `Funded` event by its requester's wallet with its
+  terms; an event that does not fit is a conflict, shown and never applied.
+  Reviewer rounds come from the chain, and every settlement is compared with
+  `settlement_plan`.
+- **Wallets are registered with a signature**: EIP-191 over a message that
+  names the party, the chain and the escrow. One wallet per party, one party
+  per address; a wallet cannot be changed in phase 2. An address no party has
+  registered appears as `wallet:<address>`.
+- **The service holds only the verifier key**, from an encrypted keystore
+  outside the repository. It attests automated results and settles reached
+  outcomes when a transaction is reported and on `tick`; there is no
+  background worker. A service directory follows one escrow on one chain from
+  its first start.
+- **What is off chain stays with the service**: observation files, reports and
+  the texts of reasons. The chain holds their SHA-256.
+- **Idempotency.** The API keeps every answer by its idempotency key (step
+  1.6), transactions are tracked by hash, and the escrow itself refuses a
+  second funding, settlement or withdrawal. The service does not use the
+  adapter's in-memory keys (D-22).
+- **Calibration tasks are visible on chain.** A real vote is a public
+  attestation that the reviewer signs, so a reviewer can tell a real task from
+  a calibration task. Calibration still measures accuracy, but no longer
+  unseen. Hiding it would need calibration votes on chain, which would put
+  made-up attestations in the public record.
+- **Gas estimates get a 25 % margin**, in the service and in the user's
+  wallet. An estimate is the exact minimum for the block it was made against,
+  and a later block can cost a little more.
+- Open: someone can fund an open request's ID first (the requester then
+  creates it again under a new ID); chain reorganisations are not handled.
