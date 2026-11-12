@@ -50,15 +50,15 @@
           },
           {
             "role": "observations",
-            "sha256": "83b676eb88c29be5ad3edc39578cdc69b90f6bf241536ec1d90a1a1795e88d36",
-            "size": 4380,
-            "url": "/v1/public/files/83b676eb88c29be5ad3edc39578cdc69b90f6bf241536ec1d90a1a1795e88d36"
+            "sha256": "26deb889d43dad040bce1e1b8304cc01a7f8ded281135b2cf3b94a939da02d37",
+            "size": 4375,
+            "url": "/v1/public/files/26deb889d43dad040bce1e1b8304cc01a7f8ded281135b2cf3b94a939da02d37"
           },
           {
             "role": "report",
-            "sha256": "33813e431db893dfc4800b3c019d03f67d5c60539865ce42e6d3d41dfd09fe16",
-            "size": 10509,
-            "url": "/v1/public/files/33813e431db893dfc4800b3c019d03f67d5c60539865ce42e6d3d41dfd09fe16"
+            "sha256": "bd95e5acf92dbae458ac688a7c8554539d9e68f5a14fd22144a3200367609c9f",
+            "size": 10504,
+            "url": "/v1/public/files/bd95e5acf92dbae458ac688a7c8554539d9e68f5a14fd22144a3200367609c9f"
           }
         ],
         "simulated": true
@@ -72,9 +72,9 @@
         "outcome_reason": "reviewers rejected 2-1",
         "automated_verdict": "fail",
         "reviewers": [
-          "reviewer:sim-aino",
-          "reviewer:sim-chen",
-          "reviewer:sim-fatima"
+          "reviewer:sim-eero",
+          "reviewer:sim-fatima",
+          "reviewer:sim-aino"
         ],
         "votes": [
           [
@@ -82,7 +82,7 @@
             true
           ],
           [
-            "reviewer:sim-chen",
+            "reviewer:sim-eero",
             false
           ],
           [
@@ -103,7 +103,7 @@
                 "reason": "review"
               },
               {
-                "party": "reviewer:sim-chen",
+                "party": "reviewer:sim-eero",
                 "points": 10,
                 "reason": "review"
               },
@@ -139,15 +139,15 @@
           },
           {
             "role": "observations",
-            "sha256": "267cf740463d7d27ed1a6ac43b3d3a7a03164aef8d93ebb53dbf7c28b8ba4baa",
-            "size": 4529,
-            "url": "/v1/public/files/267cf740463d7d27ed1a6ac43b3d3a7a03164aef8d93ebb53dbf7c28b8ba4baa"
+            "sha256": "f07f68325e4d72691dc682e87d6aabc6e5d0b95f09614776d28363defacaf306",
+            "size": 4524,
+            "url": "/v1/public/files/f07f68325e4d72691dc682e87d6aabc6e5d0b95f09614776d28363defacaf306"
           },
           {
             "role": "report",
-            "sha256": "6687615642e1916cdf1bdb48528a72b6d1a29f07ca0954bf1ebb4025a7316aa2",
-            "size": 10968,
-            "url": "/v1/public/files/6687615642e1916cdf1bdb48528a72b6d1a29f07ca0954bf1ebb4025a7316aa2"
+            "sha256": "818319197e01816b3d442805b9656e2c00a7067b62230311285e54b4f9eab010",
+            "size": 10963,
+            "url": "/v1/public/files/818319197e01816b3d442805b9656e2c00a7067b62230311285e54b4f9eab010"
           }
         ],
         "simulated": true
@@ -196,15 +196,15 @@
           },
           {
             "role": "observations",
-            "sha256": "4927661b5ab22b322b9db2b49a2a120ea1dc64372601ad053b381cceb123116b",
-            "size": 2947,
-            "url": "/v1/public/files/4927661b5ab22b322b9db2b49a2a120ea1dc64372601ad053b381cceb123116b"
+            "sha256": "2577e945c00ed64a228330f9c6ac32108019ce8e940d8705c4aec8336573f91f",
+            "size": 2942,
+            "url": "/v1/public/files/2577e945c00ed64a228330f9c6ac32108019ce8e940d8705c4aec8336573f91f"
           },
           {
             "role": "report",
-            "sha256": "d5feb34483a4cbfe784d22da9590a9910bbc9da700d72c82e807bb00a2b3b7e6",
-            "size": 8805,
-            "url": "/v1/public/files/d5feb34483a4cbfe784d22da9590a9910bbc9da700d72c82e807bb00a2b3b7e6"
+            "sha256": "5ab31eb34d6353ccb274a13e2fea492d5ec487b4442cd989f0baf4baacd76511",
+            "size": 8800,
+            "url": "/v1/public/files/5ab31eb34d6353ccb274a13e2fea492d5ec487b4442cd989f0baf4baacd76511"
           }
         ],
         "simulated": true
@@ -218,13 +218,13 @@
         "outcome_reason": "no 2-of-3 majority before the review deadline",
         "automated_verdict": "pass",
         "reviewers": [
-          "reviewer:sim-bertil",
-          "reviewer:sim-aino",
+          "reviewer:sim-chen",
+          "reviewer:sim-eero",
           "reviewer:sim-fatima"
         ],
         "votes": [
           [
-            "reviewer:sim-bertil",
+            "reviewer:sim-chen",
             true
           ]
         ],
@@ -236,7 +236,7 @@
             "deposit": 130,
             "payouts": [
               {
-                "party": "reviewer:sim-bertil",
+                "party": "reviewer:sim-chen",
                 "points": 10,
                 "reason": "review"
               },
@@ -267,15 +267,15 @@
           },
           {
             "role": "observations",
-            "sha256": "8bbabe0ea53284cf69368afe70dab13e5effa15b9305de1faa179c51ae3489af",
-            "size": 3126,
-            "url": "/v1/public/files/8bbabe0ea53284cf69368afe70dab13e5effa15b9305de1faa179c51ae3489af"
+            "sha256": "ecec4b449d36f87b355b0b01a5664547f319f115ad31515777183f432f1e0ccd",
+            "size": 3121,
+            "url": "/v1/public/files/ecec4b449d36f87b355b0b01a5664547f319f115ad31515777183f432f1e0ccd"
           },
           {
             "role": "report",
-            "sha256": "7bdcbe3b06ed533c402bf61aa451d06edd6d5b9ca921023a37660c24577b4bd3",
-            "size": 9420,
-            "url": "/v1/public/files/7bdcbe3b06ed533c402bf61aa451d06edd6d5b9ca921023a37660c24577b4bd3"
+            "sha256": "73df74f5694df3e3430a07c861f18d88731f6849b7d023f1524aa4fdd1290a4e",
+            "size": 9415,
+            "url": "/v1/public/files/73df74f5694df3e3430a07c861f18d88731f6849b7d023f1524aa4fdd1290a4e"
           }
         ],
         "simulated": true
@@ -334,8 +334,8 @@
     "station:SIM-KUOPIO": 0,
     "station:SIM-TAMPERE": 0,
     "reviewer:sim-aino": 10,
-    "reviewer:sim-bertil": 10,
     "reviewer:sim-chen": 10,
+    "reviewer:sim-eero": 10,
     "reviewer:sim-fatima": 10
   },
   "escrow_total": 0,
@@ -345,40 +345,19 @@
       "as_of": "2026-11-10T00:00:00.000Z",
       "calibration_version": "1.0",
       "calibration": {
-        "answered": 2,
-        "correct": 1,
-        "accuracy": 0.5,
-        "missed": 0,
-        "open": 0
-      },
-      "votes": {
-        "total": 3,
-        "approvals": 3,
-        "approval_rate": 1.0,
-        "real_rounds": 1,
-        "agreed_with_outcome": 0,
-        "decided_rounds": 1
-      },
-      "flags": []
-    },
-    "reviewer:sim-bertil": {
-      "reviewer": "reviewer:sim-bertil",
-      "as_of": "2026-11-10T00:00:00.000Z",
-      "calibration_version": "1.0",
-      "calibration": {
         "answered": 1,
-        "correct": 1,
-        "accuracy": 1.0,
+        "correct": 0,
+        "accuracy": 0.0,
         "missed": 0,
         "open": 0
       },
       "votes": {
         "total": 2,
-        "approvals": 1,
-        "approval_rate": 0.5,
+        "approvals": 2,
+        "approval_rate": 1.0,
         "real_rounds": 1,
         "agreed_with_outcome": 0,
-        "decided_rounds": 0
+        "decided_rounds": 1
       },
       "flags": []
     },
@@ -395,8 +374,29 @@
       },
       "votes": {
         "total": 2,
-        "approvals": 0,
-        "approval_rate": 0.0,
+        "approvals": 2,
+        "approval_rate": 1.0,
+        "real_rounds": 1,
+        "agreed_with_outcome": 0,
+        "decided_rounds": 0
+      },
+      "flags": []
+    },
+    "reviewer:sim-eero": {
+      "reviewer": "reviewer:sim-eero",
+      "as_of": "2026-11-10T00:00:00.000Z",
+      "calibration_version": "1.0",
+      "calibration": {
+        "answered": 2,
+        "correct": 2,
+        "accuracy": 1.0,
+        "missed": 0,
+        "open": 0
+      },
+      "votes": {
+        "total": 3,
+        "approvals": 1,
+        "approval_rate": 0.3333,
         "real_rounds": 1,
         "agreed_with_outcome": 1,
         "decided_rounds": 1

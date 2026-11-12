@@ -3,7 +3,7 @@
   "report_format_version": "1.0",
   "method_version": "1.0.0",
   "software": {
-    "orbit-watch": "0.3.0.dev0"
+    "orbit-watch": "0.3.0"
   },
   "simulated_input": true,
   "station": {

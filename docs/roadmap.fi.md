@@ -14,23 +14,24 @@ Jokainen pull request, joka saa tiekartan vaiheen valmiiksi, päivittää myös 
 
 ## Tilanne (12.11.2026)
 
-**Vaihe 1 on valmis** ja julkaistu versiona 0.2.0: tilaukset, optimistinen
-tarkistus, pistekirjanpito, tarkistajien tarkkuus, tallennus, HTTP-rajapinta,
-komentoriviasiakas ja datan julkaisu. Katso [vaiheen 1 yhteenveto](phase-1-summary.fi.md).
-Vaihe 0 julkaistiin
-[versiona 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0);
-sen ainoa avoin kriteeri, oikea julkinen IOD-esimerkki, on yhä avoinna
+**Vaihe 2 on valmis** ja julkaistu versiona 0.3.0: tilitys Base Sepolia
+-testiverkossa Circlen testi-USDC:llä. Päivittämätön escrow-sopimus pitää
+talletukset, automaattisen tarkistuksen tulokset ja tarkistajien äänet ovat
+EAS-attestaatioita, tarkistajarekisteri on Safe-monisignatuurin (2/3) ja 48
+tunnin aikalukon takana, ja palvelu, rajapinta ja komentorivi toimivat ketjun
+päällä niin, että jokainen osapuoli allekirjoittaa omalla lompakollaan.
+Sopimukset on viety Base Sepoliaan ([base-sepolia.md](base-sepolia.md)), ja
+vaiheen 2 demo ajettiin siellä jokaiselle osapuolelle omalla lompakolla.
+Katso [vaiheen 2 yhteenveto](phase-2-summary.fi.md).
+
+Vaihe 1 julkaistiin versiona 0.2.0 ([vaiheen 1 yhteenveto](phase-1-summary.fi.md))
+ja vaihe 0
+[versiona 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0).
+Vaiheen 0 ainoa avoin kriteeri, oikea julkinen IOD-esimerkki, on yhä avoinna
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
-**Nyt: vaihe 2**, tilitys testiverkossa. Sen päätökset hyväksyttiin
-11.11.2026. Askeleet 2.1–2.7 ovat valmiit: sopimusprojekti, tilityssäännöt
-ketjussa, EAS-attestaatiot tarkistajakierroksineen, tarkistajarekisteri
-Safe-monisignatuurin (2/3) ja 48 tunnin aikalukon takana, Pythonin
-`evm-testnet`-sovitin, joka läpäisee vaiheen 1 tilityksen skenaariosarjan
-paikallisessa ketjussa, palvelu, rajapinta ja komentorivi ketjun päällä sekä
-käyttöönotto Base Sepoliaan ([base-sepolia.md](base-sepolia.md)). Ketjussa
-jokainen osapuoli allekirjoittaa omalla lompakollaan. Seuraavaksi askel 2.8:
-vaiheen 2 demo Base Sepoliassa ja julkaisu 0.3.0.
+**Seuraavaksi: vaihe 3**, verkkosovellus, joka suunnitellaan tarkemmin ennen
+aloitusta.
 
 ## Seuraavat askeleet
 
@@ -101,7 +102,7 @@ Circlen **testi-USDC**, EAS esiasennetussa osoitteessaan, **Foundry** ja
 | ✅ **2.5 Testiverkkosovitin** ([#32](https://github.com/Haiko-Innovations/orbit-watch/issues/32)) | `evm-testnet`-tilityssovitin Pythonilla (web3.py): `fund`, `reserve`, `attest`, `settle`, `refund` transaktioina ja attestaatioina. | Sovitin läpäisee tilityksen skenaariosarjan paikallista Anvil-ketjua vasten CI:ssä. |
 | ✅ **2.6 Palvelu, API ja komentorivi** ([#33](https://github.com/Haiko-Innovations/orbit-watch/issues/33)) | Lompakko-osoitteet osapuolille; odottavat, vahvistetut ja epäonnistuneet transaktiot erikseen; ketju on maksujen ensisijainen lähde; linkit lohkoselaimeen; allekirjoitus käyttäjän omalla lompakolla tai avainsäilöllä. | Koko ketju toimii komentoriviltä ja API:n kautta paikallista ketjua vasten; mikään avain ei lähde omistajaltaan. |
 | ✅ **2.7 Testiverkkoon vienti** ([#34](https://github.com/Haiko-Innovations/orbit-watch/issues/34)) | Base Sepolian käyttöönottoskriptit ja asetukset, skeemojen rekisteröinti, faucet-ohjeet (testi-ETH ja -USDC), testiverkkomerkinnät kaikkialla. | Sopimukset toimivat Base Sepoliassa dokumentoitujen ohjeiden mukaan. |
-| **2.8 Vaiheen 2 demo** ([#35](https://github.com/Haiko-Innovations/orbit-watch/issues/35)) | Demo Base Sepoliassa erillisillä lompakoilla jokaiselle osapuolelle sekä vaiheen 2 yhteenveto. | Vaiheen 2 valmiskriteerit tiedostossa [plan.fi.md](plan.fi.md) täyttyvät; julkaistaan 0.3.0. |
+| ✅ **2.8 Vaiheen 2 demo** ([#35](https://github.com/Haiko-Innovations/orbit-watch/issues/35)) | Demo Base Sepoliassa erillisillä lompakoilla jokaiselle osapuolelle sekä vaiheen 2 yhteenveto. | Vaiheen 2 valmiskriteerit tiedostossa [plan.fi.md](plan.fi.md) täyttyvät; julkaistaan 0.3.0. |
 
 ### Vaihe 3 (myöhemmin)
 

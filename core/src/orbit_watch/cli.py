@@ -196,6 +196,8 @@ def cmd_validate(args: argparse.Namespace) -> int:
 def cmd_demo(args: argparse.Namespace) -> int:
     from orbit_watch.sim.scenarios import run_demo, summary_table
 
+    if args.phase == 2:
+        return _demo_phase2(args)
     if args.phase == 1:
         from orbit_watch.sim.phase1_demo import run_phase1_demo
 
@@ -217,6 +219,50 @@ def cmd_demo(args: argparse.Namespace) -> int:
     print(f"Read {args.out}/datasets/wrong_target/report.txt for a full explanation.")
     print(SIMULATION_NOTICE)
     return EXIT_OK if all(r["as_expected"] for r in results) else EXIT_FAILED
+
+
+def _demo_phase2(args: argparse.Namespace) -> int:
+    """The phase 2 demo against a request service on a chain (step 2.8)."""
+    import tempfile
+
+    try:
+        from web3 import Web3
+
+        from orbit_watch.chain.networks import public_rpc
+        from orbit_watch.sim.phase2_demo import ChainClock, Settings, run_phase2_demo
+    except ImportError:
+        _err(
+            'the phase 2 demo needs the optional "evm" and "api" dependencies: '
+            'pip install "orbit-watch[api,evm]"'
+        )
+        return EXIT_USAGE
+    key = args.key or os.environ.get("ORBIT_WATCH_KEY")
+    api = args.api or os.environ.get("ORBIT_WATCH_API") or "http://127.0.0.1:8000"
+    if not (key and args.wallets and args.password_file):
+        _err(
+            "the phase 2 demo needs an admin key (--key or $ORBIT_WATCH_KEY), --wallets "
+            "and --password-file"
+        )
+        return EXIT_USAGE
+    rpc = args.rpc or os.environ.get("ORBIT_WATCH_RPC") or public_rpc(84532)
+    settings = Settings(
+        api=api,
+        admin_key=key,
+        wallets=Path(args.wallets),
+        password_file=Path(args.password_file),
+        rpc=rpc,
+        minutes=args.minutes,
+        prefix=args.id_prefix,
+    )
+    out = args.out or "orbit-watch-demo-phase2"
+    clock = ChainClock(Web3(Web3.HTTPProvider(rpc)))
+    with tempfile.TemporaryDirectory(prefix="orbit-watch-demo-") as work:
+        summary = run_phase2_demo(settings, clock, out, Path(work))
+    for request_id, item in summary["requests"].items():
+        print(f"{request_id}  {item['outcome']:<10}on chain: {item['on_chain']}")
+    print(f"\nTranscript: {out}/transcript.md")
+    print(f"{SIMULATION_NOTICE} {summary['chain']['notice']}.")
+    return EXIT_OK
 
 
 def cmd_score_station(args: argparse.Namespace) -> int:
@@ -463,10 +509,41 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument(
         "--phase",
         type=int,
-        choices=(0, 1),
+        choices=(0, 1, 2),
         default=0,
         help="0: the six verification datasets (default); 1: five requests "
-        "through the whole request chain",
+        "through the whole request chain; 2: the same five requests on a testnet chain, "
+        "against a running service",
+    )
+    phase2 = demo.add_argument_group(
+        "phase 2 (testnet chain)",
+        "Runs against a request service on a chain (orbit-watch serve --network "
+        "base-sepolia). Every party signs with its own keystore from --wallets.",
+    )
+    phase2.add_argument(
+        "--api", help="the service (default: $ORBIT_WATCH_API or http://127.0.0.1:8000)"
+    )
+    phase2.add_argument("--key", help="an admin API key (prefer $ORBIT_WATCH_KEY)")
+    phase2.add_argument(
+        "--wallets",
+        help="directory of the parties' encrypted keystores, named <role>-<id>.json "
+        "(requester-sim-cubesat-team.json, station-SIM-ESPOO.json, reviewer-sim-aino.json, …)",
+    )
+    phase2.add_argument("--password-file", help="the keystores' password file")
+    phase2.add_argument(
+        "--rpc", help="the wallets' RPC endpoint (default $ORBIT_WATCH_RPC, or Base Sepolia's)"
+    )
+    phase2.add_argument(
+        "--minutes",
+        type=float,
+        default=6.0,
+        help="challenge period and review time in minutes (default 6)",
+    )
+    phase2.add_argument(
+        "--id-prefix",
+        default="SIM-REQ-200",
+        help="request IDs are this prefix and 1 to 5 (default SIM-REQ-200); a new run on "
+        "the same escrow needs a new prefix",
     )
     demo.set_defaults(handler=cmd_demo)
 

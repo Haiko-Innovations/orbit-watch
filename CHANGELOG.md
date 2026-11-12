@@ -8,6 +8,8 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-12
+
 Phase 2: settlement on a testnet. Testnet only: nothing here touches a
 mainnet or real money.
 
@@ -83,6 +85,14 @@ mainnet or real money.
   every key, so the Safe separates keys, not people (D-24). The script runs in
   CI against a local chain with Base Sepolia's EAS and Safe code. A smoke test
   ran one SIMULATED request on Base Sepolia from funding to withdrawal.
+- The phase 2 demo (phase 2, step 2.8): `orbit-watch demo --phase 2` runs the
+  five requests of the phase 1 demo against a service on a chain, every party
+  signing with its own keystore from the command line: accepted, rejected
+  through a reviewer round, rejected, disputed and expired, with token
+  transfers, EAS attestations and checks that unauthorised parties and retries
+  are refused. The run on Base Sepolia is recorded in `examples/phase2/`; CI
+  runs the same demo on a local chain. The phase 2 summary is in
+  `docs/phase-2-summary.md`.
 - Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project,
   D-19 on settlement on chain, D-20 on attestations, D-21 on governance,
   D-22 on the adapter interface, D-23 on the service on a chain and D-24 on
@@ -194,6 +204,7 @@ is simulated and labelled as such.
 - Apache 2.0 licence, Contributor Covenant 3.0, contributing guide and README in
   English and Finnish, issue templates, roadmap, decision log and release process.
 
-[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0

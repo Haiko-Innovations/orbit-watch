@@ -1,6 +1,6 @@
 [project]
 name = "orbit-watch"
-version = "0.3.0.dev0"
+version = "0.3.0"
 description = "Open protocol and reference implementation for requesting, verifying and settling satellite observations (working name). Phase 0: observation format, simulator, verification engine and station quality meter."
 readme = "README.md"
 license = "Apache-2.0"
