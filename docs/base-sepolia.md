@@ -13,7 +13,28 @@ Decision [D-24](decisions.md#d-24-the-base-sepolia-deployment).
 
 ## The deployment
 
-DEPLOYMENT-TABLE
+Deployed on 2026-11-12 from commit `07b7d09`, in blocks 57952848 to
+57952868. The sources of the three Orbit Watch contracts are verified on
+[Sourcify](https://sourcify.dev) (exact match). The deployment cost
+0.000036 testnet ETH.
+
+| Contract | Address | |
+|---|---|---|
+| Escrow (`OrbitWatchEscrow` 1.0.0) | [`0xdfeB2255BdB4a3be616c215858B87Eb15E57f4D4`](https://sepolia.basescan.org/address/0xdfeB2255BdB4a3be616c215858B87Eb15E57f4D4) | no owner; holds deposits, applies the rules |
+| Reviewer registry | [`0xE1D3f4b308C781aDcAAF628DDf499d78C7361018`](https://sepolia.basescan.org/address/0xE1D3f4b308C781aDcAAF628DDf499d78C7361018) | owned by the timelock; four SIMULATED reviewers |
+| Timelock (OpenZeppelin `TimelockController`) | [`0xc1A5cC62027e309830674D1A7f26B1E4909f5704`](https://sepolia.basescan.org/address/0xc1A5cC62027e309830674D1A7f26B1E4909f5704) | 48 hours; the Safe proposes and cancels, anyone executes |
+| Safe 1.4.1, 2 of 3 | [`0xcfB913356bd7D99707CCE6CC08f628B38652E458`](https://sepolia.basescan.org/address/0xcfB913356bd7D99707CCE6CC08f628B38652E458) | also the platform fee recipient |
+| Token: Circle's testnet USDC | [`0x036CbD53842c5426634e7929541eC2318f3dCF7e`](https://sepolia.basescan.org/address/0x036CbD53842c5426634e7929541eC2318f3dCF7e) | 6 decimals |
+| EAS (predeploy) | [`0x4200000000000000000000000000000000000021`](https://sepolia.basescan.org/address/0x4200000000000000000000000000000000000021) | |
+| Verifier (the service's key) | [`0x7eB41156A2B4BC03B8d016A58caF322A0FEdFEDc`](https://sepolia.basescan.org/address/0x7eB41156A2B4BC03B8d016A58caF322A0FEdFEDc) | |
+
+| EAS schema | UID |
+|---|---|
+| Automated result | `0xf05cee4f7b084bb079503f5cacbbe7813509fbb12a6a7b75b552f8e6f8e2e687` |
+| Reviewer vote | `0x01817492ea309c39dd325b79268d4685768afdf9612d51a1376ec58abce44b41` |
+
+The escrow registered both schemas itself, with itself as the resolver and
+without revocation ([attestations.md](attestations.md)).
 
 The machine-readable record is
 [`contracts/deployments/base-sepolia.json`](../contracts/deployments/base-sepolia.json),
@@ -64,8 +85,9 @@ testnet USDC for deposits. Checked on 2026-11-12:
   [Get Funds](https://docs.base.org/base-chain/tools/network-faucets). Each
   rate-limits claims, usually to one per 24 hours; the Coinbase Developer
   Platform faucet gives up to 0.1 ETH per 24 hours and needs a sign-in.
-  Gas costs very little on Base Sepolia: the whole deployment used less than
-  0.001 ETH.
+  Gas costs very little on Base Sepolia: the whole deployment cost
+  0.000036 ETH; in the smoke test below, a party's transaction cost less than
+  0.000001 ETH and the verifier's attestation about 0.0000035 ETH.
 - **USDC:** [Circle's faucet](https://faucet.circle.com), network
   **Base Sepolia**: 20 USDC per address and network every 2 hours, no
   account, with a reCAPTCHA. The token is
@@ -89,6 +111,28 @@ export ORBIT_WATCH_KEYSTORE=~/secrets/orbit-watch/alice.json
 orbit-watch chain                  # Base Sepolia testnet, no real value; the addresses above
 orbit-watch wallet register        # signs the registration message
 ```
+
+## Smoke test on 2026-11-12
+
+The whole chain once on Base Sepolia, from the command line and with every
+party's own keystore, against the service running locally: the SIMULATED
+request `SIM-SMOKE-0001` (the example request under a new ID, with a
+six-minute challenge period), the observer reward 1 USDC and the review
+reward 0.1 USDC.
+
+| Step | Signed by | Transaction |
+|---|---|---|
+| approve and fund (deposit 1.3 USDC) | requester | [approve](https://sepolia.basescan.org/tx/0x9c86b736d748c8477ce4e6797edf3f4a0cbb751385d83a5fb8ebbbee8ee5cd98), [fund](https://sepolia.basescan.org/tx/0xc75e1ba3d7090ee65f1ee1b4c2f1819af470e064a3acbc523304ce6bd61b3222) |
+| reserve | station | [reserve](https://sepolia.basescan.org/tx/0xaecf4f231a0a9b921d00141394f89991f708976a342e3ca88315e21d439105c4) |
+| deliver (the file's SHA-256) | station | [deliver](https://sepolia.basescan.org/tx/0x4f6fd9425e1a131a3a50570af9b5f338c0e997b99491b80e0302baf20baf1ba0) |
+| automated result `pass` (EAS attestation) | verifier | [attest](https://sepolia.basescan.org/tx/0xe02c06308bbf9167f8305c2cfbc28dc228e5aa7779ab2138c7bd0b9ca8355e62) |
+| settle after the challenge period (`admin tick`) | verifier | [settle](https://sepolia.basescan.org/tx/0xbf17ae0b3f37ef1eaca3e1b371b42819d20fee25b370f887d36ceae91b3780c6) |
+| withdraw 1 USDC | station | [withdraw](https://sepolia.basescan.org/tx/0x60486134deb1d3c7b79f09d8e0acf7edb6cbe8c0da7eb3184477ba51f14500ad) |
+| withdraw the 0.3 USDC refund | requester | [withdraw](https://sepolia.basescan.org/tx/0x43f7263fbef7aff133e5388008e9fec9727453edf9d836dbc10e34cd17034a62) |
+
+Nobody challenged, so the request was accepted: the station got the observer
+reward and the requester the unused review rewards back. Rounds with reviewers
+come in the phase 2 demo (step 2.8).
 
 ## Running the service on Base Sepolia
 

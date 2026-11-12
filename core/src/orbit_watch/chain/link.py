@@ -62,7 +62,10 @@ from orbit_watch.timeutil import format_utc
 if TYPE_CHECKING:  # pragma: no cover
     from orbit_watch.service import RequestService
 
-LOG_CHUNK = 2000  # blocks per eth_getLogs call; public RPC endpoints limit the range
+# Blocks per eth_getLogs call. Endpoints limit the range (Base's public endpoint answers
+# "413 Payload Too Large" above about 200 blocks), so a refused range is halved and retried.
+LOG_CHUNK = 2000
+MIN_LOG_CHUNK = 10
 ZERO_ADDRESS = "0x" + "00" * 20
 _TX_HASH = re.compile(r"0x[0-9a-fA-F]{64}")
 # The escrow's own events that belong to another event of the same transaction.
@@ -124,6 +127,7 @@ class ChainLink:
         self.from_block = from_block
         self.receipt_timeout = receipt_timeout
         self.notice = notice(chain.chain_id)
+        self.log_chunk = LOG_CHUNK
         self._service: RequestService | None = None
         self._token: dict[str, Any] | None = None
 
@@ -542,8 +546,15 @@ class ChainLink:
                     return changed
                 ids = self._request_ids()
                 while start <= latest:
-                    end = min(latest, start + LOG_CHUNK - 1)
-                    changed += self._mirror(self.chain.events(start, end), ids)
+                    end = min(latest, start + self.log_chunk - 1)
+                    try:
+                        events = self.chain.events(start, end)
+                    except Exception as error:
+                        if self.log_chunk > MIN_LOG_CHUNK and _range_refused(error):
+                            self.log_chunk = max(MIN_LOG_CHUNK, self.log_chunk // 2)
+                            continue
+                        raise
+                    changed += self._mirror(events, ids)
                     start = end + 1
                 self.db.execute(
                     "UPDATE chain_settings SET value = ? WHERE name = 'synced_block'",
@@ -868,3 +879,12 @@ class ChainLink:
             ],
             "notice": self.notice,
         }
+
+
+def _range_refused(error: Exception) -> bool:
+    """Whether an endpoint refused an eth_getLogs block range as too large."""
+    response = getattr(error, "response", None)
+    if getattr(response, "status_code", None) == 413:
+        return True
+    text = str(error).lower()
+    return any(word in text for word in ("block range", "range too", "too many", "limit exceeded"))

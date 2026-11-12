@@ -17,9 +17,10 @@ that tells them how accurate their station is.
 > locally, with **no money and no blockchain**. Requests target civilian objects
 > only. **Simulated data is always labelled as simulated**, and automated
 > verification is a prototype, not production-ready scientific validation.
-> Phase 2, settlement on the Base Sepolia **testnet**, is under way: the escrow
-> contract in [`contracts/`](contracts) follows the phase 1 settlement rules and
-> refuses every chain but the testnet and a local one. See the [roadmap](docs/roadmap.md), the
+> Phase 2, settlement on the Base Sepolia **testnet**, is under way: the
+> contracts in [`contracts/`](contracts) follow the phase 1 settlement rules,
+> refuse every chain but the testnet and a local one, and
+> [run on Base Sepolia](docs/base-sepolia.md) with testnet USDC of no value. See the [roadmap](docs/roadmap.md), the
 > [phase 1 summary](docs/phase-1-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)

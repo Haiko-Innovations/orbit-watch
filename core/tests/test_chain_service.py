@@ -640,3 +640,30 @@ def test_the_server_starts_on_a_chain_only_with_the_escrows_verifier(world, tmp_
     with pytest.raises(ChainError) as error:
         open_service(tmp_path / "plain", world.service.reviewers, context, chain=link)
     assert error.value.code == "not_a_chain_service"
+
+
+def test_a_refused_log_range_is_halved_and_retried(api, world, monkeypatch):
+    """Endpoints limit eth_getLogs ranges (Base's public one to about 200 blocks)."""
+    import requests
+
+    from orbit_watch.chain.link import _range_refused
+
+    real = world.chain.events
+    spans = []
+
+    def limited(start, end):
+        spans.append(end - start + 1)
+        if end - start + 1 > 100:
+            error = requests.HTTPError("413 Client Error: Payload Too Large")
+            error.response = requests.Response()
+            error.response.status_code = 413
+            raise error
+        return real(start, end)
+
+    monkeypatch.setattr(world.chain, "events", limited)
+    world.local.rpc("anvil_mine", [hex(450)])
+    open_and_fund(api)
+    assert world.link.log_chunk <= 100 and max(spans) > 100
+    assert api.view()["record"]["status"] == "funded"
+    assert _range_refused(ValueError("query exceeds max block range 1000"))
+    assert not _range_refused(ValueError("connection refused"))

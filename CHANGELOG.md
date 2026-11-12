@@ -81,7 +81,8 @@ mainnet or real money.
   escrow from the record in the package, and the command line uses Base's
   public endpoint unless `--rpc` is given. On the testnet one maintainer holds
   every key, so the Safe separates keys, not people (D-24). The script runs in
-  CI against a local chain with Base Sepolia's EAS and Safe code.
+  CI against a local chain with Base Sepolia's EAS and Safe code. A smoke test
+  ran one SIMULATED request on Base Sepolia from funding to withdrawal.
 - Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project,
   D-19 on settlement on chain, D-20 on attestations, D-21 on governance,
   D-22 on the adapter interface, D-23 on the service on a chain and D-24 on
@@ -98,6 +99,12 @@ mainnet or real money.
 - The escrow's version is 1.0.0, the version deployed on Base Sepolia.
   `orbit-watch chain` and `GET /v1/chain` also show the reviewer registry, and
   reporting a transaction on its own shows the testnet notice.
+- The service reads the escrow's events in smaller block ranges when an
+  endpoint refuses a range: Base's public endpoint answers at most about 200
+  blocks per query.
+- `admin tick` shows the transactions the service sent on chain, and
+  `request show` no longer prints "until None" for a reservation that ended
+  with a delivery.
 
 ## [0.2.0] - 2026-11-11
 

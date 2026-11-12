@@ -204,8 +204,9 @@ def describe_request(view: dict[str, Any]) -> str:
                 f" each, platform fee {amount(split['platform_fee'], token)})"
             )
     if record.get("reserved_by"):
+        until = record.get("reservation_expires_at")
         lines.append(
-            f"  reserved by {record['reserved_by']} until {record['reservation_expires_at']}"
+            f"  reserved by {record['reserved_by']}" + (f" until {until}" if until else "")
         )
     if record.get("observer"):
         lines.append(f"  delivered by {record['observer']} at {record['delivered_at']}")
@@ -437,8 +438,11 @@ def cmd_admin_key(args: argparse.Namespace) -> int:
 
 def cmd_admin_tick(args: argparse.Namespace) -> int:
     result = _post(args, "/v1/admin/tick").json()
-    changed = result["changed"]
-    _print(args, result, "deadlines applied; changed: " + (", ".join(changed) or "nothing"))
+    lines = ["deadlines applied; changed: " + (", ".join(result["changed"]) or "nothing")]
+    if "sent" in result:  # on a chain: what the service signed with its verifier key
+        sent = ", ".join(result["sent"]) or "nothing"
+        lines.append(f"sent on chain: {sent} ({result['notice']})")
+    _print(args, result, "\n".join(lines))
     return 0
 
 

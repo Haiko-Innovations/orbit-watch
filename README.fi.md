@@ -21,9 +21,10 @@ tarkka heidän asemansa on.
 > siviilikohteita. **Simuloitu data on aina merkitty simuloiduksi**, ja
 > automaattinen tarkistus on prototyyppi, ei tuotantovalmis tieteellinen
 > validointi. Vaihe 2, tilitys Base Sepolia -**testiverkossa**, on alkanut:
-> hakemiston [`contracts/`](contracts) escrow-sopimus noudattaa vaiheen 1
-> tilityssääntöjä ja kieltäytyy toimimasta muualla kuin testiverkossa ja
-> paikallisessa ketjussa.
+> hakemiston [`contracts/`](contracts) sopimukset noudattavat vaiheen 1
+> tilityssääntöjä, kieltäytyvät toimimasta muualla kuin testiverkossa ja
+> paikallisessa ketjussa ja [toimivat Base Sepoliassa](docs/base-sepolia.md)
+> arvottomalla testi-USDC:llä.
 > Katso [tiekartta](docs/roadmap.fi.md),
 > [vaiheen 1 yhteenveto](docs/phase-1-summary.fi.md) ja [muutosloki](CHANGELOG.md).
 
