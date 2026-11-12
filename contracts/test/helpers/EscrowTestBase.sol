@@ -51,7 +51,7 @@ abstract contract EscrowTestBase is BaseSepoliaEas {
     function setUp() public virtual {
         eas = _installEas();
         usd = new TestUSD();
-        registry = new OrbitWatchReviewerRegistry(address(this));
+        registry = new OrbitWatchReviewerRegistry(address(this), new address[](0));
         registry.addReviewer(r1);
         registry.addReviewer(r2);
         registry.addReviewer(r3);

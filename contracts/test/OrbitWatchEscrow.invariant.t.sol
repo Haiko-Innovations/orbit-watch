@@ -337,7 +337,8 @@ contract OrbitWatchEscrowInvariantTest is StdInvariant, BaseSepoliaEas {
     function setUp() public {
         IEAS eas = _installEas();
         usd = new TestUSD();
-        OrbitWatchReviewerRegistry registry = new OrbitWatchReviewerRegistry(address(this));
+        OrbitWatchReviewerRegistry registry =
+            new OrbitWatchReviewerRegistry(address(this), new address[](0));
         escrow =
             new OrbitWatchEscrow(usd, makeAddr("platform"), eas, registry, makeAddr("verifier"));
         handler = new EscrowHandler(escrow, usd, eas, makeAddr("platform"), makeAddr("verifier"));

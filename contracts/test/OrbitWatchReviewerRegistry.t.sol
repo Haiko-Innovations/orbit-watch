@@ -15,7 +15,7 @@ contract OrbitWatchReviewerRegistryTest is Test {
     address internal station = makeAddr("station");
 
     function setUp() public {
-        registry = new OrbitWatchReviewerRegistry(owner);
+        registry = new OrbitWatchReviewerRegistry(owner, new address[](0));
     }
 
     function test_OnlyTheOwnerChangesTheRegistry() public {
@@ -48,6 +48,19 @@ contract OrbitWatchReviewerRegistryTest is Test {
         vm.expectRevert(abi.encodeWithSelector(OrbitWatchReviewerRegistry.NotListed.selector, r1));
         registry.removeReviewer(r1);
         vm.stopPrank();
+    }
+
+    function test_InitialReviewersAreCheckedLikeAnyOther() public {
+        address[] memory initial = new address[](2);
+        (initial[0], initial[1]) = (r1, r2);
+        OrbitWatchReviewerRegistry seeded = new OrbitWatchReviewerRegistry(owner, initial);
+        assertEq(seeded.reviewers().length, 2);
+        assertEq(seeded.owner(), owner);
+        initial[1] = r1;
+        vm.expectRevert(
+            abi.encodeWithSelector(OrbitWatchReviewerRegistry.AlreadyListed.selector, r1)
+        );
+        new OrbitWatchReviewerRegistry(owner, initial);
     }
 
     function test_TheListIsBounded() public {

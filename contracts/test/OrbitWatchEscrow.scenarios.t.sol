@@ -73,7 +73,8 @@ contract OrbitWatchEscrowScenariosTest is BaseSepoliaEas {
     /// @dev A fresh token, registry (with the scenario's reviewers) and escrow.
     function _deploy(string[] memory parties) internal {
         usd = new TestUSD();
-        OrbitWatchReviewerRegistry registry = new OrbitWatchReviewerRegistry(address(this));
+        OrbitWatchReviewerRegistry registry =
+            new OrbitWatchReviewerRegistry(address(this), new address[](0));
         for (uint256 p; p < parties.length; ++p) {
             if (vm.indexOf(parties[p], "reviewer:") == 0) registry.addReviewer(_party(parties[p]));
         }

@@ -440,3 +440,27 @@ Accepted · 2026-11-12 (with the pull request that implements step 2.3). See
   commit and updated by hand like the others (D-18).
 - Open: an observer could grind the delivered file to steer reviewer
   selection, as in phase 1.
+
+### D-21 Governance of the reviewer registry
+
+Accepted · 2026-11-12 (with the pull request that implements step 2.4). See
+[who can change what](../contracts/README.md#privileges-who-can-change-what):
+
+- The registry is owned by an OpenZeppelin `TimelockController` from its
+  deployment, with the initial reviewers passed to its constructor. No single
+  person ever owns it.
+- Timelock: minimum delay 48 hours; the Safe is the only proposer and
+  canceller; anyone may execute a change once its delay has passed; no
+  administrator, so only the timelock itself (that is, the Safe and 48 hours)
+  can change its delay or its roles.
+- The Safe is a Safe 1.4.1 account (SafeL2, canonical deployment) with three
+  signers and a threshold of two. The deployment function refuses any other
+  threshold or number of signers.
+- One deployment function (`script/OrbitWatchGovernance.sol`) is used by the
+  tests and by the testnet deployment, so the tested set-up is the deployed
+  one.
+- The tests use the canonical Safe 1.4.1 bytecode from Base Sepolia (checked
+  against the code hashes in safe-deployments and on chain) with test keys. The
+  Safe code is LGPL-3.0 and is used only in tests.
+- The three signers are not needed until the testnet deployment (step 2.7).
+  This replaces "decided before step 2.4" in P2-07.
