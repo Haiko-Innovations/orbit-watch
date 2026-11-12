@@ -70,8 +70,19 @@ and [D-21](../docs/decisions.md#d-21-governance-of-the-reviewer-registry).
 Every change to the reviewer list is therefore signed by two of the three
 signers and visible on chain for 48 hours before it takes effect.
 `script/OrbitWatchGovernance.sol` deploys this set-up, and the tests use the
-same function. It refuses a Safe that is not 2-of-3. The signers are chosen
-before the testnet deployment (step 2.7).
+same function. It refuses a Safe that is not 2-of-3. On the testnet, one
+maintainer holds all three signer keys, so the 2-of-3 separates keys, not
+people; before anything but a testnet the signers must be three people, and
+the Safe can replace them without a new deployment
+([D-24](../docs/decisions.md#d-24-the-base-sepolia-deployment)).
+
+## Deployment
+
+`script/DeployOrbitWatch.s.sol` deploys the Safe, the timelock, the registry
+and the escrow, writes the deployment record and checks a deployment against
+its record. The Base Sepolia settings and record are in `deployments/`; the
+instructions are in [docs/base-sepolia.md](../docs/base-sepolia.md). The
+deployer keeps no privilege.
 
 ## Licences
 

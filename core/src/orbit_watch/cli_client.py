@@ -80,6 +80,8 @@ def _wallet(args: argparse.Namespace, *, send: bool = True):
         ) from None
     keystore = args.keystore or os.environ.get("ORBIT_WATCH_KEYSTORE")
     rpc = args.rpc or os.environ.get("ORBIT_WATCH_RPC")
+    if send and not rpc:
+        rpc = _public_rpc(args)
     if not keystore or (send and not rpc):
         raise ValueError(
             "to sign, give your encrypted keystore (--keystore or $ORBIT_WATCH_KEYSTORE, for "
@@ -89,6 +91,14 @@ def _wallet(args: argparse.Namespace, *, send: bool = True):
     if not send:
         return Wallet(None, load_keystore(keystore, read_password(args.password_file)))  # type: ignore[arg-type]
     return open_wallet(rpc, keystore, args.password_file)
+
+
+def _public_rpc(args: argparse.Namespace) -> str | None:
+    """The public RPC endpoint of the API's chain, if it has one (Base Sepolia)."""
+    from orbit_watch.chain.networks import public_rpc
+
+    info = _chain_info(args)
+    return public_rpc(info["chain_id"]) if info else None
 
 
 def _report(args: argparse.Namespace, tx_hash: str) -> dict[str, Any]:
@@ -140,7 +150,8 @@ def _show(args: argparse.Namespace, result: Any, human: str | None = None) -> in
     if "transaction" in result and "request" in result:
         view = result["request"]
         if view is None:
-            _print(args, result, describe_transaction(result["transaction"]))
+            human = f"{describe_transaction(result['transaction'])} ({result['notice']})"
+            _print(args, result, human)
             return 0
         result = view
     _print(args, result, human or describe_request(result))
@@ -193,8 +204,9 @@ def describe_request(view: dict[str, Any]) -> str:
                 f" each, platform fee {amount(split['platform_fee'], token)})"
             )
     if record.get("reserved_by"):
+        until = record.get("reservation_expires_at")
         lines.append(
-            f"  reserved by {record['reserved_by']} until {record['reservation_expires_at']}"
+            f"  reserved by {record['reserved_by']}" + (f" until {until}" if until else "")
         )
     if record.get("observer"):
         lines.append(f"  delivered by {record['observer']} at {record['delivered_at']}")
@@ -426,8 +438,11 @@ def cmd_admin_key(args: argparse.Namespace) -> int:
 
 def cmd_admin_tick(args: argparse.Namespace) -> int:
     result = _post(args, "/v1/admin/tick").json()
-    changed = result["changed"]
-    _print(args, result, "deadlines applied; changed: " + (", ".join(changed) or "nothing"))
+    lines = ["deadlines applied; changed: " + (", ".join(result["changed"]) or "nothing")]
+    if "sent" in result:  # on a chain: what the service signed with its verifier key
+        sent = ", ".join(result["sent"]) or "nothing"
+        lines.append(f"sent on chain: {sent} ({result['notice']})")
+    _print(args, result, "\n".join(lines))
     return 0
 
 
@@ -460,6 +475,7 @@ def cmd_chain(args: argparse.Namespace) -> int:
     lines = [
         f"{info['network']} (chain {info['chain_id']}): {info['notice']}",
         f"  escrow    {info['escrow']}",
+        f"  reviewers {info['registry']} (registry)",
         f"  token     {token['symbol']} {token['address']} ({token['decimals']} decimals)",
         f"  EAS       {info['eas']}",
         f"  schemas   result {info['result_schema']}",
@@ -583,7 +599,10 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
         help="file with the keystore's password (default $ORBIT_WATCH_PASSWORD_FILE; "
         "otherwise it is asked for)",
     )
-    signing.add_argument("--rpc", help="the chain's RPC endpoint (default $ORBIT_WATCH_RPC)")
+    signing.add_argument(
+        "--rpc",
+        help="the chain's RPC endpoint (default $ORBIT_WATCH_RPC, or Base Sepolia's public one)",
+    )
     signing.add_argument(
         "--unsigned",
         action="store_true",

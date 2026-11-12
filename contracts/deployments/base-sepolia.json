@@ -1,0 +1,30 @@
+{
+  "chain_id": 84532,
+  "deployer": "0x65647807A0Fe76DFFa16377C81ca9daf91BbE298",
+  "eas": "0x4200000000000000000000000000000000000021",
+  "escrow": "0xdfeB2255BdB4a3be616c215858B87Eb15E57f4D4",
+  "escrow_version": "1.0.0",
+  "fee_recipient": "0xcfB913356bd7D99707CCE6CC08f628B38652E458",
+  "from_block": 57952798,
+  "network": "base-sepolia",
+  "registry": "0xE1D3f4b308C781aDcAAF628DDf499d78C7361018",
+  "result_schema_uid": "0xf05cee4f7b084bb079503f5cacbbe7813509fbb12a6a7b75b552f8e6f8e2e687",
+  "reviewers": [
+    "0xdd53Ebe04af0BEbcE35365170478ae8291079c65",
+    "0x600e4f215b7209b9Dc7BB0F507a8A4DCe894D219",
+    "0x3606789586bC239d463256b6A751Ea69636F6b92",
+    "0xa021E92d09EA8938E5bfAAe808c7b8851B5364f8"
+  ],
+  "safe": "0xcfB913356bd7D99707CCE6CC08f628B38652E458",
+  "safe_signers": [
+    "0x66DFcAfeff7a08bFbFfDb11f6A0307eE178f04Ca",
+    "0x797EF23a94FDB4a5016381F871CC5ad8F01730c0",
+    "0x2C7Bd8F22d241a4B3c099736291B6E4a2Caa3DBc"
+  ],
+  "safe_threshold": 2,
+  "timelock": "0xc1A5cC62027e309830674D1A7f26B1E4909f5704",
+  "timelock_min_delay_seconds": 172800,
+  "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "verifier": "0x7eB41156A2B4BC03B8d016A58caF322A0FEdFEDc",
+  "vote_schema_uid": "0x01817492ea309c39dd325b79268d4685768afdf9612d51a1376ec58abce44b41"
+}

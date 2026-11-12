@@ -81,10 +81,11 @@ lapsed is refused.
 
 ## On a testnet chain
 
-Phase 2, step 2.6. Started with `--chain-rpc`, `--escrow` and
-`--verifier-keystore`, the server settles funded requests on the escrow
-contract: see [chain-service.md](chain-service.md). **The API never sees a
-party's key.** The calls above stay the same, with three differences:
+Phase 2, step 2.6. Started with `--network base-sepolia` and
+`--verifier-keystore` (the deployment in [base-sepolia.md](base-sepolia.md),
+step 2.7), or with `--chain-rpc`, `--escrow` and `--verifier-keystore` for
+another escrow, the server settles funded requests on the escrow contract: see
+[chain-service.md](chain-service.md). **The API never sees a party's key.** The calls above stay the same, with three differences:
 
 - For a funded request (and for funding), `fund`, `cancel`, `reserve`,
   `deliveries`, `challenge` and the answer to a real review task return
@@ -110,7 +111,7 @@ party's key.** The calls above stay the same, with three differences:
 
 | Method and path | Role | Body | Does |
 |---|---|---|---|
-| `GET /v1/chain` | none | | the network, escrow, token (symbol, decimals), EAS schemas, verifier, explorer, notice and the last block read |
+| `GET /v1/chain` | none | | the network, escrow, reviewer registry, token (symbol, decimals), EAS schemas, verifier, explorer, notice and the last block read |
 | `GET /v1/wallet` | any | | your party, its wallet and the message to sign to register one |
 | `POST /v1/wallet` | any | `{"address": "0x…", "signature": "0x…"}` | register your wallet (EIP-191 signature of the message) |
 | `POST /v1/wallet/withdraw` | any | | `202`: the `withdraw` transaction to sign |
@@ -156,8 +157,9 @@ export ORBIT_WATCH_KEY=$(cat requester.key)
 | on a testnet chain | `chain`, `wallet register [--print-message \| --address A --signature S]`, `wallet withdraw`, `tx list [--request ID]`, `tx report HASH` |
 
 On a testnet chain, the commands sign with your own encrypted keystore
-(`--keystore`, `--password-file`, `--rpc`) or print the transactions for
-another wallet (`--unsigned`); see
+(`--keystore`, `--password-file`, `--rpc`; on Base Sepolia `--rpc` defaults
+to Base's public endpoint) or print the transactions for another wallet
+(`--unsigned`); see
 [chain-service.md](chain-service.md#the-command-line).
 
 Every command takes `--json` to print the API's answer as is. Changes print

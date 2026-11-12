@@ -104,4 +104,4 @@ adapter stays the tested bridge between the phase 1 rules and the escrow: the
 settlement scenario suite runs through it, and the service checks every
 settlement against the same `settlement_plan`.
 
-Deployment to Base Sepolia comes with step 2.7.
+The deployment on Base Sepolia (step 2.7): [base-sepolia.md](base-sepolia.md).

@@ -108,15 +108,16 @@ jobs:
           forge test
 
       # On a local Anvil chain: the evm-testnet settlement adapter with the phase 1
-      # settlement scenario suite (step 2.5), and the service, API and command line with
-      # every party signing its own transactions (step 2.6). Needs the build above.
-      # Never touches a public network and holds no keys but local test keys (P2-08).
-      - name: Settlement adapter, service and command line on a local chain (Anvil)
+      # settlement scenario suite (step 2.5), the service, API and command line with
+      # every party signing its own transactions (step 2.6), and the deployment script
+      # run with forge script (step 2.7). Needs the build above. Never touches a public
+      # network and holds no keys but local test keys (P2-08).
+      - name: Settlement adapter, service, command line and deployment on a local chain (Anvil)
         env:
           ORBIT_WATCH_EVM_TESTS: "1"
         run: >-
           uv run --locked --python 3.12 pytest tests/test_evm_adapter.py tests/test_chain.py
-          tests/test_chain_service.py tests/test_cli_chain.py
+          tests/test_chain_service.py tests/test_cli_chain.py tests/test_deploy_script.py
 
       - name: Known vulnerabilities (runtime dependencies, including the API and EVM extras)
         run: |

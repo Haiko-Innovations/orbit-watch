@@ -37,7 +37,7 @@ contract OrbitWatchEscrowAttestationsTest is EscrowTestBase {
         assertEq(
             vote.schema, "string requestId,bytes32 deliverySha256,bool approve,bytes32 reasonSha256"
         );
-        assertEq(escrow.version(), "1.0.0-dev");
+        assertEq(escrow.version(), "1.0.0");
         assertFalse(escrow.isPayable());
     }
 

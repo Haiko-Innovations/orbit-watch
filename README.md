@@ -17,9 +17,10 @@ that tells them how accurate their station is.
 > locally, with **no money and no blockchain**. Requests target civilian objects
 > only. **Simulated data is always labelled as simulated**, and automated
 > verification is a prototype, not production-ready scientific validation.
-> Phase 2, settlement on the Base Sepolia **testnet**, is under way: the escrow
-> contract in [`contracts/`](contracts) follows the phase 1 settlement rules and
-> refuses every chain but the testnet and a local one. See the [roadmap](docs/roadmap.md), the
+> Phase 2, settlement on the Base Sepolia **testnet**, is under way: the
+> contracts in [`contracts/`](contracts) follow the phase 1 settlement rules,
+> refuse every chain but the testnet and a local one, and
+> [run on Base Sepolia](docs/base-sepolia.md) with testnet USDC of no value. See the [roadmap](docs/roadmap.md), the
 > [phase 1 summary](docs/phase-1-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)
@@ -89,7 +90,8 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Open data (CC BY 4.0, embargo, permanent URLs) | `public` | [data-publication.md](docs/data-publication.md) |
 | Escrow contract, EAS attestations and reviewer registry for the Base Sepolia **testnet** (phase 2, in progress) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [who can change what](contracts/README.md#privileges-who-can-change-what) |
 | Testnet settlement adapter (Python, `evm` extra) | | [evm-adapter.md](docs/evm-adapter.md) |
-| Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --chain-rpc …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
+| Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
+| The contracts on **Base Sepolia**: addresses, faucets, who holds which key, deploying | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
 
 The Python code is in [`core/`](core) and the Solidity contracts in [`contracts/`](contracts). Simulated examples are in
 [`examples/`](examples).

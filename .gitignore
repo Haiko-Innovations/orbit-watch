@@ -24,3 +24,6 @@ contracts/out/
 contracts/cache/
 contracts/broadcast/*/31337/
 .env
+
+# Local test deployments (core/tests/test_deploy_script.py)
+contracts/deployments/anvil*

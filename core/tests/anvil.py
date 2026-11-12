@@ -26,11 +26,23 @@ import pytest
 REPO = Path(__file__).resolve().parents[2]
 CONTRACTS_OUT = REPO / "contracts" / "out"
 EAS_FIXTURES = REPO / "contracts" / "test" / "fixtures" / "base-sepolia-eas"
+SAFE_FIXTURES = REPO / "contracts" / "test" / "fixtures" / "base-sepolia-safe"
 SCHEMA_REGISTRY_PREDEPLOY = "0x4200000000000000000000000000000000000020"
 EAS_PREDEPLOY = "0x4200000000000000000000000000000000000021"
 # The same hashes as contracts/test/helpers/BaseSepoliaEas.sol.
 EAS_CODEHASH = "5b1a9eac43a2752a4f6b83617cd580cf17abc5b15812c3cea6c26c4dd68fa721"
 SCHEMA_REGISTRY_CODEHASH = "87e5c437b0ed0763fb8dc0ab25f25cf5a302057a50de464387b587acec1f040a"
+# Canonical Safe 1.4.1, the same hashes as contracts/test/helpers/BaseSepoliaSafe.sol.
+SAFE_CODE = {
+    "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762": (
+        "safe-l2.runtime.hex",
+        "b1f926978a0f44a2c0ec8fe822418ae969bd8c3f18d61e5103100339894f81ff",
+    ),
+    "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67": (
+        "safe-proxy-factory.runtime.hex",
+        "50c3cdc4074750a7a974204a716c999edd37482f907608d960b2b025ee0b3317",
+    ),
+}
 GAS_MONEY = 10**21  # local test ether for every account
 
 
@@ -117,6 +129,16 @@ class LocalChain:
             (EAS_PREDEPLOY, "eas.runtime.hex", EAS_CODEHASH),
         ):
             code = (EAS_FIXTURES / file).read_text(encoding="utf-8").strip()
+            if keccak(hexstr=code).hex() != codehash:
+                raise RuntimeError(f"{file} is not the Base Sepolia code")
+            self.rpc("anvil_setCode", [address, code])
+
+    def install_safe(self) -> None:
+        """The canonical Safe 1.4.1 code, as on Base Sepolia (for the deployment script)."""
+        from eth_utils import keccak
+
+        for address, (file, codehash) in SAFE_CODE.items():
+            code = (SAFE_FIXTURES / file).read_text(encoding="utf-8").strip()
             if keccak(hexstr=code).hex() != codehash:
                 raise RuntimeError(f"{file} is not the Base Sepolia code")
             self.rpc("anvil_setCode", [address, code])

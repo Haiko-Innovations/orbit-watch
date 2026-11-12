@@ -21,13 +21,14 @@ its one open criterion, a real public IOD example, is still open
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
 **Now: phase 2**, settlement on a testnet. Its decisions were approved on
-2026-11-11. Steps 2.1 to 2.6 are done: the contracts project, the settlement
+2026-11-11. Steps 2.1 to 2.7 are done: the contracts project, the settlement
 rules on chain, EAS attestations with reviewer rounds, the reviewer registry
 behind a Safe 2-of-3 multisig and a 48-hour timelock, the Python
 `evm-testnet` adapter, which passes the phase 1 settlement scenario suite on a
-local chain, and the service, API and command line on the chain, where every
-party signs with its own wallet. Next is step 2.7: the Base Sepolia
-deployment.
+local chain, the service, API and command line on the chain, where every
+party signs with its own wallet, and the deployment on Base Sepolia
+([base-sepolia.md](base-sepolia.md)). Next is step 2.8: the phase 2 demo on
+Base Sepolia and release 0.3.0.
 
 ## Next steps
 
@@ -94,7 +95,7 @@ public timelock**, and a Python adapter on **web3.py**.
 | ✅ **2.4 Reviewer registry** ([#31](https://github.com/Haiko-Innovations/orbit-watch/issues/31)) | Registry of reviewer addresses owned by an OpenZeppelin TimelockController whose proposer is a Safe multisig; the privileges are documented in the README. | Adding and removing reviewers works only through the multisig and the timelock; tested. |
 | ✅ **2.5 Testnet adapter** ([#32](https://github.com/Haiko-Innovations/orbit-watch/issues/32)) | `evm-testnet` settlement adapter in Python (web3.py): `fund`, `reserve`, `attest`, `settle`, `refund` as transactions and attestations. | The adapter passes the settlement scenario suite against a local Anvil chain in CI. |
 | ✅ **2.6 Service, API and CLI** ([#33](https://github.com/Haiko-Innovations/orbit-watch/issues/33)) | Wallet addresses per party; pending, confirmed and failed transactions shown apart; the chain is the source of truth for payments; explorer links; signing with the user's own wallet or keystore. | The whole chain runs from the CLI and the API against a local chain; no key ever leaves its owner. |
-| **2.7 Testnet deployment** ([#34](https://github.com/Haiko-Innovations/orbit-watch/issues/34)) | Deployment scripts and settings for Base Sepolia, schema registration, faucet instructions (testnet ETH and USDC), testnet labels everywhere. | The contracts run on Base Sepolia from the documented instructions. |
+| ✅ **2.7 Testnet deployment** ([#34](https://github.com/Haiko-Innovations/orbit-watch/issues/34)) | Deployment scripts and settings for Base Sepolia, schema registration, faucet instructions (testnet ETH and USDC), testnet labels everywhere. | The contracts run on Base Sepolia from the documented instructions. |
 | **2.8 Phase 2 demo** ([#35](https://github.com/Haiko-Innovations/orbit-watch/issues/35)) | A demo on Base Sepolia with separate wallets per party, and the phase 2 summary. | The phase 2 completion criteria in [plan.md](plan.md#phase-2-monetary-settlement-on-a-testnet-evm-l2--eas) are met; release 0.3.0. |
 
 ### Phase 3 (later)

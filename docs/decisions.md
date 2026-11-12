@@ -243,8 +243,9 @@ Accepted · 2026-11-11 (with the pull request that implements step 1.8). See
 P2-01 to P2-11 were proposed for the
 [roadmap](roadmap.md#phase-2-settlement-on-a-testnet-target-version-030)'s
 phase 2 in [#27](https://github.com/Haiko-Innovations/orbit-watch/issues/27)
-and approved by the maintainer on 2026-11-11. One point is still open: the
-signers of the Safe in P2-07, needed at step 2.4. Facts were checked on
+and approved by the maintainer on 2026-11-11. The one open point, the
+signers of the Safe in P2-07, was settled for the testnet in
+[D-24](#d-24-the-base-sepolia-deployment). Facts were checked on
 2026-11-11; the sources are listed under each decision. Versions and addresses
 are settings, re-checked when they are used.
 
@@ -532,3 +533,44 @@ Accepted · 2026-11-12 (with the pull request that implements step 2.6). See
   and a later block can cost a little more.
 - Open: someone can fund an open request's ID first (the requester then
   creates it again under a new ID); chain reorganisations are not handled.
+
+### D-24 The Base Sepolia deployment
+
+Accepted · 2026-11-12 (with the pull request that implements step 2.7). See
+[base-sepolia.md](base-sepolia.md) and
+[`contracts/script/DeployOrbitWatch.s.sol`](../contracts/script/DeployOrbitWatch.s.sol):
+
+- **One script deploys everything**, in order: a Safe 1.4.1 account (2 of 3)
+  from the canonical Safe proxy factory, the timelock and the registry through
+  `OrbitWatchGovernance` (D-21), and the escrow 1.0.0. The tests run the same
+  function, and a local-chain test runs the script itself with
+  `forge script --broadcast` and an encrypted keystore. The script refuses
+  other chains, Safe code that is not the canonical 1.4.1 code, a token other
+  than Circle's testnet USDC on Base Sepolia, fewer than three reviewers and a
+  verifier that is also a signer or a reviewer.
+- **A record, checked on chain.** The script writes the deployment record
+  (`contracts/deployments/base-sepolia.json`); its `check` reads the record
+  back and checks every contract against it: the Safe's signers and threshold,
+  the timelock's delay and roles, the registry's owner and reviewers, the
+  escrow's fixed settings, and that the deployer kept no privilege. The
+  package carries the same record, so `orbit-watch serve --network
+  base-sepolia` needs only the verifier key.
+- **Settings.** Token: Circle's testnet USDC. Fee recipient: the Safe (the fee
+  is 0 unless a request sets one). Initial reviewers: four SIMULATED reviewers
+  without declared affiliations (`reviewer:sim-aino`, `-chen`, `-eero`,
+  `-fatima`); reviewers with affiliations are added through the Safe and the
+  timelock, together with their affiliations.
+- **Keys on the testnet: one maintainer holds them all.** Orbit Watch has one
+  developer in phase 2. The three Safe signers, the verifier, the deployer and
+  the simulated parties are separate testnet-only keys, each an encrypted
+  keystore on the machine that runs the service, funded only from faucets
+  (P2-09). On the testnet, the 2-of-3 Safe is therefore a technical set-up,
+  not a separation between people: one person can change the reviewer list,
+  still publicly and only after 48 hours. **Before anything but a testnet,
+  the signers must be three people.** The Safe can replace its signers itself
+  (two signers approving) without a new deployment; a test shows this.
+- **Source verification on Sourcify**, which needs no API key. Transaction
+  links stay on Basescan (P2-10).
+- Alternative: the deployment as a Python command next to the service. A
+  Foundry script keeps deployment in the contracts project, where the tests
+  already use the same governance function, and Foundry verifies the sources.

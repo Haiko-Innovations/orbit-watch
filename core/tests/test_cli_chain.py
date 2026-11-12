@@ -256,3 +256,23 @@ def test_the_whole_chain_from_the_command_line(server, capsys):
         path.read_bytes() for path in (server["tmp"] / "service").rglob("*") if path.is_file()
     )
     assert not [s for s in secrets if s in stored]
+
+
+def test_tick_shows_what_the_service_sent_on_chain(monkeypatch, capsys):
+    import argparse
+
+    from orbit_watch import cli_client
+
+    class Reply:
+        def json(self):
+            return {
+                "changed": [],
+                "sent": ["0xabc"],
+                "notice": "Base Sepolia testnet, no real value",
+            }
+
+    monkeypatch.setattr(cli_client, "_post", lambda *args, **kwargs: Reply())
+    assert cli_client.cmd_admin_tick(argparse.Namespace(json=False)) == 0
+    out = capsys.readouterr().out
+    assert "changed: nothing" in out
+    assert "sent on chain: 0xabc (Base Sepolia testnet, no real value)" in out

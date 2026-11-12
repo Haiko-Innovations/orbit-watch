@@ -320,9 +320,17 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
     registry, context, notes = _service_inputs(args)
     chain = None
+    if args.network:
+        if not args.verifier_keystore:
+            _err(f"on {args.network}, give --verifier-keystore")
+            return EXIT_USAGE
+        _apply_network(args)
     if args.chain_rpc or args.escrow or args.verifier_keystore:
         if not (args.chain_rpc and args.escrow and args.verifier_keystore):
-            _err("on a chain, give --chain-rpc, --escrow and --verifier-keystore together")
+            _err(
+                "on a chain, give --chain-rpc, --escrow and --verifier-keystore together, or "
+                "--network and --verifier-keystore"
+            )
             return EXIT_USAGE
         try:
             chain = _chain_link(args)
@@ -348,6 +356,22 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _apply_network(args: argparse.Namespace) -> None:
+    """Fill in the chain settings from a known deployment (step 2.7)."""
+    from orbit_watch.chain import ChainError
+    from orbit_watch.chain.networks import deployment, public_rpc
+
+    record = deployment(args.network)
+    if args.escrow and args.escrow.lower() != record["escrow"].lower():
+        raise ChainError(
+            "other_escrow", f"--escrow is not the escrow of {args.network} ({record['escrow']})"
+        )
+    args.escrow = record["escrow"]
+    args.chain_rpc = args.chain_rpc or public_rpc(record["chain_id"])
+    if args.from_block is None:
+        args.from_block = record["from_block"]
+
+
 def _chain_link(args: argparse.Namespace):
     """The service's link to a testnet chain, with the verifier key (step 2.6)."""
     import stat
@@ -367,7 +391,7 @@ def _chain_link(args: argparse.Namespace):
         "verifier keystore password: ",
         env="ORBIT_WATCH_VERIFIER_PASSWORD_FILE",
     )
-    return ChainLink(chain, load_keystore(keystore, password), from_block=args.from_block)
+    return ChainLink(chain, load_keystore(keystore, password), from_block=args.from_block or 0)
 
 
 def cmd_keys_create(args: argparse.Namespace) -> int:
@@ -588,6 +612,12 @@ def build_parser() -> argparse.ArgumentParser:
         "chain. The service holds only the verifier key; every party signs its own "
         "transactions.",
     )
+    chain.add_argument(
+        "--network",
+        choices=["base-sepolia"],
+        help="a deployment this version knows: its escrow, first block and public RPC "
+        "endpoint (override the endpoint with --chain-rpc)",
+    )
     chain.add_argument("--chain-rpc", help="the chain's JSON-RPC endpoint")
     chain.add_argument("--escrow", help="the escrow contract's address")
     chain.add_argument(
@@ -599,7 +629,10 @@ def build_parser() -> argparse.ArgumentParser:
         "otherwise it is asked for)",
     )
     chain.add_argument(
-        "--from-block", type=int, default=0, help="the escrow's deployment block (default 0)"
+        "--from-block",
+        type=int,
+        default=None,
+        help="the escrow's deployment block (default: the network's, or 0)",
     )
     serve.set_defaults(handler=cmd_serve)
 
