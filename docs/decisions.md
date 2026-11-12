@@ -464,3 +464,25 @@ Accepted · 2026-11-12 (with the pull request that implements step 2.4). See
   Safe code is LGPL-3.0 and is used only in tests.
 - The three signers are not needed until the testnet deployment (step 2.7).
   This replaces "decided before step 2.4" in P2-07.
+
+### D-22 Adapter interface 2 and the evm-testnet adapter
+
+Accepted · 2026-11-12 (with the pull request that implements step 2.5). See
+[evm-adapter.md](evm-adapter.md) and [settlement.md](settlement.md#adapter-interface):
+
+- **Interface 2.** The phase 1 interface did not carry what a chain needs:
+  the terms and split at funding, the delivery, the challenge and the time.
+  Every mutating call may now carry `record`, the lifecycle record right after
+  the event. `deliver` and `challenge` are new calls. The points ledger
+  ignores the record and journals nothing for the two new calls, so phase 1
+  behaves exactly as before (the phase 1 demo output is unchanged).
+- **The chain applies the rules; the adapter checks them.** After each
+  settlement the adapter compares the escrow's `Credited` events with
+  `settlement_plan`, payout by payout (`chain_disagrees` otherwise). When the
+  escrow chooses reviewers, the adapter checks them against the record.
+- **web3.py 8.0 as the optional `evm` extra.** Nothing else imports it. The
+  ABIs ship in the package and a test keeps them equal to the Foundry build.
+- **Local test accounts** derived from party names, and moving the chain's
+  clock to the record's time, are possible only on a local Anvil chain.
+- The adapter keeps its idempotency keys in memory. The service persists them
+  in step 2.6, which also makes the chain the source of reviewer rounds.

@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from orbit_watch.lifecycle import RequestRecord
 from orbit_watch.settlement import Receipt, SettlementPlan
 from orbit_watch.settlement.ledger import JournalEntry, LedgerAdapter, Posting
 from orbit_watch.storage import Database, StorageError
@@ -107,12 +108,22 @@ class SqliteLedgerAdapter(LedgerAdapter):
     def grant(self, party: str, points: int, *, key: str) -> Receipt:
         return self._guarded(lambda: super(SqliteLedgerAdapter, self).grant(party, points, key=key))
 
-    def fund(self, request_id: str, requester: str, points: int, *, key: str) -> Receipt:
+    def fund(
+        self,
+        request_id: str,
+        requester: str,
+        points: int,
+        *,
+        key: str,
+        record: RequestRecord | None = None,
+    ) -> Receipt:
         return self._guarded(
             lambda: super(SqliteLedgerAdapter, self).fund(request_id, requester, points, key=key)
         )
 
-    def reserve(self, request_id: str, station: str, *, key: str) -> Receipt:
+    def reserve(
+        self, request_id: str, station: str, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
         return self._guarded(
             lambda: super(SqliteLedgerAdapter, self).reserve(request_id, station, key=key)
         )
@@ -126,6 +137,7 @@ class SqliteLedgerAdapter(LedgerAdapter):
         value: str,
         *,
         key: str,
+        record: RequestRecord | None = None,
     ) -> Receipt:
         def call() -> Receipt:
             before = len(self.attestations)
@@ -152,7 +164,9 @@ class SqliteLedgerAdapter(LedgerAdapter):
                 (request_id, key),
             )
 
-    def settle(self, plan: SettlementPlan, *, key: str) -> Receipt:
+    def settle(
+        self, plan: SettlementPlan, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
         def call() -> Receipt:
             receipt = super(SqliteLedgerAdapter, self).settle(plan, key=key)
             self._mark_settled(plan.request_id)
@@ -160,7 +174,9 @@ class SqliteLedgerAdapter(LedgerAdapter):
 
         return self._guarded(call)
 
-    def refund(self, request_id: str, requester: str, *, key: str) -> Receipt:
+    def refund(
+        self, request_id: str, requester: str, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
         def call() -> Receipt:
             receipt = super(SqliteLedgerAdapter, self).refund(request_id, requester, key=key)
             self._mark_settled(request_id)

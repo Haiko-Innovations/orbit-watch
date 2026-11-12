@@ -44,7 +44,7 @@ class ForgetfulLedger(LedgerAdapter):
 class GenerousLedger(LedgerAdapter):
     """Pays observers twice: creates points out of nothing."""
 
-    def settle(self, plan, *, key):
+    def settle(self, plan, *, key, record=None):
         receipt = super().settle(plan, key=key)
         for payout in plan.payouts:
             if payout.reason == "observer_reward":
@@ -65,7 +65,7 @@ class GenerousLedger(LedgerAdapter):
 class TwiceSettlingLedger(LedgerAdapter):
     """Forgets which requests were settled."""
 
-    def settle(self, plan, *, key):
+    def settle(self, plan, *, key, record=None):
         self._settled.pop(plan.request_id, None)
         return super().settle(plan, key=key)
 

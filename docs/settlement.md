@@ -46,14 +46,21 @@ back.
 
 ## Adapter interface
 
-| Call | Ledger | Phase 2 testnet (plan) |
+Interface 2 ([D-22](decisions.md#d-22-adapter-interface-2-and-the-evm-testnet-adapter)):
+every mutating call also takes `record`, the request's lifecycle record right
+after the event. The ledger ignores it; the testnet adapter needs the terms,
+split, delivery, reviewers and time from it.
+
+| Call | Ledger | `evm-testnet` ([evm-adapter.md](evm-adapter.md)) |
 |---|---|---|
-| `fund(request, requester, points, key)` | requester's budget → escrow | deposit into the escrow contract |
-| `reserve(request, station, key)` | recorded, no points move | recorded (a bond later) |
-| `attest(request, attester, kind, subject, value, key)` | recorded in the journal | EAS attestation |
-| `settle(plan, key)` | escrow → payouts | contract releases funds by the rules |
-| `refund(request, requester, key)` | escrow → requester | contract refunds |
-| `balance(party)`, `escrow(request)` | journal balances | chain state |
+| `fund(request, requester, points, key)` | requester's budget → escrow | `escrow.fund` with the terms and split |
+| `reserve(request, station, key)` | recorded, no points move | `escrow.reserve` |
+| `deliver(request, station, delivery, key)` | nothing journaled | `escrow.deliver` |
+| `attest(request, attester, kind, subject, value, key)` | recorded in the journal | EAS attestation (result or vote) |
+| `challenge(request, party, reason, key)` | nothing journaled | `escrow.challenge` |
+| `settle(plan, key)` | escrow → payouts | `escrow.settle`, checked against the plan payout by payout |
+| `refund(request, requester, key)` | escrow → requester | `escrow.cancel` or `escrow.settle` |
+| `balance(party)`, `escrow(request)` | journal balances | token balance + credit, chain state |
 
 **Idempotency.** Every mutating call takes a key. The same key with the same
 arguments returns the first receipt and has no second effect; the same key with

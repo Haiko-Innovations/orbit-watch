@@ -6,9 +6,15 @@ Two parts, deliberately separate:
   request (its outcome, votes and locked reward split) to a list of payouts.
   The rule is the same for every adapter, so the points ledger of phase 1 and
   the testnet escrow of phase 2 pay exactly the same amounts.
-* A ``SettlementAdapter`` **executes** plans: ``fund``, ``reserve``, ``attest``,
-  ``settle`` and ``refund``. The default adapter is the points-only ledger
-  (``orbit_watch.settlement.ledger``).
+* A ``SettlementAdapter`` **executes** plans: ``fund``, ``reserve``, ``deliver``,
+  ``attest``, ``challenge``, ``settle`` and ``refund``. The default adapter is the
+  points-only ledger (``orbit_watch.settlement.ledger``); phase 2 adds the
+  ``evm-testnet`` adapter (``orbit_watch.settlement.evm``).
+
+Every mutating call may carry ``record``, the request's lifecycle record right
+after the event. The ledger needs nothing from it. An adapter on a chain needs
+the terms, the reward split, the delivery, the reviewers and the time of the
+event, and takes them from the record (adapter interface 2, decision D-22).
 
 Every mutating adapter call takes an idempotency key. Repeating a call with the
 same key and the same arguments returns the first receipt and has no second
@@ -122,15 +128,40 @@ class Receipt:
 
 
 class SettlementAdapter(Protocol):
-    """What every settlement adapter provides. All amounts are whole points."""
+    """What every settlement adapter provides. All amounts are whole units (points on the
+    ledger, the token's smallest unit on a chain).
+
+    ``record`` is the request's lifecycle record right after the event the call mirrors.
+    """
 
     name: str
 
-    def fund(self, request_id: str, requester: str, points: int, *, key: str) -> Receipt:
-        """Move ``points`` from the requester's budget into the request's escrow."""
+    def fund(
+        self,
+        request_id: str,
+        requester: str,
+        points: int,
+        *,
+        key: str,
+        record: RequestRecord | None = None,
+    ) -> Receipt:
+        """Move ``points`` from the requester into the request's escrow."""
 
-    def reserve(self, request_id: str, station: str, *, key: str) -> Receipt:
-        """Record that a station reserved the request (no points move in phase 1)."""
+    def reserve(
+        self, request_id: str, station: str, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
+        """Record that a station reserved the request (no points move)."""
+
+    def deliver(
+        self,
+        request_id: str,
+        station: str,
+        delivery_sha256: str,
+        *,
+        key: str,
+        record: RequestRecord | None = None,
+    ) -> Receipt:
+        """Record a delivery by its SHA-256 (no points move)."""
 
     def attest(
         self,
@@ -141,13 +172,29 @@ class SettlementAdapter(Protocol):
         value: str,
         *,
         key: str,
+        record: RequestRecord | None = None,
     ) -> Receipt:
         """Record a signed statement: an automated verification result or a review vote."""
 
-    def settle(self, plan: SettlementPlan, *, key: str) -> Receipt:
+    def challenge(
+        self,
+        request_id: str,
+        party: str,
+        reason: str,
+        *,
+        key: str,
+        record: RequestRecord | None = None,
+    ) -> Receipt:
+        """Record a challenge by the requester or the observer (no points move)."""
+
+    def settle(
+        self, plan: SettlementPlan, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
         """Pay out a settlement plan from escrow. Refused if the request was settled."""
 
-    def refund(self, request_id: str, requester: str, *, key: str) -> Receipt:
+    def refund(
+        self, request_id: str, requester: str, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
         """Return the whole escrow to the requester (expired or cancelled requests)."""
 
     def balance(self, party: str) -> int:

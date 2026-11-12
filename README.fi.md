@@ -93,6 +93,7 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | HTTP-rajapinta ja komentoriviasiakas | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Avoin data (CC BY 4.0, embargo, pysyvät osoitteet) | `public` | [data-publication.md](docs/data-publication.md) |
 | Escrow-sopimus, EAS-attestaatiot ja tarkistajarekisteri Base Sepolia -**testiverkkoon** (vaihe 2, kesken) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [kuka voi muuttaa mitä](contracts/README.md#privileges-who-can-change-what) |
+| Testiverkon tilityssovitin (Python, `evm`-lisäosa) | | [evm-adapter.md](docs/evm-adapter.md) |
 
 Python-koodi on hakemistossa [`core/`](core) ja Solidity-sopimukset hakemistossa [`contracts/`](contracts). Simuloidut esimerkit ovat
 hakemistossa [`examples/`](examples).

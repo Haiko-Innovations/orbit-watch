@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from orbit_watch.canonical import dumps_compact, sha256_bytes
+from orbit_watch.lifecycle import RequestRecord
 from orbit_watch.settlement import Receipt, SettlementError, SettlementPlan
 
 ISSUANCE = "issuance"
@@ -166,7 +167,15 @@ class LedgerAdapter:
             f"grant to {party}",
         )
 
-    def fund(self, request_id: str, requester: str, points: int, *, key: str) -> Receipt:
+    def fund(
+        self,
+        request_id: str,
+        requester: str,
+        points: int,
+        *,
+        key: str,
+        record: RequestRecord | None = None,
+    ) -> Receipt:
         fingerprint = {
             "op": "fund",
             "request": request_id,
@@ -190,11 +199,37 @@ class LedgerAdapter:
             f"deposit by {requester}",
         )
 
-    def reserve(self, request_id: str, station: str, *, key: str) -> Receipt:
+    def reserve(
+        self, request_id: str, station: str, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
         fingerprint = {"op": "reserve", "request": request_id, "station": station}
         if (seen := self._idempotent(key, fingerprint)) is not None:
             return seen
         return self._record(key, fingerprint, "reserve", request_id, [], f"reserved by {station}")
+
+    def deliver(
+        self,
+        request_id: str,
+        station: str,
+        delivery_sha256: str,
+        *,
+        key: str,
+        record: RequestRecord | None = None,
+    ) -> Receipt:
+        """No points move and nothing is journaled: the lifecycle keeps the delivery."""
+        return _not_journaled(key, "deliver", request_id)
+
+    def challenge(
+        self,
+        request_id: str,
+        party: str,
+        reason: str,
+        *,
+        key: str,
+        record: RequestRecord | None = None,
+    ) -> Receipt:
+        """No points move and nothing is journaled: the lifecycle keeps the challenge."""
+        return _not_journaled(key, "challenge", request_id)
 
     def attest(
         self,
@@ -205,6 +240,7 @@ class LedgerAdapter:
         value: str,
         *,
         key: str,
+        record: RequestRecord | None = None,
     ) -> Receipt:
         fingerprint = {
             "op": "attest",
@@ -231,7 +267,9 @@ class LedgerAdapter:
         )
         return receipt
 
-    def settle(self, plan: SettlementPlan, *, key: str) -> Receipt:
+    def settle(
+        self, plan: SettlementPlan, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
         fingerprint = {"op": "settle", "plan": plan.to_document()}
         if (seen := self._idempotent(key, fingerprint)) is not None:
             return seen
@@ -257,7 +295,9 @@ class LedgerAdapter:
         self._settled[plan.request_id] = key
         return receipt
 
-    def refund(self, request_id: str, requester: str, *, key: str) -> Receipt:
+    def refund(
+        self, request_id: str, requester: str, *, key: str, record: RequestRecord | None = None
+    ) -> Receipt:
         fingerprint = {"op": "refund", "request": request_id, "requester": requester}
         if (seen := self._idempotent(key, fingerprint)) is not None:
             return seen
@@ -274,6 +314,12 @@ class LedgerAdapter:
         )
         self._settled[request_id] = key
         return receipt
+
+
+def _not_journaled(key: str, operation: str, request_id: str) -> Receipt:
+    if not key:
+        raise SettlementError("missing_key", "every call needs an idempotency key")
+    return Receipt(key, operation, request_id, "ledger:not-journaled")
 
 
 def _positive(points: int) -> None:

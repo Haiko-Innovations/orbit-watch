@@ -30,6 +30,10 @@ api = [
     "starlette>=1.10",
     "uvicorn>=0.54",
 ]
+# The phase 2 settlement adapter for the Base Sepolia testnet (decision P2-08).
+evm = [
+    "web3>=8.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/Haiko-Innovations/orbit-watch"
@@ -41,7 +45,7 @@ orbit-watch = "orbit_watch.cli:main"
 [dependency-groups]
 dev = [
     "httpx2>=2.16",  # used by Starlette's TestClient
-    "orbit-watch[api]",
+    "orbit-watch[api,evm]",
     "pip-audit>=2.10",
     "pytest>=9.2",
     "ruff>=0.17",

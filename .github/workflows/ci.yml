@@ -107,7 +107,15 @@ jobs:
           forge build --sizes
           forge test
 
-      - name: Known vulnerabilities (runtime dependencies, including the API extra)
+      # The evm-testnet settlement adapter against a local Anvil chain (step 2.5): the
+      # phase 1 settlement scenario suite on the escrow contract. Needs the build above.
+      # Never touches a public network and holds no keys (decision P2-08).
+      - name: Settlement adapter on a local chain (Anvil)
+        env:
+          ORBIT_WATCH_EVM_TESTS: "1"
+        run: uv run --locked --python 3.12 pytest tests/test_evm_adapter.py tests/test_chain.py
+
+      - name: Known vulnerabilities (runtime dependencies, including the API and EVM extras)
         run: |
           uv export --locked --no-dev --all-extras --no-emit-project --format requirements-txt \
             -o "$RUNNER_TEMP/requirements-all.txt"

@@ -46,8 +46,24 @@ mainnet or real money.
   refuses any other Safe. Tests run against the canonical Safe 1.4.1 bytecode.
   The privileges are listed in `contracts/README.md`. The registry's
   constructor now takes the initial reviewers.
+- The `evm-testnet` settlement adapter (phase 2, step 2.5), in the new
+  optional `evm` extra (web3.py 8.0). It mirrors funding, reservations,
+  deliveries, results, challenges, votes, settlements and refunds to the
+  escrow and EAS, each signed by the party's own account, and checks every
+  settlement against `settlement_plan` payout by payout. It passes the phase 1
+  settlement scenario suite on a local Anvil chain, which now runs in CI.
+  `orbit_watch.chain` holds the contract client and the ABIs, which a test
+  keeps equal to the Foundry build. See `docs/evm-adapter.md`.
 - Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project,
-  D-19 on settlement on chain, D-20 on attestations and D-21 on governance.
+  D-19 on settlement on chain, D-20 on attestations, D-21 on governance and
+  D-22 on the adapter interface.
+
+### Changed
+
+- Settlement adapter interface 2: every mutating call may carry the
+  lifecycle record (`record=`), and `deliver` and `challenge` are new calls.
+  The points ledger ignores the record and journals nothing for the new calls,
+  so phase 1 behaves and exports exactly as before.
 
 ## [0.2.0] - 2026-11-11
 

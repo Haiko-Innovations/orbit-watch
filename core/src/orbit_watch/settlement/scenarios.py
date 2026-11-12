@@ -223,8 +223,9 @@ class Driver:
     _count: int = 0
 
     def _call(self, method: str, *args: Any, key: str) -> Any:
-        self.calls.append((method, args, {"key": key}))
-        return getattr(self.adapter, method)(*args, key=key)
+        kwargs = {"key": key, "record": self.record}
+        self.calls.append((method, args, kwargs))
+        return getattr(self.adapter, method)(*args, **kwargs)
 
     def _key(self, label: str) -> str:
         self._count += 1
@@ -240,6 +241,8 @@ class Driver:
             self._call("fund", rid, self.record.requester, step.split.total, key=self._key("fund"))
         elif isinstance(step, lc.Reserve):
             self._call("reserve", rid, step.station, key=self._key("reserve"))
+        elif isinstance(step, lc.Deliver):
+            self._call("deliver", rid, step.station, step.delivery_sha256, key=self._key("deliver"))
         elif isinstance(step, lc.RecordVerification):
             self._call(
                 "attest",
@@ -250,6 +253,8 @@ class Driver:
                 step.verdict,
                 key=self._key("verification"),
             )
+        elif isinstance(step, lc.Challenge):
+            self._call("challenge", rid, step.party, step.reason, key=self._key("challenge"))
         elif isinstance(step, lc.Vote):
             self._call(
                 "attest",
@@ -318,7 +323,7 @@ def run_scenario(factory: AdapterFactory, scenario: Scenario) -> list[str]:
         problems.append(f"{scenario.name}: replaying the calls changed balances")
     # A second settlement under a new key is refused.
     try:
-        adapter.settle(plan, key=f"{rid}/settle-again")
+        adapter.settle(plan, key=f"{rid}/settle-again", record=driver.record)
         problems.append(f"{scenario.name}: a second settlement was accepted")
     except SettlementError as error:
         if error.code != "already_settled":
