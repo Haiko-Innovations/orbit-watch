@@ -89,7 +89,8 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Open data (CC BY 4.0, embargo, permanent URLs) | `public` | [data-publication.md](docs/data-publication.md) |
 | Escrow contract, EAS attestations and reviewer registry for the Base Sepolia **testnet** (phase 2, in progress) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [who can change what](contracts/README.md#privileges-who-can-change-what) |
 | Testnet settlement adapter (Python, `evm` extra) | | [evm-adapter.md](docs/evm-adapter.md) |
-| Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --chain-rpc …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
+| Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
+| The contracts on **Base Sepolia**: addresses, faucets, who holds which key, deploying | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
 
 The Python code is in [`core/`](core) and the Solidity contracts in [`contracts/`](contracts). Simulated examples are in
 [`examples/`](examples).

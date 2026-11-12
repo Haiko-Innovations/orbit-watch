@@ -10,6 +10,10 @@ interface ISafe {
     function nonce() external view returns (uint256);
     function VERSION() external view returns (string memory);
 
+    /// @dev Only the Safe itself (its signers, by threshold) can replace a signer. Owners form a
+    /// linked list: `prevOwner` is the owner before `oldOwner`, or 0x1 for the first one.
+    function swapOwner(address prevOwner, address oldOwner, address newOwner) external;
+
     function setup(
         address[] calldata owners,
         uint256 threshold,

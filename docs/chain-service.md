@@ -101,11 +101,15 @@ reviewer gets no tasks, but can still vote straight on chain.
 ## Running the server on a chain
 
 ```sh
-orbit-watch serve --dir ./ow-testnet \
-  --chain-rpc http://127.0.0.1:8545 \
-  --escrow 0x… --from-block 0 \
-  --verifier-keystore ~/secrets/orbit-watch-verifier.json
+orbit-watch serve --dir ./ow-testnet --network base-sepolia \
+  --verifier-keystore ~/secrets/orbit-watch/verifier.json
 ```
+
+`--network base-sepolia` takes the escrow, its first block and Base's public
+RPC endpoint from the deployment record in the package
+([base-sepolia.md](base-sepolia.md)); `--chain-rpc` overrides the endpoint.
+For another escrow, for example on a local chain, give `--chain-rpc`,
+`--escrow` and `--from-block` instead.
 
 - The verifier keystore is an encrypted JSON keystore, for example one made
   with `cast wallet import`. Keep it outside the repository and readable only
@@ -119,9 +123,9 @@ orbit-watch serve --dir ./ow-testnet \
 - Points are not used on chain: `admin grant` is refused, and `balance` shows
   the wallet's tokens and what it can withdraw.
 
-Step 2.7 adds the deployment script and the Base Sepolia settings. Until then,
-the local chain with the contracts is set up by the tests
-([`core/tests/chain_world.py`](../core/tests/chain_world.py)).
+The deployment script and the Base Sepolia deployment are described in
+[base-sepolia.md](base-sepolia.md) (step 2.7). The tests set up their local
+chains themselves ([`core/tests/chain_world.py`](../core/tests/chain_world.py)).
 
 ## The command line
 
@@ -131,7 +135,7 @@ Every API command takes the signing options:
 |---|---|---|
 | `--keystore FILE` | `$ORBIT_WATCH_KEYSTORE` | your encrypted keystore, e.g. `~/.foundry/keystores/<name>` |
 | `--password-file FILE` | `$ORBIT_WATCH_PASSWORD_FILE` | otherwise the password is asked for |
-| `--rpc URL` | `$ORBIT_WATCH_RPC` | the endpoint your wallet sends through |
+| `--rpc URL` | `$ORBIT_WATCH_RPC`, or on Base Sepolia its public endpoint | the endpoint your wallet sends through |
 | `--unsigned` | | print the transactions for another wallet instead |
 
 The key is decrypted in the command's own process and is never sent anywhere.
@@ -140,7 +144,7 @@ password on the command line.
 
 ```sh
 cast wallet import alice                     # once: your own encrypted keystore
-export ORBIT_WATCH_KEYSTORE=~/.foundry/keystores/alice ORBIT_WATCH_RPC=http://127.0.0.1:8545
+export ORBIT_WATCH_KEYSTORE=~/.foundry/keystores/alice   # --rpc: Base Sepolia's public endpoint
 orbit-watch chain                            # the network, the escrow, the token, the notice
 orbit-watch wallet register                  # signs the registration message
 orbit-watch request fund SIM-REQ-0001 --observer 1.5 --reviewer 0.1   # token amounts

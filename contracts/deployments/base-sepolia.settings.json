@@ -1,0 +1,24 @@
+{
+  "description": "Base Sepolia TESTNET deployment settings (phase 2, step 2.7; decision D-24). No real value. Every address is a testnet-only key held by the maintainer; the reviewers are SIMULATED.",
+  "safe_signers": [
+    "0x66DFcAfeff7a08bFbFfDb11f6A0307eE178f04Ca",
+    "0x797EF23a94FDB4a5016381F871CC5ad8F01730c0",
+    "0x2C7Bd8F22d241a4B3c099736291B6E4a2Caa3DBc"
+  ],
+  "reviewers": [
+    "0xdd53Ebe04af0BEbcE35365170478ae8291079c65",
+    "0x600e4f215b7209b9Dc7BB0F507a8A4DCe894D219",
+    "0x3606789586bC239d463256b6A751Ea69636F6b92",
+    "0xa021E92d09EA8938E5bfAAe808c7b8851B5364f8"
+  ],
+  "reviewer_names": [
+    "reviewer:sim-aino",
+    "reviewer:sim-chen",
+    "reviewer:sim-eero",
+    "reviewer:sim-fatima"
+  ],
+  "verifier": "0x7eB41156A2B4BC03B8d016A58caF322A0FEdFEDc",
+  "fee_recipient": "safe",
+  "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "safe_salt_nonce": 0
+}

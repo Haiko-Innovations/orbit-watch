@@ -783,6 +783,7 @@ class ChainLink:
             "network": SUPPORTED_CHAINS[chain.chain_id],
             "notice": self.notice,
             "escrow": chain.escrow.address,
+            "registry": chain.escrow.functions.registry().call(),
             "token": self.token(),
             "eas": chain.eas.address,
             "result_schema": "0x" + chain.result_schema.hex(),

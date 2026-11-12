@@ -69,9 +69,23 @@ mainnet or real money.
   migration 0003 adds the chain's tables. Tests on a local chain include the
   whole chain from the command line and a check that no key, keystore or
   password ever reaches the server. See `docs/chain-service.md`.
+- The Base Sepolia deployment (phase 2, step 2.7).
+  `contracts/script/DeployOrbitWatch.s.sol` deploys a Safe 1.4.1 (2 of 3), the
+  48-hour timelock and the reviewer registry, and the escrow; it writes a
+  deployment record and checks a deployment against its record on chain. It
+  refuses other chains, Safe code that is not the canonical code and, on Base
+  Sepolia, any token but Circle's testnet USDC. The contracts run on Base
+  Sepolia with verified sources; the addresses, faucet instructions for
+  testnet ETH and USDC, and who holds which key are in
+  `docs/base-sepolia.md`. `orbit-watch serve --network base-sepolia` takes the
+  escrow from the record in the package, and the command line uses Base's
+  public endpoint unless `--rpc` is given. On the testnet one maintainer holds
+  every key, so the Safe separates keys, not people (D-24). The script runs in
+  CI against a local chain with Base Sepolia's EAS and Safe code.
 - Phase 2 decisions P2-01 to P2-11 accepted; D-18 on the contract project,
   D-19 on settlement on chain, D-20 on attestations, D-21 on governance,
-  D-22 on the adapter interface and D-23 on the service on a chain.
+  D-22 on the adapter interface, D-23 on the service on a chain and D-24 on
+  the Base Sepolia deployment.
 
 ### Changed
 
@@ -81,6 +95,9 @@ mainnet or real money.
   so phase 1 behaves and exports exactly as before.
 - `request fund` on the command line takes token amounts such as `1.5` when
   the API runs on a chain; with points it still takes whole numbers.
+- The escrow's version is 1.0.0, the version deployed on Base Sepolia.
+  `orbit-watch chain` and `GET /v1/chain` also show the reviewer registry, and
+  reporting a transaction on its own shows the testnet notice.
 
 ## [0.2.0] - 2026-11-11
 

@@ -36,8 +36,8 @@ contract OrbitWatchEscrow is ISchemaResolver {
     uint256 public constant REVIEWERS_PER_ROUND = 3;
     uint256 public constant VOTES_TO_DECIDE = 2;
 
-    /// @notice This contract's version (ISemver). Step 2.7 sets 1.0.0 for the first deployment.
-    string public constant version = "1.0.0-dev";
+    /// @notice This contract's version (ISemver): 1.0.0 is the first Base Sepolia deployment.
+    string public constant version = "1.0.0";
 
     /// @notice The automated verification result, attested by the Orbit Watch verifier key.
     /// `verdict` is "pass", "fail" or "inconclusive"; the recipient is the observer.
