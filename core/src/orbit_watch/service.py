@@ -20,6 +20,12 @@ memory; with ``open_service`` it also writes every change to SQLite and the
 file store (step 1.5), one transaction per call. A refused call (any
 ``ServiceError``) changes nothing: the transaction is rolled back and the
 state reloaded. The HTTP API comes in step 1.6.
+
+On a testnet chain (step 2.6, ``open_service(..., chain=ChainLink(...))``) every
+funded request lives on the escrow contract: its parties sign their own
+transactions and the service follows the chain (``orbit_watch.chain.link``).
+The calls below then refuse funded requests (``sign_on_chain``); unfunded
+requests work as before.
 """
 
 from __future__ import annotations
@@ -114,6 +120,8 @@ class RequestService:
     real_tasks: dict[str, tuple[str, str]] = field(default_factory=dict)  # id -> request, reviewer
     calibration_tasks: dict[str, cal.CalibrationTask] = field(default_factory=dict)
     storage: Storage | None = None
+    # The testnet chain (step 2.6): an orbit_watch.chain.link.ChainLink, or None.
+    chain: Any = None
 
     # ------------------------------------------------------------------ persistence
 
@@ -232,7 +240,19 @@ class RequestService:
         except KeyError:
             raise ServiceError("unknown_request", f"no request {request_id!r}") from None
 
+    def on_chain(self, request_id: str) -> bool:
+        """Whether the request was funded on chain, so that its parties sign (step 2.6)."""
+        return self.chain is not None and self.chain.on_chain(request_id)
+
+    def _off_chain(self, request_id: str) -> None:
+        if self.on_chain(request_id):
+            raise ServiceError(
+                "sign_on_chain",
+                f"request {request_id} is on chain: its parties sign their own transactions",
+            )
+
     def _apply(self, request_id: str, event: lc.Event) -> RequestRecord:
+        self._off_chain(request_id)
         try:
             record = lc.apply(self._record(request_id), event)
         except TransitionError as error:
@@ -297,6 +317,8 @@ class RequestService:
         self, request_id: str, party: str, split: lc.RewardSplit, now: datetime
     ) -> RequestRecord:
         self._require_requester(request_id, party)
+        if self.chain is not None:
+            raise ServiceError("sign_on_chain", "on chain, the requester funds with its own wallet")
         before = self._record(request_id)
         record = self._apply(request_id, lc.Fund(now, split))
         try:
@@ -331,7 +353,35 @@ class RequestService:
         """Accept a delivery and run automated verification at once."""
         observations_sha256 = sha256_bytes(observations)
         self._apply(request_id, lc.Deliver(now, station, observations_sha256))
-        self._store(observations)
+        delivered = self._verify(request_id, station, observations, observations_format)
+        self.adapter.attest(
+            request_id,
+            VERIFIER,
+            "automated_verification",
+            delivered.report_sha256,
+            delivered.verdict,
+            key=f"{request_id}/verification",
+        )
+        reviewers: tuple[str, ...] = ()
+        if delivered.verdict == "inconclusive":
+            reviewers = self._select(request_id, observations_sha256, challenger=None)
+        record = self._apply(
+            request_id,
+            lc.RecordVerification(now, delivered.verdict, delivered.report_sha256, reviewers),
+        )
+        if record.status is Status.IN_REVIEW:
+            self._assign(request_id, now)
+        return record
+
+    def _verify(
+        self,
+        request_id: str,
+        station: str,
+        observations: bytes,
+        observations_format: str | None,
+    ) -> Delivered:
+        """Keep a delivered file, run automated verification and keep its report."""
+        observations_sha256 = self._store(observations)
         previous = sorted(
             (self.files[d.observations_sha256] for d in self.deliveries.values()),
             key=sha256_bytes,
@@ -352,35 +402,16 @@ class RequestService:
         except UsageError as error:  # a configuration problem, not the station's fault
             raise ServiceError("verification_unavailable", str(error)) from None
         report_bytes = dumps_pretty(report, sort_keys=False).encode("utf-8")
-        report_sha256 = self._store(report_bytes)
-        verdict = report["verdict"]
-        self._save_delivery(
-            Delivered(
-                request_id,
-                station,
-                observations_sha256,
-                observations_format,
-                report_sha256,
-                verdict,
-            )
-        )
-        self.adapter.attest(
+        delivered = Delivered(
             request_id,
-            VERIFIER,
-            "automated_verification",
-            report_sha256,
-            verdict,
-            key=f"{request_id}/verification",
+            station,
+            observations_sha256,
+            observations_format,
+            self._store(report_bytes),
+            report["verdict"],
         )
-        reviewers: tuple[str, ...] = ()
-        if verdict == "inconclusive":
-            reviewers = self._select(request_id, observations_sha256, challenger=None)
-        record = self._apply(
-            request_id, lc.RecordVerification(now, verdict, report_sha256, reviewers)
-        )
-        if record.status is Status.IN_REVIEW:
-            self._assign(request_id, now)
-        return record
+        self._save_delivery(delivered)
+        return delivered
 
     # ------------------------------------------------------------------ challenges
 
@@ -398,6 +429,7 @@ class RequestService:
     def challenge(self, request_id: str, party: str, reason: str, now: datetime) -> RequestRecord:
         if not reason.strip():
             raise ServiceError("reason_required", "a challenge must say why")
+        self._off_chain(request_id)
         record = lc.advance(self._record(request_id), now)
         if record.status is not Status.CHALLENGE_PERIOD:
             raise ServiceError(
@@ -539,11 +571,12 @@ class RequestService:
 
     @_atomic
     def tick(self, now: datetime) -> list[str]:
-        """Apply passed deadlines to every request and settle finished ones."""
+        """Apply passed deadlines to every request and settle finished ones. On a chain,
+        funded requests are left to the chain (``ChainLink.follow_up``)."""
         changed = []
         for request_id in sorted(self.records):
             before = self.records[request_id]
-            if before.status is Status.SETTLED:
+            if before.status is Status.SETTLED or self.on_chain(request_id):
                 continue
             self._save_record(lc.advance(before, now))
             after = self._settle_if_finished(request_id, now)
@@ -671,12 +704,15 @@ def open_service(
     directory: str | Path,
     reviewers: ReviewerRegistry,
     context: VerificationContext,
+    *,
+    chain: Any = None,
     **options: Any,
 ) -> RequestService:
     """A service whose state lives in ``directory`` (SQLite and files) and survives restarts.
 
     Opening the same directory from a second process fails with
-    ``StorageError("in_use")``.
+    ``StorageError("in_use")``. With ``chain`` (an ``orbit_watch.chain.link.ChainLink``)
+    the service works on that testnet chain (step 2.6).
     """
     from orbit_watch.settlement.sqlite_ledger import SqliteLedgerAdapter
 
@@ -685,4 +721,11 @@ def open_service(
         SqliteLedgerAdapter(storage.db), reviewers, context, storage=storage, **options
     )
     service._reload()
+    if chain is not None:
+        try:
+            chain.attach(service)
+        except BaseException:
+            storage.close()
+            raise
+        service.chain = chain
     return service

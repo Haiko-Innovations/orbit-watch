@@ -79,6 +79,44 @@ scheduler with an admin key) calls `tick`. Calls on a request already take its
 passed deadlines into account: for example, a delivery after the reservation
 lapsed is refused.
 
+## On a testnet chain
+
+Phase 2, step 2.6. Started with `--chain-rpc`, `--escrow` and
+`--verifier-keystore`, the server settles funded requests on the escrow
+contract: see [chain-service.md](chain-service.md). **The API never sees a
+party's key.** The calls above stay the same, with three differences:
+
+- For a funded request (and for funding), `fund`, `cancel`, `reserve`,
+  `deliveries`, `challenge` and the answer to a real review task return
+  **`202 Accepted`** with the transactions the party signs and sends with its
+  own wallet, in order:
+
+  ```json
+  {"request_id": "SIM-REQ-0001", "action": "fund",
+   "sign": [{"action": "approve", "transaction": {"chainId": 84532, "from": "0x…", "to": "0x…", "data": "0x…", "value": 0}},
+            {"action": "fund", "transaction": {"…": "…"}}],
+   "notice": "Base Sepolia testnet, no real value", "next": "…"}
+  ```
+
+  Nothing changes until the chain confirms them; the party reports each hash.
+- Every call first applies the escrow's new events, and a request's view has
+  a `chain` part: whether it is on chain, its status there, the events applied
+  with their explorer links, its pending and failed transactions, conflicts,
+  the token and the notice. The clock is the latest block's time.
+- Points are not used: `POST /v1/admin/grants` is refused
+  (`points_not_used`), and `GET /v1/balances/{party}` gives the wallet's
+  `address`, its token `balance` and what it can withdraw (`withdrawable`).
+  `tick` also does the service's own part on chain and lists what it `sent`.
+
+| Method and path | Role | Body | Does |
+|---|---|---|---|
+| `GET /v1/chain` | none | | the network, escrow, token (symbol, decimals), EAS schemas, verifier, explorer, notice and the last block read |
+| `GET /v1/wallet` | any | | your party, its wallet and the message to sign to register one |
+| `POST /v1/wallet` | any | `{"address": "0x…", "signature": "0x…"}` | register your wallet (EIP-191 signature of the message) |
+| `POST /v1/wallet/withdraw` | any | | `202`: the `withdraw` transaction to sign |
+| `POST /v1/transactions` | any | `{"tx_hash": "0x…"}` | report a transaction you sent; the service waits for it, applies it and does its own part; returns the transaction and the request |
+| `GET /v1/transactions?request=ID` | any (admin: all) | | your transactions: `pending`, `confirmed` or `failed`, with explorer links |
+
 ## Errors
 
 Errors are JSON: `{"error": {"code": "…", "message": "…"}}`. The codes are
@@ -87,12 +125,12 @@ stable; the HTTP status follows from the code:
 | Status | Codes (examples) |
 |---|---|
 | 401 | `unauthorized` |
-| 403 | `forbidden_role`, `not_requester`, `not_a_party`, `not_your_task`, `not_yourself` |
-| 404 | `unknown_request`, `unknown_task`, `no_report`, `unknown_file` |
-| 409 | `forbidden_in_status`, `already_voted`, `duplicate_request`, `key_reused` |
+| 403 | `forbidden_role`, `not_requester`, `not_a_party`, `not_your_task`, `not_yourself`, `not_your_transaction` |
+| 404 | `unknown_request`, `unknown_task`, `no_report`, `unknown_file`, `unknown_transaction`, `not_on_chain` |
+| 409 | `forbidden_in_status`, `already_voted`, `duplicate_request`, `key_reused`; on a chain `no_wallet`, `wallet_already_set`, `address_taken`, `already_on_chain`, `insufficient_balance`, `nothing_to_withdraw`, `points_not_used`, `sign_on_chain` |
 | 413 | `too_large` (bodies over 10 MB) |
 | 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers` |
-| 503 | `verification_unavailable` |
+| 503 | `verification_unavailable`, `chain_unavailable` |
 
 ## Command-line client
 
@@ -115,6 +153,12 @@ export ORBIT_WATCH_KEY=$(cat requester.key)
 | admin | `admin grant PARTY POINTS`, `admin key PARTY ROLE [-o FILE]`, `admin tick` |
 | anyone with a key | `request list`, `request show ID`, `request report ID [-o FILE]`, `balance PARTY` |
 | anyone, no key | `public list`, `public get ID [--download DIR]` |
+| on a testnet chain | `chain`, `wallet register [--print-message \| --address A --signature S]`, `wallet withdraw`, `tx list [--request ID]`, `tx report HASH` |
+
+On a testnet chain, the commands sign with your own encrypted keystore
+(`--keystore`, `--password-file`, `--rpc`) or print the transactions for
+another wallet (`--unsigned`); see
+[chain-service.md](chain-service.md#the-command-line).
 
 Every command takes `--json` to print the API's answer as is. Changes print
 their idempotency key; running the same command again with

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from orbit_watch import SIMULATION_NOTICE, __version__
 from orbit_watch.canonical import dumps_pretty, write_text
+from orbit_watch.chain import ChainError
 from orbit_watch.client import ClientError
 from orbit_watch.formats import FORMATS, FormatError, Sites, load_observation_sets, owjson
 from orbit_watch.formats import iod as iod_format
@@ -318,16 +319,55 @@ def cmd_serve(args: argparse.Namespace) -> int:
     from orbit_watch.service import open_service
 
     registry, context, notes = _service_inputs(args)
-    service = open_service(args.dir, registry, context)
+    chain = None
+    if args.chain_rpc or args.escrow or args.verifier_keystore:
+        if not (args.chain_rpc and args.escrow and args.verifier_keystore):
+            _err("on a chain, give --chain-rpc, --escrow and --verifier-keystore together")
+            return EXIT_USAGE
+        try:
+            chain = _chain_link(args)
+        except ImportError:
+            _err('the chain needs the optional "evm" dependencies: pip install "orbit-watch[evm]"')
+            return EXIT_USAGE
+    service = open_service(args.dir, registry, context, chain=chain)
     for note in notes:
         print(f"note: {note}")
     print(f"Orbit Watch API {__version__} for {args.dir} on http://{args.host}:{args.port}/v1/")
-    print("Phase 1 prototype: local use only, no TLS. All bundled data is SIMULATED.")
+    if chain is None:
+        print("Phase 1 prototype: local use only, no TLS. All bundled data is SIMULATED.")
+    else:
+        print("Phase 2 prototype: local use only, no TLS. All bundled data is SIMULATED.")
+        print(
+            f"On chain {chain.chain.chain_id} ({chain.notice}): escrow "
+            f"{chain.chain.escrow.address}, verifier {chain.verifier.address}"
+        )
     try:
         uvicorn.run(create_app(service), host=args.host, port=args.port)
     finally:
         service.storage.close()
     return EXIT_OK
+
+
+def _chain_link(args: argparse.Namespace):
+    """The service's link to a testnet chain, with the verifier key (step 2.6)."""
+    import stat
+
+    from web3 import Web3
+
+    from orbit_watch.chain.client import OrbitWatchChain
+    from orbit_watch.chain.link import ChainLink
+    from orbit_watch.chain.wallet import load_keystore, read_password
+
+    chain = OrbitWatchChain(Web3(Web3.HTTPProvider(args.chain_rpc)), args.escrow)
+    keystore = Path(args.verifier_keystore)
+    if keystore.stat().st_mode & (stat.S_IRWXG | stat.S_IRWXO):
+        _err(f"warning: {keystore} can be read by other users; chmod 600 it")
+    password = read_password(
+        args.verifier_password_file,
+        "verifier keystore password: ",
+        env="ORBIT_WATCH_VERIFIER_PASSWORD_FILE",
+    )
+    return ChainLink(chain, load_keystore(keystore, password), from_block=args.from_block)
 
 
 def cmd_keys_create(args: argparse.Namespace) -> int:
@@ -542,6 +582,25 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--policy", help="target allow-list (default: built-in SIMULATED)")
     serve.add_argument("--reviewers", help="reviewer registry (default: built-in SIMULATED)")
     serve.add_argument("--sites", help="sites file for IOD and TDM deliveries")
+    chain = serve.add_argument_group(
+        "testnet chain (phase 2)",
+        "Settle funded requests on the escrow contract of Base Sepolia or a local Anvil "
+        "chain. The service holds only the verifier key; every party signs its own "
+        "transactions.",
+    )
+    chain.add_argument("--chain-rpc", help="the chain's JSON-RPC endpoint")
+    chain.add_argument("--escrow", help="the escrow contract's address")
+    chain.add_argument(
+        "--verifier-keystore", help="encrypted keystore of the verifier key (outside the repo)"
+    )
+    chain.add_argument(
+        "--verifier-password-file",
+        help="file with the keystore's password (or $ORBIT_WATCH_VERIFIER_PASSWORD_FILE; "
+        "otherwise it is asked for)",
+    )
+    chain.add_argument(
+        "--from-block", type=int, default=0, help="the escrow's deployment block (default 0)"
+    )
     serve.set_defaults(handler=cmd_serve)
 
     keys_parser = commands.add_parser(
@@ -575,6 +634,9 @@ def main(argv: list[str] | None = None) -> int:
     except ClientError as exc:
         _err(f"{exc.code}: {exc}")
         return EXIT_FAILED if exc.status else EXIT_USAGE
+    except ChainError as exc:
+        _err(f"{exc.code}: {exc}")
+        return EXIT_FAILED
     except (OSError, ValueError) as exc:
         _err(str(exc))
         return EXIT_USAGE
