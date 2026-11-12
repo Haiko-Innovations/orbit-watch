@@ -88,6 +88,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | HTTP API and command-line client | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Open data (CC BY 4.0, embargo, permanent URLs) | `public` | [data-publication.md](docs/data-publication.md) |
 | Escrow contract, EAS attestations and reviewer registry for the Base Sepolia **testnet** (phase 2, in progress) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [who can change what](contracts/README.md#privileges-who-can-change-what) |
+| Testnet settlement adapter (Python, `evm` extra) | | [evm-adapter.md](docs/evm-adapter.md) |
 
 The Python code is in [`core/`](core) and the Solidity contracts in [`contracts/`](contracts). Simulated examples are in
 [`examples/`](examples).
