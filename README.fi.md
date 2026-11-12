@@ -92,7 +92,7 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | Tallennus (SQLite, tiedostot tiivisteen mukaan) | | [storage.md](docs/storage.md) |
 | HTTP-rajapinta ja komentoriviasiakas | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Avoin data (CC BY 4.0, embargo, pysyvät osoitteet) | `public` | [data-publication.md](docs/data-publication.md) |
-| Escrow-sopimus Base Sepolia -**testiverkkoon** (vaihe 2, kesken) | `forge test` | [escrow.md](docs/escrow.md) |
+| Escrow-sopimus ja EAS-attestaatiot Base Sepolia -**testiverkkoon** (vaihe 2, kesken) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md) |
 
 Python-koodi on hakemistossa [`core/`](core) ja Solidity-sopimukset hakemistossa [`contracts/`](contracts). Simuloidut esimerkit ovat
 hakemistossa [`examples/`](examples).

@@ -2,11 +2,14 @@
 pragma solidity 0.8.38;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IEAS} from "eas-contracts/IEAS.sol";
 import {OrbitWatchEscrow} from "../src/OrbitWatchEscrow.sol";
-import {EscrowHarness} from "./helpers/EscrowHarness.sol";
+import {OrbitWatchReviewerRegistry} from "../src/OrbitWatchReviewerRegistry.sol";
 import {EscrowTestBase} from "./helpers/EscrowTestBase.sol";
 
-/// @notice Unit tests: every transition, every refusal and the settlement rules 1.0.
+/// @notice Unit tests: deployment, every transition and refusal, and settlement rules 1.0.
+/// Automated results and votes go through EAS (see OrbitWatchEscrow.attestations.t.sol for
+/// the attestation rules themselves).
 contract OrbitWatchEscrowTest is EscrowTestBase {
     // ------------------------------------------------------------------ deployment
 
@@ -17,19 +20,26 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
             vm.expectRevert(
                 abi.encodeWithSelector(OrbitWatchEscrow.UnsupportedChain.selector, refused[i])
             );
-            new OrbitWatchEscrow(usd, platform);
+            new OrbitWatchEscrow(usd, platform, eas, registry, verifier);
         }
         vm.chainId(84_532);
-        new OrbitWatchEscrow(usd, platform);
+        new OrbitWatchEscrow(usd, platform, eas, registry, verifier);
     }
 
-    function test_RefusesATokenThatIsNotAContract() public {
-        vm.expectRevert(OrbitWatchEscrow.InvalidToken.selector);
-        new OrbitWatchEscrow(IERC20(makeAddr("not a token")), platform);
+    function test_RefusesMissingContractsAndVerifier() public {
+        address nothing = makeAddr("nothing");
+        vm.expectRevert(abi.encodeWithSelector(OrbitWatchEscrow.NotAContract.selector, nothing));
+        new OrbitWatchEscrow(IERC20(nothing), platform, eas, registry, verifier);
+        vm.expectRevert(abi.encodeWithSelector(OrbitWatchEscrow.NotAContract.selector, nothing));
+        new OrbitWatchEscrow(usd, platform, IEAS(nothing), registry, verifier);
+        vm.expectRevert(abi.encodeWithSelector(OrbitWatchEscrow.NotAContract.selector, nothing));
+        new OrbitWatchEscrow(usd, platform, eas, OrbitWatchReviewerRegistry(nothing), verifier);
+        vm.expectRevert(OrbitWatchEscrow.InvalidVerifier.selector);
+        new OrbitWatchEscrow(usd, platform, eas, registry, address(0));
     }
 
     function test_RequestKeyIsKeccakOfTheId() public view {
-        assertEq(escrow.requestKey("SIM-REQ-0001"), keccak256("SIM-REQ-0001"));
+        assertEq(escrow.requestKey(REQUEST_ID), ID);
     }
 
     // ------------------------------------------------------------------ fund
@@ -81,7 +91,7 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
     }
 
     function test_AFeeNeedsARecipient() public {
-        EscrowHarness noFees = new EscrowHarness(usd, address(0));
+        OrbitWatchEscrow noFees = new OrbitWatchEscrow(usd, address(0), eas, registry, verifier);
         OrbitWatchEscrow.Terms memory terms = _terms();
         vm.startPrank(requester);
         usd.approve(address(noFees), type(uint256).max);
@@ -220,26 +230,25 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
         assertEq(escrow.owed(stranger), 0);
     }
 
-    function test_AVerificationThatNeverComesExpires() public {
+    function test_AResultThatNeverComesExpires() public {
         _fund();
         _reserveAndDeliver();
         skip(VERIFICATION_TIMEOUT);
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.Expired));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OrbitWatchEscrow.WrongStatus.selector, ID, OrbitWatchEscrow.Status.Expired
-            )
+        _expectRefused(
+            verifier,
+            _resultRequest("pass", DELIVERY, station),
+            _wrongStatus(OrbitWatchEscrow.Status.Expired)
         );
-        escrow.recordVerification(ID, OrbitWatchEscrow.Verdict.Pass, _noReviewers());
         escrow.settle(ID);
         assertEq(escrow.owed(requester), DEPOSIT);
         assertEq(escrow.owed(station), 0);
     }
 
-    // ------------------------------------------------------------------ verification
+    // ------------------------------------------------------------------ outcomes
 
     function test_AnUnchallengedPassIsAccepted() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Pass);
+        _toChallengePeriod("pass");
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.ChallengePeriod));
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -256,7 +265,7 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
     }
 
     function test_AnUnchallengedFailIsRejectedAndRefunded() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Fail);
+        _toChallengePeriod("fail");
         skip(CHALLENGE);
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.Rejected));
         escrow.settle(ID);
@@ -265,92 +274,67 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
         assertEq(escrow.owed(platform), 0);
     }
 
-    function test_VerificationNeedsAVerdict() public {
-        _fund();
-        _reserveAndDeliver();
-        vm.expectRevert(OrbitWatchEscrow.InvalidVerdict.selector);
-        escrow.recordVerification(ID, OrbitWatchEscrow.Verdict.None, _noReviewers());
-    }
-
     function test_InconclusiveGoesStraightToReviewers() public {
         _fund();
         _reserveAndDeliver();
-        escrow.recordVerification(ID, OrbitWatchEscrow.Verdict.Inconclusive, _reviewers());
+        _attestResult("inconclusive");
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.InReview));
         assertEq(escrow.getRequest(ID).stageEndsAt, vm.getBlockTimestamp() + REVIEW);
     }
 
-    // ------------------------------------------------------------------ challenge and review
-
     function test_OnlyTheRequesterOrTheObserverCanChallenge() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Pass);
+        _toChallengePeriod("pass");
+        vm.prank(stranger);
         vm.expectRevert(abi.encodeWithSelector(OrbitWatchEscrow.NotAParty.selector, ID, stranger));
-        escrow.challenge(ID, stranger, _reviewers());
-        escrow.challenge(ID, station, _reviewers());
+        escrow.challenge(ID, REASON);
+        vm.prank(station);
+        vm.expectRevert(OrbitWatchEscrow.MissingReason.selector);
+        escrow.challenge(ID, bytes32(0));
+        _challenge(station);
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.InReview));
     }
 
     function test_AChallengeAfterTheDeadlineIsTooLate() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Pass);
+        _toChallengePeriod("pass");
         skip(CHALLENGE);
+        vm.prank(requester);
         vm.expectRevert(
             abi.encodeWithSelector(
                 OrbitWatchEscrow.WrongStatus.selector, ID, OrbitWatchEscrow.Status.Accepted
             )
         );
-        escrow.challenge(ID, requester, _reviewers());
-    }
-
-    function test_ARoundNeedsThreeIndependentReviewers() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Pass);
-        vm.expectRevert(OrbitWatchEscrow.InvalidReviewers.selector);
-        escrow.challenge(ID, requester, [r1, r1, r3]);
-        vm.expectRevert(OrbitWatchEscrow.InvalidReviewers.selector);
-        escrow.challenge(ID, requester, [r1, r2, address(0)]);
-        vm.expectRevert(
-            abi.encodeWithSelector(OrbitWatchEscrow.ConflictOfInterest.selector, requester)
-        );
-        escrow.challenge(ID, requester, [r1, requester, r3]);
-        vm.expectRevert(
-            abi.encodeWithSelector(OrbitWatchEscrow.ConflictOfInterest.selector, station)
-        );
-        escrow.challenge(ID, requester, [station, r2, r3]);
+        escrow.challenge(ID, REASON);
     }
 
     function test_TwoApprovalsAcceptAndTheLateReviewerIsNotPaid() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Fail);
-        escrow.challenge(ID, station, _reviewers());
-        vm.expectRevert(abi.encodeWithSelector(OrbitWatchEscrow.NotAssigned.selector, ID, stranger));
-        escrow.vote(ID, stranger, true);
-        escrow.vote(ID, r1, true);
-        vm.expectRevert(abi.encodeWithSelector(OrbitWatchEscrow.AlreadyVoted.selector, ID, r1));
-        escrow.vote(ID, r1, false);
-        escrow.vote(ID, r2, true);
+        _toChallengePeriod("fail");
+        _challenge(station);
+        address[3] memory round = _round();
+        _attestVote(round[0], true);
+        _attestVote(round[1], true);
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.Accepted));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OrbitWatchEscrow.WrongStatus.selector, ID, OrbitWatchEscrow.Status.Accepted
-            )
+        _expectRefused(
+            round[2], _voteRequest(true, REASON), _wrongStatus(OrbitWatchEscrow.Status.Accepted)
         );
-        escrow.vote(ID, r3, true);
 
         // The example of docs/settlement.md: 100 + 10 + 10 + 5, and 10 back.
         escrow.settle(ID);
         assertEq(escrow.owed(station), OBSERVER_REWARD);
-        assertEq(escrow.owed(r1), REVIEWER_REWARD);
-        assertEq(escrow.owed(r2), REVIEWER_REWARD);
-        assertEq(escrow.owed(r3), 0);
+        assertEq(escrow.owed(round[0]), REVIEWER_REWARD);
+        assertEq(escrow.owed(round[1]), REVIEWER_REWARD);
+        assertEq(escrow.owed(round[2]), 0);
         assertEq(escrow.owed(platform), PLATFORM_FEE);
         assertEq(escrow.owed(requester), 10e6);
     }
 
     function test_ARejectionTwoToOnePaysAllThreeReviews() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Pass);
-        escrow.challenge(ID, requester, _reviewers());
-        escrow.vote(ID, r1, false);
-        escrow.vote(ID, r2, true);
+        _toChallengePeriod("pass");
+        _challenge(requester);
+        address[3] memory round = _round();
+        _attestVote(round[0], false);
+        _attestVote(round[1], true);
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.InReview));
-        escrow.vote(ID, r3, false);
+        _attestVote(round[2], false);
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.Rejected));
         escrow.settle(ID);
         assertEq(escrow.owed(r1) + escrow.owed(r2) + escrow.owed(r3), 3 * REVIEWER_REWARD);
@@ -360,20 +344,19 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
     }
 
     function test_NoMajorityByTheDeadlineIsADispute() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Pass);
-        escrow.challenge(ID, requester, _reviewers());
-        escrow.vote(ID, r1, true);
+        _toChallengePeriod("pass");
+        _challenge(requester);
+        address[3] memory round = _round();
+        _attestVote(round[0], true);
         skip(REVIEW);
         assertEq(uint8(_status()), uint8(OrbitWatchEscrow.Status.Disputed));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OrbitWatchEscrow.WrongStatus.selector, ID, OrbitWatchEscrow.Status.Disputed
-            )
+        // A vote at the deadline is too late.
+        _expectRefused(
+            round[1], _voteRequest(true, REASON), _wrongStatus(OrbitWatchEscrow.Status.Disputed)
         );
-        escrow.vote(ID, r2, true); // a vote at the deadline is too late
         escrow.settle(ID);
         // The dispute rule: the completed review is paid, the observer gets nothing.
-        assertEq(escrow.owed(r1), REVIEWER_REWARD);
+        assertEq(escrow.owed(round[0]), REVIEWER_REWARD);
         assertEq(escrow.owed(station), 0);
         assertEq(escrow.owed(requester), DEPOSIT - REVIEWER_REWARD);
     }
@@ -381,7 +364,7 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
     // ------------------------------------------------------------------ settle and withdraw
 
     function test_ARequestIsSettledOnce() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Pass);
+        _toChallengePeriod("pass");
         skip(CHALLENGE);
         vm.prank(stranger);
         escrow.settle(ID);
@@ -407,7 +390,7 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
     }
 
     function test_EachPartyWithdrawsOnlyItsOwnCredit() public {
-        _toChallengePeriod(OrbitWatchEscrow.Verdict.Pass);
+        _toChallengePeriod("pass");
         skip(CHALLENGE);
         escrow.settle(ID);
 
@@ -457,23 +440,19 @@ contract OrbitWatchEscrowTest is EscrowTestBase {
         uint256 votes;
         if (path == 0) {
             // No round: the automated result stands.
-            escrow.recordVerification(
-                ID,
-                approvals[0] ? OrbitWatchEscrow.Verdict.Pass : OrbitWatchEscrow.Verdict.Fail,
-                _noReviewers()
-            );
+            _attestResult(approvals[0] ? "pass" : "fail");
             skip(CHALLENGE);
         } else {
             if (path == 1) {
-                escrow.recordVerification(ID, OrbitWatchEscrow.Verdict.Inconclusive, _reviewers());
+                _attestResult("inconclusive");
             } else {
-                escrow.recordVerification(ID, OrbitWatchEscrow.Verdict.Pass, _reviewers());
-                escrow.challenge(ID, path == 2 ? requester : station, _reviewers());
+                _attestResult("pass");
+                _challenge(path == 2 ? requester : station);
             }
-            address[3] memory reviewers = _reviewers();
+            address[3] memory round = _round();
             for (uint256 i; i < 3; ++i) {
                 if (_status() != OrbitWatchEscrow.Status.InReview) break;
-                escrow.vote(ID, reviewers[i], approvals[i]);
+                _attestVote(round[i], approvals[i]);
                 ++votes;
             }
             skip(REVIEW); // decides nothing more if the round is already decided

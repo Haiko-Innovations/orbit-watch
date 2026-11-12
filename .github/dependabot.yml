@@ -1,5 +1,5 @@
 version: 2
-# contracts/lib (forge-std, OpenZeppelin) are git submodules pinned to release
+# contracts/lib (forge-std, OpenZeppelin, eas-contracts) are git submodules pinned to release
 # commits. They are not listed here on purpose: Dependabot would move them to the
 # newest commit of the default branch, which is not a release. They are updated by
 # hand, see contracts/README.md (decision D-18).

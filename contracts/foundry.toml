@@ -10,11 +10,15 @@ solc_version = "0.8.38"
 evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
+# Warnings from pinned libraries (for example OpenZeppelin's EnumerableSet.at, which
+# solc 0.8.38 flags because "at" may become a keyword); our own code still warns.
+ignored_warnings_from = ["lib/"]
 # The settlement scenario suite exported from the Python core (test/fixtures).
 fs_permissions = [{ access = "read", path = "./test/fixtures" }]
 remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "forge-std/=lib/forge-std/src/",
+    "eas-contracts/=lib/eas-contracts/contracts/",
 ]
 
 [fuzz]

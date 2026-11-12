@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.38;
 
-import {Test} from "forge-std/Test.sol";
+import {IEAS, AttestationRequest, AttestationRequestData} from "eas-contracts/IEAS.sol";
 import {OrbitWatchEscrow} from "../../src/OrbitWatchEscrow.sol";
-import {EscrowHarness} from "./EscrowHarness.sol";
+import {OrbitWatchReviewerRegistry} from "../../src/OrbitWatchReviewerRegistry.sol";
 import {TestUSD} from "../mocks/TestUSD.sol";
+import {BaseSepoliaEas} from "./BaseSepoliaEas.sol";
 
-/// @notice Shared set-up for the escrow tests: a worthless local token, the escrow behind the
-/// test-only harness, and named parties.
-abstract contract EscrowTestBase is Test {
+/// @notice Shared set-up for the escrow tests: Base Sepolia's EAS code, a worthless local
+/// token, a reviewer registry with three reviewers, the escrow and named parties.
+abstract contract EscrowTestBase is BaseSepoliaEas {
     // The example of docs/settlement.md: deposit 100 + 3 × 10 + 5 = 135.
     uint128 internal constant OBSERVER_REWARD = 100e6;
     uint128 internal constant REVIEWER_REWARD = 10e6;
@@ -22,17 +23,25 @@ abstract contract EscrowTestBase is Test {
     uint32 internal constant REVIEW = 48 hours;
     uint64 internal constant DELIVERY_WINDOW = 3 days;
 
+    string internal constant REQUEST_ID = "SIM-REQ-0001";
+    bytes32 internal constant ID = keccak256("SIM-REQ-0001");
     // keccak256 is an opcode; sha256 would be a precompile call and use up vm.prank.
     bytes32 internal constant TERMS = keccak256("terms");
     bytes32 internal constant DELIVERY = keccak256("observations");
-    bytes32 internal constant ID = keccak256("SIM-REQ-0001");
+    bytes32 internal constant REPORT = keccak256("report");
+    bytes32 internal constant REASON = keccak256("reason");
+    string internal constant METHOD = "orbit-watch-automated-verification";
+    string internal constant METHOD_VERSION = "1.0.0";
 
+    IEAS internal eas;
     TestUSD internal usd;
-    EscrowHarness internal escrow;
+    OrbitWatchReviewerRegistry internal registry;
+    OrbitWatchEscrow internal escrow;
 
     address internal requester = makeAddr("requester");
     address internal station = makeAddr("station");
     address internal otherStation = makeAddr("other station");
+    address internal verifier = makeAddr("verifier");
     address internal r1 = makeAddr("reviewer 1");
     address internal r2 = makeAddr("reviewer 2");
     address internal r3 = makeAddr("reviewer 3");
@@ -40,18 +49,19 @@ abstract contract EscrowTestBase is Test {
     address internal stranger = makeAddr("stranger");
 
     function setUp() public virtual {
+        eas = _installEas();
         usd = new TestUSD();
-        escrow = new EscrowHarness(usd, platform);
+        registry = new OrbitWatchReviewerRegistry(address(this));
+        registry.addReviewer(r1);
+        registry.addReviewer(r2);
+        registry.addReviewer(r3);
+        escrow = new OrbitWatchEscrow(usd, platform, eas, registry, verifier);
         usd.mint(requester, BUDGET);
         vm.prank(requester);
         usd.approve(address(escrow), type(uint256).max);
     }
 
-    function _reviewers() internal view returns (address[3] memory) {
-        return [r1, r2, r3];
-    }
-
-    function _noReviewers() internal pure returns (address[3] memory none) {}
+    // ------------------------------------------------------------------ requests
 
     function _terms() internal view returns (OrbitWatchEscrow.Terms memory) {
         return OrbitWatchEscrow.Terms({
@@ -88,15 +98,87 @@ abstract contract EscrowTestBase is Test {
         skip(10 minutes);
     }
 
-    /// @dev Funded, reserved, delivered and verified with `verdict` (challenge period open).
-    function _toChallengePeriod(OrbitWatchEscrow.Verdict verdict) internal {
+    /// @dev Funded, reserved, delivered and attested with `verdict` (pass or fail).
+    function _toChallengePeriod(string memory verdict) internal {
         _fund();
         _reserveAndDeliver();
-        escrow.recordVerification(ID, verdict, _noReviewers());
+        _attestResult(verdict);
+    }
+
+    function _challenge(address by) internal {
+        vm.prank(by);
+        escrow.challenge(ID, REASON);
     }
 
     function _status() internal view returns (OrbitWatchEscrow.Status) {
         return escrow.statusOf(ID);
+    }
+
+    function _round() internal view returns (address[3] memory) {
+        return escrow.getRequest(ID).reviewers;
+    }
+
+    // ------------------------------------------------------------------ attestations
+
+    function _resultRequest(string memory verdict, bytes32 delivery, address recipient)
+        internal
+        view
+        returns (AttestationRequest memory)
+    {
+        return AttestationRequest({
+            schema: escrow.resultSchemaUid(),
+            data: AttestationRequestData({
+                recipient: recipient,
+                expirationTime: 0,
+                revocable: false,
+                refUID: bytes32(0),
+                data: abi.encode(REQUEST_ID, delivery, REPORT, verdict, METHOD, METHOD_VERSION),
+                value: 0
+            })
+        });
+    }
+
+    function _voteRequest(bool approve, bytes32 reason)
+        internal
+        view
+        returns (AttestationRequest memory)
+    {
+        return AttestationRequest({
+            schema: escrow.voteSchemaUid(),
+            data: AttestationRequestData({
+                recipient: station,
+                expirationTime: 0,
+                revocable: false,
+                refUID: escrow.getRequest(ID).resultAttestation,
+                data: abi.encode(REQUEST_ID, DELIVERY, approve, reason),
+                value: 0
+            })
+        });
+    }
+
+    function _attestResult(string memory verdict) internal returns (bytes32) {
+        AttestationRequest memory request = _resultRequest(verdict, DELIVERY, station);
+        vm.prank(verifier);
+        return eas.attest(request);
+    }
+
+    function _attestVote(address reviewer, bool approve) internal returns (bytes32) {
+        AttestationRequest memory request = _voteRequest(approve, REASON);
+        vm.prank(reviewer);
+        return eas.attest(request);
+    }
+
+    /// @dev Expect `attester`'s attestation to be refused with `err` (and so never created).
+    function _expectRefused(address attester, AttestationRequest memory request, bytes memory err)
+        internal
+    {
+        vm.expectRevert(err);
+        vm.prank(attester);
+        eas.attest(request);
+    }
+
+    function _wrongStatus(OrbitWatchEscrow.Status status) internal pure returns (bytes memory) {
+        return abi.encodeWithSelector(OrbitWatchEscrow.WrongStatus.selector, ID, status);
     }
 
     /// @dev Withdraw for every party that has something owed, so balances can be compared.

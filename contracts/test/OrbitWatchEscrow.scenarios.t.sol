@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.38;
 
-import {Test} from "forge-std/Test.sol";
 import {stdJson} from "forge-std/StdJson.sol";
+import {IEAS, AttestationRequest, AttestationRequestData} from "eas-contracts/IEAS.sol";
 import {OrbitWatchEscrow} from "../src/OrbitWatchEscrow.sol";
-import {EscrowHarness} from "./helpers/EscrowHarness.sol";
+import {OrbitWatchReviewerRegistry} from "../src/OrbitWatchReviewerRegistry.sol";
+import {BaseSepoliaEas} from "./helpers/BaseSepoliaEas.sol";
 import {TestUSD} from "./mocks/TestUSD.sol";
 
 /// @notice The phase 1 settlement scenario suite, replayed on chain.
@@ -12,14 +13,23 @@ import {TestUSD} from "./mocks/TestUSD.sol";
 /// (`python -m orbit_watch.settlement.scenarios`), and a Python test checks that it is
 /// current. Every funded scenario must end with the same outcome and the same net change for
 /// every party as on the phase 1 points ledger. Unfunded scenarios never touch the chain.
-contract OrbitWatchEscrowScenariosTest is Test {
+/// Automated results and votes are attestations made through Base Sepolia's EAS code, and the
+/// reviewers chosen on chain must be the scenario's reviewers.
+contract OrbitWatchEscrowScenariosTest is BaseSepoliaEas {
     using stdJson for string;
 
     bytes32 internal constant DELIVERY = keccak256("observations");
+    bytes32 internal constant REPORT = keccak256("report");
+    bytes32 internal constant REASON = keccak256("reason");
 
     string internal json;
+    IEAS internal eas;
+    TestUSD internal usd;
+    OrbitWatchEscrow internal escrow;
+    address internal verifier = makeAddr("verifier");
 
     function setUp() public {
+        eas = _installEas();
         json = vm.readFile(
             string.concat(vm.projectRoot(), "/test/fixtures/settlement-scenarios.json")
         );
@@ -43,26 +53,42 @@ contract OrbitWatchEscrowScenariosTest is Test {
     // ------------------------------------------------------------------ one scenario
 
     function _run(string memory s) internal {
-        string memory name = json.readString(string.concat(s, ".name"));
         uint256 t0 = json.readUint(".t0");
         vm.warp(t0);
-
-        TestUSD usd = new TestUSD();
-        EscrowHarness escrow = new EscrowHarness(usd, _party(json.readString(".platform")));
-        bytes32 id = keccak256(bytes(string.concat("SIM-", name)));
-        address requester = _party(json.readString(string.concat(s, ".requester")));
-        usd.mint(requester, json.readUint(".budget"));
-
         string[] memory parties = json.readStringArray(".parties");
+        _deploy(parties);
+        string memory requestId = string.concat("SIM-", json.readString(string.concat(s, ".name")));
+        usd.mint(_party(json.readString(string.concat(s, ".requester"))), json.readUint(".budget"));
+
         int256[] memory before = new int256[](parties.length);
         for (uint256 p; p < parties.length; ++p) {
             before[p] = int256(usd.balanceOf(_party(parties[p])));
         }
-
         for (uint256 j; json.keyExists(_at(string.concat(s, ".steps"), j)); ++j) {
-            _step(escrow, usd, id, s, _at(string.concat(s, ".steps"), j), t0);
+            _step(requestId, s, _at(string.concat(s, ".steps"), j), t0);
         }
+        _settleAndCheck(s, keccak256(bytes(requestId)), parties, before);
+    }
 
+    /// @dev A fresh token, registry (with the scenario's reviewers) and escrow.
+    function _deploy(string[] memory parties) internal {
+        usd = new TestUSD();
+        OrbitWatchReviewerRegistry registry = new OrbitWatchReviewerRegistry(address(this));
+        for (uint256 p; p < parties.length; ++p) {
+            if (vm.indexOf(parties[p], "reviewer:") == 0) registry.addReviewer(_party(parties[p]));
+        }
+        escrow = new OrbitWatchEscrow(
+            usd, _party(json.readString(".platform")), eas, registry, verifier
+        );
+    }
+
+    function _settleAndCheck(
+        string memory s,
+        bytes32 id,
+        string[] memory parties,
+        int256[] memory before
+    ) internal {
+        string memory name = json.readString(string.concat(s, ".name"));
         // The outcome, before settlement (a cancellation settles at once).
         OrbitWatchEscrow.Status status = escrow.statusOf(id);
         if (status == OrbitWatchEscrow.Status.Settled) {
@@ -91,21 +117,16 @@ contract OrbitWatchEscrowScenariosTest is Test {
         }
         assertEq(usd.balanceOf(address(escrow)), 0, string.concat(name, ": left in escrow"));
         assertEq(escrow.totalHeld() + escrow.totalOwed(), 0, string.concat(name, ": owed"));
-
         for (uint256 p; p < parties.length; ++p) {
             int256 change = int256(usd.balanceOf(_party(parties[p]))) - before[p];
             assertEq(change, _expectedChange(s, parties[p]), string.concat(name, ": ", parties[p]));
         }
     }
 
-    function _step(
-        EscrowHarness escrow,
-        TestUSD usd,
-        bytes32 id,
-        string memory s,
-        string memory step,
-        uint256 t0
-    ) internal {
+    function _step(string memory requestId, string memory s, string memory step, uint256 t0)
+        internal
+    {
+        bytes32 id = keccak256(bytes(requestId));
         vm.warp(t0 + json.readUint(string.concat(step, ".at")));
         bytes32 action = keccak256(bytes(json.readString(string.concat(step, ".action"))));
         if (action == keccak256("open") || action == keccak256("wait")) {
@@ -135,15 +156,25 @@ contract OrbitWatchEscrowScenariosTest is Test {
             vm.prank(party);
             escrow.cancel(id);
         } else if (action == keccak256("verify")) {
-            escrow.recordVerification(
-                id,
-                _verdict(json.readString(string.concat(step, ".verdict"))),
-                _reviewers(string.concat(step, ".reviewers"))
-            );
+            string memory verdict = json.readString(string.concat(step, ".verdict"));
+            bytes memory data = abi.encode(requestId, DELIVERY, REPORT, verdict, "method", "1");
+            AttestationRequest memory result =
+                _request(escrow.resultSchemaUid(), id, bytes32(0), data);
+            vm.prank(verifier); // after building the request: a view call would use up the prank
+            eas.attest(result);
+            _checkRound(id, string.concat(step, ".reviewers"));
         } else if (action == keccak256("challenge")) {
-            escrow.challenge(id, party, _reviewers(string.concat(step, ".reviewers")));
+            vm.prank(party);
+            escrow.challenge(id, REASON);
+            _checkRound(id, string.concat(step, ".reviewers"));
         } else if (action == keccak256("vote")) {
-            escrow.vote(id, party, json.readBool(string.concat(step, ".approve")));
+            bytes memory data = abi.encode(
+                requestId, DELIVERY, json.readBool(string.concat(step, ".approve")), REASON
+            );
+            bytes32 result = escrow.getRequest(id).resultAttestation;
+            AttestationRequest memory request = _request(escrow.voteSchemaUid(), id, result, data);
+            vm.prank(party);
+            eas.attest(request);
         } else {
             revert(string.concat("unknown action in ", step));
         }
@@ -169,13 +200,37 @@ contract OrbitWatchEscrowScenariosTest is Test {
         });
     }
 
-    function _reviewers(string memory key) internal returns (address[3] memory reviewers) {
+    /// @dev The reviewers chosen on chain are the scenario's reviewers (in any order).
+    function _checkRound(bytes32 id, string memory key) internal {
         string[] memory names = json.readStringArray(key);
-        if (names.length == 0) return reviewers;
+        if (names.length == 0) return;
         assertEq(names.length, 3, key);
+        address[3] memory round = escrow.getRequest(id).reviewers;
         for (uint256 i; i < 3; ++i) {
-            reviewers[i] = _party(names[i]);
+            address expected = _party(names[i]);
+            assertTrue(
+                round[0] == expected || round[1] == expected || round[2] == expected,
+                string.concat(names[i], " is not in the round")
+            );
         }
+    }
+
+    function _request(bytes32 schema, bytes32 id, bytes32 refUid, bytes memory data)
+        internal
+        view
+        returns (AttestationRequest memory)
+    {
+        return AttestationRequest({
+            schema: schema,
+            data: AttestationRequestData({
+                recipient: escrow.getRequest(id).station,
+                expirationTime: 0,
+                revocable: false,
+                refUID: refUid,
+                data: data,
+                value: 0
+            })
+        });
     }
 
     function _expectedChange(string memory s, string memory party) internal view returns (int256) {
@@ -197,14 +252,6 @@ contract OrbitWatchEscrowScenariosTest is Test {
 
     function _at(string memory array, uint256 index) internal pure returns (string memory) {
         return string.concat(array, "[", vm.toString(index), "]");
-    }
-
-    function _verdict(string memory verdict) internal pure returns (OrbitWatchEscrow.Verdict) {
-        bytes32 v = keccak256(bytes(verdict));
-        if (v == keccak256("pass")) return OrbitWatchEscrow.Verdict.Pass;
-        if (v == keccak256("fail")) return OrbitWatchEscrow.Verdict.Fail;
-        if (v == keccak256("inconclusive")) return OrbitWatchEscrow.Verdict.Inconclusive;
-        revert(string.concat("unknown verdict ", verdict));
     }
 
     function _outcome(string memory outcome) internal pure returns (OrbitWatchEscrow.Status) {

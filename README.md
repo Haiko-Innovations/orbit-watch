@@ -87,7 +87,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Storage (SQLite, files by hash) | | [storage.md](docs/storage.md) |
 | HTTP API and command-line client | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Open data (CC BY 4.0, embargo, permanent URLs) | `public` | [data-publication.md](docs/data-publication.md) |
-| Escrow contract for the Base Sepolia **testnet** (phase 2, in progress) | `forge test` | [escrow.md](docs/escrow.md) |
+| Escrow contract and EAS attestations for the Base Sepolia **testnet** (phase 2, in progress) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md) |
 
 The Python code is in [`core/`](core) and the Solidity contracts in [`contracts/`](contracts). Simulated examples are in
 [`examples/`](examples).
