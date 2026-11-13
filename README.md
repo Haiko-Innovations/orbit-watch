@@ -12,24 +12,24 @@ stations observe, and the delivery is verified automatically and reproducibly
 against public orbit data. Observers get value from day one: a quality meter
 that tells them how accurate their station is.
 
-> **Status: phase 2 is done (version 0.3.0).** Requests, optimistic
-> verification, an HTTP API and a command-line client run locally, either with
-> a points ledger and no blockchain, or with settlement on the Base Sepolia
-> **testnet**: an escrow contract, EAS attestations and every party signing
-> with its own wallet, with testnet USDC of **no value**
-> ([base-sepolia.md](docs/base-sepolia.md)). No mainnet, no real money.
-> Requests target civilian objects only. **Simulated data is always labelled
-> as simulated**, and automated verification is a prototype, not
-> production-ready scientific validation. Phase 3, the web application, is
-> under way. See the [roadmap](docs/roadmap.md), the
-> [phase 2 summary](docs/phase-2-summary.md) and the [changelog](CHANGELOG.md).
+> **Status: phase 3 is done (version 0.4.0).** Requests, optimistic
+> verification, an HTTP API, a command-line client and a web application run
+> locally, either with a points ledger and no blockchain, or with settlement on
+> the Base Sepolia **testnet**: an escrow contract, EAS attestations and every
+> party signing with its own wallet, in the browser too, with testnet USDC of
+> **no value** ([base-sepolia.md](docs/base-sepolia.md)). No mainnet, no real
+> money, no public service. Requests target civilian objects only.
+> **Simulated data is always labelled as simulated**, and automated
+> verification is a prototype, not production-ready scientific validation.
+> See the [roadmap](docs/roadmap.md), the
+> [phase 3 summary](docs/phase-3-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)
 
 You need Python 3.12 or newer.
 
 ```sh
-pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.3.0#subdirectory=core"
+pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.4.0#subdirectory=core"
 orbit-watch demo
 cat orbit-watch-demo/datasets/wrong_target/report.txt
 ```
@@ -93,7 +93,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Testnet settlement adapter (Python, `evm` extra) | | [evm-adapter.md](docs/evm-adapter.md) |
 | Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | The contracts on **Base Sepolia**: addresses, faucets, who holds which key, deploying | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
-| Web application (phase 3, in progress): public pages with an attestation browser and the station quality meter, signing in with a wallet, withdrawals, the requester's, observer's and reviewer's views and the administrator view so far, served by the service; a local stack for development | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
+| Web application (phase 3): public pages with an attestation browser and the station quality meter, signing in with a wallet, withdrawals, and views for requesters, observers, reviewers and administrators, served by the service; a local stack for development; the phase 3 demo on Base Sepolia | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
 
 The Python code is in [`core/`](core), the Solidity contracts in [`contracts/`](contracts) and the web application in [`web/`](web). Simulated examples are in
 [`examples/`](examples).
@@ -143,7 +143,7 @@ The full starting plan: [docs/plan.md](docs/plan.md).
   a points-only "ledger" settlement adapter.
 - **Phase 2 (done, 0.3.0):** settlement on the Base Sepolia **testnet** with
   an escrow contract and EAS attestations. No mainnet, no token of our own.
-- **Phase 3 (in progress):** a web application with role views and wallets in
+- **Phase 3 (done, 0.4.0):** a web application with role views and wallets in
   the browser.
 
 ## Open questions

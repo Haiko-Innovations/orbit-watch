@@ -1,0 +1,434 @@
+{
+  "notice": "Base Sepolia testnet, no real value. Every station, observation, request and reviewer is SIMULATED.",
+  "request": "SIM-REQ-3804",
+  "outcome": {
+    "request_id": "SIM-REQ-3804",
+    "title": "SIMULATED: track SIM-CUBESAT-A on Base Sepolia (phase 3 demo)",
+    "requester": "requester:sim-cubesat-team",
+    "status": "settled",
+    "outcome": "accepted",
+    "outcome_reason": "reviewers approved 2-0",
+    "reserved_by": "station:SIM-ESPOO",
+    "observer": "station:SIM-ESPOO",
+    "automated_verdict": "pass",
+    "reviewers": [
+      "reviewer:sim-chen",
+      "reviewer:sim-aino",
+      "reviewer:sim-eero"
+    ],
+    "votes": [
+      [
+        "reviewer:sim-chen",
+        true
+      ],
+      [
+        "reviewer:sim-aino",
+        true
+      ]
+    ],
+    "on_chain": true,
+    "settlement": {
+      "plan": {
+        "rules_version": "1.0",
+        "request_id": "SIM-REQ-3804",
+        "outcome": "accepted",
+        "deposit": 1300000,
+        "payouts": [
+          {
+            "party": "station:SIM-ESPOO",
+            "points": 1000000,
+            "reason": "observer_reward"
+          },
+          {
+            "party": "reviewer:sim-chen",
+            "points": 100000,
+            "reason": "review"
+          },
+          {
+            "party": "reviewer:sim-aino",
+            "points": 100000,
+            "reason": "review"
+          },
+          {
+            "party": "requester:sim-cubesat-team",
+            "points": 100000,
+            "reason": "refund"
+          }
+        ]
+      },
+      "reference": "0xd1f0bb6d331ad6eda46d365317343d8b029c38a76f4725ec489e2072e39ba1ba"
+    }
+  },
+  "transactions": [
+    {
+      "tx_hash": "0x3f5d9b0f638a75c21f538b7909dbc0e0662dc144aeee143dab1a992d040d91a3",
+      "party": "requester:sim-cubesat-team",
+      "action": "approve",
+      "request_id": null,
+      "status": "confirmed",
+      "block": 58366594,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0x3f5d9b0f638a75c21f538b7909dbc0e0662dc144aeee143dab1a992d040d91a3"
+    },
+    {
+      "tx_hash": "0x6a7edfd53c9dd7ae1e5d8735984517063775b95de282f702ce49d8e1ef8893b4",
+      "party": "requester:sim-cubesat-team",
+      "action": "fund",
+      "request_id": "SIM-REQ-3804",
+      "status": "confirmed",
+      "block": 58366606,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0x6a7edfd53c9dd7ae1e5d8735984517063775b95de282f702ce49d8e1ef8893b4"
+    },
+    {
+      "tx_hash": "0x6f10cd45a705d68f19c64e32abd9825136977231221f1a8f95bb973f30899448",
+      "party": "station:SIM-ESPOO",
+      "action": "reserve",
+      "request_id": "SIM-REQ-3804",
+      "status": "confirmed",
+      "block": 58366674,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0x6f10cd45a705d68f19c64e32abd9825136977231221f1a8f95bb973f30899448"
+    },
+    {
+      "tx_hash": "0x95d35e4aa6ff95f6529f1cd9e1be8971e110018385dcd40893bd71b71e8348ad",
+      "party": "station:SIM-ESPOO",
+      "action": "deliver",
+      "request_id": "SIM-REQ-3804",
+      "status": "confirmed",
+      "block": 58366711,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0x95d35e4aa6ff95f6529f1cd9e1be8971e110018385dcd40893bd71b71e8348ad"
+    },
+    {
+      "tx_hash": "0xaea4b43d97cb4bb4cb34f9e0dcfe802e0bfc93e26954b5e3ce506467c51c9011",
+      "party": "system:verifier",
+      "action": "attest_result",
+      "request_id": "SIM-REQ-3804",
+      "status": "confirmed",
+      "block": 58366726,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0xaea4b43d97cb4bb4cb34f9e0dcfe802e0bfc93e26954b5e3ce506467c51c9011"
+    },
+    {
+      "tx_hash": "0xa857fdedf93b056652bdf8c623692abeed632e378c0fd1c98be071b68f305cdf",
+      "party": "requester:sim-cubesat-team",
+      "action": "challenge",
+      "request_id": "SIM-REQ-3804",
+      "status": "confirmed",
+      "block": 58366770,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0xa857fdedf93b056652bdf8c623692abeed632e378c0fd1c98be071b68f305cdf"
+    },
+    {
+      "tx_hash": "0x9cc45ff058b1430e4e58a05e0c3ffe76b5a966c16ee027bd4b11e48062e62645",
+      "party": "reviewer:sim-chen",
+      "action": "attest_vote",
+      "request_id": "SIM-REQ-3804",
+      "status": "confirmed",
+      "block": 58366846,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0x9cc45ff058b1430e4e58a05e0c3ffe76b5a966c16ee027bd4b11e48062e62645"
+    },
+    {
+      "tx_hash": "0x3bfbba86521ef2961a0e4a21ab89420f5b076e0907335afbd10d2134d5347be1",
+      "party": "reviewer:sim-aino",
+      "action": "attest_vote",
+      "request_id": "SIM-REQ-3804",
+      "status": "confirmed",
+      "block": 58366905,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0x3bfbba86521ef2961a0e4a21ab89420f5b076e0907335afbd10d2134d5347be1"
+    },
+    {
+      "tx_hash": "0xd1f0bb6d331ad6eda46d365317343d8b029c38a76f4725ec489e2072e39ba1ba",
+      "party": "system:verifier",
+      "action": "settle",
+      "request_id": "SIM-REQ-3804",
+      "status": "confirmed",
+      "block": 58366924,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0xd1f0bb6d331ad6eda46d365317343d8b029c38a76f4725ec489e2072e39ba1ba"
+    },
+    {
+      "tx_hash": "0x364808b1e99f9b485d563f91d7ffd1be7e3cb4a358120484d5bae2b5237679d8",
+      "party": "station:SIM-ESPOO",
+      "action": "withdraw",
+      "request_id": null,
+      "status": "confirmed",
+      "block": 58366968,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0x364808b1e99f9b485d563f91d7ffd1be7e3cb4a358120484d5bae2b5237679d8"
+    },
+    {
+      "tx_hash": "0x9a6bc60aa3cd7468e6c226ca43e1d2f6cf79a332b08b505fed6aec18ada0d55e",
+      "party": "requester:sim-cubesat-team",
+      "action": "withdraw",
+      "request_id": null,
+      "status": "confirmed",
+      "block": 58367007,
+      "error": null,
+      "explorer": "https://sepolia.basescan.org/tx/0x9a6bc60aa3cd7468e6c226ca43e1d2f6cf79a332b08b505fed6aec18ada0d55e"
+    }
+  ],
+  "attestations": [
+    {
+      "uid": "0xa3e7412aec1c9c5c4e0951945fdc0eb9ca23cc864cde972cb415f905e6f3e4ea",
+      "kind": "vote",
+      "request_id": "SIM-REQ-3804",
+      "attester": "0xdd53Ebe04af0BEbcE35365170478ae8291079c65",
+      "by_service": false,
+      "fields": {
+        "approve": true,
+        "deliverySha256": "0x8839784ee0739c1fd217eb06807319689e6f269bc809dfb9295ac93a1a234613",
+        "reasonSha256": "0xd20412891ed64eb63841262535ab666f0bd65868b50106195a6e9678c8116543",
+        "requestId": "SIM-REQ-3804"
+      },
+      "at": "2026-11-13T18:40:49.000Z",
+      "block": 58366905,
+      "tx_hash": "0x3bfbba86521ef2961a0e4a21ab89420f5b076e0907335afbd10d2134d5347be1",
+      "explorer": "https://sepolia.basescan.org/tx/0x3bfbba86521ef2961a0e4a21ab89420f5b076e0907335afbd10d2134d5347be1",
+      "eas_scan": "https://base-sepolia.easscan.org/attestation/view/0xa3e7412aec1c9c5c4e0951945fdc0eb9ca23cc864cde972cb415f905e6f3e4ea",
+      "published": true
+    },
+    {
+      "uid": "0x7b107ad5f718b3f081f0481bdeb5c9b09da407e6d322b6e6e0d8fabfbb1a47b7",
+      "kind": "vote",
+      "request_id": "SIM-REQ-3804",
+      "attester": "0x600e4f215b7209b9Dc7BB0F507a8A4DCe894D219",
+      "by_service": false,
+      "fields": {
+        "approve": true,
+        "deliverySha256": "0x8839784ee0739c1fd217eb06807319689e6f269bc809dfb9295ac93a1a234613",
+        "reasonSha256": "0xd20412891ed64eb63841262535ab666f0bd65868b50106195a6e9678c8116543",
+        "requestId": "SIM-REQ-3804"
+      },
+      "at": "2026-11-13T18:40:38.000Z",
+      "block": 58366846,
+      "tx_hash": "0x9cc45ff058b1430e4e58a05e0c3ffe76b5a966c16ee027bd4b11e48062e62645",
+      "explorer": "https://sepolia.basescan.org/tx/0x9cc45ff058b1430e4e58a05e0c3ffe76b5a966c16ee027bd4b11e48062e62645",
+      "eas_scan": "https://base-sepolia.easscan.org/attestation/view/0x7b107ad5f718b3f081f0481bdeb5c9b09da407e6d322b6e6e0d8fabfbb1a47b7",
+      "published": true
+    },
+    {
+      "uid": "0x5637a9f6b44dbcc62aa724c99578ff9e23f481d2a751accaaf740fb7b63b9a1a",
+      "kind": "result",
+      "request_id": "SIM-REQ-3804",
+      "attester": "0x7eB41156A2B4BC03B8d016A58caF322A0FEdFEDc",
+      "by_service": true,
+      "fields": {
+        "deliverySha256": "0x8839784ee0739c1fd217eb06807319689e6f269bc809dfb9295ac93a1a234613",
+        "method": "orbit-watch-automated-verification",
+        "reportSha256": "0xe764f7cf33a271c9769a386b89887baba2354f1accb8c4c7f485e985fad4c7a9",
+        "requestId": "SIM-REQ-3804",
+        "verdict": "pass",
+        "version": "1.0.0"
+      },
+      "at": "2026-11-13T18:40:14.000Z",
+      "block": 58366726,
+      "tx_hash": "0xaea4b43d97cb4bb4cb34f9e0dcfe802e0bfc93e26954b5e3ce506467c51c9011",
+      "explorer": "https://sepolia.basescan.org/tx/0xaea4b43d97cb4bb4cb34f9e0dcfe802e0bfc93e26954b5e3ce506467c51c9011",
+      "eas_scan": "https://base-sepolia.easscan.org/attestation/view/0x5637a9f6b44dbcc62aa724c99578ff9e23f481d2a751accaaf740fb7b63b9a1a",
+      "published": true
+    }
+  ],
+  "operations": [
+    {
+      "operation_id": "0x7888f2b8b3bef5373e933ffec2311979cf96567484195535df0cf1bba7d774ba",
+      "state": "waiting",
+      "ready_at": "2026-11-15T18:41:33.000Z",
+      "delay_seconds": 172800,
+      "predecessor": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "salt": "0x1568774452d32995803960960795e7ac2ff924531e8c7692851a4a24f15bff94",
+      "scheduled_at": "2026-11-13T18:41:33.000Z",
+      "scheduled_tx": "0xc3536c018f1050f23cb85d1511173840c5ce636ecaaf5d87c7ca83619076455f",
+      "executed_at": null,
+      "executed_tx": null,
+      "cancelled_at": null,
+      "calls": [
+        {
+          "target": "0xE1D3f4b308C781aDcAAF628DDf499d78C7361018",
+          "value": "0",
+          "data": "0x73a82b5f0000000000000000000000007fab546139baea864995babb60696b5a9dc24b91",
+          "description": "registry.addReviewer(0x7fab546139bAea864995bABB60696b5a9DC24b91)"
+        }
+      ],
+      "execute": {
+        "to": "0xc1A5cC62027e309830674D1A7f26B1E4909f5704",
+        "value": "0",
+        "data": "0x134008d3000000000000000000000000e1d3f4b308c781adcaaf628ddf499d78c7361018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000001568774452d32995803960960795e7ac2ff924531e8c7692851a4a24f15bff94000000000000000000000000000000000000000000000000000000000000002473a82b5f0000000000000000000000007fab546139baea864995babb60696b5a9dc24b9100000000000000000000000000000000000000000000000000000000"
+      },
+      "execute_batch": {
+        "version": "1.0",
+        "chainId": "84532",
+        "createdAt": 1794595304983,
+        "meta": {
+          "name": "Orbit Watch: execute timelock operation 0x7888f2b8",
+          "description": "Execute timelock operation 0x7888f2b8b3bef5373e933ffec2311979cf96567484195535df0cf1bba7d774ba (registry.addReviewer(0x7fab546139bAea864995bABB60696b5a9DC24b91)). Anyone may execute it once it is ready.",
+          "createdFromSafeAddress": "0xcfB913356bd7D99707CCE6CC08f628B38652E458",
+          "checksum": "0x2cdde4ececc8add01f347d6d03bc6a7ac5e9bbe1a48df7aa05cfc687931a1db0"
+        },
+        "transactions": [
+          {
+            "to": "0xc1A5cC62027e309830674D1A7f26B1E4909f5704",
+            "value": "0",
+            "data": "0x134008d3000000000000000000000000e1d3f4b308c781adcaaf628ddf499d78c7361018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000001568774452d32995803960960795e7ac2ff924531e8c7692851a4a24f15bff94000000000000000000000000000000000000000000000000000000000000002473a82b5f0000000000000000000000007fab546139baea864995babb60696b5a9dc24b9100000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "who": "administrator (command line)",
+      "what": "Registers the reviewers' wallets, and its own, with the service. Reviewers: reviewer:sim-aino, reviewer:sim-chen, reviewer:sim-eero, reviewer:sim-fatima.",
+      "shots": []
+    },
+    {
+      "who": "visitor",
+      "what": "Opens the network page: Base Sepolia, the contracts, no sign-in.",
+      "shots": [
+        {
+          "file": "screenshots/01-network.jpg",
+          "caption": "The network page on Base Sepolia, with the testnet label."
+        }
+      ]
+    },
+    {
+      "who": "requester:sim-cubesat-team",
+      "what": "Signs up with its own wallet (Sign-In with Ethereum).",
+      "shots": [
+        {
+          "file": "screenshots/02-sign-up.jpg",
+          "caption": "Signing up as a requester with the wallet."
+        }
+      ]
+    },
+    {
+      "who": "requester:sim-cubesat-team",
+      "what": "Creates SIM-REQ-3804: SIM-CUBESAT-A, the window of 1-2 November 2026, minutes-long deadlines; publishes it and deposits its rewards.",
+      "shots": [
+        {
+          "file": "screenshots/03-new-request.jpg",
+          "caption": "The new request's form."
+        },
+        {
+          "file": "screenshots/04-deposit-check.jpg",
+          "caption": "Before the wallet: what each transaction does, read from its call data."
+        },
+        {
+          "file": "screenshots/05-funded.jpg",
+          "caption": "Funded: the deposit is in the escrow."
+        }
+      ]
+    },
+    {
+      "who": "station:SIM-ESPOO",
+      "what": "Signs up, registers its SIMULATED station, reserves the request, simulates observations with its profile and delivers them.",
+      "shots": [
+        {
+          "file": "screenshots/06-station.jpg",
+          "caption": "The station's SIMULATED profile."
+        },
+        {
+          "file": "screenshots/07-verified.jpg",
+          "caption": "Delivered and verified, check by check."
+        }
+      ]
+    },
+    {
+      "who": "requester:sim-cubesat-team",
+      "what": "Challenges the passed result; the escrow chooses three reviewers from the registry.",
+      "shots": [
+        {
+          "file": "screenshots/08-challenged.jpg",
+          "caption": "Challenged: three reviewers chosen on chain."
+        }
+      ]
+    },
+    {
+      "who": "reviewer:sim-chen",
+      "what": "Approves with reasons: its vote is an EAS attestation it signs.",
+      "shots": [
+        {
+          "file": "screenshots/09-vote-check.jpg",
+          "caption": "The vote, checked before signing."
+        }
+      ]
+    },
+    {
+      "who": "reviewer:sim-aino",
+      "what": "Approves with reasons: its vote is an EAS attestation it signs.",
+      "shots": []
+    },
+    {
+      "who": "service (verifier key)",
+      "what": "Two approvals of three decide the round; the service settles the request on chain.",
+      "shots": [
+        {
+          "file": "screenshots/10-settled.jpg",
+          "caption": "Settled: who gets what, and the chain's events."
+        }
+      ]
+    },
+    {
+      "who": "station:SIM-ESPOO",
+      "what": "Withdraws its credit from the escrow with its own wallet.",
+      "shots": [
+        {
+          "file": "screenshots/11-withdrawn.jpg",
+          "caption": "The reward withdrawn; the transactions listed."
+        }
+      ]
+    },
+    {
+      "who": "requester:sim-cubesat-team",
+      "what": "Withdraws its credit from the escrow with its own wallet.",
+      "shots": []
+    },
+    {
+      "who": "admin:orbit-watch-demo",
+      "what": "Signs in with its wallet: every request, payment, transaction and event; runs the simulator; prepares adding a reviewer for the Safe.",
+      "shots": [
+        {
+          "file": "screenshots/12-admin.jpg",
+          "caption": "The administrator view."
+        },
+        {
+          "file": "screenshots/13-safe-proposal.jpg",
+          "caption": "The Safe transaction, prepared for the Safe app."
+        }
+      ]
+    },
+    {
+      "who": "Safe owners (2 of 3)",
+      "what": "Schedule the batch file's transaction in the timelock: 0xc3536c018f1050f23cb85d1511173840c5ce636ecaaf5d87c7ca83619076455f. Anyone may execute it after 48 hours.",
+      "shots": [
+        {
+          "file": "screenshots/14-timelock.jpg",
+          "caption": "The timelock's operation, waiting out its 48 hours."
+        }
+      ]
+    },
+    {
+      "who": "visitor",
+      "what": "Browses the attestations, with EAS Scan links, without signing in.",
+      "shots": [
+        {
+          "file": "screenshots/15-attestations.jpg",
+          "caption": "The attestation browser."
+        }
+      ]
+    },
+    {
+      "who": "visitor",
+      "what": "Measures a SIMULATED observation file's quality without signing in.",
+      "shots": [
+        {
+          "file": "screenshots/16-quality.jpg",
+          "caption": "The station quality meter."
+        }
+      ]
+    }
+  ]
+}

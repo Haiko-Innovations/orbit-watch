@@ -160,7 +160,7 @@
     }
   ],
   "source": {
-    "software": "orbit-watch 0.4.0.dev0 simulator",
+    "software": "orbit-watch 0.4.0 simulator",
     "notes": "SIMULATED resubmission: the observations of the acceptable dataset, delivered again."
   }
 }

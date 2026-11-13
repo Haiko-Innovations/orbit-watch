@@ -1,6 +1,6 @@
 # The web application
 
-Phase 3, steps 3.1 to 3.7. Code: [`web/`](../web). Decisions:
+Phase 3, steps 3.1 to 3.8. Code: [`web/`](../web). Decisions:
 [P3-01 to P3-11](decisions.md#phase-3-decisions),
 [D-25](decisions.md#d-25-the-web-project),
 [D-26](decisions.md#d-26-open-requests-are-public),
@@ -8,8 +8,10 @@ Phase 3, steps 3.1 to 3.7. Code: [`web/`](../web). Decisions:
 [D-28](decisions.md#d-28-transactions-in-the-browser),
 [D-29](decisions.md#d-29-the-requesters-view),
 [D-30](decisions.md#d-30-the-observers-view),
-[D-31](decisions.md#d-31-the-reviewers-view) and
-[D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages).
+[D-31](decisions.md#d-31-the-reviewers-view),
+[D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages) and
+[D-33](decisions.md#d-33-the-phase-3-demo-and-the-accessibility-review).
+Accessibility: [accessibility.md](accessibility.md).
 
 > **Testnet only, no real value.** The web application runs locally
 > ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)). Every page
@@ -148,6 +150,31 @@ orbit-watch serve --dir ./ow-base-sepolia --network base-sepolia \
   --verifier-keystore … --web web/dist
 ```
 
+The service's verifier key must be the escrow's, so on the deployed escrow
+only its maintainer runs this service
+([base-sepolia.md](base-sepolia.md)). Each party then signs in with its own
+wallet on Base Sepolia, with a little testnet ETH for fees and, for a
+requester, testnet USDC
+([faucets](base-sepolia.md#testnet-eth-and-usdc-faucets)).
+
+### The phase 3 demo
+
+[`examples/phase3/transcript.md`](../examples/phase3/transcript.md) is a
+recorded run of the whole chain in the browser on Base Sepolia, every role
+with its own wallet
+([D-33](decisions.md#d-33-the-phase-3-demo-and-the-accessibility-review)).
+The maintainer runs it again with the testnet keystores:
+
+```sh
+cd web && npm run build
+ORBIT_WATCH_SECRETS=~/secrets/orbit-watch ORBIT_WATCH_DEMO_DIR=~/ow-phase3-demo \
+  ORBIT_WATCH_DEMO_REQUEST=SIM-REQ-3803 npm run demo:base-sepolia
+```
+
+It starts a new service in `ORBIT_WATCH_DEMO_DIR` ([`web/demo/serve.sh`](../web/demo/serve.sh)),
+needs a new request ID for every run, and takes a few minutes. Videos of
+every role's browser go to `ORBIT_WATCH_DEMO_DIR/videos`.
+
 ## Develop
 
 ```sh
@@ -161,7 +188,8 @@ cd web && npm run dev                            # http://127.0.0.1:5173/, /v1 f
 | `npm run typecheck` | TypeScript 7, strict |
 | `npm test` | unit tests (Vitest) |
 | `npm run build` | the build, in `dist/` |
-| `npm run e2e` | end-to-end tests (Playwright) against the local stack on port 8790, with axe accessibility checks in light and dark colours and a check for sideways scrolling on a phone; needs `npm run build` and `forge build` first, and once `npx playwright install chromium` |
+| `npm run e2e` | end-to-end tests (Playwright) against the local stack on port 8790, with the accessibility review of every view ([accessibility.md](accessibility.md)); needs `npm run build` and `forge build` first, and once `npx playwright install chromium` |
+| `npm run demo:base-sepolia` | the phase 3 demo on Base Sepolia, for the maintainer (above) |
 
 The end-to-end tests sign in with a test wallet that announces itself to the
 page like a real one; its key stays in the test runner, which signs when the

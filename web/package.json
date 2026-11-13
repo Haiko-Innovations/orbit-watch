@@ -14,7 +14,8 @@
     "check": "biome ci .",
     "format": "biome check --write .",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "demo:base-sepolia": "playwright test --config playwright.demo.config.ts"
   },
   "dependencies": {
     "react": "19.3.1",
