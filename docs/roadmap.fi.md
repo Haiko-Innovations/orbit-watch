@@ -30,9 +30,11 @@ ja vaihe 0
 Vaiheen 0 ainoa avoin kriteeri, oikea julkinen IOD-esimerkki, on yhä avoinna
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
-**Seuraavaksi: vaihe 3**, verkkosovellus. Sen suunnitelma on alla, ja työ
-alkaa, kun ehdotetut päätökset P3-01–P3-11 on hyväksytty
-([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)).
+**Vaihe 3 on käynnissä**: verkkosovellus. Sen päätökset P3-01–P3-11
+hyväksyttiin 13.11.2026 ([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)), ja askel 3.1 on valmis: sovelluksen
+projekti hakemistossa `web/`, palvelu tarjoaa sen, julkiset sivut sekä
+paikallinen ympäristö yhdellä komennolla kehitykseen ja päästä päähän
+-testeihin ([web.md](web.md), englanniksi).
 
 ## Seuraavat askeleet
 
@@ -115,8 +117,8 @@ rajapinta ei anna: säännöt pysyvät palvelussa ja sopimuksissa. Edelleen vain
 testiverkko, eikä julkista käyttöönottoa, ellei toisin päätetä.
 
 Suunnitelman valinnat ovat **päätöksiä P3-01–P3-11** tiedostossa
-[decisions.md](decisions.md#phase-3-decisions) (englanniksi), ja ne odottavat
-hyväksyntää issuessa [#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46). Lyhyesti: **TypeScriptillä ja Reactilla**
+[decisions.md](decisions.md#phase-3-decisions) (englanniksi), ja ne
+hyväksyttiin 13.11.2026 ([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)). Lyhyesti: **TypeScriptillä ja Reactilla**
 tehty yhden sivun sovellus, joka käännetään **Vitellä** ja jota Python-palvelu
 tarjoaa, lompakot **viemin** ja **EIP-6963**:n kautta, **Sign-In with
 Ethereum** ja istuntoeväste, **Biome** ja **TypeScript 7**, päästä päähän
@@ -124,7 +126,7 @@ Ethereum** ja istuntoeväste, **Biome** ja **TypeScript 7**, päästä päähän
 
 | Vaihe | Sisältö | Valmis, kun |
 |---|---|---|
-| **3.1 Verkkoprojekti ja paikallinen ympäristö** ([#47](https://github.com/Haiko-Innovations/orbit-watch/issues/47)) | `web/`: TypeScriptillä ja Reactilla tehty yhden sivun sovellus, joka käännetään Vitellä ja tarkistetaan `tarkistus`-tarkistuksessa (Biome, tyyppitarkistus, yksikkötestit, käännös) npm-asennuksilla, jotka eivät aja skriptejä; `orbit-watch serve --web` tarjoaa sen rajapinnan omasta osoitteesta; paikallinen ympäristö yhdellä komennolla (Anvil, sopimukset, palvelu, simuloidut osapuolet); julkiset sivut verkosta ja avoimista tilauksista. | CI kääntää ja testaa sovelluksen; Playwright-testi avaa sen paikallista ympäristöä vasten; jokainen sivu näyttää testiverkkomerkinnän. |
+| ✅ **3.1 Verkkoprojekti ja paikallinen ympäristö** ([#47](https://github.com/Haiko-Innovations/orbit-watch/issues/47)) | `web/`: TypeScriptillä ja Reactilla tehty yhden sivun sovellus, joka käännetään Vitellä ja tarkistetaan `tarkistus`-tarkistuksessa (Biome, tyyppitarkistus, yksikkötestit, käännös) npm-asennuksilla, jotka eivät aja skriptejä; `orbit-watch serve --web` tarjoaa sen rajapinnan omasta osoitteesta; paikallinen ympäristö yhdellä komennolla (Anvil, sopimukset, palvelu, simuloidut osapuolet); julkiset sivut verkosta ja avoimista tilauksista. | CI kääntää ja testaa sovelluksen; Playwright-testi avaa sen paikallista ympäristöä vasten; jokainen sivu näyttää testiverkkomerkinnän. |
 | **3.2 Kirjautuminen lompakolla** ([#48](https://github.com/Haiko-Innovations/orbit-watch/issues/48)) | Lompakoiden löytäminen (EIP-6963), oikea ketju, Sign-In with Ethereum (ERC-4361) ja istuntoeväste, uloskirjautuminen; tilaajat ja asemat rekisteröityvät itse. | Päästä päähän -testi kirjautuu testilompakolla; uudelleen käytetyt, vanhentuneet ja vieraat viestit hylätään; mikään avain tai salaisuus ei päädy selaimeen, testattu. |
 | **3.3 Transaktiot selaimessa** ([#49](https://github.com/Haiko-Innovations/orbit-watch/issues/49)) | Yksi kulku jokaiselle valmistellulle transaktiolle: mitä se tekee, lompakko allekirjoittaa ja lähettää, odottava, vahvistettu tai epäonnistunut lohkoselainlinkkeineen; väärä ketju, hylätty allekirjoitus ja peruutus selitetään; saldot ja nostot. | Nosto toimii selaimessa päästä päähän; jokainen virhetilanne näytetään ja testataan. |
 | **3.4 Tilaajan näkymä** ([#50](https://github.com/Haiko-Innovations/orbit-watch/issues/50)) | Tilauksen luonti (kohde sallittujen listalta, aikaikkuna, määräaika, toimitusvaatimukset), jako ja maksut näkyvät ennen rahoitusta, rahoitus, seuranta ja haaste, aineiston ja raportin lataus, maksut ja palautukset. | Päästä päähän: selaimessa luotu ja rahoitettu tilaus toimitetaan ja tilitetään, ja sen raportti ladataan. |

@@ -23,7 +23,7 @@ tarkka heidän asemansa on.
 > ([base-sepolia.md](docs/base-sepolia.md)). Ei pääverkkoa eikä oikeaa rahaa.
 > Tilaukset koskevat vain siviilikohteita. **Simuloitu data on aina merkitty
 > simuloiduksi**, ja automaattinen tarkistus on prototyyppi, ei tuotantovalmis
-> tieteellinen validointi. Vaihe 3, verkkosovellus, on suunnitteilla. Katso
+> tieteellinen validointi. Vaihe 3, verkkosovellus, on käynnissä. Katso
 > [tiekartta](docs/roadmap.fi.md),
 > [vaiheen 2 yhteenveto](docs/phase-2-summary.fi.md) ja [muutosloki](CHANGELOG.md).
 
@@ -96,8 +96,9 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | Testiverkon tilityssovitin (Python, `evm`-lisäosa) | | [evm-adapter.md](docs/evm-adapter.md) |
 | Palvelu, rajapinta ja komentorivi **testiverkossa**: omat lompakot, allekirjoitus omalla avainsäilöllä, transaktiot lohkoselainlinkkeineen | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | Sopimukset **Base Sepoliassa**: osoitteet, faucetit, kuka hallitsee mitäkin avainta, käyttöönotto | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
+| Verkkosovellus (vaihe 3, kesken): toistaiseksi julkiset sivut, jotka palvelu tarjoaa; paikallinen ympäristö kehitykseen | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
 
-Python-koodi on hakemistossa [`core/`](core) ja Solidity-sopimukset hakemistossa [`contracts/`](contracts). Simuloidut esimerkit ovat
+Python-koodi on hakemistossa [`core/`](core), Solidity-sopimukset hakemistossa [`contracts/`](contracts) ja verkkosovellus hakemistossa [`web/`](web). Simuloidut esimerkit ovat
 hakemistossa [`examples/`](examples).
 
 ### Mikä on simuloitua
@@ -144,7 +145,7 @@ Koko aloitussuunnitelma: [docs/plan.fi.md](docs/plan.fi.md).
   kirjaava ledger-tilityssovitin.
 - **Vaihe 2 (valmis, 0.3.0):** tilitys Base Sepolia -**testiverkossa**
   escrow-sopimuksella ja EAS-attestaatioilla. Ei pääverkkoa, ei omaa tokenia.
-- **Vaihe 3 (suunnitteilla):** verkkosovellus roolikohtaisine näkymineen ja
+- **Vaihe 3 (käynnissä):** verkkosovellus roolikohtaisine näkymineen ja
   lompakkoineen selaimessa.
 
 ## Avoimet kysymykset

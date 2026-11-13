@@ -26,6 +26,11 @@ wallet and reports each hash (``POST /v1/transactions``). The service follows
 the chain, which decides: every call first applies the escrow's new events.
 Every chain-related answer carries a ``notice`` ("Base Sepolia testnet, no
 real value").
+
+**The web application** (step 3.1): given the directory of its build, the API
+serves it at ``/`` on its own origin, so the browser talks to one server only.
+Every response carries a strict content security policy: the pages load only
+their own files and talk only to this API (decision D-25).
 """
 
 from __future__ import annotations
@@ -34,13 +39,16 @@ import json
 import threading
 from collections.abc import Callable
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
+from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-from starlette.routing import Route
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
 
 from orbit_watch import __version__
 from orbit_watch import lifecycle as lc
@@ -51,6 +59,28 @@ from orbit_watch.settlement import SettlementError
 from orbit_watch.timeutil import parse_utc
 
 MAX_BODY_BYTES = 10 * 1024 * 1024
+# The web application loads only its own files and talks only to this API (decision
+# D-25). Wallet extensions inject their providers themselves; EIP-6963 wallet icons are
+# data: URLs.
+CONTENT_SECURITY_POLICY = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "object-src 'none'",
+        "base-uri 'none'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+    ]
+)
+SECURITY_HEADERS = [
+    (b"content-security-policy", CONTENT_SECURITY_POLICY.encode("ascii")),
+    (b"x-content-type-options", b"nosniff"),
+    (b"referrer-policy", b"no-referrer"),
+    (b"cross-origin-opener-policy", b"same-origin"),
+]
 TERMS_FIELDS = {
     "delivery_deadline": str,
     "reservation_hours": (int, float),
@@ -414,6 +444,9 @@ class Api:
     def public_requests(self, request, now):
         return {"requests": self.service.published(now)}
 
+    def public_open_requests(self, request, now):
+        return {"requests": self.service.open_requests()}
+
     def public_request(self, request, now):
         request_id = request.path_params["request_id"]
         if request_id not in self.service.records:
@@ -556,10 +589,35 @@ class Api:
         }
 
 
+class SecurityHeaders:
+    """Adds ``SECURITY_HEADERS`` to every HTTP response (pure ASGI middleware)."""
+
+    def __init__(self, app: Any):
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        names = {name for name, _ in SECURITY_HEADERS}
+
+        async def send_with_headers(message: Any) -> None:
+            if message["type"] == "http.response.start":
+                kept = [h for h in message.get("headers", []) if h[0].lower() not in names]
+                message = {**message, "headers": [*kept, *SECURITY_HEADERS]}
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
+
+
 def create_app(
-    service: RequestService, *, clock: Callable[[], datetime] | None = None
+    service: RequestService,
+    *,
+    clock: Callable[[], datetime] | None = None,
+    web: str | Path | None = None,
 ) -> Starlette:
-    """The ASGI application for a stored service."""
+    """The ASGI application for a stored service; with ``web``, the directory of the built
+    web application, served at ``/`` (step 3.1)."""
     if clock is None:
         # On a chain the service keeps the chain's time, which its deadlines use.
         clock = service.chain.now if service.chain is not None else lambda: datetime.now(tz=UTC)
@@ -614,12 +672,20 @@ def create_app(
         Route("/v1/transactions", change(api.report_transaction), methods=["POST"]),
         # Public, no key: settled requests whose embargo has passed (step 1.8).
         Route("/v1/public/requests", api.public(api.public_requests), methods=["GET"]),
+        # Public, no key: requests that invite observers (step 3.1, decision D-26).
+        Route("/v1/public/open-requests", api.public(api.public_open_requests), methods=["GET"]),
         Route("/v1/public/requests/{request_id}", api.public(api.public_request), methods=["GET"]),
         Route("/v1/public/files/{sha256}", api.public(api.public_file), methods=["GET"]),
     ]
+    if web is not None:
+        if not (Path(web) / "index.html").is_file():
+            raise ValueError(f"{web} has no index.html: build the web application first")
+        routes.append(Mount("/", app=StaticFiles(directory=web, html=True), name="web"))
     handlers = {
         ApiError: _handle_api_error,
         ServiceError: _handle_api_error,
         SettlementError: _handle_api_error,
     }
-    return Starlette(routes=routes, exception_handlers=handlers)
+    return Starlette(
+        routes=routes, exception_handlers=handlers, middleware=[Middleware(SecurityHeaders)]
+    )

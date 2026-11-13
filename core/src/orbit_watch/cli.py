@@ -364,6 +364,9 @@ def cmd_serve(args: argparse.Namespace) -> int:
         return EXIT_USAGE
     from orbit_watch.service import open_service
 
+    if args.web and not (Path(args.web) / "index.html").is_file():
+        _err(f"{args.web} has no index.html: build the web application (cd web && npm run build)")
+        return EXIT_USAGE
     registry, context, notes = _service_inputs(args)
     chain = None
     if args.network:
@@ -387,6 +390,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
     for note in notes:
         print(f"note: {note}")
     print(f"Orbit Watch API {__version__} for {args.dir} on http://{args.host}:{args.port}/v1/")
+    if args.web:
+        print(f"Web application on http://{args.host}:{args.port}/")
     if chain is None:
         print("Phase 1 prototype: local use only, no TLS. All bundled data is SIMULATED.")
     else:
@@ -403,7 +408,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         else:
             print(f"Followed the chain to block {chain.synced_block()}")
     try:
-        uvicorn.run(create_app(service), host=args.host, port=args.port)
+        uvicorn.run(create_app(service, web=args.web), host=args.host, port=args.port)
     finally:
         service.storage.close()
     return EXIT_OK
@@ -689,6 +694,11 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--policy", help="target allow-list (default: built-in SIMULATED)")
     serve.add_argument("--reviewers", help="reviewer registry (default: built-in SIMULATED)")
     serve.add_argument("--sites", help="sites file for IOD and TDM deliveries")
+    serve.add_argument(
+        "--web",
+        metavar="DIR",
+        help="also serve the built web application from DIR (web/dist) at / (phase 3)",
+    )
     chain = serve.add_argument_group(
         "testnet chain (phase 2)",
         "Settle funded requests on the escrow contract of Base Sepolia or a local Anvil "

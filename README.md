@@ -21,7 +21,7 @@ that tells them how accurate their station is.
 > Requests target civilian objects only. **Simulated data is always labelled
 > as simulated**, and automated verification is a prototype, not
 > production-ready scientific validation. Phase 3, the web application, is
-> being planned. See the [roadmap](docs/roadmap.md), the
+> under way. See the [roadmap](docs/roadmap.md), the
 > [phase 2 summary](docs/phase-2-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)
@@ -93,8 +93,9 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Testnet settlement adapter (Python, `evm` extra) | | [evm-adapter.md](docs/evm-adapter.md) |
 | Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | The contracts on **Base Sepolia**: addresses, faucets, who holds which key, deploying | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
+| Web application (phase 3, in progress): public pages so far, served by the service; a local stack for development | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
 
-The Python code is in [`core/`](core) and the Solidity contracts in [`contracts/`](contracts). Simulated examples are in
+The Python code is in [`core/`](core), the Solidity contracts in [`contracts/`](contracts) and the web application in [`web/`](web). Simulated examples are in
 [`examples/`](examples).
 
 ### What is simulated
@@ -142,8 +143,8 @@ The full starting plan: [docs/plan.md](docs/plan.md).
   a points-only "ledger" settlement adapter.
 - **Phase 2 (done, 0.3.0):** settlement on the Base Sepolia **testnet** with
   an escrow contract and EAS attestations. No mainnet, no token of our own.
-- **Phase 3 (planned):** a web application with role views and wallets in the
-  browser.
+- **Phase 3 (in progress):** a web application with role views and wallets in
+  the browser.
 
 ## Open questions
 

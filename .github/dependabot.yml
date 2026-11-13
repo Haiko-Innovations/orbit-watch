@@ -23,6 +23,22 @@ updates:
       python:
         patterns: ["*"]
         update-types: [minor, patch]
+  # The web application (decision P3-02). web/.npmrc also sets npm's
+  # min-release-age to 14 days, so dependencies of dependencies follow the same rule.
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Helsinki
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 5
+    groups:
+      web:
+        patterns: ["*"]
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule:
