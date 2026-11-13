@@ -403,3 +403,61 @@ button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+.tx-list {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+  padding-left: 1.4rem;
+}
+
+.tx-list li {
+  display: grid;
+  gap: 2px;
+}
+
+.tx-state {
+  font-weight: 600;
+}
+
+.tx-confirmed,
+.ok {
+  color: var(--ok);
+}
+
+.tx-pending {
+  color: var(--wait);
+}
+
+.tx-failed {
+  color: var(--problem-text);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+main > h2 {
+  margin: 36px 0 8px;
+}

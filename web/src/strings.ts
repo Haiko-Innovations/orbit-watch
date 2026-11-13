@@ -110,6 +110,102 @@ export const strings = {
       admin: "Administrator",
     },
   },
+  balance: {
+    title: "Balance",
+    inWallet: "In your wallet",
+    owed: "Waiting for you in the escrow",
+    withdraw: (amount: string) => `Withdraw ${amount}`,
+    nothing: "Nothing to withdraw.",
+    noWallet: "This account has no wallet registered.",
+  },
+  transactions: {
+    title: "Your transactions",
+    none: "No transactions yet.",
+    action: "Action",
+    request: "Request",
+    status: "Status",
+    transaction: "Transaction",
+    states: { pending: "Waiting for the chain", confirmed: "Confirmed", failed: "Failed" },
+  },
+  tx: {
+    review: "Check and send",
+    reviewIntro:
+      "Your wallet will ask you to confirm each transaction and show its network fee. Testnet only: nothing here has real value.",
+    send: "Send with your wallet",
+    cancel: "Cancel",
+    close: "Close",
+    chooseWallet: (address: string) => `Send with the wallet that has the account ${address}:`,
+    noWallet: "No wallet was found in this browser. Install one and sign in again.",
+    wrongAccount: (connected: string, signedIn: string) =>
+      `Your wallet's account is ${connected}, but you signed in with ${signedIn}. Choose that account in your wallet and try again.`,
+    waiting: (title: string) => `${title}: confirm in your wallet…`,
+    sent: (title: string) => `${title}: sent, waiting for the chain…`,
+    done: "Done. The chain confirmed every transaction.",
+    pendingNote:
+      "The chain has not confirmed it yet. It stays in your transactions with its status.",
+    failedOnChain: (error: string) => `The chain did not accept it: ${error}`,
+    declined: "You declined in your wallet. Nothing was sent.",
+    notSent: (detail: string) => `The wallet did not send the transaction: ${detail}`,
+    problem: "The transaction was not completed",
+    contracts: {
+      escrow: "Orbit Watch escrow",
+      token: (symbol: string) => `${symbol} token`,
+      eas: "Ethereum Attestation Service",
+    },
+    withdraw: {
+      title: "Withdraw your credit",
+      detail: "Everything the escrow owes you moves to your wallet.",
+    },
+    approve: {
+      title: (amount: string) => `Allow the escrow to take ${amount}`,
+      detail: "Only the escrow may take it, and only when it records the deposit.",
+    },
+    fund: {
+      title: (id: string, amount: string) => `Deposit ${amount} for ${id}`,
+      detail: (observer: string, reviewer: string, fee: string) =>
+        `Observer reward ${observer}, three review rewards of ${reviewer}, platform fee ${fee}. What is not paid out comes back to you.`,
+    },
+    escrowCalls: {
+      reserve: (id: string) => `Reserve ${id}`,
+      deliver: (id: string) => `Record your delivery for ${id}`,
+      challenge: (id: string) => `Challenge the result of ${id}`,
+      cancel: (id: string) => `Cancel ${id} and get the deposit back`,
+      settle: (id: string) => `Settle ${id}`,
+    },
+    vote: {
+      title: (id: string) => `Record your vote on ${id}`,
+      detail: "Your vote becomes a public EAS attestation signed by your wallet.",
+    },
+    refused: {
+      empty: "The service asked for no transaction.",
+      unreadable: "The transaction's data could not be read, so it was not sent.",
+      chain: (asked: number, network: string) =>
+        `The transaction is for chain ${asked}, not ${network || "this service's chain"}, so it was not sent.`,
+      sender: (from: string) =>
+        `The transaction would be sent from ${from}, not from your wallet, so it was not sent.`,
+      value:
+        "The transaction would send ether, which Orbit Watch never asks for, so it was not sent.",
+      request: "The transaction is about another request than the one shown, so it was not sent.",
+      function: (name: string) => `The call ${name} is not one you make here, so it was not sent.`,
+      contract: (to: string) =>
+        `${to} is not one of Orbit Watch's contracts, so the transaction was not sent.`,
+    },
+    reverted: {
+      unknown: "The chain refuses this transaction, so it was not sent.",
+      named: (name: string) => `The chain refuses this transaction (${name}), so it was not sent.`,
+      known: {
+        NothingToWithdraw:
+          "The chain refuses this transaction: there is nothing to withdraw any more. It was probably withdrawn already, for example in another tab.",
+        WrongStatus:
+          "The chain refuses this transaction: the request is no longer in a state that allows it.",
+        NotRequester: "The chain refuses this transaction: only the requester may do this.",
+        NotAParty: "The chain refuses this transaction: only the request's parties may do this.",
+        NotAssigned: "The chain refuses this transaction: you are not a reviewer of this round.",
+        AlreadyVoted: "The chain refuses this transaction: you have voted already.",
+        AlreadyFunded: "The chain refuses this transaction: the request is funded already.",
+      },
+    },
+  },
   footer: {
     source: "Source code",
     licence: "Code Apache 2.0, data CC BY 4.0",

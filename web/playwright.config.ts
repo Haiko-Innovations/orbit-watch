@@ -4,6 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
 // contracts, the service and SIMULATED parties, serving the built app on the API's origin.
 // Build first (npm run build); the contracts must be built too (cd contracts && forge build).
 const port = 8790;
+const chainPort = 8591; // the test wallet sends there (e2e/testWallet.ts)
 
 export default defineConfig({
   testDir: "e2e",
@@ -13,7 +14,7 @@ export default defineConfig({
   use: { baseURL: `http://127.0.0.1:${port}`, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `uv run --locked python tests/local_stack.py --port ${port} --chain-port 0 --web ../web/dist`,
+    command: `uv run --locked python tests/local_stack.py --port ${port} --chain-port ${chainPort} --web ../web/dist`,
     cwd: "../core",
     // The stack says "Ready." once its SIMULATED requests are in place.
     url: `http://127.0.0.1:${port}/v1/health`,

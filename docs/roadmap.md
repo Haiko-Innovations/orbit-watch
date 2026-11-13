@@ -30,7 +30,8 @@ phase 0's one open criterion, a real public IOD example, is still open
 **Phase 3 is under way**: the web application. Its decisions P3-01 to
 P3-11 were approved on 2026-11-13 ([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)). Done so far: the app's
 project in `web/`, served by the service, its public pages and a local stack
-in one command (3.1), and signing in with a wallet (3.2) ([web.md](web.md)).
+in one command (3.1), signing in with a wallet (3.2), and transactions in the
+browser with balances and withdrawals (3.3) ([web.md](web.md)).
 
 ## Next steps
 
@@ -121,7 +122,7 @@ and **WCAG 2.2 AA**.
 |---|---|---|
 | ✅ **3.1 Web project and local stack** ([#47](https://github.com/Haiko-Innovations/orbit-watch/issues/47)) | `web/`: a TypeScript and React single-page app built with Vite, checked in the `tarkistus` check (Biome, type check, unit tests, build) with npm installs that run no scripts; `orbit-watch serve --web` serves it on the API's origin; a local stack in one command (Anvil, contracts, service, simulated parties); public pages for the network and the open requests. | CI builds and tests the app; a Playwright test opens it against the local stack; every page shows the testnet label. |
 | ✅ **3.2 Sign in with a wallet** ([#48](https://github.com/Haiko-Innovations/orbit-watch/issues/48)) | Wallet discovery (EIP-6963), the right chain, Sign-In with Ethereum (ERC-4361) with a session cookie, sign-out; requesters and stations sign up themselves. | An end-to-end test signs in with a test wallet; replayed, expired and foreign messages are refused; no key or secret reaches the browser, tested. |
-| **3.3 Transactions in the browser** ([#49](https://github.com/Haiko-Innovations/orbit-watch/issues/49)) | One flow for every prepared transaction: what it does, the wallet signs and sends, pending, confirmed or failed with explorer links; wrong chain, rejected signature and revert explained; balances and withdrawals. | A withdrawal runs end to end in the browser; each failure case is shown and tested. |
+| ✅ **3.3 Transactions in the browser** ([#49](https://github.com/Haiko-Innovations/orbit-watch/issues/49)) | One flow for every prepared transaction: what it does, the wallet signs and sends, pending, confirmed or failed with explorer links; wrong chain, rejected signature and revert explained; balances and withdrawals. | A withdrawal runs end to end in the browser; each failure case is shown and tested. |
 | **3.4 Requester view** ([#50](https://github.com/Haiko-Innovations/orbit-watch/issues/50)) | Create a request (target from the allow-list, window, deadline, delivery requirements), see the split and fees before funding, fund, follow and challenge, download the data and report, see payments and refunds. | End to end: a request created and funded in the browser is delivered and settled, and its report downloaded. |
 | **3.5 Observer view** ([#51](https://github.com/Haiko-Innovations/orbit-watch/issues/51)) | Register a simulated station, browse and reserve open requests, upload observations (SHA-256 checked), see why a delivery was accepted or rejected, challenge, follow rewards. | End to end: reserve and deliver in the browser; accepted and rejected deliveries show their reasons. |
 | **3.6 Reviewer view** ([#52](https://github.com/Haiko-Innovations/orbit-watch/issues/52)) | Assigned tasks, the report and checks, approve or reject with a reason signed as an EAS attestation, rewards and accuracy. | End to end: votes cast in the browser are attestations on the local chain, and the round settles. |

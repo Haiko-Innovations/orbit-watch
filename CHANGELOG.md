@@ -40,6 +40,22 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   (storage migration 0004). The web application gets Sign in and Your account
   pages; wallets are found with EIP-6963, and the page checks every message
   against its own address before the wallet signs (D-27).
+- Transactions in the browser (phase 3, step 3.3): the page reads every
+  prepared transaction from its call data with the contracts' own ABIs, shows
+  what it does in words, and refuses anything but this party's calls to Orbit
+  Watch's contracts on the service's chain. The party's wallet sends it, the
+  service hears the hash, and the page shows it as pending, confirmed or
+  failed with an explorer link. A declined prompt, a wallet on another network
+  or account, and a transaction the chain refuses (named from the escrow's
+  error) are explained. Your account shows the balance, the credit waiting in
+  the escrow with a withdrawal, and the party's transactions (D-28). The local
+  stack seeds a settled request, so that a station and the requester have
+  credit to withdraw.
+
+### Changed
+
+- React 19.3.1 and Vitest 5.0.5 in the web application (Dependabot): the
+  versions first picked were not the highest at least 14 days old (D-28).
 
 ## [0.3.0] - 2026-11-13
 

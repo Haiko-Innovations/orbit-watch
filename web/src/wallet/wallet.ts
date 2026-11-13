@@ -21,7 +21,14 @@ export const CHAINS: Record<number, Chain> = {
 };
 
 export class WalletError extends Error {
-  readonly code: "declined" | "no_account" | "wrong_chain" | "wrong_message" | "failed";
+  readonly code:
+    | "declined"
+    | "no_account"
+    | "wrong_account"
+    | "wrong_chain"
+    | "wrong_message"
+    | "reverted"
+    | "failed";
 
   constructor(code: WalletError["code"], message: string) {
     super(message);
@@ -65,8 +72,8 @@ export async function connect(provider: EIP1193Provider): Promise<Address> {
 export async function switchToChain(provider: EIP1193Provider, chainId: number): Promise<void> {
   const chain = CHAINS[chainId];
   if (!chain) throw new WalletError("wrong_chain", `Chain ${chainId} is not one Orbit Watch uses.`);
-  await guarded(async () => {
-    const wallet = client(provider);
+  const wallet = client(provider);
+  try {
     if ((await wallet.getChainId()) === chainId) return;
     try {
       await wallet.switchChain({ id: chainId });
@@ -76,7 +83,13 @@ export async function switchToChain(provider: EIP1193Provider, chainId: number):
       await wallet.addChain({ chain });
       await wallet.switchChain({ id: chainId });
     }
-  }, `The wallet did not switch to ${chain.name}`);
+  } catch {
+    // Declined or impossible: either way the wallet stays on another network.
+    throw new WalletError(
+      "wrong_chain",
+      `Your wallet is on another network and did not switch to ${chain.name}, so nothing was sent or signed.`,
+    );
+  }
 }
 
 /** Signs a sign-in message after checking that it is for this page and this account. */

@@ -597,7 +597,8 @@ side by side, and a party sees the views of its role. Alternatives: Next.js,
 which brings a server runtime and a second backend next to the Python API;
 plain TypeScript without a framework, which is smaller but known to fewer
 contributors.
-Sources: [React](https://www.npmjs.com/package/react) 19.1.10,
+Sources: [React](https://www.npmjs.com/package/react) 19.1.10 (19.3.1 since
+2026-11-13, see D-28),
 [Vite](https://www.npmjs.com/package/vite) 8.3.5,
 [@vitejs/plugin-react](https://www.npmjs.com/package/@vitejs/plugin-react) 6.1.2
 (MIT).
@@ -702,7 +703,7 @@ service), with a test wallet injected into the page as an EIP-1193 provider
 that signs with Anvil's test keys; accessibility checks with axe on every view.
 All of it runs in the `tarkistus` check; CI never touches a public testnet and
 holds no keys (P2-08).
-Sources: [Vitest](https://vitest.dev/) 4.1.12 (MIT),
+Sources: [Vitest](https://vitest.dev/) 4.1.12 (5.0.5 since 2026-11-13, see D-28) (MIT),
 [Playwright](https://playwright.dev/docs/intro) 1.64.1 (Apache-2.0),
 [axe-core for Playwright](https://github.com/dequelabs/axe-core-npm) 4.14.0
 (MPL-2.0, development only).
@@ -850,3 +851,54 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.2). Code:
   - asking for messages has no rate limit.
 
   The last two matter only for a public deployment (P3-10).
+
+### D-28 Transactions in the browser
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.3). Code:
+[`web/src/chain/`](../web/src/chain),
+[`web/src/components/TransactionFlow.tsx`](../web/src/components/TransactionFlow.tsx):
+
+- **The page reads what it is asked to send** (P3-06). For each transaction
+  the API prepares, the page decodes the call data with the contracts' own
+  ABIs, taken from the files the Python service uses
+  (`core/src/orbit_watch/chain/abi/`, which a test keeps equal to the
+  Foundry build). It shows the result in words: the contract, the function,
+  and the amounts from the call itself, for example "Deposit 1.3 TESTUSD for
+  SIM-REQ-3001" with the split.
+- **It sends nothing outside these limits.** Before the wallet sees a
+  transaction, the page refuses it unless:
+  - it is for the service's chain and from the signed-in wallet;
+  - it carries no ether;
+  - it goes to the escrow (a call this party makes), to the token (`approve`
+    for the escrow only), or to EAS (a vote, by its schema);
+  - every call about a request names the request shown, as
+    `keccak256(request ID)`.
+- **One flow for every transaction**:
+  1. the wallet signs and sends each transaction in order;
+  2. the page reports the hash to the service (`POST /v1/transactions`),
+     which waits for the chain and does its own part;
+  3. the page shows the result: pending, confirmed or failed, with an
+     explorer link on Base Sepolia.
+
+  A transaction that does not confirm stops the ones after it.
+- **Failures are explained, not hidden**:
+  - a declined wallet prompt ("Nothing was sent");
+  - a wallet on another network that does not switch;
+  - a wallet whose account is not the signed-in one;
+  - a transaction the chain refuses, named from the escrow's own error when
+    the wallet passes it on, for example "there is nothing to withdraw any
+    more", when another tab withdrew first;
+  - a transaction that failed after mining, with the service's reason.
+- **The wallet is remembered in memory only.** After a reload the page asks
+  which wallet to send with, and nothing about wallets is stored in the
+  browser. The wallet code loads only when a transaction is to be sent.
+- **The local stack seeds a request that ran its course** (SIM-REQ-3000), so
+  that a station and the requester have credit to withdraw. Seeding moves the
+  local chain's clock to 2026-11-02 05:01 UTC.
+- **Correction to P3-01 and P3-08.** The versions there were picked as the
+  most recently published release at least 14 days old, not the highest
+  version. React 19.1.10 and Vitest 4.1.12 were published on the same days as
+  the higher React 19.3.1 and Vitest 5.0.5. Dependabot proposed both
+  (#57, #58), and they were merged on 2026-11-13. Versions are now picked as
+  the highest version published at least 14 days ago.
+
