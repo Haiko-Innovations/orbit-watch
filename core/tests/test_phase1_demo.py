@@ -49,3 +49,11 @@ def test_committed_output_is_up_to_date(demo, examples_dir):
     for name in names:
         assert (out / name).read_bytes() == (committed / name).read_bytes(), name
     assert json.loads((committed / "summary.json").read_text())["notice"].startswith("SIMULATED")
+
+
+def test_the_deliveries_name_no_version_so_releases_draw_the_same_rounds():
+    from orbit_watch.catalog import parse_catalog
+    from orbit_watch.sim.phase1_demo import _deliveries, _packaged
+
+    for data in _deliveries(parse_catalog(_packaged("catalog.json"))).values():
+        assert json.loads(data)["source"]["software"] == "orbit-watch simulator"

@@ -24,16 +24,16 @@
     ]
   },
   "software": {
-    "orbit-watch": "0.4.0",
+    "orbit-watch": "0.5.0.dev0",
     "skyfield": "1.55",
     "sgp4": "2.27",
     "numpy": "2.5.4"
   },
   "inputs": {
     "request_sha256": "ed503008700f8f6be8bd0c9dfc0c9083c247dd9d74c85406c4e9569483df203a",
-    "observations_sha256": "1c99e97271af493c21de1f05fe97a55c350fcc79603c8cab35d3a0c56314553e",
+    "observations_sha256": "84582b53946c3163c3be3f34f1fbbe90ae67fc887d756f846f2a162f270b3d97",
     "observations_format": "json",
-    "declared_sha256": "1c99e97271af493c21de1f05fe97a55c350fcc79603c8cab35d3a0c56314553e",
+    "declared_sha256": "84582b53946c3163c3be3f34f1fbbe90ae67fc887d756f846f2a162f270b3d97",
     "reference_catalog_sha256": "2924282be9c9c79af1c034f43da75502d043a9c04185ba700903abe7b5790d5c",
     "target_policy_sha256": "866f9d582d155fab0810417a7644573501fa282b3bdc93ffc22b15ed96434f95",
     "previous_deliveries_sha256": []
