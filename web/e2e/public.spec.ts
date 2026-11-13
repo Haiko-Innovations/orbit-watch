@@ -24,6 +24,11 @@ for (const { path, heading } of pages) {
         .analyze();
       expect(audit.violations, `${colorScheme} colours`).toEqual([]);
     }
+    // No sideways scrolling on a phone.
+    await page.setViewportSize({ width: 360, height: 800 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      360,
+    );
   });
 }
 

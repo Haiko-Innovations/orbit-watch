@@ -110,16 +110,16 @@ jobs:
       # On a local Anvil chain: the evm-testnet settlement adapter with the phase 1
       # settlement scenario suite (step 2.5), the service, API and command line with
       # every party signing its own transactions (step 2.6), the deployment script run
-      # with forge script (step 2.7) and the phase 2 demo (step 2.8). Needs the build
-      # above. Never touches a public network and holds no keys but local test keys
+      # with forge script (step 2.7), the phase 2 demo (step 2.8) and signing in with a
+      # wallet (step 3.2). Needs the build above. Never touches a public network and holds no keys but local test keys
       # (P2-08).
-      - name: Settlement adapter, service, command line, deployment and demo on a local chain (Anvil)
+      - name: Settlement adapter, service, command line, deployment, demo and sign-in on a local chain (Anvil)
         env:
           ORBIT_WATCH_EVM_TESTS: "1"
         run: >-
           uv run --locked --python 3.12 pytest tests/test_evm_adapter.py tests/test_chain.py
           tests/test_chain_service.py tests/test_cli_chain.py tests/test_deploy_script.py
-          tests/test_phase2_demo.py
+          tests/test_phase2_demo.py tests/test_sessions.py
 
       # The web application (phase 3). Node from the Active LTS line (decision P3-02);
       # `npm ci` installs exactly the lock file, and no package runs an install script.

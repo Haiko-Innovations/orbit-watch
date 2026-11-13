@@ -794,3 +794,59 @@ public on chain anyway, and an observer should find work before signing up
 key could list every request, but nobody without one. Drafts stay the
 requester's own, and nothing delivered appears: the observation file and the
 report still follow the publication rules (D-17).
+
+### D-27 Signing in with a wallet
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.2). Code:
+[`core/src/orbit_watch/api/sessions.py`](../core/src/orbit_watch/api/sessions.py),
+[`web/src/wallet/`](../web/src/wallet):
+
+- **The service writes the whole message** (ERC-4361):
+  - its own origin, with the scheme always written, because a wallet assumes
+    https without one;
+  - the wallet's EIP-55 address and a statement naming the party ("Sign in to
+    Orbit Watch as station:SIM-ESPOO. Testnet only, no real value. Signing
+    sends no transaction.");
+  - the chain ID, a 17-character single-use nonce, and an expiry five minutes
+    after it is issued.
+
+  A message works once, only from the origin it was written for, and only with
+  its address's signature (ERC-191). A signature that fails leaves the message
+  usable for its owner.
+- **The page checks the message before the wallet sees it**: viem's
+  `validateSiweMessage` against the page's own host and scheme, the account
+  and the time. A message for another site is never shown for signing.
+- **Origins are configured, not taken from the request**:
+  - `orbit-watch serve --origin URL`, repeatable, by default
+    `http://HOST:PORT`, plus `http://localhost:PORT` when the service listens on
+    127.0.0.1;
+  - the local stack also allows Vite's development server.
+
+  The `Host` header is never trusted, so a phishing site's server cannot have a
+  message written for its own domain.
+- **Sessions**:
+  - a random cookie `ow_session` (`HttpOnly`, `SameSite=Strict`, `Path=/`,
+    `Secure` on https), stored only as its SHA-256;
+  - they last 12 hours and end on sign-out;
+  - a change made with a session also needs the `Origin` it was signed in on;
+  - `GET /v1/session` answers `null` when nobody is signed in, so a page does
+    not log an error on every load;
+  - sessions and messages use wall-clock time, also when the service follows a
+    local chain whose clock is elsewhere.
+- **Signing up** (P3-05):
+  - requesters and stations only, named `requester:<name>` or
+    `station:<name>` (2 to 63 letters, digits, dots, dashes or underscores);
+  - a name that has an API key or a wallet is taken;
+  - the signed sign-up message names the party and is kept with the wallet
+    (migration 0004), so the registration stays verifiable like one made with
+    `orbit-watch wallet register`.
+- **The wallet code loads only with the sign-in page**, so viem does not
+  slow down the public pages.
+- **The local stack's chain listens on port 8545** by default, where wallets
+  and viem expect a local chain 31337, so a real wallet can be pointed at it.
+- **Limits**:
+  - only externally owned accounts sign in;
+  - revoking a party's API keys does not end its sessions;
+  - asking for messages has no rate limit.
+
+  The last two matter only for a public deployment (P3-10).

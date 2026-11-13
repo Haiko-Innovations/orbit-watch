@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
-import { type ChainInfo, chainInfo, getJson, type Health } from "./api";
+import { lazy, Suspense, useEffect, useRef } from "react";
+import { type ChainInfo, chainInfo, currentSession, getJson, type Health } from "./api";
 import { Logo } from "./components/Logo";
 import { Loaded } from "./components/Status";
 import { TestnetBanner } from "./components/TestnetBanner";
+import { AccountPage } from "./pages/AccountPage";
 import { NetworkPage } from "./pages/NetworkPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { OpenRequestsPage } from "./pages/OpenRequestsPage";
@@ -20,9 +21,14 @@ async function loadService(): Promise<Service> {
   return { health, chain };
 }
 
+// The wallet code (viem) loads only with the sign-in page.
+const SignInPage = lazy(() => import("./pages/SignInPage"));
+
 const titles: Record<Route["page"], string> = {
   network: strings.network.title,
   "open-requests": strings.openRequests.title,
+  "sign-in": strings.signIn.title,
+  account: strings.account.title,
   "not-found": strings.notFound.title,
 };
 
@@ -45,6 +51,7 @@ function NavLink({
 export function App() {
   const route = useRoute();
   const [service, reload] = useResource(loadService);
+  const [session, reloadSession] = useResource(currentSession);
   const main = useRef<HTMLElement>(null);
   const first = useRef(true);
 
@@ -59,6 +66,7 @@ export function App() {
   }, [route.page]);
 
   const chain = service.state === "ready" ? service.value.chain : null;
+  const signedIn = session.state === "ready" ? session.value : null;
   return (
     <>
       <button
@@ -66,7 +74,7 @@ export function App() {
         className="skip-link"
         onClick={() => main.current?.querySelector<HTMLElement>("h1")?.focus()}
       >
-        Skip to content
+        {strings.skip}
       </button>
       <TestnetBanner notice={chain?.notice ?? null} />
       <header className="site-header">
@@ -81,6 +89,15 @@ export function App() {
           <NavLink href={paths.openRequests} current={route.page === "open-requests"}>
             {strings.nav.openRequests}
           </NavLink>
+          {signedIn ? (
+            <NavLink href={paths.account} current={route.page === "account"}>
+              {signedIn.party}
+            </NavLink>
+          ) : (
+            <NavLink href={paths.signIn} current={route.page === "sign-in"}>
+              {strings.session.signIn}
+            </NavLink>
+          )}
         </nav>
       </header>
       <main ref={main} id="main">
@@ -88,13 +105,28 @@ export function App() {
           <NotFoundPage />
         ) : (
           <Loaded resource={service} reload={reload}>
-            {({ health, chain }) =>
-              route.page === "network" ? (
-                <NetworkPage health={health} chain={chain} />
-              ) : (
-                <OpenRequestsPage chain={chain} />
-              )
-            }
+            {({ health, chain }) => {
+              switch (route.page) {
+                case "network":
+                  return <NetworkPage health={health} chain={chain} />;
+                case "open-requests":
+                  return <OpenRequestsPage chain={chain} />;
+                case "sign-in":
+                  return (
+                    <Suspense fallback={<p className="muted">{strings.loading}</p>}>
+                      <SignInPage chain={chain} onSignedIn={reloadSession} />
+                    </Suspense>
+                  );
+                case "account":
+                  return (
+                    <Loaded resource={session} reload={reloadSession}>
+                      {(current) => (
+                        <AccountPage session={current} chain={chain} onSignedOut={reloadSession} />
+                      )}
+                    </Loaded>
+                  );
+              }
+            }}
           </Loaded>
         )}
       </main>

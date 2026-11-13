@@ -28,6 +28,18 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 - A local stack in one command for development and end-to-end tests
   (`core/tests/local_stack.py`): a local Anvil chain with the contracts, the
   service, SIMULATED parties with registered wallets and SIMULATED requests.
+  Its chain listens on port 8545 by default, where wallets expect chain 31337.
+- Signing in with a wallet (phase 3, step 3.2): Sign-In with Ethereum
+  (ERC-4361) at `POST /v1/session/challenge` and `POST /v1/session`, a session
+  cookie (`HttpOnly`, `SameSite=Strict`, 12 hours) that the rest of the API
+  accepts like the party's key, `GET /v1/session` and `DELETE /v1/session`.
+  Messages are written by the service for its configured web origins
+  (`orbit-watch serve --origin`), work once and expire after five minutes;
+  changes made with a session need its `Origin`. A new wallet signs up as a
+  requester or a station, and its signed message is kept with the wallet
+  (storage migration 0004). The web application gets Sign in and Your account
+  pages; wallets are found with EIP-6963, and the page checks every message
+  against its own address before the wallet signs (D-27).
 
 ## [0.3.0] - 2026-11-13
 

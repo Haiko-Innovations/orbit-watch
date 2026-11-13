@@ -367,6 +367,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
     if args.web and not (Path(args.web) / "index.html").is_file():
         _err(f"{args.web} has no index.html: build the web application (cd web && npm run build)")
         return EXIT_USAGE
+    for origin in args.origin or ():
+        if not origin.startswith(("http://", "https://")) or origin.rstrip("/").count("/") > 2:
+            _err(f"--origin {origin}: give a web origin such as https://orbit.example")
+            return EXIT_USAGE
     registry, context, notes = _service_inputs(args)
     chain = None
     if args.network:
@@ -389,9 +393,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
     service = open_service(args.dir, registry, context, chain=chain)
     for note in notes:
         print(f"note: {note}")
+    origins = args.origin or _default_origins(args.host, args.port)
     print(f"Orbit Watch API {__version__} for {args.dir} on http://{args.host}:{args.port}/v1/")
     if args.web:
         print(f"Web application on http://{args.host}:{args.port}/")
+    if chain is not None:
+        print(f"Wallets sign in from: {', '.join(origins)}")
     if chain is None:
         print("Phase 1 prototype: local use only, no TLS. All bundled data is SIMULATED.")
     else:
@@ -408,10 +415,20 @@ def cmd_serve(args: argparse.Namespace) -> int:
         else:
             print(f"Followed the chain to block {chain.synced_block()}")
     try:
-        uvicorn.run(create_app(service, web=args.web), host=args.host, port=args.port)
+        uvicorn.run(
+            create_app(service, web=args.web, origins=origins), host=args.host, port=args.port
+        )
     finally:
         service.storage.close()
     return EXIT_OK
+
+
+def _default_origins(host: str, port: int) -> list[str]:
+    """Where a browser opens the service by default: its own address."""
+    origins = [f"http://{host}:{port}"]
+    if host == "127.0.0.1":
+        origins.append(f"http://localhost:{port}")
+    return origins
 
 
 def _apply_network(args: argparse.Namespace) -> None:
@@ -698,6 +715,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--web",
         metavar="DIR",
         help="also serve the built web application from DIR (web/dist) at / (phase 3)",
+    )
+    serve.add_argument(
+        "--origin",
+        action="append",
+        metavar="URL",
+        help="a web origin that browsers may sign in from, as they see it (repeatable; "
+        "default: http://HOST:PORT, and http://localhost:PORT on 127.0.0.1)",
     )
     chain = serve.add_argument_group(
         "testnet chain (phase 2)",

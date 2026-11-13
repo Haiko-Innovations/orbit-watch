@@ -3,7 +3,8 @@
 One command starts, on this machine only:
 
 * a LOCAL Anvil chain with Base Sepolia's EAS code and fresh Orbit Watch contracts, whose
-  clock starts at 2026-11-01 12:00 UTC, before the SIMULATED requests' window;
+  clock starts at 2026-11-01 12:00 UTC, before the SIMULATED requests' window; on port
+  8545 by default, where wallets look for a local chain (31337);
 * the request service on that chain, with the API and, given ``--web``, the built web
   application on one port;
 * SIMULATED parties (a requester, four stations, the reviewers) with LOCAL TEST keys and
@@ -45,6 +46,7 @@ STATIONS = (ESPOO, OULU, KUOPIO, TAMPERE)
 PASSWORD = "local stack test password"  # protects LOCAL TEST keys only
 BUDGET = 100_000_000  # 100 TestUSD (6 decimals), worthless
 DELIVERY_DEADLINE = "2026-11-03T12:00:00Z"
+DEV_SERVER_PORT = 5173  # npm run dev (web/vite.config.ts)
 REQUESTS = [  # request id, title, funded
     ("SIM-REQ-3001", "Identify and track SIM-CUBESAT-A after deployment", True),
     ("SIM-REQ-3002", "Track SIM-CUBESAT-A on its second night", True),
@@ -59,7 +61,7 @@ class StackError(RuntimeError):
 class LocalStack:
     """The running stack; ``stop()`` ends it."""
 
-    def __init__(self, directory: Path, port: int, web: Path | None):
+    def __init__(self, directory: Path, port: int, web: Path | None, chain_port: int = 0):
         import uvicorn
 
         from orbit_watch.api import create_app, keys
@@ -75,6 +77,7 @@ class LocalStack:
             platform=PLATFORM,
             verifier=VERIFIER,
             parties=[*self.parties, PLATFORM],
+            port=chain_port,
         )
         local = self.deployment.chain
         self.rpc = local.w3.provider.endpoint_uri
@@ -94,9 +97,15 @@ class LocalStack:
                 for party in self.parties
             }
         self.api = f"http://127.0.0.1:{port}"
+        # Browsers sign in from the stack itself or from Vite's development server.
+        self.origins = [
+            f"http://{host}:{p}"
+            for p in (port, DEV_SERVER_PORT)
+            for host in ("127.0.0.1", "localhost")
+        ]
         self.server = uvicorn.Server(
             uvicorn.Config(
-                create_app(self.service, web=web),
+                create_app(self.service, web=web, origins=self.origins),
                 host="127.0.0.1",
                 port=port,
                 log_level="warning",
@@ -188,6 +197,7 @@ class LocalStack:
             "notice": "LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.",
             "api": self.api,
             "web": self.api + "/",
+            "origins": self.origins,
             "chain_rpc": self.rpc,
             "chain_id": 31337,
             "escrow": self.deployment.escrow.address,
@@ -221,6 +231,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, default=8787, help="API and web port (8787)")
     parser.add_argument("--web", type=Path, help="the built web application (web/dist)")
     parser.add_argument(
+        "--chain-port",
+        type=int,
+        default=8545,
+        help="the local chain's port (8545, where wallets look for chain 31337; 0: any free one)",
+    )
+    parser.add_argument(
         "--dir", type=Path, help="where the stack keeps its state (default: a new temporary one)"
     )
     args = parser.parse_args(argv)
@@ -235,7 +251,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     directory.mkdir(parents=True, exist_ok=True)
 
-    stack = LocalStack(directory, args.port, args.web)
+    stack = LocalStack(directory, args.port, args.web, args.chain_port)
     stopped = threading.Event()
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: stopped.set())

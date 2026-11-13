@@ -1,7 +1,9 @@
 """The phase 1 HTTP API (step 1.6), built on Starlette (decision D-16).
 
-Every call except ``GET /v1/health`` needs an API key (``Authorization:
-Bearer ow_...``). Keys belong to one party and one role (decision P-04):
+Every call except ``GET /v1/health`` and the public ones needs an API key
+(``Authorization: Bearer ow_...``) or, in the browser, a session from signing in with
+the party's wallet (step 3.2, ``api.sessions``). Keys belong to one party and one role
+(decision P-04):
 
 * ``requester``: create, open, fund and cancel requests, challenge results;
 * ``station``: reserve requests, deliver observation files, challenge results;
@@ -52,8 +54,10 @@ from starlette.staticfiles import StaticFiles
 
 from orbit_watch import __version__
 from orbit_watch import lifecycle as lc
-from orbit_watch.api import keys
+from orbit_watch.api import keys, sessions
+from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
+from orbit_watch.chain import WALLET_PREFIX
 from orbit_watch.service import RequestService, ServiceError
 from orbit_watch.settlement import SettlementError
 from orbit_watch.timeutil import parse_utc
@@ -93,6 +97,10 @@ TERMS_FIELDS = {
 # HTTP status for each stable error code. Anything else is 422.
 STATUS = {
     "unauthorized": 401,
+    "forbidden_origin": 403,
+    "wrong_origin": 403,
+    "unknown_wallet": 404,
+    "party_taken": 409,
     "forbidden_role": 403,
     "not_requester": 403,
     "not_a_party": 403,
@@ -161,7 +169,14 @@ def _field(document: dict[str, Any], name: str, kind: type | tuple[type, ...]) -
 
 
 class Api:
-    def __init__(self, service: RequestService, clock: Callable[[], datetime]):
+    def __init__(
+        self,
+        service: RequestService,
+        clock: Callable[[], datetime],
+        *,
+        origins: tuple[str, ...] = (),
+        wall_clock: Callable[[], datetime] | None = None,
+    ):
         if service.storage is None:
             raise ValueError("the API needs a stored service (open_service)")
         self.service = service
@@ -169,16 +184,49 @@ class Api:
         self.clock = clock
         self.chain = service.chain  # an orbit_watch.chain.link.ChainLink, or None
         self.lock = threading.Lock()
+        # The web application's origins: where a browser may sign in from (step 3.2).
+        self.origins = tuple(sessions.normalise_origin(o) for o in origins)
+        # Sessions live in wall-clock time, whatever the chain's clock says.
+        self.wall_clock = wall_clock or (lambda: datetime.now(tz=UTC))
 
     # ------------------------------------------------------------------ plumbing
 
-    def _principal(self, request: Request) -> keys.Principal:
+    def _principal(self, request: Request, mutating: bool = False) -> keys.Principal:
+        """The caller: an API key, or else a browser session. A change made with a session
+        must come from the page it was signed in on (the browser sets ``Origin``)."""
         header = request.headers.get("authorization", "")
-        scheme, _, token = header.partition(" ")
-        principal = keys.lookup(self.db, token.strip()) if scheme.lower() == "bearer" else None
-        if principal is None:
-            raise ApiError("unauthorized", "a valid API key is required (Authorization: Bearer)")
-        return principal
+        if header:
+            scheme, _, token = header.partition(" ")
+            principal = keys.lookup(self.db, token.strip()) if scheme.lower() == "bearer" else None
+            if principal is None:
+                raise ApiError(
+                    "unauthorized", "a valid API key is required (Authorization: Bearer)"
+                )
+            return principal
+        session = sessions.lookup(self.db, request.cookies.get(sessions.COOKIE), self.wall_clock())
+        if session is None:
+            raise ApiError(
+                "unauthorized",
+                "sign in with your wallet, or give an API key (Authorization: Bearer)",
+            )
+        if mutating and self._origin(request) != session.origin:
+            raise ApiError("wrong_origin", f"this session belongs to {session.origin}")
+        return keys.Principal(session.party, session.role)
+
+    def _origin(self, request: Request) -> str:
+        """The page's origin, which browsers send with every change: one of this service's."""
+        origin = request.headers.get("origin", "")
+        try:
+            normalised = sessions.normalise_origin(origin)
+        except SessionError:
+            normalised = ""
+        if normalised not in self.origins:
+            raise ApiError(
+                "forbidden_origin",
+                f"{origin or 'a request without an Origin'} is not one of this service's web "
+                "origins (orbit-watch serve --origin)",
+            )
+        return normalised
 
     @staticmethod
     def _require(principal: keys.Principal, *roles: str) -> None:
@@ -214,7 +262,7 @@ class Api:
         store_response: Callable[[Any], Any] | None,
     ) -> Response:
         with self.lock:
-            principal = self._principal(request)
+            principal = self._principal(request, mutating)
             self._follow_chain()
             now = self.clock()
             if not mutating:
@@ -441,6 +489,117 @@ class Api:
             self._follow_chain()
             return self._respond(work(request, self.clock()))
 
+    # ------------------------------------------------------------------ sessions (step 3.2)
+
+    def session_route(self, work: Callable[..., Any]):
+        """Sign-in calls: no key, no idempotency record, one transaction, wall-clock time."""
+
+        async def handler(request: Request) -> Response:
+            body = await request.body()
+            if len(body) > 64 * 1024:
+                raise ApiError("too_large", "the body is larger than 64 KiB")
+            return await run_in_threadpool(self._run_session, request, body, work)
+
+        return handler
+
+    def _run_session(self, request: Request, body: bytes, work: Callable[..., Any]) -> Response:
+        with self.lock, self.db.transaction():
+            return self._respond(work(request, body, self.wall_clock()))
+
+    def session_challenge(self, request, body, now):
+        chain = self._require_chain()  # wallets belong to the chain
+        origin = self._origin(request)
+        document = _json(body)
+        address = sessions.checked_address(document.get("address"))
+        sign_up = document.get("sign_up")
+        owner = chain.party_of(address)
+        if sign_up is None:
+            if owner.startswith(WALLET_PREFIX):
+                raise ApiError(
+                    "unknown_wallet",
+                    f"{address} is no party's wallet yet: sign up, or register it with "
+                    "orbit-watch wallet register",
+                )
+            party = owner
+        else:
+            if not isinstance(sign_up, dict):
+                raise ApiError("invalid_body", "sign_up must be an object with a party")
+            party = _field(sign_up, "party", str)
+            if not sessions.SIGN_UP_PARTY.match(party):
+                raise ApiError(
+                    "invalid_party",
+                    "sign up as requester:<name> or station:<name>: 2 to 63 letters, digits, "
+                    "dots, dashes or underscores, starting with a letter or digit",
+                )
+            if sessions.party_taken(self.db, party):
+                raise ApiError("party_taken", f"{party} already exists: choose another name")
+            if not owner.startswith(WALLET_PREFIX):
+                raise ApiError(
+                    "address_taken", f"{address} is already {owner}'s wallet: sign in instead"
+                )
+        message = sessions.issue_challenge(
+            self.db,
+            origin=origin,
+            address=address,
+            party=party,
+            sign_up=sign_up is not None,
+            chain_id=chain.chain.chain_id,
+            now=now,
+        )
+        return {"message": message, "party": party, "sign_up": sign_up is not None}
+
+    def sign_in(self, request, body, now):
+        chain = self._require_chain()
+        origin = self._origin(request)
+        document = _json(body)
+        signed = sessions.redeem(
+            self.db,
+            origin=origin,
+            message=document.get("message"),
+            signature=document.get("signature"),
+            now=now,
+        )
+        if signed.sign_up_party is not None:
+            party = signed.sign_up_party
+            if sessions.party_taken(self.db, party):
+                raise ApiError("party_taken", f"{party} already exists: choose another name")
+            chain.register_signed_up_wallet(
+                party, signed.address, signed.message, signed.signature, now
+            )
+        else:
+            party = chain.party_of(signed.address)
+            if party.startswith(WALLET_PREFIX):
+                raise ApiError("unknown_wallet", f"{signed.address} is no party's wallet")
+        role = party.split(":", 1)[0]
+        if role not in keys.ROLES:
+            raise ApiError("forbidden_role", f"{party} cannot sign in")
+        token, session = sessions.create_session(
+            self.db, party=party, role=role, address=signed.address, origin=origin, now=now
+        )
+        response = JSONResponse({"session": session.view(), "notice": chain.notice})
+        response.set_cookie(
+            sessions.COOKIE,
+            token,
+            max_age=int(sessions.SESSION_LIFETIME.total_seconds()),
+            path="/",
+            secure=origin.startswith("https://"),
+            httponly=True,
+            samesite="strict",
+        )
+        return response
+
+    def get_session(self, request, body, now):
+        """Who is signed in: the session, or null (not an error: a page asks on every load)."""
+        session = sessions.lookup(self.db, request.cookies.get(sessions.COOKIE), now)
+        return {"session": None if session is None else session.view()}
+
+    def sign_out(self, request, body, now):
+        self._origin(request)
+        sessions.end(self.db, request.cookies.get(sessions.COOKIE), now)
+        response = JSONResponse({"signed_out": True})
+        response.delete_cookie(sessions.COOKIE, path="/", httponly=True, samesite="strict")
+        return response
+
     def public_requests(self, request, now):
         return {"requests": self.service.published(now)}
 
@@ -615,13 +774,16 @@ def create_app(
     *,
     clock: Callable[[], datetime] | None = None,
     web: str | Path | None = None,
+    origins: tuple[str, ...] | list[str] = (),
+    wall_clock: Callable[[], datetime] | None = None,
 ) -> Starlette:
     """The ASGI application for a stored service; with ``web``, the directory of the built
-    web application, served at ``/`` (step 3.1)."""
+    web application, served at ``/`` (step 3.1). Browsers sign in from ``origins`` only
+    (step 3.2)."""
     if clock is None:
         # On a chain the service keeps the chain's time, which its deadlines use.
         clock = service.chain.now if service.chain is not None else lambda: datetime.now(tz=UTC)
-    api = Api(service, clock)
+    api = Api(service, clock, origins=tuple(origins), wall_clock=wall_clock)
     read, change = (
         lambda f: api.endpoint(f, mutating=False),
         lambda f, **kw: api.endpoint(f, mutating=True, **kw),
@@ -665,6 +827,11 @@ def create_app(
         Route("/v1/admin/tick", change(api.tick), methods=["POST"]),
         # On a testnet chain (step 2.6).
         Route("/v1/chain", api.public(api.chain_info), methods=["GET"]),
+        # Signing in with a wallet (step 3.2).
+        Route("/v1/session/challenge", api.session_route(api.session_challenge), methods=["POST"]),
+        Route("/v1/session", api.session_route(api.get_session), methods=["GET"]),
+        Route("/v1/session", api.session_route(api.sign_in), methods=["POST"]),
+        Route("/v1/session", api.session_route(api.sign_out), methods=["DELETE"]),
         Route("/v1/wallet", read(api.get_wallet), methods=["GET"]),
         Route("/v1/wallet", change(api.register_wallet), methods=["POST"]),
         Route("/v1/wallet/withdraw", change(api.withdraw), methods=["POST"]),
@@ -685,6 +852,7 @@ def create_app(
         ApiError: _handle_api_error,
         ServiceError: _handle_api_error,
         SettlementError: _handle_api_error,
+        SessionError: _handle_api_error,
     }
     return Starlette(
         routes=routes, exception_handlers=handlers, middleware=[Middleware(SecurityHeaders)]

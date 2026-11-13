@@ -36,6 +36,7 @@ migrations ([decision P-02](decisions.md#p-02-sqlite-with-plain-sql-migrations))
 | `ledger_entries`, `ledger_postings` | the double-entry points journal |
 | `ledger_settled`, `attestations` | settled requests and recorded attestations |
 | `chain_settings`, `wallets`, `transactions`, `chain_events`, `chain_texts`, `chain_uploads`, `chain_conflicts` | on a testnet chain only (migration 0003, step 2.6): the chain followed, each party's wallet, watched transactions, the escrow events applied, reasons by SHA-256, uploaded files and conflicts ([chain-service.md](chain-service.md)) |
+| `signin_challenges`, `sessions` | signing in with a wallet (migration 0004, step 3.2): the sign-in messages the service wrote, each usable once, and browser sessions by the SHA-256 of their cookie; `wallets.signed_message` keeps the message a party signed when it signed up in the browser ([D-27](decisions.md#d-27-signing-in-with-a-wallet)) |
 
 ## Files
 
