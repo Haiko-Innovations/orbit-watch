@@ -37,6 +37,7 @@ from typing import Any, Protocol
 from orbit_watch import SIMULATION_NOTICE
 from orbit_watch.canonical import dumps_pretty, write_text
 from orbit_watch.catalog import parse_catalog
+from orbit_watch.chain import EAS_SCAN
 from orbit_watch.sim.phase1_demo import ESPOO, KUOPIO, OULU, REQUESTER, TAMPERE, _deliveries
 from orbit_watch.sim.phase1_demo import _packaged as packaged
 from orbit_watch.sim.phase1_demo import _request_bytes as request_bytes
@@ -48,7 +49,6 @@ RUBBER_STAMPER = "reviewer:sim-aino"  # approves every task without looking
 OBSERVER_REWARD = "1"  # token amounts, as the command line takes them
 REVIEWER_REWARD = "0.1"
 DEFAULT_PREFIX = "SIM-REQ-200"
-EAS_SCAN = {84532: "https://base-sepolia.easscan.org"}
 PLAN = [  # number, title, station, delivered dataset (None: never delivered)
     (1, "Identify and track SIM-CUBESAT-A (good delivery)", ESPOO, "SIM-REQ-1001"),
     (2, "Identify and track SIM-CUBESAT-A (wrong object delivered)", ESPOO, "SIM-REQ-1002"),

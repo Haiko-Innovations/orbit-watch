@@ -320,3 +320,220 @@ export interface ReviewerProfile {
   };
   flags: string[];
 }
+
+/** POST a file as it is, with no session or key: the public quality meter (step 3.7). */
+export async function postBytes<T>(
+  path: string,
+  body: Uint8Array,
+  fetcher: typeof fetch = fetch,
+): Promise<T> {
+  return call<T>(
+    path,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: body as BodyInit,
+    },
+    fetcher,
+  );
+}
+
+// ---------------------------------------------------------------- administrator view (3.7)
+
+export interface TransactionView {
+  tx_hash: string;
+  party: string;
+  action: string;
+  request_id: string | null;
+  status: "pending" | "confirmed" | "failed";
+  block: number | null;
+  error: string | null;
+  explorer: string | null;
+}
+
+export interface AdminRequest {
+  request_id: string;
+  title: string | null;
+  requester: string;
+  status: string;
+  outcome: string | null;
+  outcome_reason: string | null;
+  reserved_by: string | null;
+  observer: string | null;
+  automated_verdict: string | null;
+  reviewers: string[];
+  votes: [string, boolean][];
+  on_chain: boolean;
+  settlement: { plan: { outcome: string; deposit: number; payouts: Payout[] } } | null;
+}
+
+/** GET /v1/admin/overview. */
+export interface AdminOverview {
+  now: string;
+  requests: AdminRequest[];
+  counts: Record<string, number>;
+  chain: ChainInfo | null;
+  events: (ChainEvent & { request_id: string })[];
+  conflicts: { request_id: string; code: string; message: string; tx_hash: string }[];
+  transactions: TransactionView[];
+  notice?: string;
+}
+
+/** A Safe Transaction Builder batch file: loaded as it is, never read by the page. */
+export type BatchFile = Record<string, unknown> & { meta: { name: string } };
+
+export interface CallData {
+  to: string;
+  value: string;
+  data: string;
+}
+
+export interface NamedAddress {
+  address: string;
+  party: string | null;
+}
+
+export interface SafeView {
+  address: string;
+  app: { home: string; queue: string; history: string } | null;
+  owners?: NamedAddress[];
+  threshold?: number;
+  nonce?: number;
+  proposer?: boolean;
+  problem?: string;
+}
+
+export interface TimelockOperation {
+  operation_id: string;
+  state: "unset" | "waiting" | "ready" | "done" | "cancelled";
+  ready_at: string | null;
+  delay_seconds: number;
+  scheduled_at: string;
+  scheduled_tx: string;
+  executed_at: string | null;
+  executed_tx: string | null;
+  cancelled_at: string | null;
+  calls: (Omit<CallData, "to"> & { target: string; description: string })[];
+  execute?: CallData;
+  execute_batch?: BatchFile;
+}
+
+/** GET /v1/admin/governance. */
+export interface GovernanceView {
+  registry: {
+    address: string;
+    owner: string;
+    owner_kind: "timelock" | "other";
+    pending_owner: string;
+    max_reviewers: number;
+    reviewers: NamedAddress[];
+    timelock: { address: string; min_delay_seconds: number } | null;
+  };
+  safe: SafeView | null;
+  operations: TimelockOperation[];
+  explorer: string | null;
+  notice: string;
+}
+
+/** POST /v1/admin/governance/proposals: data for the Safe; nothing is sent or kept. */
+export interface Proposal {
+  action: "add" | "remove";
+  reviewer: string;
+  call: CallData & { function: string };
+  operation_id: string;
+  salt: string;
+  delay_seconds: number;
+  schedule: CallData;
+  execute: CallData;
+  safe: SafeView | null;
+  batch_file: BatchFile;
+}
+
+/** A SIMULATED observation file made by the service and not kept. */
+export interface SimulatedFile {
+  file_name: string;
+  format: string;
+  observations: string;
+  sha256: string;
+  simulated: true;
+  count?: number;
+  expected_verdict?: string;
+  expected_failures?: string[];
+}
+
+export interface DemoDataset {
+  name: string;
+  title: string;
+  expected_verdict: string;
+  expected_failures: string[];
+}
+
+// ---------------------------------------------------------------- public pages (3.7)
+
+/** GET /v1/public/attestations: one EAS attestation of the escrow's schemas. */
+export interface Attestation {
+  uid: string;
+  kind: "result" | "vote";
+  request_id: string;
+  attester: string;
+  by_service: boolean;
+  fields: {
+    requestId?: string;
+    verdict?: string;
+    approve?: boolean;
+    deliverySha256?: string;
+    reportSha256?: string;
+    reasonSha256?: string;
+    method?: string;
+    version?: string;
+  };
+  at: string;
+  block: number;
+  tx_hash: string;
+  explorer: string | null;
+  eas_scan: string | null;
+  published: boolean;
+}
+
+export interface AttestationList {
+  attestations: Attestation[];
+  eas: string;
+  result_schema: string;
+  vote_schema: string;
+  notice: string;
+}
+
+export interface QualityRow {
+  observations: number;
+  angle_scatter_arcsec: number | null;
+  timing_scatter_s: number | null;
+  mean_along_track_s: number | null;
+}
+
+/** POST /v1/public/quality: the station quality report. */
+export interface QualityResult {
+  report: {
+    simulated_input: boolean;
+    notice?: string;
+    station: { id: string; name?: string };
+    summary: string;
+    overall?: QualityRow & {
+      objects: number;
+      nights: number;
+      declared_angle_uncertainty_arcsec: number[];
+      declared_time_uncertainty_s: number[];
+    };
+    findings?: string[];
+    objects?: (QualityRow & {
+      norad_id: number;
+      name: string | null;
+      passes: number;
+      median_residual_arcsec: number | null;
+    })[];
+    nights?: (QualityRow & { night: string; objects: number })[];
+    notices: string[];
+  };
+  text: string;
+  warnings: string[];
+  skipped: string[];
+}

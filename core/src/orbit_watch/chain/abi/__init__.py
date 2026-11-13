@@ -24,6 +24,10 @@ SOURCES: dict[str, tuple[str, str]] = {
     "IERC20": ("IERC20.sol", "IERC20"),
     "IERC20Metadata": ("IERC20Metadata.sol", "IERC20Metadata"),
     "IERC20Errors": ("draft-IERC6093.sol", "IERC20Errors"),
+    # Governance of the reviewer registry (step 3.7): the timelock that owns it and the Safe
+    # that proposes to the timelock.
+    "TimelockController": ("TimelockController.sol", "TimelockController"),
+    "ISafe": ("ISafe.sol", "ISafe"),
 }
 
 # Errors of the EAS contract on Base Sepolia (EAS 1.4.1-beta.3, vendored in the Optimism

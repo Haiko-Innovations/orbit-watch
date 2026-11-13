@@ -16,6 +16,9 @@ works with the escrow contract instead of the points ledger, for every funded re
   settles requests whose outcome is reached (anyone may settle, P2-05).
 * **Transactions** that parties report and that the service sends are shown as pending,
   confirmed or failed, with block explorer links.
+* **Governance** (step 3.7): when a timelock owns the reviewer registry, the service follows
+  the timelock's operations too, for the administrator view; it can prepare changes for
+  the Safe that proposes to the timelock, but never sends them (``chain.governance``).
 
 Unfunded requests never touch the chain and work as in phase 1 (decision D-19).
 """
@@ -23,6 +26,7 @@ Unfunded requests never touch the chain and work as in phase 1 (decision D-19).
 from __future__ import annotations
 
 import contextlib
+import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -43,6 +47,7 @@ from orbit_watch.chain import (
     SUPPORTED_CHAINS,
     WALLET_PREFIX,
     ChainError,
+    attestation_link,
     bytes32_from_sha256,
     explorer_link,
     notice,
@@ -54,6 +59,7 @@ from orbit_watch.chain import (
     whole_seconds,
 )
 from orbit_watch.chain.client import VERDICTS, Call, Event, OrbitWatchChain
+from orbit_watch.chain.governance import Governance
 from orbit_watch.lifecycle import RequestRecord, Status, TransitionError
 from orbit_watch.service import VERIFIER, ServiceError
 from orbit_watch.settlement import settlement_plan
@@ -103,7 +109,7 @@ class ChainLink:
     directory has no requests yet, so no earlier event can be its own: it follows the chain
     from the current block, or from ``from_block`` if given, and then from where it stopped.
     The service waits up to ``receipt_timeout`` seconds for a transaction before calling it
-    pending.
+    pending. ``safe`` is the Safe that proposes to the registry's timelock, if known.
     """
 
     def __init__(
@@ -113,6 +119,7 @@ class ChainLink:
         *,
         from_block: int | None = None,
         receipt_timeout: float = 60.0,
+        safe: str | None = None,
     ):
         if verifier.address != chain.verifier:
             raise ChainError(
@@ -125,6 +132,7 @@ class ChainLink:
         self.from_block = from_block
         self.receipt_timeout = receipt_timeout
         self.notice = notice(chain.chain_id)
+        self.governance = Governance(chain, safe)
         self._service: RequestService | None = None
         self._token: dict[str, Any] | None = None
 
@@ -580,6 +588,9 @@ class ChainLink:
     def _mirror(self, events: list[Event], ids: dict[str, str]) -> list[str]:
         changed = []
         for index, event in enumerate(events):
+            if event.source == "timelock":
+                self._on_timelock(event)
+                continue
             if event.name in _FOLLOWERS:
                 continue
             request_id = ids.get(event.args["requestId"].hex())
@@ -613,6 +624,46 @@ class ChainLink:
             )
             changed.append(request_id)
         return changed
+
+    def _on_timelock(self, event: Event) -> None:
+        """Remember an operation of the registry's timelock (step 3.7)."""
+        operation_id = "0x" + event.args["id"].hex()
+        at = format_utc(_at(self.chain.block_time(event.block)))
+        if event.name == "CallScheduled":
+            self.db.execute(
+                "INSERT INTO governance_operations (operation_id, call_index, target, value, "
+                "data, predecessor, delay_seconds, scheduled_tx, scheduled_block, scheduled_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
+                (
+                    operation_id,
+                    event.args["index"],
+                    to_checksum_address(event.args["target"]),
+                    str(event.args["value"]),
+                    "0x" + event.args["data"].hex(),
+                    "0x" + event.args["predecessor"].hex(),
+                    event.args["delay"],
+                    event.tx_hash,
+                    event.block,
+                    at,
+                ),
+            )
+        elif event.name == "CallSalt":
+            self.db.execute(
+                "UPDATE governance_operations SET salt = ? WHERE operation_id = ?",
+                ("0x" + event.args["salt"].hex(), operation_id),
+            )
+        elif event.name == "CallExecuted":
+            self.db.execute(
+                "UPDATE governance_operations SET executed_tx = ?, executed_at = ? "
+                "WHERE operation_id = ? AND call_index = ?",
+                (event.tx_hash, at, operation_id, event.args["index"]),
+            )
+        elif event.name == "Cancelled":
+            self.db.execute(
+                "UPDATE governance_operations SET cancelled_tx = ?, cancelled_at = ? "
+                "WHERE operation_id = ?",
+                (event.tx_hash, at, operation_id),
+            )
 
     def _conflict(
         self, tx_hash: str, log_index: int, request_id: str, code: str, message: str
@@ -891,3 +942,183 @@ class ChainLink:
             ],
             "notice": self.notice,
         }
+
+    # ------------------------------------------------------------------ administrator (step 3.7)
+
+    def _known_party(self, address: str) -> str | None:
+        party = self.party_of(address)
+        return None if party.startswith(WALLET_PREFIX) else party
+
+    def admin_view(self, limit: int = 200) -> dict[str, Any]:
+        """The chain side of the administrator view: the latest escrow events applied, every
+        conflict and every watched transaction, newest first."""
+        events = self.db.query(
+            "SELECT * FROM chain_events ORDER BY block DESC, log_index DESC LIMIT ?", (limit,)
+        )
+        conflicts = self.db.query("SELECT * FROM chain_conflicts ORDER BY rowid DESC")
+        return {
+            "chain": self.info(),
+            "events": [
+                {
+                    "request_id": row["request_id"],
+                    "event": row["event"],
+                    "at": row["at"],
+                    "block": row["block"],
+                    "tx_hash": row["tx_hash"],
+                    "explorer": explorer_link(self.chain.chain_id, row["tx_hash"]),
+                }
+                for row in events
+            ],
+            "conflicts": [
+                {
+                    "request_id": row["request_id"],
+                    "code": row["code"],
+                    "message": row["message"],
+                    "tx_hash": row["tx_hash"],
+                }
+                for row in conflicts
+            ],
+            "transactions": list(reversed(self.transactions())),
+        }
+
+    def governance_view(self, created_at_ms: int) -> dict[str, Any]:
+        """The reviewer registry, the timelock that owns it, its Safe and its operations."""
+        governance = self.governance
+        registry = governance.registry_view()
+        registry["reviewers"] = [
+            {"address": address, "party": self._known_party(address)}
+            for address in registry["reviewers"]
+        ]
+        safe = governance.safe_view()
+        if safe is not None and "owners" in safe:
+            safe["owners"] = [
+                {"address": address, "party": self._known_party(address)}
+                for address in safe["owners"]
+            ]
+        return {
+            "registry": registry,
+            "safe": safe,
+            "operations": self.governance_operations(created_at_ms),
+            "explorer": EXPLORERS.get(self.chain.chain_id),
+            "notice": self.notice,
+        }
+
+    def governance_operations(self, created_at_ms: int) -> list[dict[str, Any]]:
+        """The timelock's operations since the service started following the chain, newest
+        first, with the timelock's word on their state."""
+        from orbit_watch.chain.governance import ZERO_BYTES32, batch_file
+
+        rows = self.db.query(
+            "SELECT * FROM governance_operations ORDER BY scheduled_block, operation_id, call_index"
+        )
+        grouped: dict[str, list[Any]] = {}
+        for row in rows:
+            grouped.setdefault(row["operation_id"], []).append(row)
+        governance = self.governance
+        views = []
+        for operation_id, calls in grouped.items():
+            first = calls[0]
+            if first["cancelled_tx"]:
+                state, ready = "cancelled", 0
+            else:
+                state, ready = governance.operation_state(operation_id)
+            # The timelock announces a salt only when it is not zero.
+            salt = first["salt"] or "0x" + ZERO_BYTES32.hex()
+            view: dict[str, Any] = {
+                "operation_id": operation_id,
+                "state": state,
+                "ready_at": format_utc(_at(ready)) if ready > 1 else None,
+                "delay_seconds": first["delay_seconds"],
+                "predecessor": first["predecessor"],
+                "salt": salt,
+                "scheduled_at": first["scheduled_at"],
+                "scheduled_tx": first["scheduled_tx"],
+                "executed_at": first["executed_at"],
+                "executed_tx": first["executed_tx"],
+                "cancelled_at": first["cancelled_at"],
+                "calls": [
+                    {
+                        "target": call["target"],
+                        "value": call["value"],
+                        "data": call["data"],
+                        "description": governance.describe_call(call["target"], call["data"]),
+                    }
+                    for call in calls
+                ],
+            }
+            if state in ("waiting", "ready"):
+                execute = governance.execute_data(
+                    [dict(call) for call in calls], first["predecessor"], salt
+                )
+                view["execute"] = execute
+                view["execute_batch"] = batch_file(
+                    self.chain.chain_id,
+                    governance.safe,
+                    f"Orbit Watch: execute timelock operation {operation_id[:10]}",
+                    f"Execute timelock operation {operation_id} ("
+                    + "; ".join(c["description"] for c in view["calls"])
+                    + "). Anyone may execute it once it is ready.",
+                    [execute],
+                    created_at_ms,
+                )
+            views.append(view)
+        return list(reversed(views))
+
+    def attestations(self) -> list[dict[str, Any]]:
+        """The EAS attestations of the requests this service follows (automated results and
+        reviewers' votes), newest first. Each is read from the chain once and kept."""
+        missing = self.db.query(
+            "SELECT e.* FROM chain_events e LEFT JOIN chain_attestations a "
+            "ON a.tx_hash = e.tx_hash AND a.log_index = e.log_index "
+            "WHERE e.event IN ('VerificationRecorded', 'Voted') AND a.uid IS NULL "
+            "ORDER BY e.block, e.log_index"
+        )
+        if missing:
+            with self.db.transaction():
+                for row in missing:
+                    self._keep_attestation(row)
+        rows = self.db.query(
+            "SELECT a.*, e.block, e.at FROM chain_attestations a JOIN chain_events e "
+            "ON a.tx_hash = e.tx_hash AND a.log_index = e.log_index "
+            "ORDER BY e.block DESC, e.log_index DESC"
+        )
+        return [
+            {
+                "uid": row["uid"],
+                "kind": row["kind"],
+                "request_id": row["request_id"],
+                "attester": row["attester"],
+                "by_service": row["attester"] == self.chain.verifier,
+                "fields": json.loads(row["fields_json"]),
+                "at": row["at"],
+                "block": row["block"],
+                "tx_hash": row["tx_hash"],
+                "explorer": explorer_link(self.chain.chain_id, row["tx_hash"]),
+                "eas_scan": attestation_link(self.chain.chain_id, row["uid"]),
+            }
+            for row in rows
+        ]
+
+    def _keep_attestation(self, row: Any) -> None:
+        receipt = self.chain.w3.eth.get_transaction_receipt(row["tx_hash"])
+        log = next(item for item in receipt["logs"] if item["logIndex"] == row["log_index"])
+        event = getattr(self.chain.escrow.events, row["event"])().process_log(log)
+        uid = event["args"]["attestation"]
+        found = self.chain.attestation(uid)
+        fields = {
+            name: "0x" + value.hex() if isinstance(value, bytes) else value
+            for name, value in found.get("fields", {}).items()
+        }
+        self.db.execute(
+            "INSERT INTO chain_attestations (tx_hash, log_index, uid, kind, request_id, "
+            "attester, fields_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                row["tx_hash"],
+                row["log_index"],
+                "0x" + uid.hex(),
+                "result" if row["event"] == "VerificationRecorded" else "vote",
+                row["request_id"],
+                to_checksum_address(found["attester"]),
+                json.dumps(fields, sort_keys=True),
+            ),
+        )

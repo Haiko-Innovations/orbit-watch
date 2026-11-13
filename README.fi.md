@@ -96,7 +96,7 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | Testiverkon tilityssovitin (Python, `evm`-lisäosa) | | [evm-adapter.md](docs/evm-adapter.md) |
 | Palvelu, rajapinta ja komentorivi **testiverkossa**: omat lompakot, allekirjoitus omalla avainsäilöllä, transaktiot lohkoselainlinkkeineen | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | Sopimukset **Base Sepoliassa**: osoitteet, faucetit, kuka hallitsee mitäkin avainta, käyttöönotto | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
-| Verkkosovellus (vaihe 3, kesken): toistaiseksi julkiset sivut, kirjautuminen lompakolla, nostot sekä tilaajan, havaitsijan ja tarkistajan näkymät, palvelu tarjoaa sen; paikallinen ympäristö kehitykseen | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
+| Verkkosovellus (vaihe 3, kesken): toistaiseksi julkiset sivut attestaatioselaimineen ja aseman laatumittareineen, kirjautuminen lompakolla, nostot, tilaajan, havaitsijan ja tarkistajan näkymät sekä ylläpitäjän näkymä, palvelu tarjoaa sen; paikallinen ympäristö kehitykseen | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
 
 Python-koodi on hakemistossa [`core/`](core), Solidity-sopimukset hakemistossa [`contracts/`](contracts) ja verkkosovellus hakemistossa [`web/`](web). Simuloidut esimerkit ovat
 hakemistossa [`examples/`](examples).

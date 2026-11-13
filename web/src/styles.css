@@ -541,3 +541,35 @@ textarea {
 .check-inconclusive strong {
   color: var(--wait);
 }
+
+/* The administrator view and the public pages (step 3.7). */
+main h3 {
+  margin: 24px 0 8px;
+  font-size: 1rem;
+}
+
+.state-waiting {
+  color: var(--wait);
+  font-weight: 600;
+}
+
+.state-ready {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.state-done,
+.state-cancelled,
+.state-unset {
+  color: var(--muted);
+}
+
+.plain-list {
+  margin: 4px 0 0;
+  padding-left: 1.1rem;
+}
+
+details summary {
+  cursor: pointer;
+  margin-top: 8px;
+}

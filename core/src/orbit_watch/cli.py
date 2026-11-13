@@ -443,6 +443,8 @@ def _apply_network(args: argparse.Namespace) -> None:
         )
     args.escrow = record["escrow"]
     args.chain_rpc = args.chain_rpc or public_rpc(record["chain_id"])
+    if getattr(args, "safe", None) is None:
+        args.safe = record.get("safe")
 
 
 def _chain_link(args: argparse.Namespace):
@@ -464,7 +466,12 @@ def _chain_link(args: argparse.Namespace):
         "verifier keystore password: ",
         env="ORBIT_WATCH_VERIFIER_PASSWORD_FILE",
     )
-    return ChainLink(chain, load_keystore(keystore, password), from_block=args.from_block)
+    return ChainLink(
+        chain,
+        load_keystore(keystore, password),
+        from_block=args.from_block,
+        safe=getattr(args, "safe", None),
+    )
 
 
 def cmd_keys_create(args: argparse.Namespace) -> int:
@@ -751,6 +758,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="a new service directory follows the chain from this block (default: the "
         "current block, since no earlier event can belong to its requests)",
+    )
+    chain.add_argument(
+        "--safe",
+        help="the Safe that proposes to the reviewer registry's timelock, for the "
+        "administrator view (default with --network: the deployment's Safe)",
     )
     serve.set_defaults(handler=cmd_serve)
 

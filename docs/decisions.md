@@ -1019,3 +1019,61 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.6):
   chose three of the six SIMULATED reviewers. The end-to-end tests let two of
   them vote in the browser, and the round settles.
 
+### D-32 The administrator view and the public pages
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.7):
+
+- **Administration** (`#/admin`, administrators only):
+  - every request with its status, observer, automated result, votes,
+    outcome and payments;
+  - errors: the chain conflicts and the failed transactions;
+  - every watched transaction, and the escrow's events the service applied,
+    newest first;
+  - `tick`;
+  - the reviewer registry and its governance (below);
+  - the simulator and the six demo datasets, as SIMULATED files to download.
+    Nothing is kept.
+- **The view uses the API only**, and the API checks the role of every call,
+  so the view can do nothing the API refuses. The end-to-end tests check this
+  with a non-administrator's session. A page for someone else shows a note
+  instead of controls.
+- **Governance stays with the Safe.** As on Base Sepolia (step 2.7), a
+  timelock owns the registry and a 2-of-3 Safe is its only proposer. The
+  service never holds their keys and never sends their transactions. It
+  prepares:
+  - `schedule` and `execute` call data for adding or removing a reviewer,
+    with the timelock operation's ID and a random salt;
+  - a batch file for the Safe app's Transaction Builder, with the checksum the
+    builder checks (its `serializeJSONObject`, Keccak-256, without the
+    batch's name), tested against the builder's own test value;
+  - links to the Safe app on Base Sepolia (`?safe=basesep:<address>`).
+
+  The Safe's owners sign and execute in the Safe app. After the delay anyone
+  may execute (`execute` with the operation's data, or the execute file in the
+  Transaction Builder).
+- **The timelock's operations are read from its events.** The service reads
+  the timelock's logs in the same `eth_getLogs` calls as the escrow's, and
+  keeps `CallScheduled`, `CallSalt`, `CallExecuted` and `Cancelled`
+  (migration 0006). The timelock's `getOperationState` gives each operation's
+  state. Operations scheduled before the service started following the chain
+  do not show; the Safe app shows every Safe transaction. The escrow's and the
+  timelock's `Cancelled(bytes32)` share a topic, so logs are told apart by
+  their address. `serve --network` takes the Safe from the deployment record;
+  `serve --safe` names it otherwise.
+- **The local stack governs like Base Sepolia.** A Safe 1.4.1 of three LOCAL
+  TEST signers (two must sign), a timelock that waits 60 seconds instead of 48
+  hours, and the registry owned by the timelock. The administrator has a
+  wallet and signs in like everyone else. The end-to-end test downloads the
+  batch file, has the Safe execute it, waits out the delay on the chain's
+  clock, executes with the downloaded execute file, sees the reviewer
+  added, and removes it again.
+- **Public pages, no sign-in**:
+  - **Attestations** (`#/attestations`): every automated result and vote of
+    the requests the service follows, with EAS Scan links on Base Sepolia
+    (`base-sepolia.easscan.org/attestation/view/<uid>`). Each attestation is
+    read from the chain once and kept (migration 0006). Attesters are shown
+    by address, as on the chain; a reviewer's party name is not.
+  - **Station quality meter** (`#/quality`): an observation file in, the
+    quality report out (`POST /v1/public/quality`). The file is not kept,
+    it is at most 2 MiB, and scoring does not hold the service's lock.
+

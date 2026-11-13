@@ -15,6 +15,9 @@ export type Route =
         | "my-observations"
         | "station"
         | "tasks"
+        | "admin"
+        | "attestations"
+        | "quality"
         | "not-found";
     }
   | { page: "request"; id: string }
@@ -30,6 +33,9 @@ export const paths = {
   myObservations: "#/my-observations",
   station: "#/station",
   tasks: "#/tasks",
+  admin: "#/admin",
+  attestations: "#/attestations",
+  quality: "#/quality",
   task: (id: string) => `#/tasks/${encodeURIComponent(id)}`,
   request: (id: string) => `#/requests/${encodeURIComponent(id)}`,
 } as const;
@@ -58,6 +64,12 @@ export function parseHash(hash: string): Route {
       return { page: "station" };
     case "/tasks":
       return { page: "tasks" };
+    case "/admin":
+      return { page: "admin" };
+    case "/attestations":
+      return { page: "attestations" };
+    case "/quality":
+      return { page: "quality" };
     default: {
       const decoded = decodeURIComponent(path);
       const request = REQUEST_ID.exec(decoded);

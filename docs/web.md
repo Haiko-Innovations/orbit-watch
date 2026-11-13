@@ -1,14 +1,15 @@
 # The web application
 
-Phase 3, steps 3.1 to 3.6. Code: [`web/`](../web). Decisions:
+Phase 3, steps 3.1 to 3.7. Code: [`web/`](../web). Decisions:
 [P3-01 to P3-11](decisions.md#phase-3-decisions),
 [D-25](decisions.md#d-25-the-web-project),
 [D-26](decisions.md#d-26-open-requests-are-public),
 [D-27](decisions.md#d-27-signing-in-with-a-wallet),
 [D-28](decisions.md#d-28-transactions-in-the-browser),
 [D-29](decisions.md#d-29-the-requesters-view),
-[D-30](decisions.md#d-30-the-observers-view) and
-[D-31](decisions.md#d-31-the-reviewers-view).
+[D-30](decisions.md#d-30-the-observers-view),
+[D-31](decisions.md#d-31-the-reviewers-view) and
+[D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages).
 
 > **Testnet only, no real value.** The web application runs locally
 > ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)). Every page
@@ -45,8 +46,30 @@ failed result.
 | Your review tasks | `#/tasks` | a reviewer's open tasks, real and calibration alike, and its record: calibration accuracy, votes, notes |
 | A task | `#/tasks/<id>` | the request, the challenge's reason, the files, the automated verification check by check, and the answer: approve or reject with reasons. A vote in a real round is the reviewer's EAS attestation, signed in its wallet; the page checks the answer, the reasons' SHA-256 and the delivery in the call data first |
 
-The administrator view follows in step 3.7
-([roadmap](roadmap.md#phase-3-web-application-target-version-040)).
+| Attestations | `#/attestations` | public: every automated result and reviewer's vote as an EAS attestation, with EAS Scan and explorer links on Base Sepolia ([`GET /v1/public/attestations`](api.md)) |
+| Station quality meter | `#/quality` | public: an observation file in, its quality report out; the file is not kept ([quality-meter.md](quality-meter.md)) |
+| Administration | `#/admin` | administrators only: every request with its status, delivery and payments; errors, transactions and the event log; `tick`; the reviewer registry, the timelock's operations and the data for the Safe; the simulator and the demo datasets |
+
+The public pages need no sign-in. The administrator view uses the API only,
+and the API checks every call's role, so the view can do nothing the API
+refuses ([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)).
+
+### Changing the reviewers
+
+A timelock owns the reviewer registry, and a 2-of-3 Safe is its only proposer
+(on Base Sepolia, [base-sepolia.md](base-sepolia.md)). Orbit Watch holds
+neither's keys. On Administration:
+
+1. Choose **Add a reviewer** or **Remove a reviewer**, give the wallet address
+   or the party, and **Prepare the Safe transaction**.
+2. **Download the batch file**, and in the Safe app open Apps → Transaction
+   Builder and drop the file in. Or enter its address and data as a custom
+   transaction. The Safe's owners sign and execute it: the timelock schedules
+   the change.
+3. The timelock's operations show it as waiting until its delay has passed
+   (48 hours on Base Sepolia, 60 seconds on the local stack), then as ready.
+   Anyone may then execute it: send the data under **Execute**, or load its
+   file in the Transaction Builder.
 
 ## Signing in
 
@@ -109,9 +132,11 @@ cd ../core && uv run python tests/local_stack.py --web ../web/dist
 
 Then open <http://127.0.0.1:8787/>. The local stack is a LOCAL Anvil chain
 with Base Sepolia's EAS code and fresh Orbit Watch contracts, the service on
-it, SIMULATED parties (a requester, four stations, the reviewers) with
-registered wallets, and three SIMULATED requests, two of them funded. Its
-clock starts at 2026-11-01 12:00 UTC. It writes `local-stack.json` with every
+it, SIMULATED parties (a requester, four stations, the reviewers, an
+administrator) with registered wallets, and SIMULATED requests in every
+state the views need. As on Base Sepolia, a timelock owns the reviewer
+registry and a Safe of three LOCAL TEST signers proposes to it; the local
+timelock waits 60 seconds. Its clock starts at 2026-11-01 12:00 UTC. It writes `local-stack.json` with every
 party's API key, address and keystore; the keys are public test keys that
 anyone can recompute from the parties' names, so never use them anywhere but
 a local chain. Stop it with Ctrl+C.

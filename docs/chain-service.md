@@ -80,6 +80,13 @@ apart as `pending`, `confirmed` or `failed`, each with a block explorer link
 transaction shows the contract's reason when the node can replay it, for
 example `not_a_reviewer`.
 
+**The reviewer registry's timelock** (step 3.7): when a timelock owns the
+registry, as on Base Sepolia, the service reads its logs in the same
+`eth_getLogs` calls as the escrow's. It keeps the operations the timelock
+schedules, executes and cancels, for the administrator view, and never sends
+anything to the timelock itself
+([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)).
+
 ## Wallets
 
 A party registers one wallet address by signing the API's registration

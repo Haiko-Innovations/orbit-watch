@@ -76,17 +76,20 @@ class Call:
 
 @dataclass(frozen=True)
 class Event:
-    """One decoded escrow event."""
+    """One decoded event of the escrow or, with ``source`` "timelock", of the timelock that
+    owns the reviewer registry (step 3.7)."""
 
     name: str
     args: dict[str, Any]
     block: int
     tx_hash: str
     log_index: int
+    source: str = "escrow"
 
 
 class OrbitWatchChain:
-    """The escrow at ``escrow_address`` and the EAS contract and token it names."""
+    """The escrow at ``escrow_address`` and the EAS contract, token and reviewer registry it
+    names; and the registry's owner, when that is a timelock (``timelock``, else None)."""
 
     def __init__(self, w3: Web3, escrow_address: str):
         self.w3 = w3
@@ -103,15 +106,37 @@ class OrbitWatchChain:
         self.vote_schema = self.escrow.functions.voteSchemaUid().call()
         self.fee_recipient = self.escrow.functions.feeRecipient().call()
         self.verifier = self.escrow.functions.verifier().call()
+        self.registry = w3.eth.contract(
+            address=self.escrow.functions.registry().call(), abi=load("OrbitWatchReviewerRegistry")
+        )
+        self.timelock = self._timelock()
+        # By address and topic: the escrow's Cancelled and the timelock's share a signature.
         self._events = {
-            event().topic: event()
-            for event in (getattr(self.escrow.events, e["name"]) for e in self._event_abis())
+            (contract.address, event().topic): (source, event())
+            for source, contract in (("escrow", self.escrow), ("timelock", self.timelock))
+            if contract is not None
+            for event in (
+                getattr(contract.events, e["name"])
+                for e in contract.abi
+                if e.get("type") == "event"
+            )
         }
         self._block_times: dict[int, int] = {}
         self.log_chunk = LOG_CHUNK
 
-    def _event_abis(self) -> list[dict[str, Any]]:
-        return [item for item in self.escrow.abi if item.get("type") == "event"]
+    def _timelock(self) -> Any | None:
+        """The registry's owner as a TimelockController, or None if it is not one (in the
+        tests, the deployer's own account owns it)."""
+        owner = self.registry.functions.owner().call()
+        if not self.w3.eth.get_code(owner):
+            return None
+        candidate = self.w3.eth.contract(address=owner, abi=load("TimelockController"))
+        try:
+            candidate.functions.getMinDelay().call()
+            candidate.functions.PROPOSER_ROLE().call()
+        except Exception:  # another kind of contract
+            return None
+        return candidate
 
     # ------------------------------------------------------------------ reading
 
@@ -147,11 +172,7 @@ class OrbitWatchChain:
         }
 
     def is_reviewer(self, address: str) -> bool:
-        registry = self.w3.eth.contract(
-            address=self.escrow.functions.registry().call(),
-            abi=load("OrbitWatchReviewerRegistry"),
-        )
-        return registry.functions.isReviewer(to_checksum_address(address)).call()
+        return self.registry.functions.isReviewer(to_checksum_address(address)).call()
 
     def credits(self, sent: Sent) -> list[Credit]:
         """The payouts a settlement transaction credited."""
@@ -177,8 +198,8 @@ class OrbitWatchChain:
         return self._block_times[number]
 
     def events(self, from_block: int, to_block: int) -> list[Event]:
-        """The escrow's events in a block range, in chain order, read in ranges the endpoint
-        accepts."""
+        """The escrow's events, and the timelock's, in a block range, in chain order, read in
+        ranges the endpoint accepts."""
         logs: list[Any] = []
         start = from_block
         while start <= to_block:
@@ -194,9 +215,11 @@ class OrbitWatchChain:
             start = end + 1
         found = []
         for log in sorted(logs, key=lambda item: (item["blockNumber"], item["logIndex"])):
-            event = self._events.get(log["topics"][0].to_0x_hex()) if log["topics"] else None
-            if event is None:  # pragma: no cover - the escrow emits only its own events
+            topic = log["topics"][0].to_0x_hex() if log["topics"] else None
+            known = self._events.get((to_checksum_address(log["address"]), topic))
+            if known is None:  # an event the service does not follow (RoleGranted, ...)
                 continue
+            source, event = known
             decoded = event.process_log(log)
             found.append(
                 Event(
@@ -205,15 +228,21 @@ class OrbitWatchChain:
                     log["blockNumber"],
                     log["transactionHash"].to_0x_hex(),
                     log["logIndex"],
+                    source,
                 )
             )
         return found
 
     def _query_logs(self, from_block: int, to_block: int) -> list[Any]:
-        """One eth_getLogs call for the escrow's logs."""
+        """One eth_getLogs call for the escrow's logs and the timelock's."""
+        addresses = [c.address for c in (self.escrow, self.timelock) if c is not None]
         return list(
             self.w3.eth.get_logs(
-                {"address": self.escrow.address, "fromBlock": from_block, "toBlock": to_block}
+                {
+                    "address": addresses if len(addresses) > 1 else addresses[0],
+                    "fromBlock": from_block,
+                    "toBlock": to_block,
+                }
             )
         )
 
