@@ -149,3 +149,73 @@ export interface Session {
 export async function currentSession(fetcher: typeof fetch = fetch): Promise<Session | null> {
   return (await getJson<{ session: Session | null }>("/v1/session", fetcher)).session;
 }
+
+export interface Target {
+  norad_id: number;
+  name: string | null;
+}
+
+export interface RequestListItem {
+  request_id: string;
+  requester: string;
+  title: string | null;
+  status: string;
+  outcome: string | null;
+}
+
+export interface Payout {
+  party: string;
+  points: number;
+  reason: string;
+}
+
+export interface ChainEvent {
+  event: string;
+  at: string;
+  block: number;
+  tx_hash: string;
+  explorer: string | null;
+}
+
+/** GET /v1/requests/{id}: the lifecycle record and what follows from it. */
+export interface RequestView {
+  summary: {
+    request_id: string;
+    status: string;
+    outcome: string | null;
+    outcome_reason: string | null;
+    automated_verdict: string | null;
+    reviewers: string[];
+    votes: [string, boolean][];
+    settlement: { plan: { outcome: string; deposit: number; payouts: Payout[] } } | null;
+  };
+  record: {
+    request_id: string;
+    requester: string;
+    status: string;
+    terms: OpenRequest["terms"] & { verification_timeout_hours: number; request_sha256: string };
+    split: {
+      observer: number;
+      reviewer: number;
+      platform_fee: number;
+      challenge_reserve: number;
+      total: number;
+    } | null;
+    reserved_by: string | null;
+    reservation_expires_at: string | null;
+    observer: string | null;
+    delivery_sha256: string | null;
+    delivered_at: string | null;
+    automated_verdict: string | null;
+    report_sha256: string | null;
+    challenge_deadline: string | null;
+    challenger: string | null;
+    challenge_reason: string | null;
+    reviewers: string[];
+    review_deadline: string | null;
+    outcome: string | null;
+    outcome_reason: string | null;
+  };
+  publication: { state: string; public_from: string | null; licence: string };
+  chain?: { on_chain: boolean; status: string | null; events: ChainEvent[] };
+}

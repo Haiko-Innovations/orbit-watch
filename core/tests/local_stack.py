@@ -12,7 +12,9 @@ One command starts, on this machine only:
 * three SIMULATED requests: two funded and open for observers, one opened but not funded;
 * one SIMULATED request that ran its course: SIM-ESPOO delivered good observations, nobody
   challenged, and the escrow credited the station 1 TESTUSD and the requester 0.3 back,
-  for them to withdraw. Seeding it moves the chain's clock to 2026-11-02 05:01 UTC.
+  for them to withdraw. Seeding it moves the chain's clock to 2026-11-02 05:01 UTC;
+* fresh SIMULATED good observations of SIM-CUBESAT-A by SIM-ESPOO, never delivered yet,
+  in ``datasets/`` (the service refuses data delivered before).
 
     cd contracts && forge build
     cd ../web && npm run build
@@ -46,6 +48,8 @@ from orbit_watch.catalog import parse_catalog
 from orbit_watch.sim.phase1_demo import ESPOO, KUOPIO, OULU, REQUESTER, TAMPERE, _deliveries
 from orbit_watch.sim.phase1_demo import _packaged as packaged
 from orbit_watch.sim.phase1_demo import _request_bytes as request_bytes
+from orbit_watch.sim.scenarios import TARGET, _sim_json, _window
+from orbit_watch.sim.simulator import load_profile
 from orbit_watch.timeutil import parse_utc
 
 STATIONS = (ESPOO, OULU, KUOPIO, TAMPERE)
@@ -62,6 +66,7 @@ SETTLED = ("SIM-REQ-3000", "Identify SIM-CUBESAT-A (delivered and accepted)")
 AFTER_WINDOW = "2026-11-02T04:00:00Z"  # the requests' window ended at 03:00
 AFTER_CHALLENGE = "2026-11-02T05:01:00Z"  # its one-hour challenge period is over
 ADMIN = "admin:local"
+FRESH_SEEDS = (201, 202)  # SIM-ESPOO's good observations for tests, unlike the seeded ones
 
 
 class StackError(RuntimeError):
@@ -80,6 +85,7 @@ class LocalStack:
         from orbit_watch.service import VerificationContext, open_service
 
         self.directory = directory
+        self.datasets: list[str] = []
         self.parties = [REQUESTER, *STATIONS, *REVIEWERS]
         self.deployment = Deployment(
             GENESIS,
@@ -248,6 +254,29 @@ class LocalStack:
         if settled["summary"]["outcome"] != "accepted":
             raise StackError(f"{request_id} was not accepted: {settled['summary']}")
 
+    def write_datasets(self) -> list[str]:
+        """Good observations that pass verification and were never delivered."""
+        folder = self.directory / "datasets"
+        folder.mkdir(exist_ok=True)
+        catalog = parse_catalog(packaged("catalog.json"))
+        start, end = _window()
+        written = []
+        for seed in FRESH_SEEDS:
+            path = folder / f"station-SIM-ESPOO-{seed}.json"
+            path.write_bytes(
+                _sim_json(
+                    catalog,
+                    target_id=TARGET,
+                    profile=load_profile("sim-cmos-gps"),
+                    start=start,
+                    end=end,
+                    seed=seed,
+                    max_passes=2,
+                )
+            )
+            written.append(str(path))
+        return written
+
     def describe(self) -> dict:
         return {
             "notice": "LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.",
@@ -271,6 +300,7 @@ class LocalStack:
             },
             "requests": [request_id for request_id, _, _ in REQUESTS],
             "settled": SETTLED[0],
+            "datasets": {ESPOO: self.datasets},
         }
 
     def stop(self) -> None:
@@ -296,6 +326,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--dir", type=Path, help="where the stack keeps its state (default: a new temporary one)"
     )
+    parser.add_argument(
+        "--replace",
+        action="store_true",
+        help="start afresh in --dir if it holds an earlier local stack (its local-stack.json)",
+    )
     args = parser.parse_args(argv)
     reason = unavailable()
     if reason:
@@ -303,6 +338,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     temporary = args.dir is None
     directory = args.dir or Path(tempfile.mkdtemp(prefix="orbit-watch-local-"))
+    if args.replace and (directory / "local-stack.json").is_file():
+        shutil.rmtree(directory)  # an earlier local stack's state, and nothing else
     if (directory / "service").exists():
         print(f"local stack: {directory} is in use; give a new --dir", file=sys.stderr)
         return 2
@@ -315,6 +352,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         stack.seed()
         stack.seed_settled()
+        stack.datasets = stack.write_datasets()
         info = directory / "local-stack.json"
         info.write_text(json.dumps(stack.describe(), indent=2) + "\n", encoding="utf-8")
         print("LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.")
@@ -322,7 +360,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.web:
             print(f"Web application: {stack.api}/")
         print(f"Keys, wallets and addresses: {info}")
-        print("Ready. Stop with Ctrl+C.", flush=True)
+        # The end-to-end tests read the keys from this line (web/playwright.config.ts).
+        print(f"Ready (local-stack.json: {info}). Stop with Ctrl+C.", flush=True)
         stopped.wait()
     finally:
         stack.stop()

@@ -35,3 +35,27 @@ export function shortHex(value: string): string {
 export function addressLink(explorer: string | null, address: string): string | null {
   return explorer ? `${explorer.replace(/\/$/, "")}/address/${address}` : null;
 }
+
+/** A decimal amount typed by a person, in token units: "1.3" with 6 decimals is 1300000n.
+ * Null if it is not a plain non-negative number with at most ``decimals`` decimals. */
+export function parseUnits(text: string, decimals: number): bigint | null {
+  const match = /^(\d+)(?:\.(\d*))?$/.exec(text.trim());
+  if (!match) return null;
+  const whole = match[1] ?? "0";
+  const fraction = match[2] ?? "";
+  if (fraction.length > decimals) return null;
+  return BigInt(whole + fraction.padEnd(decimals, "0"));
+}
+
+/** The value of an <input type="datetime-local">, read as UTC: "2026-11-01T15:00" is
+ * "2026-11-01T15:00:00.000Z". Null if empty or not a time. */
+export function utcFromInput(value: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value)) return null;
+  const time = new Date(`${value}Z`);
+  return Number.isNaN(time.getTime()) ? null : time.toISOString();
+}
+
+/** An ISO time as the value of an <input type="datetime-local">, in UTC. */
+export function inputFromUtc(iso: string): string {
+  return new Date(iso).toISOString().slice(0, 16);
+}

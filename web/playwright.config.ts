@@ -14,11 +14,12 @@ export default defineConfig({
   use: { baseURL: `http://127.0.0.1:${port}`, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `uv run --locked python tests/local_stack.py --port ${port} --chain-port ${chainPort} --web ../web/dist`,
+    command: `uv run --locked python tests/local_stack.py --port ${port} --chain-port ${chainPort} --dir ../web/.e2e-stack --replace --web ../web/dist`,
     cwd: "../core",
-    // The stack says "Ready." once its SIMULATED requests are in place.
+    // The stack says "Ready" once its SIMULATED requests are in place. Its keys are in
+    // web/.e2e-stack/local-stack.json, which the tests read (e2e/stack.ts).
     url: `http://127.0.0.1:${port}/v1/health`,
-    wait: { stdout: /Ready\./ },
+    wait: { stdout: /Ready/ },
     timeout: 180_000,
     reuseExistingServer: false,
     stdout: "pipe",

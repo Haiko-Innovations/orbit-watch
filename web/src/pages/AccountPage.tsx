@@ -1,7 +1,8 @@
-import { lazy, Suspense, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { type ChainInfo, deleteJson, getJson, postJson, type Session } from "../api";
 import type { Prepared } from "../chain/describe";
 import type { TransactionView } from "../chain/send";
+import { actionKey, SendFlow } from "../components/SendFlow";
 import { Loaded, MaybeLink } from "../components/Status";
 import { addressLink, formatAmount, formatUtc, shortHex } from "../format";
 import { paths } from "../router";
@@ -9,18 +10,12 @@ import { strings } from "../strings";
 import { useResource } from "../useResource";
 
 const s = strings.account;
-// The wallet code (viem) loads only when a transaction is to be sent.
-const TransactionFlow = lazy(() => import("../components/TransactionFlow"));
 
 interface Balance {
   address: string | null;
   balance: number | null;
   withdrawable: number | null;
   token: { symbol: string; decimals: number };
-}
-
-function newKey(): string {
-  return crypto.randomUUID();
 }
 
 function BalanceSection({ session, chain }: { session: Session; chain: ChainInfo }) {
@@ -42,7 +37,7 @@ function BalanceSection({ session, chain }: { session: Session; chain: ChainInfo
     setProblem(null);
     try {
       setPrepared(
-        await postJson<Prepared>("/v1/wallet/withdraw", {}, { idempotencyKey: newKey() }),
+        await postJson<Prepared>("/v1/wallet/withdraw", {}, { idempotencyKey: actionKey() }),
       );
     } catch (error) {
       setProblem(error instanceof Error ? error.message : String(error));
@@ -71,15 +66,13 @@ function BalanceSection({ session, chain }: { session: Session; chain: ChainInfo
                 <dd>{formatAmount(value.withdrawable ?? 0, value.token)}</dd>
               </dl>
               {prepared ? (
-                <Suspense fallback={<p className="muted">{strings.loading}</p>}>
-                  <TransactionFlow
-                    prepared={prepared}
-                    chain={chain}
-                    session={session}
-                    onDone={closeFlow}
-                    onCancel={closeFlow}
-                  />
-                </Suspense>
+                <SendFlow
+                  prepared={prepared}
+                  chain={chain}
+                  session={session}
+                  onDone={closeFlow}
+                  onCancel={closeFlow}
+                />
               ) : (value.withdrawable ?? 0) > 0 ? (
                 <button type="button" onClick={() => void withdraw()}>
                   {strings.balance.withdraw(formatAmount(value.withdrawable ?? 0, value.token))}

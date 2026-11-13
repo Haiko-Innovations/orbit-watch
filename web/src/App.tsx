@@ -4,9 +4,12 @@ import { Logo } from "./components/Logo";
 import { Loaded } from "./components/Status";
 import { TestnetBanner } from "./components/TestnetBanner";
 import { AccountPage } from "./pages/AccountPage";
+import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { NetworkPage } from "./pages/NetworkPage";
+import { NewRequestPage } from "./pages/NewRequestPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { OpenRequestsPage } from "./pages/OpenRequestsPage";
+import { RequestPage } from "./pages/RequestPage";
 import { paths, type Route, useRoute } from "./router";
 import { strings } from "./strings";
 import { useResource } from "./useResource";
@@ -29,6 +32,9 @@ const titles: Record<Route["page"], string> = {
   "open-requests": strings.openRequests.title,
   "sign-in": strings.signIn.title,
   account: strings.account.title,
+  "my-requests": strings.myRequests.title,
+  "new-request": strings.newRequest.title,
+  request: strings.request.terms,
   "not-found": strings.notFound.title,
 };
 
@@ -66,6 +72,7 @@ export function App() {
   }, [route.page]);
 
   const chain = service.state === "ready" ? service.value.chain : null;
+  const requestId = route.page === "request" ? route.id : null;
   const signedIn = session.state === "ready" ? session.value : null;
   return (
     <>
@@ -89,6 +96,14 @@ export function App() {
           <NavLink href={paths.openRequests} current={route.page === "open-requests"}>
             {strings.nav.openRequests}
           </NavLink>
+          {signedIn?.role === "requester" ? (
+            <NavLink
+              href={paths.myRequests}
+              current={route.page === "my-requests" || route.page === "new-request"}
+            >
+              {strings.nav.myRequests}
+            </NavLink>
+          ) : null}
           {signedIn ? (
             <NavLink href={paths.account} current={route.page === "account"}>
               {signedIn.party}
@@ -116,6 +131,24 @@ export function App() {
                     <Suspense fallback={<p className="muted">{strings.loading}</p>}>
                       <SignInPage chain={chain} onSignedIn={reloadSession} />
                     </Suspense>
+                  );
+                case "my-requests":
+                case "new-request":
+                case "request":
+                  return (
+                    <Loaded resource={session} reload={reloadSession}>
+                      {(current) =>
+                        current === null || chain === null ? (
+                          <AccountPage session={null} chain={chain} onSignedOut={reloadSession} />
+                        ) : route.page === "my-requests" ? (
+                          <MyRequestsPage session={current} />
+                        ) : route.page === "new-request" ? (
+                          <NewRequestPage />
+                        ) : (
+                          <RequestPage id={requestId ?? ""} chain={chain} session={current} />
+                        )
+                      }
+                    </Loaded>
                   );
                 case "account":
                   return (

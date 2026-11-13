@@ -51,6 +51,15 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   the escrow with a withdrawal, and the party's transactions (D-28). The local
   stack seeds a settled request, so that a station and the requester have
   credit to withdraw.
+- The requester's view (phase 3, step 3.4): Your requests, a form for a new
+  request (target from the allow-list, window and deadline in UTC,
+  requirements, time limits), and a page per request with its status and
+  progress, terms, files to download, payments and chain events. Its
+  requester publishes, funds (seeing the deposit and its split first), cancels
+  and challenges a passed result there, each signed with the requester's own
+  wallet (D-29). `GET /v1/public/targets` gives the allow-list, and
+  `GET /v1/requests` also gives each request's requester and title. The local
+  stack writes fresh SIMULATED good observations for tests.
 
 ### Changed
 
