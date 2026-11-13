@@ -15,7 +15,7 @@ has passed.
 | Licence | CC BY 4.0 (`https://creativecommons.org/licenses/by/4.0/`), fixed in the request's terms. |
 | Embargo | 0 to 30 days, chosen by the requester in the terms ([P-07](decisions.md#p-07-default-time-limits-fixed-in-the-request-terms)). It runs from the moment the request is **settled**, so the outcome is always known before the data is public. |
 | What is published | The request document, the observation file and the automated verification report. An expired or cancelled request without a delivery publishes only its request. |
-| Before publication | Only the parties of the request (requester, observer, the reviewers of its round) and administrators can download its files and report. Everyone else gets `404`, so the API does not reveal what exists. |
+| Before publication | Only the parties of the request (requester, observer, the reviewers of its round) and administrators can download its files and report. The request document is also open to any party while the request is opened or funded, and to the station that reserved it ([D-30](decisions.md#d-30-the-observers-view)). Everyone else gets `404`, so the API does not reveal what exists. |
 | Calibration files | Never public. Only the reviewer who received the calibration task (and administrators) can download them. |
 | Retention | Files are kept by SHA-256 and never deleted ([storage.md](storage.md)). |
 | Permanent URL | `/v1/public/files/{sha256}`. The address is the content's hash, so it never changes and always returns the same bytes. Responses carry `Link: <licence URL>; rel="license"` and are cacheable forever. |

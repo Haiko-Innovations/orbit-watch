@@ -4,12 +4,14 @@ import { Logo } from "./components/Logo";
 import { Loaded } from "./components/Status";
 import { TestnetBanner } from "./components/TestnetBanner";
 import { AccountPage } from "./pages/AccountPage";
+import { MyObservationsPage } from "./pages/MyObservationsPage";
 import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { NetworkPage } from "./pages/NetworkPage";
 import { NewRequestPage } from "./pages/NewRequestPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { OpenRequestsPage } from "./pages/OpenRequestsPage";
 import { RequestPage } from "./pages/RequestPage";
+import { StationPage } from "./pages/StationPage";
 import { paths, type Route, useRoute } from "./router";
 import { strings } from "./strings";
 import { useResource } from "./useResource";
@@ -33,6 +35,8 @@ const titles: Record<Route["page"], string> = {
   "sign-in": strings.signIn.title,
   account: strings.account.title,
   "my-requests": strings.myRequests.title,
+  "my-observations": strings.myObservations.title,
+  station: strings.station.title,
   "new-request": strings.newRequest.title,
   request: strings.request.terms,
   "not-found": strings.notFound.title,
@@ -96,6 +100,16 @@ export function App() {
           <NavLink href={paths.openRequests} current={route.page === "open-requests"}>
             {strings.nav.openRequests}
           </NavLink>
+          {signedIn?.role === "station" ? (
+            <>
+              <NavLink href={paths.myObservations} current={route.page === "my-observations"}>
+                {strings.nav.myObservations}
+              </NavLink>
+              <NavLink href={paths.station} current={route.page === "station"}>
+                {strings.nav.myStation}
+              </NavLink>
+            </>
+          ) : null}
           {signedIn?.role === "requester" ? (
             <NavLink
               href={paths.myRequests}
@@ -125,7 +139,7 @@ export function App() {
                 case "network":
                   return <NetworkPage health={health} chain={chain} />;
                 case "open-requests":
-                  return <OpenRequestsPage chain={chain} />;
+                  return <OpenRequestsPage chain={chain} session={signedIn} />;
                 case "sign-in":
                   return (
                     <Suspense fallback={<p className="muted">{strings.loading}</p>}>
@@ -134,6 +148,8 @@ export function App() {
                   );
                 case "my-requests":
                 case "new-request":
+                case "my-observations":
+                case "station":
                 case "request":
                   return (
                     <Loaded resource={session} reload={reloadSession}>
@@ -144,6 +160,10 @@ export function App() {
                           <MyRequestsPage session={current} />
                         ) : route.page === "new-request" ? (
                           <NewRequestPage />
+                        ) : route.page === "my-observations" ? (
+                          <MyObservationsPage session={current} />
+                        ) : route.page === "station" ? (
+                          <StationPage session={current} />
                         ) : (
                           <RequestPage id={requestId ?? ""} chain={chain} session={current} />
                         )

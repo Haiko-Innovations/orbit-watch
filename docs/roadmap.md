@@ -31,8 +31,8 @@ phase 0's one open criterion, a real public IOD example, is still open
 P3-11 were approved on 2026-11-13 ([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)). Done so far: the app's
 project in `web/`, served by the service, its public pages and a local stack
 in one command (3.1), signing in with a wallet (3.2), transactions in the
-browser with balances and withdrawals (3.3), and the requester's view (3.4)
-([web.md](web.md)).
+browser with balances and withdrawals (3.3), the requester's view (3.4) and
+the observer's view (3.5) ([web.md](web.md)).
 
 ## Next steps
 
@@ -125,7 +125,7 @@ and **WCAG 2.2 AA**.
 | ✅ **3.2 Sign in with a wallet** ([#48](https://github.com/Haiko-Innovations/orbit-watch/issues/48)) | Wallet discovery (EIP-6963), the right chain, Sign-In with Ethereum (ERC-4361) with a session cookie, sign-out; requesters and stations sign up themselves. | An end-to-end test signs in with a test wallet; replayed, expired and foreign messages are refused; no key or secret reaches the browser, tested. |
 | ✅ **3.3 Transactions in the browser** ([#49](https://github.com/Haiko-Innovations/orbit-watch/issues/49)) | One flow for every prepared transaction: what it does, the wallet signs and sends, pending, confirmed or failed with explorer links; wrong chain, rejected signature and revert explained; balances and withdrawals. | A withdrawal runs end to end in the browser; each failure case is shown and tested. |
 | ✅ **3.4 Requester view** ([#50](https://github.com/Haiko-Innovations/orbit-watch/issues/50)) | Create a request (target from the allow-list, window, deadline, delivery requirements), see the split and fees before funding, fund, follow and challenge, download the data and report, see payments and refunds. | End to end: a request created and funded in the browser is delivered and settled, and its report downloaded. |
-| **3.5 Observer view** ([#51](https://github.com/Haiko-Innovations/orbit-watch/issues/51)) | Register a simulated station, browse and reserve open requests, upload observations (SHA-256 checked), see why a delivery was accepted or rejected, challenge, follow rewards. | End to end: reserve and deliver in the browser; accepted and rejected deliveries show their reasons. |
+| ✅ **3.5 Observer view** ([#51](https://github.com/Haiko-Innovations/orbit-watch/issues/51)) | Register a simulated station, browse and reserve open requests, upload observations (SHA-256 checked), see why a delivery was accepted or rejected, challenge, follow rewards. | End to end: reserve and deliver in the browser; accepted and rejected deliveries show their reasons. |
 | **3.6 Reviewer view** ([#52](https://github.com/Haiko-Innovations/orbit-watch/issues/52)) | Assigned tasks, the report and checks, approve or reject with a reason signed as an EAS attestation, rewards and accuracy. | End to end: votes cast in the browser are attestations on the local chain, and the round settles. |
 | **3.7 Administrator view and public pages** ([#53](https://github.com/Haiko-Innovations/orbit-watch/issues/53)) | Requests, deliveries, payments, errors and the event log; `tick`; the reviewer registry, the timelock's queue and Safe transactions to propose in the Safe's own app; simulator and demo datasets; the station quality meter and a public attestation browser. | End to end for the administrator; the view can do nothing the API refuses, tested; public pages work without signing in. |
 | **3.8 Phase 3 demo** ([#54](https://github.com/Haiko-Innovations/orbit-watch/issues/54)) | The whole chain in the browser on Base Sepolia with a wallet per role, an accessibility review of every view, and the phase 3 summary. | The phase 3 completion criteria below are met; release 0.4.0. |

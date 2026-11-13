@@ -716,10 +716,22 @@ class RequestService:
         if role == "admin":
             return sha256 in self.files
         for request_id in sorted(self.records):
-            if any(digest == sha256 for _, digest in self.request_files(request_id)):
+            roles = {role for role, digest in self.request_files(request_id) if digest == sha256}
+            if roles:
                 if self.publication(request_id, now)["state"] == "published":
                     return True
                 if party is not None and party in self.parties(request_id):
+                    return True
+                # The request document invites observers while the request is open (D-26),
+                # and the station that reserved it needs it to observe (step 3.5).
+                record = self.records[request_id]
+                if (
+                    "request" in roles
+                    and party is not None
+                    and (
+                        record.status in (Status.OPEN, Status.FUNDED) or party == record.reserved_by
+                    )
+                ):
                     return True
         return any(
             task.reviewer == party

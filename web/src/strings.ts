@@ -12,6 +12,8 @@ export const strings = {
     network: "Network",
     openRequests: "Open requests",
     myRequests: "Your requests",
+    myObservations: "Your observations",
+    myStation: "Your station",
   },
   skip: "Skip to content",
   loading: "Loading…",
@@ -146,6 +148,8 @@ export const strings = {
       "The chain has not confirmed it yet. It stays in your transactions with its status.",
     failedOnChain: (error: string) => `The chain did not accept it: ${error}`,
     declined: "You declined in your wallet. Nothing was sent.",
+    noGas:
+      "Your wallet has no ETH for the network fee, so nothing was sent. On the testnet, get a little from a faucet (see docs/base-sepolia.md) and try again.",
     notSent: (detail: string) => `The wallet did not send the transaction: ${detail}`,
     problem: "The transaction was not completed",
     contracts: {
@@ -173,6 +177,8 @@ export const strings = {
       cancel: (id: string) => `Cancel ${id} and get the deposit back`,
       settle: (id: string) => `Settle ${id}`,
     },
+    deliverDetail: (sha: string) =>
+      `The file's SHA-256 ${sha} goes on chain; the file goes to the service.`,
     vote: {
       title: (id: string) => `Record your vote on ${id}`,
       detail: "Your vote becomes a public EAS attestation signed by your wallet.",
@@ -187,6 +193,7 @@ export const strings = {
       value:
         "The transaction would send ether, which Orbit Watch never asks for, so it was not sent.",
       request: "The transaction is about another request than the one shown, so it was not sent.",
+      file: "The transaction records another file than the one you chose, so it was not sent.",
       function: (name: string) => `The call ${name} is not one you make here, so it was not sent.`,
       contract: (to: string) =>
         `${to} is not one of Orbit Watch's contracts, so the transaction was not sent.`,
@@ -296,6 +303,8 @@ export const strings = {
     challengeTitle: "Challenge the result",
     challengeIntro:
       "If you think the automated result is wrong, say why. Three reviewers chosen by the escrow then decide, 2 of 3.",
+    observerChallengeIntro:
+      "The automated verification rejected your delivery. If you think it is wrong, say why: three reviewers chosen by the escrow then decide, 2 of 3.",
     reason: "Reason",
     prepareChallenge: "Prepare the challenge",
     files: "Files",
@@ -314,6 +323,61 @@ export const strings = {
     chainEvents: "On chain",
     notYours: "You are not a party of this request: its documents and files are not shown.",
     back: "Back to your requests",
+  },
+  station: {
+    title: "Your station",
+    intro:
+      "Your station's profile: where it is and what it observes with. Only you and the administrators see it, but the coordinates go into every observation file you deliver, which becomes public after settlement.",
+    none: "You have not registered your station yet.",
+    template: "Start from",
+    templateHint:
+      "SIMULATED instruments from Orbit Watch: the profile keeps its noise and cadence.",
+    name: "Station name",
+    latitude: "Latitude (degrees, north positive)",
+    longitude: "Longitude (degrees, east positive)",
+    altitude: "Altitude (metres)",
+    instrument: "Instrument",
+    save: "Save the profile",
+    saved: "Saved.",
+    invalid: "Check the fields: latitude −90 to 90, longitude −180 to 180, and a name.",
+    stationId: "Station ID",
+  },
+  myObservations: {
+    title: "Your observations",
+    intro: "The requests you reserved or delivered.",
+    none: "You have not reserved a request yet. Choose one among the open requests.",
+    browse: "Browse open requests",
+  },
+  reserve: {
+    button: (id: string) => `Reserve ${id}`,
+    note: "Reserving gives you the request until the reservation ends. The chain records it.",
+  },
+  delivery: {
+    title: "Deliver your observations",
+    intro:
+      "Choose your observation file (Orbit Watch JSON, IOD or CCSDS TDM). The page computes its SHA-256; the chain records that, and the service checks the file against it.",
+    file: "Observation file",
+    format: "Format",
+    formats: { json: "Orbit Watch JSON", iod: "IOD", tdm: "CCSDS TDM" } as Record<string, string>,
+    simulate: "Simulate observations with your station",
+    simulateNote:
+      "No telescope? The service simulates SIMULATED observations of this target with your station's profile.",
+    noProfile: "Register your station first to simulate observations.",
+    chosen: (name: string, size: number) => `${name}, ${size} bytes`,
+    sha: "SHA-256",
+    simulatedFile: "This file says it is SIMULATED.",
+    prepare: "Prepare the delivery",
+    reading: "Reading the file…",
+  },
+  verification: {
+    title: "Why: the automated verification",
+    verdict: (verdict: string) => `Verdict: ${verdict}`,
+    results: {
+      pass: "passed",
+      fail: "failed",
+      skipped: "skipped",
+      inconclusive: "inconclusive",
+    } as Record<string, string>,
   },
   footer: {
     source: "Source code",

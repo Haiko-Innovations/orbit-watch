@@ -3,10 +3,12 @@ import {
   ApiError,
   type ChainInfo,
   getJson,
+  postFile,
   postJson,
   type RequestDocument,
   type RequestView,
   type Session,
+  type VerificationReport,
 } from "../api";
 import type { Prepared } from "../chain/describe";
 import { actionKey, SendFlow } from "../components/SendFlow";
@@ -192,9 +194,11 @@ function FundForm({
 
 function ChallengeForm({
   requestId,
+  intro,
   onPrepared,
 }: {
   requestId: string;
+  intro: string;
   onPrepared: (p: Prepared) => void;
 }) {
   const [reason, setReason] = useState("");
@@ -224,7 +228,7 @@ function ChallengeForm({
   return (
     <form className="panel" onSubmit={prepare} aria-labelledby={titleId}>
       <h2 id={titleId}>{s.challengeTitle}</h2>
-      <p className="muted">{s.challengeIntro}</p>
+      <p className="muted">{intro}</p>
       <label htmlFor={reasonId}>{s.reason}</label>
       <textarea
         id={reasonId}
@@ -316,7 +320,7 @@ function RequesterActions({
         <FundForm chain={chain} requestId={id} onPrepared={setPrepared} />
       ) : null}
       {status === "challenge_period" && record.automated_verdict === "pass" ? (
-        <ChallengeForm requestId={id} onPrepared={setPrepared} />
+        <ChallengeForm requestId={id} intro={s.challengeIntro} onPrepared={setPrepared} />
       ) : null}
       {cancellable ? (
         <p>
@@ -336,6 +340,242 @@ function RequesterActions({
           {problem}
         </p>
       ) : null}
+    </>
+  );
+}
+
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", bytes as BufferSource);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function formatOf(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".iod") || lower.endsWith(".txt")) return "iod";
+  if (lower.endsWith(".tdm") || lower.endsWith(".kvn") || lower.endsWith(".xml")) return "tdm";
+  return "json";
+}
+
+function saysSimulated(bytes: Uint8Array): boolean {
+  try {
+    return (
+      (JSON.parse(new TextDecoder().decode(bytes)) as { simulated?: unknown }).simulated === true
+    );
+  } catch {
+    return /simulated\s*=\s*true/i.test(new TextDecoder().decode(bytes.slice(0, 4096)));
+  }
+}
+
+interface Chosen {
+  name: string;
+  bytes: Uint8Array;
+  sha256: string;
+  format: string;
+}
+
+function DeliveryForm({
+  requestId,
+  onPrepared,
+}: {
+  requestId: string;
+  onPrepared: (prepared: Prepared, sha256: string) => void;
+}) {
+  const d = strings.delivery;
+  const ids = { file: useId(), format: useId(), title: useId() };
+  const [chosen, setChosen] = useState<Chosen | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const base = `/v1/requests/${encodeURIComponent(requestId)}`;
+
+  async function choose(name: string, bytes: Uint8Array, format?: string) {
+    setChosen({ name, bytes, sha256: await sha256Hex(bytes), format: format ?? formatOf(name) });
+  }
+
+  async function simulate() {
+    setBusy(true);
+    setProblem(null);
+    try {
+      const made = await postJson<{ file_name: string; observations: string }>(
+        `${base}/simulate`,
+        {},
+      );
+      await choose(made.file_name, new TextEncoder().encode(made.observations), "json");
+    } catch (error) {
+      setProblem(
+        error instanceof ApiError && error.code === "no_profile" ? d.noProfile : errorText(error),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function prepare(event: React.FormEvent) {
+    event.preventDefault();
+    if (!chosen) return;
+    setBusy(true);
+    setProblem(null);
+    try {
+      const prepared = await postFile<Prepared>(
+        `${base}/deliveries?format=${chosen.format}`,
+        chosen.bytes,
+        chosen.sha256,
+        actionKey(),
+      );
+      onPrepared(prepared, chosen.sha256);
+    } catch (error) {
+      setProblem(errorText(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="panel" onSubmit={prepare} aria-labelledby={ids.title}>
+      <h2 id={ids.title}>{d.title}</h2>
+      <p className="muted">{d.intro}</p>
+      <div className="field">
+        <label htmlFor={ids.file}>{d.file}</label>
+        <input
+          id={ids.file}
+          type="file"
+          accept=".json,.iod,.txt,.tdm,.kvn,.xml"
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            if (file) await choose(file.name, new Uint8Array(await file.arrayBuffer()));
+          }}
+        />
+      </div>
+      <p>
+        <button type="button" className="secondary" disabled={busy} onClick={() => void simulate()}>
+          {d.simulate}
+        </button>{" "}
+        <span className="muted">{d.simulateNote}</span>
+      </p>
+      {chosen ? (
+        <div aria-live="polite">
+          <p>
+            <strong>{d.chosen(chosen.name, chosen.bytes.length)}</strong>{" "}
+            {saysSimulated(chosen.bytes) ? (
+              <span className="badge">{strings.simulated}</span>
+            ) : null}
+          </p>
+          <p>
+            {d.sha}:{" "}
+            <code className="hex" data-testid="delivery-sha256">
+              {chosen.sha256}
+            </code>
+          </p>
+          <div className="field">
+            <label htmlFor={ids.format}>{d.format}</label>
+            <select
+              id={ids.format}
+              value={chosen.format}
+              onChange={(e) => setChosen({ ...chosen, format: e.target.value })}
+            >
+              {Object.entries(d.formats).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      ) : null}
+      {problem ? (
+        <p className="problem" role="alert">
+          {problem}
+        </p>
+      ) : null}
+      <div className="actions">
+        <button type="submit" disabled={busy || chosen === null}>
+          {d.prepare}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ObserverActions({
+  view,
+  chain,
+  session,
+  reload,
+}: {
+  view: RequestView;
+  chain: ChainInfo;
+  session: Session;
+  reload: () => void;
+}) {
+  const [prepared, setPrepared] = useState<{ prepared: Prepared; sha256?: string } | null>(null);
+  const record = view.record;
+  const id = record.request_id;
+  if (prepared) {
+    const close = () => {
+      setPrepared(null);
+      reload();
+    };
+    return (
+      <SendFlow
+        prepared={prepared.prepared}
+        chain={chain}
+        session={session}
+        expected={prepared.sha256 ? { deliverySha256: prepared.sha256 } : {}}
+        onDone={close}
+        onCancel={close}
+      />
+    );
+  }
+  if (record.status === "reserved" && record.reserved_by === session.party) {
+    return (
+      <DeliveryForm
+        requestId={id}
+        onPrepared={(next, sha256) => setPrepared({ prepared: next, sha256 })}
+      />
+    );
+  }
+  if (
+    record.status === "challenge_period" &&
+    record.observer === session.party &&
+    record.automated_verdict === "fail"
+  ) {
+    return (
+      <ChallengeForm
+        requestId={id}
+        intro={s.observerChallengeIntro}
+        onPrepared={(next) => setPrepared({ prepared: next })}
+      />
+    );
+  }
+  return null;
+}
+
+/** The automated verification's checks, with their reasons: why it passed or failed. */
+function Verification({ sha }: { sha: string }) {
+  const v = strings.verification;
+  const load = useCallback(() => getJson<VerificationReport>(`/v1/files/${sha}`), [sha]);
+  const [report, reload] = useResource(load);
+  return (
+    <>
+      <h2>{v.title}</h2>
+      <Loaded resource={report} reload={reload}>
+        {(value) => (
+          <>
+            <p>
+              <strong>{v.verdict(value.verdict)}</strong> · {value.summary}
+            </p>
+            <ul className="checks">
+              {value.checks.map((check) => (
+                <li key={check.id} className={`check check-${check.result}`}>
+                  <strong>
+                    {check.title}: {v.results[check.result] ?? check.result}
+                  </strong>
+                  <span>{check.reason}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </Loaded>
     </>
   );
 }
@@ -455,6 +695,12 @@ export function RequestPage({
             <Progress view={view} />
             {mine ? (
               <RequesterActions view={view} chain={chain} session={session} reload={reload} />
+            ) : null}
+            {record.reserved_by === session.party || record.observer === session.party ? (
+              <ObserverActions view={view} chain={chain} session={session} reload={reload} />
+            ) : null}
+            {document !== null && record.report_sha256 ? (
+              <Verification sha={record.report_sha256} />
             ) : null}
             <h2>{s.terms}</h2>
             <dl className="details">

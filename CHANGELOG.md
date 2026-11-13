@@ -60,11 +60,32 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   wallet (D-29). `GET /v1/public/targets` gives the allow-list, and
   `GET /v1/requests` also gives each request's requester and title. The local
   stack writes fresh SIMULATED good observations for tests.
+- The observer's view (phase 3, step 3.5): Your station, where a station
+  registers its profile from a SIMULATED instrument with its own name and
+  place (`GET /v1/public/station-templates`, `GET` and
+  `PUT /v1/stations/{party}/profile`, storage migration 0005); Your
+  observations; reserving funded open requests; and delivering on the
+  request's page, with a file of the station's own or SIMULATED observations
+  made with its profile (`POST /v1/requests/{id}/simulate`). The page computes
+  the file's SHA-256 and the transaction flow checks that the chain records
+  exactly that. The parties see why a delivery passed or failed, check by
+  check, and an observer may challenge a failed result. A wallet without ETH
+  is told to get some from a faucet (D-30).
 
 ### Changed
 
+- The request document is readable by any party while the request is opened
+  or funded, and by the station that reserved it; observations and reports
+  still only by the request's parties until publication (D-30).
+- `GET /v1/requests` also gives each request's reserving station and observer.
 - React 19.3.1 and Vitest 5.0.5 in the web application (Dependabot): the
   versions first picked were not the highest at least 14 days old (D-28).
+
+### Fixed
+
+- The end-to-end tests waited for the local stack's health URL or its "Ready"
+  line, whichever came first, so they could start before the stack had seeded
+  its requests; they now wait for the line (D-30).
 
 ## [0.3.0] - 2026-11-13
 

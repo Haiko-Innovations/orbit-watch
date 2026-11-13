@@ -101,6 +101,11 @@ async function rpc(method: string, params: unknown[]): Promise<unknown> {
   return answer.result;
 }
 
+/** Gives ``address`` local test ether for gas, as a faucet would on a testnet. */
+export async function giveGasMoney(address: string): Promise<void> {
+  await rpc("anvil_setBalance", [address, "0x3635c9adc5dea00000"]); // 1000 local test ETH
+}
+
 /** Moves the local chain's clock forward, as core/src/orbit_watch/chain/client.py does. */
 export async function travelTo(iso: string): Promise<void> {
   const target = Math.floor(new Date(iso).getTime() / 1000);

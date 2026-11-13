@@ -30,6 +30,47 @@ export async function postJson<T>(
   return call<T>(path, { method: "POST", headers, body: JSON.stringify(body) }, fetcher);
 }
 
+/** PUT a JSON document (a change: one Idempotency-Key per action). */
+export async function putJson<T>(
+  path: string,
+  body: unknown,
+  idempotencyKey: string,
+  fetcher: typeof fetch = fetch,
+): Promise<T> {
+  return call<T>(
+    path,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+      body: JSON.stringify(body),
+    },
+    fetcher,
+  );
+}
+
+/** POST a file as it is, with its SHA-256 for the service to check. */
+export async function postFile<T>(
+  path: string,
+  body: Uint8Array,
+  sha256: string,
+  idempotencyKey: string,
+  fetcher: typeof fetch = fetch,
+): Promise<T> {
+  return call<T>(
+    path,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Content-SHA256": sha256,
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: body as BodyInit,
+    },
+    fetcher,
+  );
+}
+
 export async function deleteJson<T>(path: string, fetcher: typeof fetch = fetch): Promise<T> {
   return call<T>(path, { method: "DELETE" }, fetcher);
 }
@@ -159,6 +200,8 @@ export interface RequestListItem {
   request_id: string;
   requester: string;
   title: string | null;
+  reserved_by: string | null;
+  observer: string | null;
   status: string;
   outcome: string | null;
 }
@@ -218,4 +261,31 @@ export interface RequestView {
   };
   publication: { state: string; public_from: string | null; licence: string };
   chain?: { on_chain: boolean; status: string | null; events: ChainEvent[] };
+}
+
+/** A station profile (format orbit-watch/station-profile 1.0). */
+export interface StationProfile {
+  format: string;
+  format_version: string;
+  simulated: boolean;
+  id: string;
+  description: string;
+  station: {
+    id: string;
+    name?: string;
+    latitude_deg: number;
+    longitude_deg: number;
+    altitude_m: number;
+    [field: string]: unknown;
+  };
+  angle_type: string;
+  declared_angle_uncertainty_arcsec: number;
+  declared_time_uncertainty_s: number;
+  [field: string]: unknown;
+}
+
+export interface VerificationReport {
+  verdict: string;
+  summary: string;
+  checks: { id: string; title: string; result: string; reason: string }[];
 }

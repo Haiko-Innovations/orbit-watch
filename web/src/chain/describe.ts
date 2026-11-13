@@ -44,6 +44,12 @@ export interface Described {
   transaction: UnsignedTransaction;
 }
 
+/** What the page itself knows a transaction must carry, checked against its call data. */
+export interface Expected {
+  /** The SHA-256 (hex) of the file the party chose to deliver. */
+  deliverySha256?: string;
+}
+
 export class RefusedTransaction extends Error {
   constructor(message: string) {
     super(message);
@@ -70,6 +76,7 @@ function describeOne(
   requestId: string | null,
   chain: ChainInfo,
   account: Address,
+  expected: Expected,
 ): Described {
   if (transaction.chainId !== chain.chain_id) {
     throw new RefusedTransaction(t.refused.chain(transaction.chainId, chain.network));
@@ -111,8 +118,20 @@ function describeOne(
           ),
         };
       }
-      case "reserve":
       case "deliver":
+        forRequest(args[0]);
+        if (
+          expected.deliverySha256 !== undefined &&
+          String(args[1]).toLowerCase() !== `0x${expected.deliverySha256.toLowerCase()}`
+        ) {
+          throw new RefusedTransaction(t.refused.file);
+        }
+        return {
+          ...shown,
+          title: t.escrowCalls.deliver(requestId ?? ""),
+          detail: expected.deliverySha256 ? t.deliverDetail(expected.deliverySha256) : null,
+        };
+      case "reserve":
       case "challenge":
       case "cancel":
       case "settle":
@@ -168,9 +187,10 @@ export function describePrepared(
   prepared: Prepared,
   chain: ChainInfo,
   account: Address,
+  expected: Expected = {},
 ): Described[] {
   if (prepared.sign.length === 0) throw new RefusedTransaction(t.refused.empty);
   return prepared.sign.map(({ transaction }) =>
-    describeOne(transaction, prepared.request_id, chain, account),
+    describeOne(transaction, prepared.request_id, chain, account, expected),
   );
 }
