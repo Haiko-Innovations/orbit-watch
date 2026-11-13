@@ -18,7 +18,9 @@ orbit-watch serve --dir ./ow-service                                        # ht
 ```
 
 `--catalog`, `--policy` and `--reviewers` default to the built-in SIMULATED
-data. The service directory holds the database and the files
+data. `--web web/dist` also serves the built web application at `/`, on the
+API's own origin ([web.md](web.md)). Every response carries a strict content
+security policy ([D-25](decisions.md#d-25-the-web-project)). The service directory holds the database and the files
 ([storage.md](storage.md)); a running server holds it exclusively, so create
 the first admin key before starting it and the rest through the API.
 
@@ -70,6 +72,7 @@ refusal.
 | `POST /v1/admin/grants` | admin | `{"party": "…", "points": 1000}` | give points (phase 1 budgets) |
 | `POST /v1/admin/keys` | admin | `{"party": "…", "role": "…"}` | create a key; shown once (a replay returns `"key": null`) |
 | `POST /v1/admin/tick` | admin | | apply passed deadlines and settle finished requests |
+| `GET /v1/public/open-requests` | none | | requests that invite observers: opened or funded, not reserved, with their request document, terms and reward split ([D-26](decisions.md#d-26-open-requests-are-public)) |
 | `GET /v1/public/requests` | none | | published requests ([data-publication.md](data-publication.md)) |
 | `GET /v1/public/requests/{id}` | none | | one published request |
 | `GET /v1/public/files/{sha256}` | none | | a published file, with its licence in a `Link` header |

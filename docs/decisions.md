@@ -577,17 +577,18 @@ Accepted · 2026-11-12 (with the pull request that implements step 2.7). See
 
 ## Phase 3 decisions
 
-P3-01 to P3-11 are proposed for the
+P3-01 to P3-11 were proposed for the
 [roadmap](roadmap.md#phase-3-web-application-target-version-040)'s phase 3,
 the web application, in
-[#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46). They wait
-for the maintainer's approval. Facts were checked on 2026-11-13; the sources
-are listed under each decision. Versions are the newest releases at least 14
-days old, and they are re-checked when they are used.
+[#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46) and approved
+by the maintainer on 2026-11-13, P3-10 as proposed: no public demo in phase 3.
+Facts were checked on 2026-11-13; the sources are listed under each decision.
+Versions are the newest releases at least 14 days old, and they are re-checked
+when they are used.
 
 ### P3-01 One single-page app, served by the service
 
-Proposed · 2026-11-13. The web application is one single-page app in
+Accepted · 2026-11-13. The web application is one single-page app in
 TypeScript and React, built with Vite, in `web/`. Its build is static files
 that `orbit-watch serve` serves on the API's own origin, so there is no second
 server, no cross-origin requests and one place for the rules: the Python
@@ -603,7 +604,7 @@ Sources: [React](https://www.npmjs.com/package/react) 19.1.10,
 
 ### P3-02 The npm supply chain
 
-Proposed · 2026-11-13. The same rules as the rest of the repository (D-07),
+Accepted · 2026-11-13. The same rules as the rest of the repository (D-07),
 for npm:
 
 - **Node 26**, the Active LTS line ("Lithium"), pinned in `web/.nvmrc` and in
@@ -628,7 +629,7 @@ Sources: [Node.js releases](https://nodejs.org/en/about/previous-releases),
 
 ### P3-03 Wallets through viem and EIP-6963
 
-Proposed · 2026-11-13. The browser talks to wallets with
+Accepted · 2026-11-13. The browser talks to wallets with
 [viem](https://www.npmjs.com/package/viem) 2.57.13 (MIT) alone. Injected
 wallets are discovered with EIP-6963, so several wallet extensions can live
 side by side; the app asks the wallet to add or switch to Base Sepolia
@@ -646,7 +647,7 @@ Sources: [EIP-6963](https://eips.ethereum.org/EIPS/eip-6963) (Final),
 
 ### P3-04 Sign in with the wallet
 
-Proposed · 2026-11-13. A party signs in with its registered wallet by
+Accepted · 2026-11-13. A party signs in with its registered wallet by
 Sign-In with Ethereum (ERC-4361, Final). The service writes the message, with
 its own domain, the chain, a single-use nonce and an expiry; the wallet signs
 it; the service checks the ERC-191 signature against the party's registered
@@ -661,7 +662,7 @@ Source: [ERC-4361](https://eips.ethereum.org/EIPS/eip-4361).
 
 ### P3-05 Parties in the browser
 
-Proposed · 2026-11-13. One wallet belongs to one party, as in phase 2. On the
+Accepted · 2026-11-13. One wallet belongs to one party, as in phase 2. On the
 testnet, **requesters and stations sign up themselves** in the browser: they
 choose a party ID, and their wallet's signature registers it. **Reviewers**
 are added by an administrator, and the escrow chooses them from the on-chain
@@ -672,7 +673,7 @@ need limits on sign-up (P3-10).
 
 ### P3-06 The browser holds no privileges
 
-Proposed · 2026-11-13. The web application uses the documented API and the
+Accepted · 2026-11-13. The web application uses the documented API and the
 sign-in endpoints, nothing else; every rule stays in the service and the
 contracts, so the browser cannot do what the command line cannot. Before the
 wallet signs, the app shows what a prepared transaction does: the contract,
@@ -683,7 +684,7 @@ chain stays the source of payment status (P2-10), with explorer links.
 
 ### P3-07 Governance through the Safe's own app
 
-Proposed · 2026-11-13. The administrator view shows the reviewer registry, the
+Accepted · 2026-11-13. The administrator view shows the reviewer registry, the
 timelock's queued operations with their ready times, and the reviewer changes
 as Safe transactions (target, call data and the decoded call) to propose and
 sign in the Safe's own app, for example with its Transaction Builder. Orbit
@@ -695,7 +696,7 @@ Sources: [Safe Transaction Service on Base Sepolia](https://api.safe.global/tx-s
 
 ### P3-08 Tests
 
-Proposed · 2026-11-13. Unit tests with Vitest; end-to-end tests with
+Accepted · 2026-11-13. Unit tests with Vitest; end-to-end tests with
 Playwright for every role against a local stack (Anvil, the contracts, the
 service), with a test wallet injected into the page as an EIP-1193 provider
 that signs with Anvil's test keys; accessibility checks with axe on every view.
@@ -708,7 +709,7 @@ Sources: [Vitest](https://vitest.dev/) 4.1.12 (MIT),
 
 ### P3-09 Accessibility, language and labels
 
-Proposed · 2026-11-13. WCAG 2.2 level AA: every view works with the keyboard
+Accepted · 2026-11-13. WCAG 2.2 level AA: every view works with the keyboard
 and a screen reader, in light and dark colours. The interface is in English
 (D-09), with its strings in one place so that a Finnish translation can follow.
 Every page shows "Base Sepolia testnet, no real value", and simulated data says
@@ -717,16 +718,15 @@ Source: [WCAG 2.2](https://www.w3.org/TR/WCAG22/).
 
 ### P3-10 No public deployment in phase 3
 
-Proposed · 2026-11-13. As in phases 1 and 2 (P-03, P2-11), the service and the
+Accepted · 2026-11-13. As in phases 1 and 2 (P-03, P2-11), the service and the
 web application run locally; the contracts and attestations are public on the
 testnet. A public demo is its own decision, because it needs hosting, TLS,
 rate limits and limits on sign-up, and the verifier key away from the
-maintainer's machine (D-24). **Open: does the maintainer want a public demo in
-phase 3?**
+maintainer's machine (D-24). The maintainer chose no public demo in phase 3.
 
 ### P3-11 Phase 3 completion criteria
 
-Proposed · 2026-11-13. The starting plan gives none for phase 3. Phase 3 is
+Accepted · 2026-11-13. The starting plan gives none for phase 3. Phase 3 is
 done when:
 
 1. The web application starts with the documented instructions, on a local
@@ -749,3 +749,48 @@ done when:
 9. The testnet label is visible on every page, and simulated data is labelled.
 10. End-to-end tests of every role and accessibility checks of every view run
     in CI against a local chain.
+
+### D-25 The web project
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.1). See
+[web.md](web.md):
+
+- **`web/`** is a Vite project in TypeScript and React (P3-01). Its build,
+  `web/dist`, is static files; `orbit-watch serve --web web/dist` serves them
+  at `/` next to the API at `/v1/`, so the browser talks to one origin.
+- **Pages behind the hash** (`#/requests`): the service serves one
+  `index.html` and needs no routing rules, and every page has an address that
+  can be shared. A page change moves keyboard focus to the new page's heading.
+- **A strict content security policy** on every response: the page runs only
+  its own scripts and styles, connects only to its own origin, and cannot be
+  framed. The build has no inline scripts. Wallet extensions inject their
+  providers themselves, and EIP-6963 wallet icons are `data:` URLs, which the
+  policy allows for images.
+- **No state, routing or styling libraries**: a small hash router, a resource
+  hook and plain CSS with colour tokens for light and dark (P3-02, P3-09).
+  The interface's texts live in `web/src/strings.ts`.
+- **A local stack in one command** (`core/tests/local_stack.py`): a local
+  Anvil chain with Base Sepolia's EAS code and fresh contracts, the service on
+  it, SIMULATED parties with public test keys and registered wallets, and
+  SIMULATED requests. Its clock starts at 2026-11-01 12:00 UTC, before the
+  requests' observation window. Development (`npm run dev`, which forwards `/v1` to it) and the end-to-end
+  tests use it. It lives with the tests because it needs the repository: the
+  contracts' build and the test fixtures.
+- **npm's `min-release-age`** is 14 days in `web/.npmrc`, so not only the
+  direct dependencies but their dependencies too are at least 14 days old when
+  the lock file is made. Only React, React DOM and scheduler reach the
+  browser; everything else is a development tool. Vite's CSS minifier
+  (lightningcss) and axe are MPL-2.0, used only at build and test time.
+
+### D-26 Open requests are public
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.1).
+`GET /v1/public/open-requests` lists, without a key, every request that
+invites observers: opened or funded, and not reserved. It shows the request
+document, the terms, the reward split once funded, the requester and the
+simulated flag. A request is opened to be seen by observers, its deposit is
+public on chain anyway, and an observer should find work before signing up
+(the plan's observer view starts with "browses open requests"). Before, any
+key could list every request, but nobody without one. Drafts stay the
+requester's own, and nothing delivered appears: the observation file and the
+report still follow the publication rules (D-17).

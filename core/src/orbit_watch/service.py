@@ -649,6 +649,48 @@ class RequestService:
             "simulated": bool(json.loads(self.request_documents[request_id]).get("simulated")),
         }
 
+    def open_requests(self) -> list[dict[str, Any]]:
+        """Requests that invite observers: opened or funded, not reserved (decision D-26).
+        Their request documents, terms and rewards are public; anything delivered follows
+        the publication rules."""
+        found = []
+        for request_id in sorted(self.records):
+            record = self.records[request_id]
+            if record.status not in (Status.OPEN, Status.FUNDED):
+                continue
+            terms = record.terms
+            document = json.loads(self.request_documents[request_id])
+            found.append(
+                {
+                    "request_id": request_id,
+                    "status": str(record.status),
+                    "requester": record.requester,
+                    "request": document,
+                    "request_sha256": terms.request_sha256,
+                    "terms": {
+                        "target_norad_id": terms.target_norad_id,
+                        "window_start": format_utc(terms.window_start),
+                        "window_end": format_utc(terms.window_end),
+                        "delivery_deadline": format_utc(terms.delivery_deadline),
+                        "reservation_hours": terms.reservation_hours,
+                        "challenge_period_hours": terms.challenge_period_hours,
+                        "review_hours": terms.review_hours,
+                        "embargo_days": terms.embargo_days,
+                        "licence": terms.licence,
+                        "verification_method": terms.verification_method,
+                    },
+                    "split": None
+                    if record.split is None
+                    else {
+                        "observer": record.split.observer,
+                        "reviewer": record.split.reviewer,
+                        "platform_fee": record.split.platform_fee,
+                    },
+                    "simulated": bool(document.get("simulated")),
+                }
+            )
+        return found
+
     def published(self, now: datetime) -> list[dict[str, Any]]:
         return [
             self.publication(rid, now)

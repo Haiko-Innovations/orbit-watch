@@ -121,9 +121,39 @@ jobs:
           tests/test_chain_service.py tests/test_cli_chain.py tests/test_deploy_script.py
           tests/test_phase2_demo.py
 
+      # The web application (phase 3). Node from the Active LTS line (decision P3-02);
+      # `npm ci` installs exactly the lock file, and no package runs an install script.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Web application (Biome, type check, unit tests, build)
+        working-directory: web
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm run typecheck
+          npm test
+          npm run build
+
+      # The built app against the local stack (step 3.1): a local Anvil chain with the
+      # contracts built above, the service and SIMULATED parties, with accessibility
+      # checks in light and dark colours. Never touches a public network (P3-08).
+      - name: Web application end to end (Playwright and axe, local chain)
+        working-directory: web
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e
+
       - name: Known vulnerabilities (runtime dependencies, including the API and EVM extras)
         run: |
           uv export --locked --no-dev --all-extras --no-emit-project --format requirements-txt \
             -o "$RUNNER_TEMP/requirements-all.txt"
           uv run --locked --python 3.12 pip-audit --disable-pip --require-hashes --strict \
             -r "$RUNNER_TEMP/requirements-all.txt"
+
+      - name: Known vulnerabilities (the web application's runtime dependencies)
+        working-directory: web
+        run: npm audit --omit=dev

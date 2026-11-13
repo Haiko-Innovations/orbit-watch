@@ -11,8 +11,23 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 ### Added
 
 - Phase 3 plan: the web application in eight steps (3.1 to 3.8) with
-  completion criteria in `docs/roadmap.md`, and the proposed decisions P3-01
-  to P3-11 in `docs/decisions.md`.
+  completion criteria in `docs/roadmap.md`, and decisions P3-01 to P3-11 in
+  `docs/decisions.md`, approved on 2026-11-13.
+- The web application's project (phase 3, step 3.1): `web/`, a TypeScript and
+  React single-page app built with Vite, with the public pages Network and
+  Open requests and a testnet label on every page. `orbit-watch serve --web
+  web/dist` serves it on the API's own origin, and every response carries a
+  strict content security policy (D-25). The `tarkistus` check runs Biome,
+  the TypeScript 7 type check, Vitest, the build, Playwright end-to-end tests
+  with axe accessibility checks in light and dark colours, and `npm audit`;
+  npm installs run no scripts and take only releases at least 14 days old.
+  Dependabot watches `web/`. See `docs/web.md`.
+- `GET /v1/public/open-requests` lists, without a key, the requests that
+  invite observers: opened or funded and not reserved, with their request
+  document, terms and reward split (D-26).
+- A local stack in one command for development and end-to-end tests
+  (`core/tests/local_stack.py`): a local Anvil chain with the contracts, the
+  service, SIMULATED parties with registered wallets and SIMULATED requests.
 
 ## [0.3.0] - 2026-11-13
 

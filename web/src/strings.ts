@@ -1,0 +1,66 @@
+// Every text of the interface, in one place, so that a translation can follow
+// (decision P3-09). English is the primary language (D-09).
+
+export const strings = {
+  appName: "Orbit Watch",
+  tagline: "Request, deliver and verify satellite observations.",
+  testnetOnly: "Testnet only, no real value",
+  simulatedNote: "All stations, observations, requests and reviewers here are SIMULATED.",
+  simulated: "SIMULATED",
+  nav: {
+    label: "Main",
+    network: "Network",
+    openRequests: "Open requests",
+  },
+  loading: "Loading…",
+  retry: "Try again",
+  errorTitle: "The service did not answer",
+  notFound: {
+    title: "Page not found",
+    body: "There is no page at this address.",
+    home: "Go to the network page",
+  },
+  network: {
+    title: "Network",
+    intro:
+      "Orbit Watch settles requests through an escrow contract on a test network. Deposits, results and votes are public there; the money has no value.",
+    noChain: "This service runs without a chain: settlement uses points in a ledger, not tokens.",
+    service: "Service",
+    version: "Version",
+    chain: "Chain",
+    chainId: "Chain ID",
+    escrow: "Escrow contract",
+    registry: "Reviewer registry",
+    token: "Token",
+    eas: "Attestation service (EAS)",
+    resultSchema: "Schema of automated results",
+    voteSchema: "Schema of reviewer votes",
+    verifier: "Verifier key of the service",
+    feeRecipient: "Platform fee recipient",
+    syncedBlock: "Last block read",
+    explorer: "Block explorer",
+    noExplorer: "none (local chain)",
+  },
+  openRequests: {
+    title: "Open requests",
+    intro:
+      "Requests that invite observers. A funded request can be reserved and delivered; its deposit waits in the escrow contract.",
+    none: "No open requests right now.",
+    target: "Target",
+    window: "Observation window",
+    deadline: "Delivery deadline",
+    observerReward: "Observer reward",
+    reviewerReward: "Reward per review",
+    requirements: "Requirements",
+    minObservations: (n: number) => `at least ${n} observations`,
+    maxAngle: (arcsec: number) => `angle uncertainty at most ${arcsec}″`,
+    requester: "Requester",
+    funded: "Funded, open for observers",
+    open: "Published, waiting for funding",
+    notFunded: "not funded yet",
+  },
+  footer: {
+    source: "Source code",
+    licence: "Code Apache 2.0, data CC BY 4.0",
+  },
+} as const;
