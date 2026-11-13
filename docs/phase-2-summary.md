@@ -88,6 +88,15 @@ only its maintainer can run the service; anyone can deploy their own escrow
 demo on a local chain (`core/tests/test_phase2_demo.py`). The deadlines are
 minutes long, and a run takes about half an hour.
 
+The recorded run (requests SIM-REQ-2101 to 2105) took 25 minutes on
+2026-11-13. A first run (SIM-REQ-2001 to 2005) also went through on chain,
+but stopped while writing its summary: the demo asked Base's public endpoint
+for the whole run's events at once, and the chain client now reads them in
+ranges the endpoint accepts. Before that, a new service directory timed out on
+its first request while it read the escrow's history; it now starts at the
+current block. The wallet balances "before" in the transcript include the
+smoke test and the first run.
+
 ## Open problems for the next phase
 
 - **Separate people for the keys**: the Safe's three signers, and the verifier

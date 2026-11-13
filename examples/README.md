@@ -16,5 +16,10 @@
 - [`phase1/`](phase1): the output of `orbit-watch demo --phase 1`: five
   simulated requests through the whole request chain, with every outcome,
   the points and the reviewer profiles. CI regenerates it too.
+- [`phase2/`](phase2): the output of `orbit-watch demo --phase 2`: the same
+  five simulated requests on the Base Sepolia testnet (no real value), each
+  party with its own wallet, with links to every transaction and attestation.
+  It is a record of one run on a live chain, so CI does not regenerate it; CI
+  runs the same demo on a local chain instead.
 - [`real-iod/`](real-iod): how to run the quality meter on real IOD
   observations, and why no real example is committed yet.

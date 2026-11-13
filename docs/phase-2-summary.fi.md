@@ -74,6 +74,15 @@ avainsäilön, jossa on vähän testi-ETH:ta, sekä tilaajalle testi-USDC:tä. A
 kestää noin puoli tuntia, koska määräajat ovat minuutteja pitkiä. Saman demon
 voi ajaa myös paikallisessa ketjussa (`core/tests/test_phase2_demo.py`).
 
+Tallennettu ajo (tilaukset SIM-REQ-2101–2105) kesti 25 minuuttia 13.11.2026.
+Ensimmäinen ajo (SIM-REQ-2001–2005) meni sekin ketjussa läpi, mutta pysähtyi
+yhteenvetoa kirjoittaessa: demo pyysi Basen julkiselta päätepisteeltä koko
+ajon tapahtumat kerralla, ja ketjuasiakas lukee ne nyt päätepisteen
+hyväksymissä paloissa. Sitä ennen uusi palveluhakemisto aikakatkaisi
+ensimmäisen pyyntönsä lukiessaan escrow-sopimuksen historiaa; nyt se aloittaa
+nykyisestä lohkosta. Transkriptin saldot ennen ajoa sisältävät savutestin ja
+ensimmäisen ajon.
+
 ## Avoimet ongelmat seuraavaan vaiheeseen
 
 - **Avaimet eri ihmisille**: Safen kolme allekirjoittajaa ja tarkistusavain
