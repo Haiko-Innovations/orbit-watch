@@ -12,6 +12,7 @@ export const strings = {
     network: "Network",
     openRequests: "Open requests",
   },
+  skip: "Skip to content",
   loading: "Loading…",
   retry: "Try again",
   errorTitle: "The service did not answer",
@@ -58,6 +59,56 @@ export const strings = {
     funded: "Funded, open for observers",
     open: "Published, waiting for funding",
     notFunded: "not funded yet",
+  },
+  session: {
+    signIn: "Sign in",
+    account: "Your account",
+    signedInAs: (party: string) => `Signed in as ${party}`,
+  },
+  signIn: {
+    title: "Sign in",
+    intro:
+      "Sign in with your wallet. You sign a short message that names this site; it sends no transaction and costs nothing. Your keys never leave your wallet.",
+    noChain:
+      "This service runs without a chain, so there are no wallets to sign in with. Use an API key on the command line.",
+    chooseWallet: "Choose your wallet",
+    searching: "Looking for wallets in this browser…",
+    noWallet:
+      "No wallet was found in this browser. Install a wallet extension, for example MetaMask or Rabby, and reload the page.",
+    connecting: (wallet: string) => `Connecting to ${wallet}…`,
+    switching: (network: string) => `Asking your wallet to use ${network}…`,
+    confirm: "Confirm in your wallet. The message names this site and costs nothing.",
+    checking: "Checking the signature…",
+    signUpTitle: "Sign up",
+    signUpIntro: (address: string) =>
+      `The wallet ${address} has no Orbit Watch account yet. Choose what you do and a name; your account will be this wallet.`,
+    role: "I am",
+    requester: "a requester: I ask for observations",
+    station: "an observer: I run a station",
+    name: "Name",
+    nameHint:
+      "2 to 63 letters, digits, dots, dashes or underscores, for example SIM-HELSINKI. It is public.",
+    yourParty: (party: string) => `Your account will be ${party}.`,
+    signUp: "Sign up and sign in",
+    reviewersNote:
+      "Reviewers and administrators are added by the maintainers and sign in with a wallet they registered.",
+    tryAgain: "Choose a wallet again",
+    failed: "Signing in did not work",
+  },
+  account: {
+    title: "Your account",
+    notSignedIn: "You are not signed in.",
+    party: "Account",
+    role: "Role",
+    wallet: "Wallet",
+    expires: "Session ends",
+    signOut: "Sign out",
+    roles: {
+      requester: "Requester",
+      station: "Observer station",
+      reviewer: "Reviewer",
+      admin: "Administrator",
+    },
   },
   footer: {
     source: "Source code",

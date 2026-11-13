@@ -304,3 +304,102 @@ button {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+.panel {
+  overflow-wrap: anywhere;
+  margin: 24px 0;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.panel h2 {
+  margin-bottom: 12px;
+}
+
+.wallets {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wallet-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 28rem;
+  padding: 12px 16px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.wallet-choice:hover {
+  border-color: var(--accent);
+}
+
+fieldset {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+legend {
+  padding: 0 4px;
+  color: var(--muted);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+}
+
+.choice {
+  font-weight: normal;
+}
+
+input:not([type="radio"]) {
+  width: 100%;
+  max-width: 28rem;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+input[aria-invalid="true"] {
+  border-color: var(--problem-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--link);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

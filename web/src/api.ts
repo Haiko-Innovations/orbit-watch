@@ -15,9 +15,34 @@ export class ApiError extends Error {
 
 /** GET a JSON document from the API; refusals become an ApiError with the API's code. */
 export async function getJson<T>(path: string, fetcher: typeof fetch = fetch): Promise<T> {
+  return call<T>(path, { method: "GET" }, fetcher);
+}
+
+/** POST a JSON document. Changes to requests also send an Idempotency-Key (one per action). */
+export async function postJson<T>(
+  path: string,
+  body: unknown,
+  options: { idempotencyKey?: string } = {},
+  fetcher: typeof fetch = fetch,
+): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
+  return call<T>(path, { method: "POST", headers, body: JSON.stringify(body) }, fetcher);
+}
+
+export async function deleteJson<T>(path: string, fetcher: typeof fetch = fetch): Promise<T> {
+  return call<T>(path, { method: "DELETE" }, fetcher);
+}
+
+// The session cookie travels by itself: same origin, HttpOnly (decision P3-04).
+async function call<T>(path: string, init: RequestInit, fetcher: typeof fetch): Promise<T> {
   let response: Response;
   try {
-    response = await fetcher(path, { headers: { Accept: "application/json" } });
+    response = await fetcher(path, {
+      ...init,
+      credentials: "same-origin",
+      headers: { Accept: "application/json", ...(init.headers as Record<string, string>) },
+    });
   } catch (error) {
     throw new ApiError("unreachable", `The service could not be reached (${String(error)}).`, 0);
   }
@@ -111,4 +136,16 @@ export async function chainInfo(fetcher: typeof fetch = fetch): Promise<ChainInf
     if (error instanceof ApiError && error.code === "not_on_chain") return null;
     throw error;
   }
+}
+
+export interface Session {
+  party: string;
+  role: "requester" | "station" | "reviewer" | "admin";
+  address: string;
+  expires_at: string;
+}
+
+/** The signed-in party, or null. */
+export async function currentSession(fetcher: typeof fetch = fetch): Promise<Session | null> {
+  return (await getJson<{ session: Session | null }>("/v1/session", fetcher)).session;
 }

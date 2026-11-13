@@ -85,12 +85,13 @@ def artifact(source: str, contract: str) -> dict:
 class LocalChain:
     """An Anvil process starting at ``genesis`` (Unix seconds)."""
 
-    def __init__(self, genesis: int):
+    def __init__(self, genesis: int, port: int = 0):
         from web3 import Web3
 
-        with socket.socket() as probe:
-            probe.bind(("127.0.0.1", 0))
-            port = probe.getsockname()[1]
+        if not port:  # any free port
+            with socket.socket() as probe:
+                probe.bind(("127.0.0.1", 0))
+                port = probe.getsockname()[1]
         self.process = subprocess.Popen(
             [shutil.which("anvil") or "anvil", "--port", str(port), "--timestamp", str(genesis)],
             stdout=subprocess.DEVNULL,
@@ -179,8 +180,9 @@ class Deployment:
         platform: str,
         verifier: str,
         parties: list[str],
+        port: int = 0,
     ):
-        self.chain = LocalChain(genesis)
+        self.chain = LocalChain(genesis, port)
         self.accounts = {party: test_account(party) for party in [*parties, verifier]}
         self.deployer = test_account("deployer")
         for account in [self.deployer, *self.accounts.values()]:

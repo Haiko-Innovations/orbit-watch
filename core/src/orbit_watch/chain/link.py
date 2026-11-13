@@ -236,6 +236,27 @@ class ChainLink:
         )
         return self.wallet_view(party)
 
+    def register_signed_up_wallet(
+        self, party: str, address: str, message: str, signature: str, now: datetime
+    ) -> dict[str, Any]:
+        """Register ``address`` for a new ``party`` that signed up in the browser (step 3.2).
+        Its signed sign-in message names the party and proves the address; it is kept with
+        the wallet, so the registration stays verifiable."""
+        address = to_checksum_address(address)
+        if self.wallet(party) is not None:
+            raise ServiceError("party_taken", f"{party} already exists")
+        if address in (self.chain.verifier, self.chain.fee_recipient):
+            raise ServiceError("address_taken", f"{address} is one of Orbit Watch's own")
+        owner = self.party_of(address)
+        if not owner.startswith(WALLET_PREFIX):
+            raise ServiceError("address_taken", f"{address} is already {owner}'s wallet")
+        self.db.execute(
+            "INSERT INTO wallets (party, address, signature, registered_at, signed_message) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (party, address, signature, format_utc(now), message),
+        )
+        return self.wallet_view(party)
+
     def _wallet_required(self, party: str) -> str:
         address = self.wallet(party)
         if address is None:

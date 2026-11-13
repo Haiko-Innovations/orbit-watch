@@ -19,14 +19,17 @@ orbit-watch serve --dir ./ow-service                                        # ht
 
 `--catalog`, `--policy` and `--reviewers` default to the built-in SIMULATED
 data. `--web web/dist` also serves the built web application at `/`, on the
-API's own origin ([web.md](web.md)). Every response carries a strict content
+API's own origin ([web.md](web.md)), and `--origin` names the addresses
+browsers use for it, if not the service's own ([signing in](#signing-in-with-a-wallet)). Every response carries a strict content
 security policy ([D-25](decisions.md#d-25-the-web-project)). The service directory holds the database and the files
 ([storage.md](storage.md)); a running server holds it exclusively, so create
 the first admin key before starting it and the rest through the API.
 
 ## Keys and roles
 
-Every call except `GET /v1/health` needs `Authorization: Bearer <key>`. A key
+Every call except `GET /v1/health` and the public ones needs
+`Authorization: Bearer <key>`, or in a browser the session cookie of a party
+that [signed in with its wallet](#signing-in-with-a-wallet). A key
 belongs to one party and one role
 ([P-04](decisions.md#p-04-role-scoped-api-keys)); the party's name starts with
 its role (`station:SIM-ESPOO`). Keys are stored only as SHA-256 hashes and are
@@ -115,11 +118,37 @@ another escrow, the server settles funded requests on the escrow contract: see
 | Method and path | Role | Body | Does |
 |---|---|---|---|
 | `GET /v1/chain` | none | | the network, escrow, reviewer registry, token (symbol, decimals), EAS schemas, verifier, explorer, notice and the last block read |
+| `POST /v1/session/challenge` | none, from a web origin | `{"address": "0x…"}`, or with `"sign_up": {"party": "station:NAME"}` | a Sign-In with Ethereum message to sign ([signing in](#signing-in-with-a-wallet)) |
+| `POST /v1/session` | none, from a web origin | `{"message": "…", "signature": "0x…"}` | sign in: sets the session cookie |
+| `GET /v1/session` | the session cookie | | the signed-in party, or `null` |
+| `DELETE /v1/session` | the session cookie, from its origin | | sign out |
 | `GET /v1/wallet` | any | | your party, its wallet and the message to sign to register one |
 | `POST /v1/wallet` | any | `{"address": "0x…", "signature": "0x…"}` | register your wallet (EIP-191 signature of the message) |
 | `POST /v1/wallet/withdraw` | any | | `202`: the `withdraw` transaction to sign |
 | `POST /v1/transactions` | any | `{"tx_hash": "0x…"}` | report a transaction you sent; the service waits for it, applies it and does its own part; returns the transaction and the request |
 | `GET /v1/transactions?request=ID` | any (admin: all) | | your transactions: `pending`, `confirmed` or `failed`, with explorer links |
+
+## Signing in with a wallet
+
+Phase 3, step 3.2 ([D-27](decisions.md#d-27-signing-in-with-a-wallet)). A
+browser signs in instead of holding an API key:
+
+1. `POST /v1/session/challenge` with the wallet's address, from one of the
+   service's web origins (`orbit-watch serve --origin`, by default the
+   service's own address). The service writes a Sign-In with Ethereum message
+   (ERC-4361) for that origin and address, valid for five minutes and usable
+   once. A wallet that is no party's yet gets `unknown_wallet`; it can sign up
+   as `requester:<name>` or `station:<name>` with `sign_up`.
+2. The wallet signs the message (`personal_sign`).
+3. `POST /v1/session` with the message and signature sets the cookie
+   `ow_session` (`HttpOnly`, `SameSite=Strict`) for 12 hours. With it, the
+   rest of the API works as with the party's own key. A change also needs the
+   `Origin` it was signed in on.
+
+Refusals: `forbidden_origin` and `wrong_origin` (403), `unknown_message`,
+`message_used`, `message_expired` and `bad_signature` (422), `unknown_wallet`
+(404), `party_taken` and `address_taken` (409), `invalid_party` (422). Only a
+service on a chain has wallets (`not_on_chain` otherwise).
 
 ## Errors
 

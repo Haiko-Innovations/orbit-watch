@@ -93,7 +93,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Testnet settlement adapter (Python, `evm` extra) | | [evm-adapter.md](docs/evm-adapter.md) |
 | Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | The contracts on **Base Sepolia**: addresses, faucets, who holds which key, deploying | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
-| Web application (phase 3, in progress): public pages so far, served by the service; a local stack for development | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
+| Web application (phase 3, in progress): public pages and signing in with a wallet so far, served by the service; a local stack for development | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
 
 The Python code is in [`core/`](core), the Solidity contracts in [`contracts/`](contracts) and the web application in [`web/`](web). Simulated examples are in
 [`examples/`](examples).

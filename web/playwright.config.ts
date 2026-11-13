@@ -13,7 +13,7 @@ export default defineConfig({
   use: { baseURL: `http://127.0.0.1:${port}`, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `uv run --locked python tests/local_stack.py --port ${port} --web ../web/dist`,
+    command: `uv run --locked python tests/local_stack.py --port ${port} --chain-port 0 --web ../web/dist`,
     cwd: "../core",
     // The stack says "Ready." once its SIMULATED requests are in place.
     url: `http://127.0.0.1:${port}/v1/health`,

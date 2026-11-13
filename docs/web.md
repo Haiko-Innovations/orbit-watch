@@ -1,9 +1,10 @@
 # The web application
 
-Phase 3, step 3.1. Code: [`web/`](../web). Decisions:
+Phase 3, steps 3.1 and 3.2. Code: [`web/`](../web). Decisions:
 [P3-01 to P3-11](decisions.md#phase-3-decisions),
-[D-25](decisions.md#d-25-the-web-project) and
-[D-26](decisions.md#d-26-open-requests-are-public).
+[D-25](decisions.md#d-25-the-web-project),
+[D-26](decisions.md#d-26-open-requests-are-public) and
+[D-27](decisions.md#d-27-signing-in-with-a-wallet).
 
 > **Testnet only, no real value.** The web application runs locally
 > ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)). Every page
@@ -13,15 +14,43 @@ One single-page application in TypeScript and React, built with Vite. The
 Python service serves its build on the API's own origin, so the browser talks
 to one server, and the app uses the documented [API](api.md) and nothing else.
 
-What it has so far (step 3.1), without signing in:
+What it has so far:
 
 | Page | Address | Shows |
 |---|---|---|
 | Network | `#/` | the service's version, the chain, the escrow, registry, token, EAS schemas, verifier and explorer, with explorer links on Base Sepolia |
 | Open requests | `#/requests` | requests that invite observers: target, window, deadline, rewards and requirements ([`GET /v1/public/open-requests`](api.md)) |
+| Sign in | `#/sign-in` | the wallets in this browser; signing in, or signing up as a requester or a station |
+| Your account | `#/account` | the signed-in party, its role and wallet, when the session ends; signing out |
 
-Signing in with a wallet and the role views follow in steps 3.2 to 3.7
+The role views follow in steps 3.3 to 3.7
 ([roadmap](roadmap.md#phase-3-web-application-target-version-040)).
+
+## Signing in
+
+The page lists the wallets that announce themselves (EIP-6963; an older
+wallet at `window.ethereum` if none does). Choosing one:
+
+1. connects and asks the wallet to use the service's chain, adding it if the
+   wallet lacks it;
+2. asks the service for a sign-in message, and checks that it names this page
+   and this account before the wallet shows it;
+3. asks the wallet to sign. Signing sends no transaction and costs nothing;
+4. hands the signature to the service, which sets a session cookie that
+   scripts cannot read.
+
+A wallet that is no party's yet signs up instead, as a requester or a station
+with a name of its choosing. Reviewers and administrators are added by the
+maintainers and sign in with a wallet registered from the command line
+(`orbit-watch wallet register`). The details and the checks are in the
+[API](api.md#signing-in-with-a-wallet) and
+[D-27](decisions.md#d-27-signing-in-with-a-wallet).
+
+**With a real wallet on the local stack**: the local chain listens on
+`http://127.0.0.1:8545` (chain 31337), where wallets and viem expect it; the
+page asks the wallet to add it. `local-stack.json` lists every SIMULATED
+party's test key, which you can import into a wallet used only for testing.
+Never send real funds to these public keys.
 
 ## Run it
 
@@ -53,7 +82,7 @@ orbit-watch serve --dir ./ow-base-sepolia --network base-sepolia \
 ## Develop
 
 ```sh
-cd core && uv run python tests/local_stack.py   # the API on port 8787
+cd core && uv run python tests/local_stack.py   # the API on port 8787, the chain on 8545
 cd web && npm run dev                            # http://127.0.0.1:5173/, /v1 forwarded to 8787
 ```
 
@@ -63,7 +92,11 @@ cd web && npm run dev                            # http://127.0.0.1:5173/, /v1 f
 | `npm run typecheck` | TypeScript 7, strict |
 | `npm test` | unit tests (Vitest) |
 | `npm run build` | the build, in `dist/` |
-| `npm run e2e` | end-to-end tests (Playwright) against the local stack on port 8790, with axe accessibility checks in light and dark colours; needs `npm run build` and `forge build` first, and once `npx playwright install chromium` |
+| `npm run e2e` | end-to-end tests (Playwright) against the local stack on port 8790, with axe accessibility checks in light and dark colours and a check for sideways scrolling on a phone; needs `npm run build` and `forge build` first, and once `npx playwright install chromium` |
+
+The end-to-end tests sign in with a test wallet that announces itself to the
+page like a real one; its key stays in the test runner, which signs when the
+page asks ([`web/e2e/testWallet.ts`](../web/e2e/testWallet.ts)).
 
 The interface's texts are in [`web/src/strings.ts`](../web/src/strings.ts),
 in one place for a later translation. Colours are tokens in
