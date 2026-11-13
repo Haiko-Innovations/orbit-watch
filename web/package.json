@@ -17,8 +17,8 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "react": "19.1.10",
-    "react-dom": "19.1.10",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "viem": "2.57.13"
   },
   "devDependencies": {
