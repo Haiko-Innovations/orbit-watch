@@ -106,7 +106,7 @@
     }
   ],
   "source": {
-    "software": "orbit-watch 0.4.0 simulator",
+    "software": "orbit-watch 0.5.0.dev0 simulator",
     "notes": "SIMULATED by the Orbit Watch simulator: profile sim-visual-binoculars, seed 104. Not real observations."
   }
 }

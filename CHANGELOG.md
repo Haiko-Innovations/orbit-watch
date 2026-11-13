@@ -8,6 +8,14 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+### Fixed
+
+- The phase 1 demo told another story after every release: its reviewer rounds
+  are drawn from each delivery's SHA-256, and its observation files named the
+  software's version. They now name the simulator without a version, so every
+  release draws the same rounds. The rubber stamper's missed calibration task
+  stays visible.
+
 ## [0.4.0] - 2026-11-13
 
 Phase 3: the web application, with each party's own wallet in the browser.

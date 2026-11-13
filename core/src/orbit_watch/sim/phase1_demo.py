@@ -17,6 +17,7 @@ deterministic and committed in ``examples/phase1/``.
 
 from __future__ import annotations
 
+import json
 from importlib import resources
 from pathlib import Path
 from typing import Any
@@ -61,6 +62,15 @@ def _request_bytes(request_id: str, title: str) -> bytes:
     return dumps_pretty(document, sort_keys=False).encode("utf-8")
 
 
+def _without_version(data: bytes) -> bytes:
+    """The observations with the simulator named but not its version. Reviewer rounds are
+    drawn from the delivery's SHA-256, so a version in the file would draw other reviewers,
+    and tell another story, after every release."""
+    document = json.loads(data)
+    document["source"]["software"] = "orbit-watch simulator"
+    return dumps_pretty(document, sort_keys=False).encode("utf-8")
+
+
 def _deliveries(catalog) -> dict[str, bytes]:
     ctx: dict[str, Any] = {"catalog": catalog, "datasets": {}}
     azel = simulate(
@@ -72,12 +82,13 @@ def _deliveries(catalog) -> dict[str, bytes]:
         seed=401,
         max_passes=2,
     )
-    return {
+    made = {
         "SIM-REQ-1001": scenarios._acceptable(ctx),
         "SIM-REQ-1002": scenarios._wrong_target(ctx),
         "SIM-REQ-1003": scenarios._too_imprecise(ctx),
         "SIM-REQ-1004": owjson.write_observation_set(azel).encode("utf-8"),
     }
+    return {request_id: _without_version(data) for request_id, data in made.items()}
 
 
 class Demo:

@@ -160,7 +160,7 @@
     }
   ],
   "source": {
-    "software": "orbit-watch 0.4.0 simulator",
+    "software": "orbit-watch 0.5.0.dev0 simulator",
     "notes": "SIMULATED by the Orbit Watch simulator: profile sim-cmos-gps, seed 103. Not real observations. Claims SIM-CUBESAT-A but the positions are of SIM-CUBESAT-B, which trails it by about 8 seconds in the same orbit (a typical post-deployment mix-up)."
   }
 }

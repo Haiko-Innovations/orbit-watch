@@ -20,19 +20,19 @@ are bookkeeping only: no money and no blockchain.
 | 2026-11-02 04:00 | station:SIM-ESPOO | delivers SIM-REQ-1002: automated verification **fail**, challenge period until 2026-11-03 04:00 |
 | 2026-11-02 04:00 | station:SIM-OULU | delivers SIM-REQ-1003: automated verification **fail**, challenge period until 2026-11-03 04:00 |
 | 2026-11-02 04:00 | station:SIM-KUOPIO | delivers SIM-REQ-1004: automated verification **pass**, challenge period until 2026-11-03 04:00 |
-| 2026-11-02 05:00 | station:SIM-ESPOO | challenges SIM-REQ-1002; reviewers reviewer:sim-chen, reviewer:sim-aino, reviewer:sim-fatima |
-| 2026-11-02 05:00 | requester:sim-cubesat-team | challenges SIM-REQ-1004; reviewers reviewer:sim-chen, reviewer:sim-bertil, reviewer:sim-aino |
+| 2026-11-02 05:00 | station:SIM-ESPOO | challenges SIM-REQ-1002; reviewers reviewer:sim-eero, reviewer:sim-aino, reviewer:sim-fatima |
+| 2026-11-02 05:00 | requester:sim-cubesat-team | challenges SIM-REQ-1004; reviewers reviewer:sim-chen, reviewer:sim-eero, reviewer:sim-fatima |
 | 2026-11-02 06:00 | reviewer:sim-aino | answers a calibration task: approve (wrong) |
-| 2026-11-02 06:00 | reviewer:sim-aino | answers a calibration task: approve (correct) |
 | 2026-11-02 06:00 | reviewer:sim-aino | answers the SIM-REQ-1002 task: approve |
-| 2026-11-02 06:00 | reviewer:sim-bertil | answers a calibration task: reject (correct) |
 | 2026-11-02 06:00 | reviewer:sim-chen | answers the SIM-REQ-1004 task: approve |
-| 2026-11-02 06:00 | reviewer:sim-chen | answers the SIM-REQ-1002 task: reject |
 | 2026-11-02 06:00 | reviewer:sim-chen | answers a calibration task: approve (correct) |
-| 2026-11-02 06:00 | reviewer:sim-chen | answers a calibration task: reject (correct) |
+| 2026-11-02 06:00 | reviewer:sim-eero | answers a calibration task: reject (correct) |
+| 2026-11-02 06:00 | reviewer:sim-eero | answers the SIM-REQ-1002 task: reject |
+| 2026-11-02 06:00 | reviewer:sim-eero | answers a calibration task: approve (correct) |
+| 2026-11-02 06:00 | reviewer:sim-fatima | answers a calibration task: approve (correct) |
 | 2026-11-02 06:00 | reviewer:sim-fatima | answers the SIM-REQ-1002 task: reject |
 | 2026-11-02 06:00 | reviewer:sim-fatima | answers a calibration task: reject (correct) |
-| 2026-11-02 06:00 | service | SIM-REQ-1002: reviewers rejected 2-1 -> **rejected**, settled: reviewer:sim-aino +10, reviewer:sim-chen +10, reviewer:sim-fatima +10, requester:sim-cubesat-team +100 |
+| 2026-11-02 06:00 | service | SIM-REQ-1002: reviewers rejected 2-1 -> **rejected**, settled: reviewer:sim-aino +10, reviewer:sim-eero +10, reviewer:sim-fatima +10, requester:sim-cubesat-team +100 |
 | 2026-11-03 03:00 | clock | SIM-REQ-1005: no delivery before the deadline -> **expired**, settled: requester:sim-cubesat-team +130 |
 | 2026-11-03 04:00 | clock | SIM-REQ-1001: automated verification passed and nobody challenged it -> **accepted**, settled: station:SIM-ESPOO +100, requester:sim-cubesat-team +30 |
 | 2026-11-03 04:00 | clock | SIM-REQ-1003: automated verification failed and nobody challenged it -> **rejected**, settled: requester:sim-cubesat-team +130 |
@@ -55,7 +55,8 @@ are bookkeeping only: no money and no blockchain.
 | requester:sim-cubesat-team | 860 |
 | station:SIM-ESPOO | 100 |
 | reviewer:sim-aino | 10 |
-| reviewer:sim-chen | 20 |
+| reviewer:sim-chen | 10 |
+| reviewer:sim-eero | 10 |
 | reviewer:sim-fatima | 10 |
 
 Points in escrow: 0. Every deposit was paid out or refunded.
@@ -67,7 +68,7 @@ carefully. Calibration tasks are mixed into their queues.
 
 | Reviewer | Calibration correct | Approval rate | Flags |
 |---|---|---|---|
-| reviewer:sim-aino | 1/2 | 100% | - |
-| reviewer:sim-bertil | 1/1 | 0% | - |
-| reviewer:sim-chen | 2/2 | 50% | - |
-| reviewer:sim-fatima | 1/1 | 0% | - |
+| reviewer:sim-aino | 0/1 | 100% | - |
+| reviewer:sim-chen | 1/1 | 100% | - |
+| reviewer:sim-eero | 2/2 | 33% | - |
+| reviewer:sim-fatima | 2/2 | 33% | - |
