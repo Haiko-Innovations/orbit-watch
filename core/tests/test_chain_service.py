@@ -646,9 +646,9 @@ def test_a_refused_log_range_is_halved_and_retried(api, world, monkeypatch):
     """Endpoints limit eth_getLogs ranges (Base's public one to 200 blocks)."""
     import requests
 
-    from orbit_watch.chain.link import MIN_LOG_CHUNK, _smaller_range
+    from orbit_watch.chain.client import MIN_LOG_CHUNK, _smaller_range
 
-    real = world.chain.events
+    real = world.chain._query_logs
     spans = []
 
     def limited(start, end):
@@ -660,10 +660,10 @@ def test_a_refused_log_range_is_halved_and_retried(api, world, monkeypatch):
             raise error
         return real(start, end)
 
-    monkeypatch.setattr(world.chain, "events", limited)
+    monkeypatch.setattr(world.chain, "_query_logs", limited)
     world.local.rpc("anvil_mine", [hex(450)])
     open_and_fund(api)
-    assert world.link.log_chunk <= 100 and max(spans) > 100
+    assert world.chain.log_chunk <= 100 and max(spans) > 100
     assert api.view()["record"]["status"] == "funded"
     assert _smaller_range(ValueError("query exceeds max block range 1000"), 2000) == 1000
     assert _smaller_range(ValueError("connection refused"), 2000) is None

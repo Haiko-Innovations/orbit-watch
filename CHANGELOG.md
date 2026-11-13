@@ -109,9 +109,10 @@ mainnet or real money.
 - The escrow's version is 1.0.0, the version deployed on Base Sepolia.
   `orbit-watch chain` and `GET /v1/chain` also show the reviewer registry, and
   reporting a transaction on its own shows the testnet notice.
-- The service reads the escrow's events in smaller block ranges when an
-  endpoint refuses a range, taking the limit the endpoint names: Base's public
-  endpoint answers at most 200 blocks per query.
+- The escrow's events are read in smaller block ranges when an endpoint
+  refuses a range, taking the limit the endpoint names: Base's public endpoint
+  answers at most 200 blocks per query. The chain client does this for every
+  reader, the service and the demo alike.
 - A new service directory follows the chain from the current block, since no
   earlier event can belong to its requests, and `serve` reads the chain up to
   date before it answers. Before, a new directory on Base Sepolia read the
