@@ -1,6 +1,10 @@
-import { type ChainInfo, getJson, type OpenRequest } from "../api";
+import { useState } from "react";
+import { type ChainInfo, getJson, type OpenRequest, postJson, type Session } from "../api";
+import type { Prepared } from "../chain/describe";
+import { actionKey, SendFlow } from "../components/SendFlow";
 import { Loaded } from "../components/Status";
 import { formatAmount, formatUtc } from "../format";
+import { paths } from "../router";
 import { strings } from "../strings";
 import { useResource } from "../useResource";
 
@@ -10,7 +14,73 @@ async function loadOpenRequests(): Promise<OpenRequest[]> {
   return (await getJson<{ requests: OpenRequest[] }>("/v1/public/open-requests")).requests;
 }
 
-function RequestCard({ item, chain }: { item: OpenRequest; chain: ChainInfo | null }) {
+/** A station reserves a funded request with its own wallet (step 3.5). */
+function Reserve({
+  item,
+  chain,
+  session,
+}: {
+  item: OpenRequest;
+  chain: ChainInfo;
+  session: Session;
+}) {
+  const [prepared, setPrepared] = useState<Prepared | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (prepared) {
+    return (
+      <SendFlow
+        prepared={prepared}
+        chain={chain}
+        session={session}
+        onDone={() => {
+          window.location.hash = paths.request(item.request_id);
+        }}
+        onCancel={() => setPrepared(null)}
+      />
+    );
+  }
+  async function reserve() {
+    setBusy(true);
+    setProblem(null);
+    try {
+      setPrepared(
+        await postJson<Prepared>(
+          `/v1/requests/${encodeURIComponent(item.request_id)}/reserve`,
+          {},
+          { idempotencyKey: actionKey() },
+        ),
+      );
+    } catch (error) {
+      setProblem(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="actions">
+      <button type="button" disabled={busy} onClick={() => void reserve()}>
+        {strings.reserve.button(item.request_id)}
+      </button>
+      <span className="muted">{strings.reserve.note}</span>
+      {problem ? (
+        <p className="problem" role="alert">
+          {problem}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function RequestCard({
+  item,
+  chain,
+  session,
+}: {
+  item: OpenRequest;
+  chain: ChainInfo | null;
+  session: Session | null;
+}) {
   const { request, terms, split } = item;
   const token = chain ? chain.token : null;
   const titleId = `request-${item.request_id}`;
@@ -61,11 +131,20 @@ function RequestCard({ item, chain }: { item: OpenRequest; chain: ChainInfo | nu
           <code>{item.requester}</code>
         </dd>
       </dl>
+      {session?.role === "station" && chain !== null && item.status === "funded" ? (
+        <Reserve item={item} chain={chain} session={session} />
+      ) : null}
     </article>
   );
 }
 
-export function OpenRequestsPage({ chain }: { chain: ChainInfo | null }) {
+export function OpenRequestsPage({
+  chain,
+  session = null,
+}: {
+  chain: ChainInfo | null;
+  session?: Session | null;
+}) {
   const [requests, reload] = useResource(loadOpenRequests);
   return (
     <>
@@ -78,7 +157,7 @@ export function OpenRequestsPage({ chain }: { chain: ChainInfo | null }) {
           ) : (
             <div className="cards">
               {items.map((item) => (
-                <RequestCard key={item.request_id} item={item} chain={chain} />
+                <RequestCard key={item.request_id} item={item} chain={chain} session={session} />
               ))}
             </div>
           )

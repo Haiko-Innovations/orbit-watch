@@ -518,3 +518,26 @@ textarea {
 .card-meta .badge {
   margin-left: 8px;
 }
+
+.checks {
+  display: grid;
+  gap: 8px;
+  padding-left: 1.2rem;
+}
+
+.check {
+  display: grid;
+  gap: 2px;
+}
+
+.check-pass strong {
+  color: var(--ok);
+}
+
+.check-fail strong {
+  color: var(--problem-text);
+}
+
+.check-inconclusive strong {
+  color: var(--wait);
+}

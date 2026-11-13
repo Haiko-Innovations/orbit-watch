@@ -70,7 +70,8 @@ export async function installTestWallet(
       } catch (error) {
         const data = revertData(error);
         const message = error instanceof BaseError ? error.shortMessage : String(error);
-        return { error: { code: 3, message, ...(data ? { data } : {}) } };
+        // EIP-1474: 3 is a revert with its data; -32000 any other refusal of the node.
+        return { error: { code: data ? 3 : -32000, message, ...(data ? { data } : {}) } };
       }
     },
   );

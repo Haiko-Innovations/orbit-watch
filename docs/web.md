@@ -1,12 +1,13 @@
 # The web application
 
-Phase 3, steps 3.1 to 3.4. Code: [`web/`](../web). Decisions:
+Phase 3, steps 3.1 to 3.5. Code: [`web/`](../web). Decisions:
 [P3-01 to P3-11](decisions.md#phase-3-decisions),
 [D-25](decisions.md#d-25-the-web-project),
 [D-26](decisions.md#d-26-open-requests-are-public),
 [D-27](decisions.md#d-27-signing-in-with-a-wallet),
-[D-28](decisions.md#d-28-transactions-in-the-browser) and
-[D-29](decisions.md#d-29-the-requesters-view).
+[D-28](decisions.md#d-28-transactions-in-the-browser),
+[D-29](decisions.md#d-29-the-requesters-view) and
+[D-30](decisions.md#d-30-the-observers-view).
 
 > **Testnet only, no real value.** The web application runs locally
 > ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)). Every page
@@ -29,7 +30,18 @@ What it has so far:
 | New request | `#/new-request` | a form for a draft request: target from the allow-list, window, deadline, requirements, time limits |
 | A request | `#/requests/<id>` | its status and progress, terms, files, payments and chain events; for its requester: publish, fund (the deposit and its split first), cancel, challenge a passed result |
 
-The observer, reviewer and administrator views follow in steps 3.5 to 3.7
+| Your station | `#/station` | a station's profile: a SIMULATED instrument with the station's own name and place; only the station sees it |
+| Your observations | `#/my-observations` | the requests a station reserved or delivered |
+
+On Open requests a signed-in station reserves a funded request. On the
+request's page the station that reserved it delivers: it chooses a file, or
+has the service simulate SIMULATED observations with its profile; the page
+computes the file's SHA-256, and the transaction flow checks that the chain
+records exactly that. The request's parties see why the automated
+verification passed or failed, check by check; an observer may challenge a
+failed result.
+
+The reviewer and administrator views follow in steps 3.6 and 3.7
 ([roadmap](roadmap.md#phase-3-web-application-target-version-040)).
 
 ## Signing in

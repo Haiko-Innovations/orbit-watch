@@ -9,7 +9,7 @@ One command starts, on this machine only:
   application on one port;
 * SIMULATED parties (a requester, four stations, the reviewers) with LOCAL TEST keys and
   registered wallets, and worthless TestUSD for the requester;
-* three SIMULATED requests: two funded and open for observers, one opened but not funded;
+* five SIMULATED requests: four funded and open for observers, one opened but not funded;
 * one SIMULATED request that ran its course: SIM-ESPOO delivered good observations, nobody
   challenged, and the escrow credited the station 1 TESTUSD and the requester 0.3 back,
   for them to withdraw. Seeding it moves the chain's clock to 2026-11-02 05:01 UTC;
@@ -61,6 +61,8 @@ REQUESTS = [  # request id, title, funded
     ("SIM-REQ-3001", "Identify and track SIM-CUBESAT-A after deployment", True),
     ("SIM-REQ-3002", "Track SIM-CUBESAT-A on its second night", True),
     ("SIM-REQ-3003", "Confirm SIM-CUBESAT-A's orbit (not funded yet)", False),
+    ("SIM-REQ-3004", "Follow SIM-CUBESAT-A after its first manoeuvre", True),
+    ("SIM-REQ-3005", "Check SIM-CUBESAT-A's period", True),
 ]
 SETTLED = ("SIM-REQ-3000", "Identify SIM-CUBESAT-A (delivered and accepted)")
 AFTER_WINDOW = "2026-11-02T04:00:00Z"  # the requests' window ended at 03:00

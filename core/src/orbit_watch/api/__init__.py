@@ -38,9 +38,11 @@ their own files and talk only to this API (decision D-25).
 from __future__ import annotations
 
 import json
+import secrets
 import threading
 from collections.abc import Callable
 from datetime import UTC, datetime
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -59,9 +61,10 @@ from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.chain import WALLET_PREFIX
 from orbit_watch.documents import TargetPolicy
+from orbit_watch.schema import validate
 from orbit_watch.service import RequestService, ServiceError
 from orbit_watch.settlement import SettlementError
-from orbit_watch.timeutil import parse_utc
+from orbit_watch.timeutil import format_utc, parse_utc
 
 MAX_BODY_BYTES = 10 * 1024 * 1024
 # The web application loads only its own files and talks only to this API (decision
@@ -101,6 +104,8 @@ STATUS = {
     "forbidden_origin": 403,
     "wrong_origin": 403,
     "unknown_wallet": 404,
+    "no_profile": 404,
+    "not_reserved_by_you": 409,
     "party_taken": 409,
     "forbidden_role": 403,
     "not_requester": 403,
@@ -451,6 +456,8 @@ class Api:
                     "request_id": rid,
                     "requester": record.requester,
                     "title": json.loads(self.service.request_documents[rid]).get("title"),
+                    "reserved_by": record.reserved_by,
+                    "observer": record.observer,
                     "status": str(record.status),
                     "outcome": None if record.outcome is None else str(record.outcome),
                 }
@@ -616,6 +623,98 @@ class Api:
             ],
             "simulated": policy.simulated,
             "description": policy.description,
+        }
+
+    # ------------------------------------------------------------------ stations (step 3.5)
+
+    def station_templates(self, request, now):
+        """The built-in SIMULATED station profiles, as starting points for a station's own."""
+        from orbit_watch.sim.simulator import builtin_profiles
+
+        templates = []
+        for name in builtin_profiles():
+            text = resources.files("orbit_watch.data").joinpath("stations", f"{name}.json")
+            templates.append(json.loads(text.read_text(encoding="utf-8")))
+        return {"templates": templates}
+
+    def _own_station(self, principal: keys.Principal, request: Request) -> str:
+        party = request.path_params["party"]
+        if principal.role != "admin" and principal.party != party:
+            raise ApiError("not_yourself", "only the station itself and administrators see this")
+        return party
+
+    def _profile(self, party: str) -> dict[str, Any] | None:
+        rows = self.db.query("SELECT * FROM station_profiles WHERE party = ?", (party,))
+        if not rows:
+            return None
+        return {
+            "party": party,
+            "profile": json.loads(rows[0]["profile_json"]),
+            "updated_at": rows[0]["updated_at"],
+        }
+
+    def get_station_profile(self, principal, request, body, now):
+        party = self._own_station(principal, request)
+        found = self._profile(party)
+        if found is None:
+            raise ApiError("no_profile", f"{party} has no station profile yet")
+        return found
+
+    def put_station_profile(self, principal, request, body, now, key):
+        self._require(principal, "station")
+        party = self._own_station(principal, request)
+        document = _field(_json(body), "profile", dict)
+        problems = validate(document, "station-profile")
+        if problems:
+            raise ApiError("invalid_profile", "; ".join(problems[:5]))
+        name = party.split(":", 1)[1]
+        if document["station"]["id"] != name:
+            raise ApiError("wrong_station", f"the profile's station id must be {name}")
+        self.db.execute(
+            "INSERT INTO station_profiles (party, profile_json, updated_at) VALUES (?, ?, ?) "
+            "ON CONFLICT (party) DO UPDATE SET profile_json = excluded.profile_json, "
+            "updated_at = excluded.updated_at",
+            (party, dumps_pretty(document, sort_keys=False), format_utc(now)),
+        )
+        return 200, self._profile(party)
+
+    def simulate_observations(self, principal, request, body, now):
+        """SIMULATED observations of a reserved request's target, made with the station's
+        own profile, for it to deliver like any file (no state changes here)."""
+        from orbit_watch.catalog import parse_catalog
+        from orbit_watch.formats import owjson
+        from orbit_watch.sim.simulator import StationProfile, simulate
+
+        self._require(principal, "station")
+        request_id = request.path_params["request_id"]
+        record = self.service.records.get(request_id)
+        if record is None:
+            raise ApiError("unknown_request", f"no request {request_id!r}")
+        if record.status != lc.Status.RESERVED or record.reserved_by != principal.party:
+            raise ApiError("not_reserved_by_you", f"{request_id} is not reserved by you")
+        found = self._profile(principal.party)
+        if found is None:
+            raise ApiError("no_profile", "register your station profile first")
+        terms = record.terms
+        observations = simulate(
+            parse_catalog(self.service.context.catalog),
+            terms.target_norad_id,
+            StationProfile.from_document(found["profile"]),
+            terms.window_start,
+            terms.window_end,
+            seed=secrets.randbits(31),
+            max_passes=2,
+            notes=f"SIMULATED for {principal.party} with its station profile, by Orbit Watch",
+        )
+        text = owjson.write_observation_set(observations)
+        name = principal.party.split(":", 1)[1]
+        return {
+            "request_id": request_id,
+            "file_name": f"{request_id}-{name}-simulated.json",
+            "format": "json",
+            "observations": text,
+            "sha256": sha256_bytes(text.encode("utf-8")),
+            "simulated": True,
         }
 
     def public_open_requests(self, request, now):
@@ -854,6 +953,15 @@ def create_app(
         Route("/v1/transactions", change(api.report_transaction), methods=["POST"]),
         # Public, no key: settled requests whose embargo has passed (step 1.8).
         Route("/v1/public/requests", api.public(api.public_requests), methods=["GET"]),
+        # Stations (step 3.5).
+        Route("/v1/public/station-templates", api.public(api.station_templates), methods=["GET"]),
+        Route("/v1/stations/{party}/profile", read(api.get_station_profile), methods=["GET"]),
+        Route("/v1/stations/{party}/profile", change(api.put_station_profile), methods=["PUT"]),
+        Route(
+            "/v1/requests/{request_id}/simulate",
+            read(api.simulate_observations),
+            methods=["POST"],
+        ),
         # Public, no key: the objects requests may target (step 3.4).
         Route("/v1/public/targets", api.public(api.public_targets), methods=["GET"]),
         # Public, no key: requests that invite observers (step 3.1, decision D-26).

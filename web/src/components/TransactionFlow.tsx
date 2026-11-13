@@ -4,6 +4,7 @@ import { ApiError, type ChainInfo, type Session } from "../api";
 import {
   type Described,
   describePrepared,
+  type Expected,
   type Prepared,
   RefusedTransaction,
 } from "../chain/describe";
@@ -40,8 +41,10 @@ export default function TransactionFlow({
   session,
   onDone,
   onCancel,
+  expected,
 }: {
   prepared: Prepared;
+  expected?: Expected;
   chain: ChainInfo;
   session: Session;
   onDone: () => void;
@@ -57,12 +60,12 @@ export default function TransactionFlow({
 
   const described = useMemo((): Described[] | RefusedTransaction => {
     try {
-      return describePrepared(prepared, chain, session.address as Address);
+      return describePrepared(prepared, chain, session.address as Address, expected ?? {});
     } catch (error) {
       if (error instanceof RefusedTransaction) return error;
       throw error;
     }
-  }, [prepared, chain, session.address]);
+  }, [prepared, chain, session.address, expected]);
 
   useEffect(() => (wallet === null ? discoverWallets(setFound) : undefined), [wallet]);
 

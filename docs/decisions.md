@@ -936,3 +936,52 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.4):
   keys there, to play the station and the administrator through the API until
   their views exist.
 
+### D-30 The observer's view
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.5):
+
+- **A station registers its profile**: where it is and what it observes with
+  (format `orbit-watch/station-profile` 1.0, migration 0005).
+  - `PUT /v1/stations/{party}/profile` stores it. Its station ID must be the
+    party's own name (`station:SIM-ESPOO` → `SIM-ESPOO`), the ID that its
+    observation files carry.
+  - Only the station and administrators read it, because the coordinates are
+    personal data. They become public anyway in every observation file after
+    settlement, which the page says.
+  - The page starts from one of the built-in SIMULATED instruments
+    (`GET /v1/public/station-templates`), with the station's own name and
+    place.
+- **SIMULATED observations on request**: `POST /v1/requests/{id}/simulate`.
+  - Without a telescope, the station that reserved a request gets observations
+    of its target in its window, simulated with its own profile. The
+    simulator labels them SIMULATED.
+  - Each call is a new draw, because the service refuses data delivered
+    before. The call changes nothing; the station delivers the file like any
+    other.
+  - Two stations at one place simulate near-identical observations, which
+    the duplicate check refuses as resubmitted data. That is why a profile
+    keeps the station's own place.
+  - This is how the plan's "registers a (simulated) station" works in the
+    browser, and why everything still runs without a real telescope.
+- **Reserve and deliver in the browser**:
+  - **Reserving**: funded open requests get a Reserve button for stations.
+  - **Delivering**: the page reads the chosen file and computes its SHA-256,
+    sends it with `Content-SHA256` (the service checks it), and shows it.
+  - **Checking the call data**: the transaction flow refuses a `deliver` call
+    whose SHA-256 is not the file's, so the chain records exactly the file the
+    station chose (extends D-28).
+- **Why a delivery passed or failed**: the request's parties see the automated
+  verification's checks with their reasons. An observer may challenge a
+  failed result; a requester a passed one (D-29).
+- **The request document is readable by more parties** than D-17 said: any
+  party while the request is opened or funded (as D-26 lists it publicly), and
+  the station that reserved it, which needs it to observe. Observations and
+  reports still follow D-17.
+- **A wallet without ETH** gets a plain message instead of the node's error:
+  get some from a faucet. The end-to-end tests give new local wallets test
+  ETH, as a faucet would.
+- **The end-to-end tests now wait for the local stack's "Ready" line only.**
+  Playwright takes whichever of a health URL and the line comes first, and
+  the URL answers before the seeding is done. Since step 3.1 the first tests
+  could therefore start too early; the slow seeding of step 3.4 made it show.
+

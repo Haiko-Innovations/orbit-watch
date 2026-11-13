@@ -152,6 +152,26 @@ describe("describePrepared", () => {
     expect(refusal({ ...prepared(chain.escrow, withdraw), sign: [] })).toContain("no transaction");
   });
 
+  it("checks that a delivery records the file the party chose", () => {
+    const sha = "ab".repeat(32);
+    const deliver = encodeFunctionData({
+      abi: escrowAbi,
+      functionName: "deliver",
+      args: [key("SIM-REQ-3004"), `0x${sha}`],
+    });
+    const item = prepared(chain.escrow, deliver, "SIM-REQ-3004");
+    const [shown] = describePrepared(item, chain, ACCOUNT, { deliverySha256: sha });
+    expect(shown?.title).toBe("Record your delivery for SIM-REQ-3004");
+    expect(shown?.detail).toContain(sha);
+    let refused = "";
+    try {
+      describePrepared(item, chain, ACCOUNT, { deliverySha256: "cd".repeat(32) });
+    } catch (error) {
+      refused = (error as Error).message;
+    }
+    expect(refused).toContain("another file than the one you chose");
+  });
+
   it("refuses a call about another request than the one shown", () => {
     const reserve = encodeFunctionData({
       abi: escrowAbi,

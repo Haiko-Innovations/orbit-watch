@@ -132,6 +132,8 @@ def test_the_request_list_names_requesters_and_titles(world):  # noqa: F811
         "request_id": "SIM-REQ-0004",
         "requester": REQUESTER,
         "title": "SIMULATED: a title",
+        "reserved_by": None,
+        "observer": None,
         "status": "draft",
         "outcome": None,
     }

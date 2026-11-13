@@ -16,9 +16,9 @@ export default defineConfig({
   webServer: {
     command: `uv run --locked python tests/local_stack.py --port ${port} --chain-port ${chainPort} --dir ../web/.e2e-stack --replace --web ../web/dist`,
     cwd: "../core",
-    // The stack says "Ready" once its SIMULATED requests are in place. Its keys are in
-    // web/.e2e-stack/local-stack.json, which the tests read (e2e/stack.ts).
-    url: `http://127.0.0.1:${port}/v1/health`,
+    // The stack says "Ready" once its SIMULATED requests are in place; only then do the tests
+    // start (a health URL would answer before the seeding is done, and Playwright takes
+    // whichever comes first). Its keys are in web/.e2e-stack/local-stack.json (e2e/stack.ts).
     wait: { stdout: /Ready/ },
     timeout: 180_000,
     reuseExistingServer: false,

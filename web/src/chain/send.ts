@@ -62,6 +62,26 @@ export function explainRevert(error: unknown): string | null {
   }
 }
 
+/** Whether the wallet cannot pay the network fee. */
+export function lacksGas(error: unknown): boolean {
+  const texts: string[] = [];
+  const collect = (value: unknown) => {
+    const { name, message, details } = (value ?? {}) as Record<string, unknown>;
+    for (const text of [name, message, details]) if (typeof text === "string") texts.push(text);
+  };
+  if (error instanceof BaseError) {
+    error.walk((inner) => {
+      collect(inner);
+      return false;
+    });
+  } else {
+    collect(error);
+  }
+  return texts.some((text) =>
+    /InsufficientFunds|insufficient funds|exceeds the balance of the account/i.test(text),
+  );
+}
+
 /** Sends one transaction with the party's own wallet; returns its hash. */
 export async function sendWithWallet(
   provider: EIP1193Provider,
@@ -83,6 +103,7 @@ export async function sendWithWallet(
     });
   } catch (error) {
     if (isUserRejection(error)) throw new WalletError("declined", t.declined);
+    if (lacksGas(error)) throw new WalletError("failed", t.noGas);
     const reverted = explainRevert(error);
     if (reverted !== null) throw new WalletError("reverted", reverted);
     const detail = error instanceof BaseError ? error.shortMessage : String(error);
