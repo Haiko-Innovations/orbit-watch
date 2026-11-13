@@ -1,10 +1,11 @@
 # The web application
 
-Phase 3, steps 3.1 and 3.2. Code: [`web/`](../web). Decisions:
+Phase 3, steps 3.1 to 3.3. Code: [`web/`](../web). Decisions:
 [P3-01 to P3-11](decisions.md#phase-3-decisions),
 [D-25](decisions.md#d-25-the-web-project),
-[D-26](decisions.md#d-26-open-requests-are-public) and
-[D-27](decisions.md#d-27-signing-in-with-a-wallet).
+[D-26](decisions.md#d-26-open-requests-are-public),
+[D-27](decisions.md#d-27-signing-in-with-a-wallet) and
+[D-28](decisions.md#d-28-transactions-in-the-browser).
 
 > **Testnet only, no real value.** The web application runs locally
 > ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)). Every page
@@ -21,9 +22,9 @@ What it has so far:
 | Network | `#/` | the service's version, the chain, the escrow, registry, token, EAS schemas, verifier and explorer, with explorer links on Base Sepolia |
 | Open requests | `#/requests` | requests that invite observers: target, window, deadline, rewards and requirements ([`GET /v1/public/open-requests`](api.md)) |
 | Sign in | `#/sign-in` | the wallets in this browser; signing in, or signing up as a requester or a station |
-| Your account | `#/account` | the signed-in party, its role and wallet, when the session ends; signing out |
+| Your account | `#/account` | the signed-in party, its role and wallet, when the session ends; signing out; the wallet's balance and the credit waiting in the escrow, with a withdrawal; the party's transactions with their status |
 
-The role views follow in steps 3.3 to 3.7
+The role views follow in steps 3.4 to 3.7
 ([roadmap](roadmap.md#phase-3-web-application-target-version-040)).
 
 ## Signing in
@@ -46,11 +47,33 @@ maintainers and sign in with a wallet registered from the command line
 [API](api.md#signing-in-with-a-wallet) and
 [D-27](decisions.md#d-27-signing-in-with-a-wallet).
 
+## Transactions
+
+Everything that moves money or records a vote is a transaction that the
+party's own wallet signs ([D-28](decisions.md#d-28-transactions-in-the-browser)).
+The service prepares it; the page then:
+
+1. reads what the transaction does from its call data with the contracts'
+   ABIs, shows it in words ("Withdraw your credit", "Deposit 1.3 TESTUSD for
+   SIM-REQ-3001"), and refuses anything that is not a call this party makes to
+   Orbit Watch's own contracts on the service's chain;
+2. asks the wallet to send it, which shows the network fee;
+3. reports the hash to the service, which waits for the chain, and shows the
+   transaction as pending, confirmed or failed, with an explorer link on Base
+   Sepolia.
+
+A declined prompt, a wallet on another network, a wallet with another account
+and a transaction the chain refuses are each explained, and nothing is sent.
+Withdrawals come first (Your account); requests, deliveries and votes follow
+in steps 3.4 to 3.6.
+
 **With a real wallet on the local stack**: the local chain listens on
 `http://127.0.0.1:8545` (chain 31337), where wallets and viem expect it; the
 page asks the wallet to add it. `local-stack.json` lists every SIMULATED
 party's test key, which you can import into a wallet used only for testing.
-Never send real funds to these public keys.
+Never send real funds to these public keys. The stack seeds SIM-REQ-3000, a
+request that ran its course: station:SIM-ESPOO can withdraw 1 TESTUSD and the
+requester 0.3 TESTUSD.
 
 ## Run it
 

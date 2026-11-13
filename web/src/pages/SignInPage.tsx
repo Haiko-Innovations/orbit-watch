@@ -3,6 +3,7 @@ import type { Address } from "viem";
 import { ApiError, type ChainInfo, postJson } from "../api";
 import { paths } from "../router";
 import { strings } from "../strings";
+import { rememberWallet } from "../wallet/current";
 import { discoverWallets, type Wallet } from "../wallet/discovery";
 import { connect, signSignIn, switchToChain, WalletError } from "../wallet/wallet";
 
@@ -143,6 +144,7 @@ export default function SignInPage({
       const signature = await signSignIn(wallet.provider, address, asked.message);
       setStep({ kind: "working", text: s.checking });
       await postJson("/v1/session", { message: asked.message, signature });
+      rememberWallet(wallet);
       onSignedIn();
       window.location.hash = paths.account;
     } catch (error) {

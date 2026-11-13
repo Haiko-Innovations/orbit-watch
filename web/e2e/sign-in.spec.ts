@@ -31,9 +31,9 @@ test("a station with a registered wallet signs in and out", async ({ page, conte
   await page.getByRole("button", { name: "Test wallet (LOCAL keys)" }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
-  await expect(page.locator("dl.details")).toContainText("station:SIM-ESPOO");
-  await expect(page.locator("dl.details")).toContainText("Observer station");
-  await expect(page.locator("dl.details")).toContainText(address);
+  await expect(page.locator("dl.details").first()).toContainText("station:SIM-ESPOO");
+  await expect(page.locator("dl.details").first()).toContainText("Observer station");
+  await expect(page.locator("dl.details").first()).toContainText(address);
   await expect(page.getByRole("link", { name: "station:SIM-ESPOO" })).toBeVisible();
   await audit(page);
 
@@ -70,7 +70,7 @@ test("a new wallet signs up as an observer station", async ({ page }) => {
   await expect(page.getByText("Your account will be station:SIM-TEST-STATION.")).toBeVisible();
   await page.getByRole("button", { name: "Sign up and sign in" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
-  await expect(page.locator("dl.details")).toContainText("station:SIM-TEST-STATION");
+  await expect(page.locator("dl.details").first()).toContainText("station:SIM-TEST-STATION");
 });
 
 test("a name that is taken is refused, and nothing is signed", async ({ page }) => {

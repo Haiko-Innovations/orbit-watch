@@ -9,7 +9,10 @@ One command starts, on this machine only:
   application on one port;
 * SIMULATED parties (a requester, four stations, the reviewers) with LOCAL TEST keys and
   registered wallets, and worthless TestUSD for the requester;
-* three SIMULATED requests: two funded and open for observers, one opened but not funded.
+* three SIMULATED requests: two funded and open for observers, one opened but not funded;
+* one SIMULATED request that ran its course: SIM-ESPOO delivered good observations, nobody
+  challenged, and the escrow credited the station 1 TESTUSD and the requester 0.3 back,
+  for them to withdraw. Seeding it moves the chain's clock to 2026-11-02 05:01 UTC.
 
     cd contracts && forge build
     cd ../web && npm run build
@@ -39,8 +42,11 @@ from anvil import Deployment, unavailable
 from chain_world import GENESIS, PLATFORM, REGISTRY, REVIEWERS, VERIFIER
 from helpers import catalog_bytes, policy_bytes
 
-from orbit_watch.sim.phase1_demo import ESPOO, KUOPIO, OULU, REQUESTER, TAMPERE
+from orbit_watch.catalog import parse_catalog
+from orbit_watch.sim.phase1_demo import ESPOO, KUOPIO, OULU, REQUESTER, TAMPERE, _deliveries
+from orbit_watch.sim.phase1_demo import _packaged as packaged
 from orbit_watch.sim.phase1_demo import _request_bytes as request_bytes
+from orbit_watch.timeutil import parse_utc
 
 STATIONS = (ESPOO, OULU, KUOPIO, TAMPERE)
 PASSWORD = "local stack test password"  # protects LOCAL TEST keys only
@@ -52,6 +58,10 @@ REQUESTS = [  # request id, title, funded
     ("SIM-REQ-3002", "Track SIM-CUBESAT-A on its second night", True),
     ("SIM-REQ-3003", "Confirm SIM-CUBESAT-A's orbit (not funded yet)", False),
 ]
+SETTLED = ("SIM-REQ-3000", "Identify SIM-CUBESAT-A (delivered and accepted)")
+AFTER_WINDOW = "2026-11-02T04:00:00Z"  # the requests' window ended at 03:00
+AFTER_CHALLENGE = "2026-11-02T05:01:00Z"  # its one-hour challenge period is over
+ADMIN = "admin:local"
 
 
 class StackError(RuntimeError):
@@ -91,7 +101,7 @@ class LocalStack:
         self.service = open_service(directory / "service", REGISTRY, context, chain=link)
         with self.service.storage.db.transaction():
             now = link.now()
-            self.admin = keys.create_key(self.service.storage.db, "admin:local", "admin", now)
+            self.admin = keys.create_key(self.service.storage.db, ADMIN, "admin", now)
             self.keys = {
                 party: keys.create_key(self.service.storage.db, party, party.split(":")[0], now)
                 for party in self.parties
@@ -143,7 +153,8 @@ class LocalStack:
         """Run ``orbit-watch`` as ``party``, with its own keystore when it signs."""
         from orbit_watch.cli import main
 
-        args = [*argv, "--json", "--api", self.api, "--key", self.keys[party]]
+        key = self.admin if party == ADMIN else self.keys[party]
+        args = [*argv, "--json", "--api", self.api, "--key", key]
         if sign:
             args += [
                 "--keystore",
@@ -192,6 +203,51 @@ class LocalStack:
                     sign=True,
                 )
 
+    def travel(self, when: str) -> None:
+        """Move the local chain's clock forward (only a local chain can)."""
+        self.service.chain.chain.travel_to(int(parse_utc(when).timestamp()))
+
+    def seed_settled(self) -> None:
+        """A request that ran its course, so that SIM-ESPOO and the requester have credit in
+        the escrow to withdraw."""
+        request_id, title = SETTLED
+        documents = self.directory / "requests"
+        document = documents / f"{request_id}.json"
+        document.write_bytes(request_bytes(request_id, title))
+        self.cli(
+            REQUESTER,
+            "request",
+            "create",
+            str(document),
+            "--delivery-deadline",
+            DELIVERY_DEADLINE,
+            "--challenge-period-hours",
+            "1",
+        )
+        self.cli(REQUESTER, "request", "open", request_id)
+        self.cli(
+            REQUESTER,
+            "request",
+            "fund",
+            request_id,
+            "--observer",
+            "1",
+            "--reviewer",
+            "0.1",
+            sign=True,
+        )
+        self.cli(ESPOO, "reserve", request_id, sign=True)
+        self.travel(AFTER_WINDOW)
+        observations = documents / f"{request_id}.observations.json"
+        good = _deliveries(parse_catalog(packaged("catalog.json")))["SIM-REQ-1001"]
+        observations.write_bytes(good)
+        self.cli(ESPOO, "submit", str(observations), "--request", request_id, sign=True)
+        self.travel(AFTER_CHALLENGE)
+        self.cli(ADMIN, "admin", "tick")
+        settled = json.loads(self.cli(REQUESTER, "request", "show", request_id))
+        if settled["summary"]["outcome"] != "accepted":
+            raise StackError(f"{request_id} was not accepted: {settled['summary']}")
+
     def describe(self) -> dict:
         return {
             "notice": "LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.",
@@ -214,6 +270,7 @@ class LocalStack:
                 for party in self.parties
             },
             "requests": [request_id for request_id, _, _ in REQUESTS],
+            "settled": SETTLED[0],
         }
 
     def stop(self) -> None:
@@ -257,6 +314,7 @@ def main(argv: list[str] | None = None) -> int:
         signal.signal(sig, lambda *_: stopped.set())
     try:
         stack.seed()
+        stack.seed_settled()
         info = directory / "local-stack.json"
         info.write_text(json.dumps(stack.describe(), indent=2) + "\n", encoding="utf-8")
         print("LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.")
