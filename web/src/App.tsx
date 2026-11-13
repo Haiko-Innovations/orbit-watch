@@ -4,12 +4,15 @@ import { Logo } from "./components/Logo";
 import { Loaded } from "./components/Status";
 import { TestnetBanner } from "./components/TestnetBanner";
 import { AccountPage } from "./pages/AccountPage";
+import { AdminPage } from "./pages/AdminPage";
+import { AttestationsPage } from "./pages/AttestationsPage";
 import { MyObservationsPage } from "./pages/MyObservationsPage";
 import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { NetworkPage } from "./pages/NetworkPage";
 import { NewRequestPage } from "./pages/NewRequestPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { OpenRequestsPage } from "./pages/OpenRequestsPage";
+import { QualityPage } from "./pages/QualityPage";
 import { RequestPage } from "./pages/RequestPage";
 import { StationPage } from "./pages/StationPage";
 import { TaskPage } from "./pages/TaskPage";
@@ -43,6 +46,9 @@ const titles: Record<Route["page"], string> = {
   task: strings.task.title,
   "new-request": strings.newRequest.title,
   request: strings.request.terms,
+  admin: strings.admin.title,
+  attestations: strings.attestations.title,
+  quality: strings.quality.title,
   "not-found": strings.notFound.title,
 };
 
@@ -105,6 +111,14 @@ export function App() {
           <NavLink href={paths.openRequests} current={route.page === "open-requests"}>
             {strings.nav.openRequests}
           </NavLink>
+          {chain ? (
+            <NavLink href={paths.attestations} current={route.page === "attestations"}>
+              {strings.nav.attestations}
+            </NavLink>
+          ) : null}
+          <NavLink href={paths.quality} current={route.page === "quality"}>
+            {strings.nav.quality}
+          </NavLink>
           {signedIn?.role === "station" ? (
             <>
               <NavLink href={paths.myObservations} current={route.page === "my-observations"}>
@@ -126,6 +140,11 @@ export function App() {
               current={route.page === "my-requests" || route.page === "new-request"}
             >
               {strings.nav.myRequests}
+            </NavLink>
+          ) : null}
+          {signedIn?.role === "admin" ? (
+            <NavLink href={paths.admin} current={route.page === "admin"}>
+              {strings.nav.admin}
             </NavLink>
           ) : null}
           {signedIn ? (
@@ -150,6 +169,10 @@ export function App() {
                   return <NetworkPage health={health} chain={chain} />;
                 case "open-requests":
                   return <OpenRequestsPage chain={chain} session={signedIn} />;
+                case "attestations":
+                  return <AttestationsPage chain={chain} />;
+                case "quality":
+                  return <QualityPage />;
                 case "sign-in":
                   return (
                     <Suspense fallback={<p className="muted">{strings.loading}</p>}>
@@ -163,6 +186,7 @@ export function App() {
                 case "tasks":
                 case "task":
                 case "request":
+                case "admin":
                   return (
                     <Loaded resource={session} reload={reloadSession}>
                       {(current) =>
@@ -180,6 +204,8 @@ export function App() {
                           <TasksPage session={current} />
                         ) : route.page === "task" ? (
                           <TaskPage id={taskId ?? ""} chain={chain} session={current} />
+                        ) : route.page === "admin" ? (
+                          <AdminPage session={current} onChain={chain !== null} />
                         ) : (
                           <RequestPage id={requestId ?? ""} chain={chain} session={current} />
                         )

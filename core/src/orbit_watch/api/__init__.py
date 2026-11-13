@@ -8,7 +8,9 @@ the party's wallet (step 3.2, ``api.sessions``). Keys belong to one party and on
 * ``requester``: create, open, fund and cancel requests, challenge results;
 * ``station``: reserve requests, deliver observation files, challenge results;
 * ``reviewer``: list review tasks and answer them;
-* ``admin``: grant points, create keys, apply deadlines.
+* ``admin``: grant points, create keys, apply deadlines; and, in the administrator view
+  (step 3.7), see every request, transaction, conflict and event, prepare reviewer registry
+  changes for the Safe to propose, and make SIMULATED observation files.
 
 A station key can deliver, but it can never move points.
 
@@ -28,6 +30,11 @@ wallet and reports each hash (``POST /v1/transactions``). The service follows
 the chain, which decides: every call first applies the escrow's new events.
 Every chain-related answer carries a ``notice`` ("Base Sepolia testnet, no
 real value").
+
+**Public pages** (step 3.7) need no key either: the station quality meter
+(``POST /v1/public/quality``) scores an observation file without keeping it, and the
+attestation browser (``GET /v1/public/attestations``) lists the EAS attestations of the
+requests the service follows, with EAS Scan links on Base Sepolia.
 
 **The web application** (step 3.1): given the directory of its build, the API
 serves it at ``/`` on its own origin, so the browser talks to one server only.
@@ -59,7 +66,7 @@ from orbit_watch import lifecycle as lc
 from orbit_watch.api import keys, sessions
 from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
-from orbit_watch.chain import WALLET_PREFIX
+from orbit_watch.chain import WALLET_PREFIX, ChainError
 from orbit_watch.documents import TargetPolicy
 from orbit_watch.schema import validate
 from orbit_watch.service import RequestService, ServiceError
@@ -67,6 +74,9 @@ from orbit_watch.settlement import SettlementError
 from orbit_watch.timeutil import format_utc, parse_utc
 
 MAX_BODY_BYTES = 10 * 1024 * 1024
+# The public quality meter scores one observation file at a time, outside the service lock.
+MAX_QUALITY_BYTES = 2 * 1024 * 1024
+MAX_SIMULATED_PASSES = 6
 # The web application loads only its own files and talks only to this API (decision
 # D-25). Wallet extensions inject their providers themselves; EIP-6963 wallet icons are
 # data: URLs.
@@ -134,6 +144,13 @@ STATUS = {
     "nothing_to_withdraw": 409,
     "insufficient_balance": 409,
     "points_not_used": 409,
+    "already_reviewer": 409,
+    "not_a_reviewer": 409,
+    "registry_full": 409,
+    "no_timelock": 409,
+    "unknown_scenario": 404,
+    "unknown_profile": 404,
+    "unknown_target": 404,
     "too_large": 413,
     "verification_unavailable": 503,
     "chain_unavailable": 503,
@@ -165,6 +182,13 @@ def _json(body: bytes) -> dict[str, Any]:
     if not isinstance(document, dict):
         raise ApiError("invalid_body", "the body must be a JSON object")
     return document
+
+
+def _utc_field(document: dict[str, Any], name: str) -> datetime:
+    try:
+        return parse_utc(_field(document, name, str))
+    except ValueError:
+        raise ApiError("invalid_body", f"field {name!r} is not a UTC time") from None
 
 
 def _field(document: dict[str, Any], name: str, kind: type | tuple[type, ...]) -> Any:
@@ -820,6 +844,216 @@ class Api:
             result["notice"] = self.chain.notice
         return 200, result
 
+    # ------------------------------------------------------------------ administrator (step 3.7)
+
+    def admin_overview(self, principal, request, body, now):
+        """Every request with its status, delivery and payments; the chain's transactions,
+        conflicts and latest events."""
+        self._require(principal, "admin")
+        requests = []
+        counts: dict[str, int] = {}
+        for rid, record in sorted(self.service.records.items()):
+            summary = self.service.summary(rid)
+            counts[str(record.status)] = counts.get(str(record.status), 0) + 1
+            requests.append(
+                {
+                    "request_id": rid,
+                    "title": json.loads(self.service.request_documents[rid]).get("title"),
+                    "requester": record.requester,
+                    "status": str(record.status),
+                    "outcome": summary["outcome"],
+                    "outcome_reason": summary["outcome_reason"],
+                    "reserved_by": record.reserved_by,
+                    "observer": record.observer,
+                    "automated_verdict": summary["automated_verdict"],
+                    "reviewers": summary["reviewers"],
+                    "votes": summary["votes"],
+                    "on_chain": self.service.on_chain(rid),
+                    "settlement": summary["settlement"],
+                }
+            )
+        view: dict[str, Any] = {"now": format_utc(now), "requests": requests, "counts": counts}
+        if self.chain is not None:
+            view.update(self.chain.admin_view())
+            view["notice"] = self.chain.notice
+        else:
+            view.update({"chain": None, "events": [], "conflicts": [], "transactions": []})
+        return view
+
+    def _wall_ms(self) -> int:
+        return int(self.wall_clock().timestamp() * 1000)
+
+    def admin_governance(self, principal, request, body, now):
+        self._require(principal, "admin")
+        return self._require_chain().governance_view(self._wall_ms())
+
+    def admin_propose(self, principal, request, body, now):
+        """The data for the Safe to add or remove a reviewer through the timelock. Nothing
+        changes here: the Safe's owners sign in the Safe's own app."""
+        self._require(principal, "admin")
+        chain = self._require_chain()
+        document = _json(body)
+        action = _field(document, "action", str)
+        reviewer = _field(document, "reviewer", str).strip()
+        if not reviewer.startswith("0x"):  # a party name: its registered wallet
+            address = chain.address_of(reviewer)
+            if address is None:
+                raise ApiError("no_wallet", f"{reviewer} has no registered wallet")
+            reviewer = address
+        proposal = chain.governance.prepare(action, reviewer, self._wall_ms())
+        return {"proposal": proposal, "notice": chain.notice}
+
+    def admin_demo_datasets(self, principal, request, body, now):
+        """The six SIMULATED test datasets of phase 0 (``orbit-watch demo``)."""
+        from orbit_watch.sim.scenarios import REQUEST, SCENARIOS
+
+        self._require(principal, "admin")
+        return {
+            "request": REQUEST,
+            "datasets": [
+                {
+                    "name": s.name,
+                    "title": s.title,
+                    "expected_verdict": s.expected_verdict,
+                    "expected_failures": s.expected_failures,
+                }
+                for s in SCENARIOS
+            ],
+            "simulated": True,
+        }
+
+    def admin_demo_dataset(self, principal, request, body, now):
+        """One SIMULATED test dataset, made afresh (no state changes here)."""
+        from orbit_watch.catalog import parse_catalog
+        from orbit_watch.sim.scenarios import SCENARIOS
+
+        self._require(principal, "admin")
+        name = request.path_params["name"]
+        scenarios = {s.name: s for s in SCENARIOS}
+        if name not in scenarios:
+            raise ApiError("unknown_scenario", f"no demo dataset {name!r}")
+        ctx: dict[str, Any] = {"catalog": parse_catalog(self.service.context.catalog)}
+        ctx["datasets"] = {"acceptable": scenarios["acceptable"].build(ctx)}
+        data = scenarios[name].build(ctx)
+        scenario = scenarios[name]
+        return {
+            "name": name,
+            "file_name": f"demo-{name}.json",
+            "format": "json",
+            "observations": data.decode("utf-8"),
+            "sha256": sha256_bytes(data),
+            "expected_verdict": scenario.expected_verdict,
+            "expected_failures": scenario.expected_failures,
+            "simulated": True,
+        }
+
+    def admin_simulate(self, principal, request, body, now):
+        """SIMULATED observations by a built-in station profile of an allowed target in a
+        window (``orbit-watch simulate``); nothing is kept."""
+        from orbit_watch.catalog import parse_catalog
+        from orbit_watch.formats import owjson
+        from orbit_watch.sim.simulator import builtin_profiles, load_profile, simulate
+
+        self._require(principal, "admin")
+        document = _json(body)
+        profile = _field(document, "profile", str)
+        if profile not in builtin_profiles():
+            raise ApiError("unknown_profile", f"no built-in station profile {profile!r}")
+        norad_id = _field(document, "norad_id", int)
+        if not TargetPolicy.parse(self.service.context.policy).allows(norad_id):
+            raise ApiError("unknown_target", f"{norad_id} is not an allowed target")
+        start = _utc_field(document, "start")
+        end = _utc_field(document, "end")
+        if not start < end or (end - start).total_seconds() > 3 * 24 * 3600:
+            raise ApiError("invalid_window", "the window must end after it starts, within 3 days")
+        passes = document.get("max_passes", 2)
+        if not isinstance(passes, int) or isinstance(passes, bool):
+            raise ApiError("invalid_body", "max_passes must be a whole number")
+        if not 1 <= passes <= MAX_SIMULATED_PASSES:
+            raise ApiError("invalid_body", f"max_passes must be 1 to {MAX_SIMULATED_PASSES}")
+        observations = simulate(
+            parse_catalog(self.service.context.catalog),
+            norad_id,
+            load_profile(profile),
+            start,
+            end,
+            seed=secrets.randbits(31),
+            max_passes=passes,
+            notes=f"SIMULATED by Orbit Watch for {principal.party} with {profile}",
+        )
+        text = owjson.write_observation_set(observations)
+        return {
+            "file_name": f"simulated-{profile}-{norad_id}.json",
+            "format": "json",
+            "observations": text,
+            "count": len(observations.observations),
+            "sha256": sha256_bytes(text.encode("utf-8")),
+            "simulated": True,
+        }
+
+    # ------------------------------------------------------------------ public pages (step 3.7)
+
+    def public_attestations(self, request, now):
+        chain = self._require_chain()
+        published = {
+            rid
+            for rid in self.service.records
+            if self.service.publication(rid, now)["state"] == "published"
+        }
+        attestations = chain.attestations()
+        for attestation in attestations:
+            attestation["published"] = attestation["request_id"] in published
+        return {
+            "attestations": attestations,
+            "eas": chain.chain.eas.address,
+            "result_schema": "0x" + chain.chain.result_schema.hex(),
+            "vote_schema": "0x" + chain.chain.vote_schema.hex(),
+            "notice": chain.notice,
+        }
+
+    async def public_quality(self, request: Request) -> Response:
+        """The station quality meter: an observation file in, its quality report out. The
+        file is not kept, and scoring does not hold the service lock."""
+        # Read in pieces and stop at the limit: anyone may call this.
+        chunks, size = [], 0
+        async for chunk in request.stream():
+            size += len(chunk)
+            if size > MAX_QUALITY_BYTES:
+                raise ApiError("too_large", f"the file is larger than {MAX_QUALITY_BYTES} bytes")
+            chunks.append(chunk)
+        body = b"".join(chunks)
+        fmt = request.query_params.get("format")
+        if fmt not in (None, "json", "iod", "tdm"):
+            raise ApiError("invalid_format", "format must be json, iod or tdm")
+        report = await run_in_threadpool(self._score, body, fmt)
+        return self._respond(report)
+
+    def _score(self, data: bytes, fmt: str | None) -> dict[str, Any]:
+        from orbit_watch import quality
+        from orbit_watch.catalog import parse_catalog
+        from orbit_watch.formats import load_observation_sets
+
+        try:
+            # Without a format, the content tells (the name has no suffix to go by).
+            loaded = load_observation_sets("upload", data=data, input_format=fmt)
+        except (ValueError, KeyError, IndexError, TypeError) as error:
+            raise ApiError("invalid_file", f"cannot read the observations: {error}") from None
+        stations = sorted({s.station.id for s in loaded.sets})
+        if not loaded.sets:
+            raise ApiError("invalid_file", "the file has no observations the meter can use")
+        if len(stations) > 1:
+            raise ApiError("several_stations", f"the file has several stations: {stations}")
+        try:
+            report = quality.score_station(loaded.sets, parse_catalog(self.service.context.catalog))
+        except ValueError as error:
+            raise ApiError("cannot_score", str(error)) from None
+        return {
+            "report": report,
+            "text": quality.render_text(report),
+            "warnings": loaded.warnings,
+            "skipped": loaded.skipped,
+        }
+
     # ------------------------------------------------------------------ chain (step 2.6)
 
     def chain_info(self, request, now):
@@ -939,6 +1173,16 @@ def create_app(
             methods=["POST"],
         ),
         Route("/v1/admin/tick", change(api.tick), methods=["POST"]),
+        # The administrator view (step 3.7): reads, and data for others to sign.
+        Route("/v1/admin/overview", read(api.admin_overview), methods=["GET"]),
+        Route("/v1/admin/governance", read(api.admin_governance), methods=["GET"]),
+        Route("/v1/admin/governance/proposals", read(api.admin_propose), methods=["POST"]),
+        Route("/v1/admin/demo-datasets", read(api.admin_demo_datasets), methods=["GET"]),
+        Route("/v1/admin/demo-datasets/{name}", read(api.admin_demo_dataset), methods=["POST"]),
+        Route("/v1/admin/simulate", read(api.admin_simulate), methods=["POST"]),
+        # Public pages (step 3.7).
+        Route("/v1/public/quality", api.public_quality, methods=["POST"]),
+        Route("/v1/public/attestations", api.public(api.public_attestations), methods=["GET"]),
         # On a testnet chain (step 2.6).
         Route("/v1/chain", api.public(api.chain_info), methods=["GET"]),
         # Signing in with a wallet (step 3.2).
@@ -978,6 +1222,7 @@ def create_app(
         ServiceError: _handle_api_error,
         SettlementError: _handle_api_error,
         SessionError: _handle_api_error,
+        ChainError: _handle_api_error,
     }
     return Starlette(
         routes=routes, exception_handlers=handlers, middleware=[Middleware(SecurityHeaders)]

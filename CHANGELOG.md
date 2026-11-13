@@ -79,6 +79,27 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   page has checked the answer, the reasons' SHA-256 and the delivery in the
   call data; a calibration answer is recorded at once (D-31). The local stack
   seeds a request in review.
+- The administrator view and the public pages (phase 3, step 3.7).
+  Administration shows every request with its status, delivery, votes and
+  payments, the conflicts and failed transactions, every watched transaction
+  and the event log, and runs `tick`. It shows the reviewer registry with the
+  timelock that owns it, its Safe and the timelock's operations. It prepares
+  a reviewer's addition or removal as data for the Safe: a Transaction Builder
+  batch file with the builder's checksum, and the data to execute after the
+  delay; the service sends nothing and holds no governance key. It also makes
+  SIMULATED files with the simulator and the six demo datasets. New
+  endpoints: `GET /v1/admin/overview`, `GET /v1/admin/governance`,
+  `POST /v1/admin/governance/proposals`, `GET /v1/admin/demo-datasets`,
+  `POST /v1/admin/demo-datasets/{name}` and `POST /v1/admin/simulate`. The
+  public pages need no sign-in: Attestations (`GET /v1/public/attestations`)
+  lists every automated result and vote with EAS Scan links on Base Sepolia,
+  and the Station quality meter (`POST /v1/public/quality`) scores an
+  observation file without keeping it. The service follows the timelock's
+  events with the escrow's and keeps the attestations it has read (storage
+  migration 0006); `orbit-watch serve --safe` names the Safe, which
+  `--network` takes from the deployment record. The local stack governs like
+  Base Sepolia, with a Safe of LOCAL TEST signers and a 60-second timelock,
+  and its administrator signs in with a wallet (D-32).
 
 ### Changed
 

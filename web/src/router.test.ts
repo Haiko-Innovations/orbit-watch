@@ -25,8 +25,14 @@ describe("parseHash", () => {
     });
   });
 
+  it("knows the administrator view and the public pages (step 3.7)", () => {
+    expect(parseHash(paths.admin)).toEqual({ page: "admin" });
+    expect(parseHash(paths.attestations)).toEqual({ page: "attestations" });
+    expect(parseHash(paths.quality)).toEqual({ page: "quality" });
+  });
+
   it("calls everything else not found", () => {
-    expect(parseHash("#/admin")).toEqual({ page: "not-found" });
+    expect(parseHash("#/admin/keys")).toEqual({ page: "not-found" });
     expect(parseHash("#main")).toEqual({ page: "not-found" });
   });
 });

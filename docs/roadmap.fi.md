@@ -34,8 +34,9 @@ Vaiheen 0 ainoa avoin kriteeri, oikea julkinen IOD-esimerkki, on yhä avoinna
 hyväksyttiin 13.11.2026 ([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)). Valmiina: sovelluksen projekti
 hakemistossa `web/`, palvelu tarjoaa sen, julkiset sivut ja paikallinen
 ympäristö yhdellä komennolla (3.1), kirjautuminen lompakolla (3.2),
-transaktiot selaimessa saldoineen ja nostoineen (3.3) sekä tilaajan (3.4),
-havaitsijan (3.5) ja tarkistajan (3.6) näkymät
+transaktiot selaimessa saldoineen ja nostoineen (3.3), tilaajan (3.4),
+havaitsijan (3.5) ja tarkistajan (3.6) näkymät sekä ylläpitäjän näkymä,
+julkinen attestaatioselain ja laatumittari (3.7)
 ([web.md](web.md), englanniksi).
 
 ## Seuraavat askeleet
@@ -134,7 +135,7 @@ Ethereum** ja istuntoeväste, **Biome** ja **TypeScript 7**, päästä päähän
 | ✅ **3.4 Tilaajan näkymä** ([#50](https://github.com/Haiko-Innovations/orbit-watch/issues/50)) | Tilauksen luonti (kohde sallittujen listalta, aikaikkuna, määräaika, toimitusvaatimukset), jako ja maksut näkyvät ennen rahoitusta, rahoitus, seuranta ja haaste, aineiston ja raportin lataus, maksut ja palautukset. | Päästä päähän: selaimessa luotu ja rahoitettu tilaus toimitetaan ja tilitetään, ja sen raportti ladataan. |
 | ✅ **3.5 Havaitsijan näkymä** ([#51](https://github.com/Haiko-Innovations/orbit-watch/issues/51)) | Simuloidun aseman rekisteröinti, avoimet tilaukset ja varaus, havaintojen lähetys (SHA-256 tarkistetaan), syyt toimituksen hyväksymiselle tai hylkäämiselle, haaste, palkkioiden seuranta. | Päästä päähän: varaus ja toimitus selaimessa; hyväksytty ja hylätty toimitus näyttävät syynsä. |
 | ✅ **3.6 Tarkistajan näkymä** ([#52](https://github.com/Haiko-Innovations/orbit-watch/issues/52)) | Annetut tehtävät, raportti ja tarkistukset, hyväksyntä tai hylkäys perusteluineen EAS-attestaationa allekirjoitettuna, palkkiot ja tarkkuus. | Päästä päähän: selaimessa annetut äänet ovat attestaatioita paikallisessa ketjussa, ja kierros tilitetään. |
-| **3.7 Ylläpitäjän näkymä ja julkiset sivut** ([#53](https://github.com/Haiko-Innovations/orbit-watch/issues/53)) | Tilaukset, toimitukset, maksut, virheet ja tapahtumaloki; `tick`; tarkistajarekisteri, aikalukon jono ja Safen omassa sovelluksessa ehdotettavat Safe-transaktiot; simulaattori ja demoaineistot; aseman laatumittari ja julkinen attestaatioselain. | Päästä päähän ylläpitäjälle; näkymä ei voi tehdä mitään, minkä rajapinta kieltää, testattu; julkiset sivut toimivat kirjautumatta. |
+| ✅ **3.7 Ylläpitäjän näkymä ja julkiset sivut** ([#53](https://github.com/Haiko-Innovations/orbit-watch/issues/53)) | Tilaukset, toimitukset, maksut, virheet ja tapahtumaloki; `tick`; tarkistajarekisteri, aikalukon jono ja Safen omassa sovelluksessa ehdotettavat Safe-transaktiot; simulaattori ja demoaineistot; aseman laatumittari ja julkinen attestaatioselain. | Päästä päähän ylläpitäjälle; näkymä ei voi tehdä mitään, minkä rajapinta kieltää, testattu; julkiset sivut toimivat kirjautumatta. |
 | **3.8 Vaiheen 3 demo** ([#54](https://github.com/Haiko-Innovations/orbit-watch/issues/54)) | Koko ketju selaimessa Base Sepoliassa, jokaisella roolilla oma lompakko, jokaisen näkymän saavutettavuuskatselmointi ja vaiheen 3 yhteenveto. | Alla olevat vaiheen 3 valmiskriteerit täyttyvät; julkaisu 0.4.0. |
 
 **Vaiheen 3 valmiskriteerit** ([P3-11](decisions.md#p3-11-phase-3-completion-criteria);

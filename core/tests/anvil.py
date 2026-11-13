@@ -43,7 +43,15 @@ SAFE_CODE = {
         "50c3cdc4074750a7a974204a716c999edd37482f907608d960b2b025ee0b3317",
     ),
 }
+SAFE_L2_SINGLETON = "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762"
+SAFE_PROXY_FACTORY = "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67"
+ZERO_ADDRESS = "0x" + "00" * 20
 GAS_MONEY = 10**21  # local test ether for every account
+# The local timelock waits a minute (Base Sepolia's waits 48 hours), so that tests can
+# move the clock past it without passing the SIMULATED requests' deadlines.
+LOCAL_TIMELOCK_DELAY = 60
+SAFE_SIGNERS = ("safe:signer-1", "safe:signer-2", "safe:signer-3")
+SAFE_THRESHOLD = 2
 
 
 def unavailable() -> str | None:
@@ -170,7 +178,12 @@ def contract_name(call) -> str:
 
 
 class Deployment:
-    """A fresh chain with TestUSD, a reviewer registry and the escrow."""
+    """A fresh chain with TestUSD, a reviewer registry and the escrow.
+
+    With ``governance``, as on Base Sepolia (step 2.7): a 2-of-3 Safe of LOCAL TEST signers
+    and a TimelockController whose only proposer is the Safe, which owns the registry; its
+    delay is ``LOCAL_TIMELOCK_DELAY``. Otherwise the deployer's account owns the registry.
+    """
 
     def __init__(
         self,
@@ -181,6 +194,7 @@ class Deployment:
         verifier: str,
         parties: list[str],
         port: int = 0,
+        governance: bool = False,
     ):
         self.chain = LocalChain(genesis, port)
         self.accounts = {party: test_account(party) for party in [*parties, verifier]}
@@ -188,11 +202,26 @@ class Deployment:
         for account in [self.deployer, *self.accounts.values()]:
             self.chain.give_gas_money(account.address)
         self.usd = self.chain.deploy(self.deployer, "TestUSD.sol", "TestUSD")
+        self.safe = self.timelock = None
+        self.safe_signers = [test_account(name) for name in SAFE_SIGNERS]
+        owner = self.deployer.address
+        if governance:
+            self.safe = self._deploy_safe()
+            self.timelock = self.chain.deploy(
+                self.deployer,
+                "TimelockController.sol",
+                "TimelockController",
+                LOCAL_TIMELOCK_DELAY,
+                [self.safe.address],
+                [ZERO_ADDRESS],  # anyone may execute
+                ZERO_ADDRESS,  # no admin
+            )
+            owner = self.timelock.address
         self.registry = self.chain.deploy(
             self.deployer,
             "OrbitWatchReviewerRegistry.sol",
             "OrbitWatchReviewerRegistry",
-            self.deployer.address,
+            owner,
             [self.accounts[r].address for r in reviewers],
         )
         self.escrow = self.chain.deploy(
@@ -204,6 +233,54 @@ class Deployment:
             EAS_PREDEPLOY,
             self.registry.address,
             self.accounts[verifier].address,
+        )
+
+    def _deploy_safe(self):
+        """A Safe 1.4.1 proxy with the LOCAL TEST signers, made like the deployment script's."""
+        self.chain.install_safe()
+        for signer in self.safe_signers:
+            self.chain.give_gas_money(signer.address)
+        w3 = self.chain.w3
+        abi = artifact("ISafe.sol", "ISafe")["abi"]
+        setup = w3.eth.contract(abi=abi).encode_abi(
+            "setup",
+            args=[
+                [s.address for s in self.safe_signers],
+                SAFE_THRESHOLD,
+                ZERO_ADDRESS,
+                b"",
+                ZERO_ADDRESS,
+                ZERO_ADDRESS,
+                0,
+                ZERO_ADDRESS,
+            ],
+        )
+        factory = w3.eth.contract(
+            address=SAFE_PROXY_FACTORY, abi=artifact("ISafe.sol", "ISafeProxyFactory")["abi"]
+        )
+        create = factory.functions.createProxyWithNonce(SAFE_L2_SINGLETON, setup, 0)
+        address = create.call({"from": self.deployer.address})
+        self.chain.send(self.deployer, create)
+        return w3.eth.contract(address=address, abi=abi)
+
+    def safe_execute(self, to: str, data: str, signers: int = SAFE_THRESHOLD):
+        """Have the Safe call ``to`` with ``data``, signed by its first ``signers`` LOCAL
+        TEST signers (what the Safe's owners do in the Safe app)."""
+        from eth_account import Account
+
+        safe = self.safe.functions
+        safe_tx_hash = safe.getTransactionHash(
+            to, 0, data, 0, 0, 0, 0, ZERO_ADDRESS, ZERO_ADDRESS, safe.nonce().call()
+        ).call()
+        owners = sorted(self.safe_signers[:signers], key=lambda a: int(a.address, 16))
+        signatures = b""
+        for owner in owners:
+            signed = Account.unsafe_sign_hash(safe_tx_hash, owner.key)
+            signatures += signed.r.to_bytes(32, "big") + signed.s.to_bytes(32, "big")
+            signatures += bytes([signed.v])
+        return self.chain.send(
+            owners[0],
+            safe.execTransaction(to, 0, data, 0, 0, 0, 0, ZERO_ADDRESS, ZERO_ADDRESS, signatures),
         )
 
     def give_budget(self, party: str, amount: int) -> None:

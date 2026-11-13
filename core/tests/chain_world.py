@@ -33,15 +33,18 @@ BUDGET = 1_000_000_000  # 1000 TestUSD (6 decimals), worthless
 
 
 class ChainWorld:
-    """A fresh chain with the contracts, and a stored service that follows it."""
+    """A fresh chain with the contracts, and a stored service that follows it. With
+    ``governance``, a timelock owns the reviewer registry and a Safe proposes to it, as on
+    Base Sepolia (step 3.7)."""
 
-    def __init__(self, directory: Path):
+    def __init__(self, directory: Path, *, governance: bool = False, parties: tuple = ()):
         self.deployment = Deployment(
             GENESIS,
             reviewers=REVIEWERS,
             platform=PLATFORM,
             verifier=VERIFIER,
-            parties=[REQUESTER, STATION, STRANGER, PLATFORM, *REVIEWERS],
+            parties=[REQUESTER, STATION, STRANGER, PLATFORM, *REVIEWERS, *parties],
+            governance=governance,
         )
         self.local = self.deployment.chain
         self.w3 = self.local.w3
@@ -53,7 +56,13 @@ class ChainWorld:
 
     def open(self, escrow: str | None = None):
         chain = OrbitWatchChain(self.w3, escrow or self.deployment.escrow.address)
-        link = ChainLink(chain, self.deployment.accounts[VERIFIER], receipt_timeout=30)
+        safe = self.deployment.safe
+        link = ChainLink(
+            chain,
+            self.deployment.accounts[VERIFIER],
+            receipt_timeout=30,
+            safe=None if safe is None else safe.address,
+        )
         context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
         return open_service(self.directory, REGISTRY, context, chain=link)
 

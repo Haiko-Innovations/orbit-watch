@@ -31,6 +31,8 @@ SUPPORTED_CHAINS = {
 }
 # Block explorer for links (decision P2-10). A local chain has none.
 EXPLORERS = {BASE_SEPOLIA_CHAIN_ID: "https://sepolia.basescan.org"}
+# EAS Scan, for attestation links (steps 2.8 and 3.7). A local chain has none.
+EAS_SCAN = {BASE_SEPOLIA_CHAIN_ID: "https://base-sepolia.easscan.org"}
 # Shown with every chain-related output (decision P2-10).
 TESTNET_NOTICE = "Base Sepolia testnet, no real value"
 LOCAL_NOTICE = "local Anvil test chain, no real value"
@@ -117,6 +119,11 @@ def snake_case(name: str) -> str:
 def explorer_link(chain_id: int, tx_hash: str) -> str | None:
     base = EXPLORERS.get(chain_id)
     return f"{base}/tx/{tx_hash}" if base else None
+
+
+def attestation_link(chain_id: int, uid: str) -> str | None:
+    base = EAS_SCAN.get(chain_id)
+    return f"{base}/attestation/view/{uid}" if base else None
 
 
 def notice(chain_id: int) -> str:

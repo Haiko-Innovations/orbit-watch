@@ -4,11 +4,13 @@ One command starts, on this machine only:
 
 * a LOCAL Anvil chain with Base Sepolia's EAS code and fresh Orbit Watch contracts, whose
   clock starts at 2026-11-01 12:00 UTC, before the SIMULATED requests' window; on port
-  8545 by default, where wallets look for a local chain (31337);
+  8545 by default, where wallets look for a local chain (31337). As on Base Sepolia, a
+  timelock owns the reviewer registry and a 2-of-3 Safe of LOCAL TEST signers proposes to
+  it; the local timelock waits 60 seconds, not 48 hours;
 * the request service on that chain, with the API and, given ``--web``, the built web
   application on one port;
-* SIMULATED parties (a requester, four stations, the reviewers) with LOCAL TEST keys and
-  registered wallets, and worthless TestUSD for the requester;
+* SIMULATED parties (a requester, four stations, the reviewers, an administrator) with
+  LOCAL TEST keys and registered wallets, and worthless TestUSD for the requester;
 * six SIMULATED requests: five funded (four open for observers), one opened but not funded;
 * one SIMULATED request that ran its course: SIM-ESPOO delivered good observations, nobody
   challenged, and the escrow credited the station 1 TESTUSD and the requester 0.3 back,
@@ -42,7 +44,7 @@ import time
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
-from anvil import Deployment, unavailable
+from anvil import LOCAL_TIMELOCK_DELAY, SAFE_SIGNERS, SAFE_THRESHOLD, Deployment, unavailable
 from chain_world import GENESIS, PLATFORM, REGISTRY, REVIEWERS, VERIFIER
 from helpers import catalog_bytes, policy_bytes
 
@@ -100,8 +102,9 @@ class LocalStack:
             reviewers=REVIEWERS,
             platform=PLATFORM,
             verifier=VERIFIER,
-            parties=[*self.parties, PLATFORM],
+            parties=[*self.parties, PLATFORM, ADMIN],
             port=chain_port,
+            governance=True,
         )
         local = self.deployment.chain
         self.rpc = local.w3.provider.endpoint_uri
@@ -110,7 +113,12 @@ class LocalStack:
             self.deployment.usd.functions.mint(self.address(REQUESTER), BUDGET),
         )
         chain = OrbitWatchChain(local.w3, self.deployment.escrow.address)
-        link = ChainLink(chain, self.deployment.accounts[VERIFIER], receipt_timeout=30)
+        link = ChainLink(
+            chain,
+            self.deployment.accounts[VERIFIER],
+            receipt_timeout=30,
+            safe=self.deployment.safe.address,
+        )
         context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
         self.service = open_service(directory / "service", REGISTRY, context, chain=link)
         with self.service.storage.db.transaction():
@@ -157,7 +165,7 @@ class LocalStack:
         wallets = self.directory / "wallets"
         wallets.mkdir(parents=True, exist_ok=True)
         (wallets / "password").write_text(PASSWORD + "\n", encoding="utf-8")
-        for party in self.parties:
+        for party in [*self.parties, ADMIN]:
             encrypted = Account.encrypt(
                 self.deployment.accounts[party].key, PASSWORD, kdf="pbkdf2", iterations=1000
             )
@@ -188,7 +196,7 @@ class LocalStack:
     def seed(self) -> None:
         """Wallets for every party and the SIMULATED requests."""
         self.write_wallets()
-        for party in self.parties:
+        for party in [*self.parties, ADMIN]:
             self.cli(party, "wallet", "register", sign=True)
         documents = self.directory / "requests"
         documents.mkdir(exist_ok=True)
@@ -321,6 +329,30 @@ class LocalStack:
             "escrow": self.deployment.escrow.address,
             "token": self.deployment.usd.address,
             "admin_key": self.admin,
+            "admin": {
+                "party": ADMIN,
+                "key": self.admin,
+                "address": self.address(ADMIN),
+                "keystore": str(self.keystore(ADMIN)),
+                "private_key": "0x" + self.deployment.accounts[ADMIN].key.hex(),
+            },
+            "governance": {
+                "registry": self.deployment.registry.address,
+                "timelock": self.deployment.timelock.address,
+                "min_delay_seconds": LOCAL_TIMELOCK_DELAY,
+                "safe": self.deployment.safe.address,
+                "threshold": SAFE_THRESHOLD,
+                "signers": [
+                    {
+                        "name": name,
+                        "address": account.address,
+                        "private_key": "0x" + account.key.hex(),
+                    }
+                    for name, account in zip(
+                        SAFE_SIGNERS, self.deployment.safe_signers, strict=True
+                    )
+                ],
+            },
             "password_file": str(self.directory / "wallets" / "password"),
             "parties": {
                 party: {

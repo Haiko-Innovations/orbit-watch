@@ -75,6 +75,12 @@ refusal.
 | `POST /v1/admin/grants` | admin | `{"party": "…", "points": 1000}` | give points (phase 1 budgets) |
 | `POST /v1/admin/keys` | admin | `{"party": "…", "role": "…"}` | create a key; shown once (a replay returns `"key": null`) |
 | `POST /v1/admin/tick` | admin | | apply passed deadlines and settle finished requests |
+| `GET /v1/admin/overview` | admin | | every request with status, observer, automated result, votes, outcome and payments; counts by status; on a chain also the chain's state, conflicts, watched transactions and the latest 200 escrow events, newest first ([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)) |
+| `GET /v1/admin/governance` | admin | | on a chain: the reviewer registry and its reviewers, the timelock that owns it, the Safe that proposes, and the timelock's operations with their state and, while not done, the data to execute them |
+| `POST /v1/admin/governance/proposals` | admin | `{"action": "add"\|"remove", "reviewer": "0x…" or a party}` | the data for the Safe to schedule the change through the timelock, a Safe Transaction Builder batch file, and the data to execute it after the delay; sends and keeps nothing |
+| `GET /v1/admin/demo-datasets` | admin | | the six SIMULATED demo datasets with their expected results |
+| `POST /v1/admin/demo-datasets/{name}` | admin | | one demo dataset, made afresh: `{file_name, format, observations, sha256, expected_verdict, expected_failures, simulated}` |
+| `POST /v1/admin/simulate` | admin | `{"profile": "sim-cmos-gps", "norad_id": 339001, "start": "…", "end": "…", "max_passes": 2}` | SIMULATED observations by a built-in station profile of an allowed target, in a window of at most three days; changes nothing |
 | `GET /v1/public/station-templates` | none | | the built-in SIMULATED station profiles, as starting points ([D-30](decisions.md#d-30-the-observers-view)) |
 | `GET /v1/stations/{party}/profile` | that station, admin | | the station's profile |
 | `PUT /v1/stations/{party}/profile` | that station | `{"profile": <station profile>}` | register or replace the profile; its station ID is the party's own name |
@@ -84,6 +90,8 @@ refusal.
 | `GET /v1/public/requests` | none | | published requests ([data-publication.md](data-publication.md)) |
 | `GET /v1/public/requests/{id}` | none | | one published request |
 | `GET /v1/public/files/{sha256}` | none | | a published file, with its licence in a `Link` header |
+| `POST /v1/public/quality?format=json\|iod\|tdm` | none | an observation file of one station, at most 2 MiB | the station quality report ([quality-meter.md](quality-meter.md)); the file is not kept |
+| `GET /v1/public/attestations` | none | | on a chain: the EAS attestations of the requests the service follows (automated results and votes), newest first, with explorer and EAS Scan links on Base Sepolia |
 
 Deadlines move on and finished requests are settled when an admin (or a
 scheduler with an admin key) calls `tick`. Calls on a request already take its

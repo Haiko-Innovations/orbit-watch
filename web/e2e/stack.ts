@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { APIRequestContext } from "@playwright/test";
-import { createWalletClient, type Hex, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { createPublicClient, createWalletClient, type Hex, http, parseAbi } from "viem";
+import { privateKeyToAccount, sign } from "viem/accounts";
 import { foundry } from "viem/chains";
 import { CHAIN_RPC } from "./testWallet";
 
@@ -16,8 +16,20 @@ interface Party {
   private_key: Hex;
 }
 
+/** As on Base Sepolia: a timelock owns the reviewer registry, a 2-of-3 Safe proposes. */
+interface Governance {
+  registry: Hex;
+  timelock: Hex;
+  min_delay_seconds: number;
+  safe: Hex;
+  threshold: number;
+  signers: { name: string; address: Hex; private_key: Hex }[];
+}
+
 interface StackInfo {
   admin_key: string;
+  admin: Party & { party: string };
+  governance: Governance;
   parties: Record<string, Party>;
   /** Fresh SIMULATED good observations by station, never delivered yet. */
   datasets: Record<string, string[]>;
@@ -116,4 +128,61 @@ export async function travelTo(iso: string): Promise<void> {
     now = target;
   }
   await rpc("evm_setNextBlockTimestamp", [now]);
+}
+
+const SAFE_ABI = parseAbi([
+  "function nonce() view returns (uint256)",
+  "function getTransactionHash(address to, uint256 value, bytes data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, uint256 _nonce) view returns (bytes32)",
+  "function execTransaction(address to, uint256 value, bytes data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures) payable returns (bool success)",
+]);
+const ZERO: Hex = "0x0000000000000000000000000000000000000000";
+
+/** What the Safe's owners do in the Safe app: ``threshold`` LOCAL TEST signers sign the
+ * Safe transaction's hash, and one of them executes it. */
+export async function safeExecute(to: Hex, data: Hex): Promise<void> {
+  const { safe, signers, threshold } = stackInfo().governance;
+  const chain = createPublicClient({ chain: foundry, transport: http(CHAIN_RPC) });
+  const nonce = await chain.readContract({ address: safe, abi: SAFE_ABI, functionName: "nonce" });
+  const hash = await chain.readContract({
+    address: safe,
+    abi: SAFE_ABI,
+    functionName: "getTransactionHash",
+    args: [to, 0n, data, 0, 0n, 0n, 0n, ZERO, ZERO, nonce],
+  });
+  // The Safe wants the signatures ordered by their owners' addresses.
+  const chosen = signers
+    .slice(0, threshold)
+    .sort((a, b) => (BigInt(a.address) < BigInt(b.address) ? -1 : 1));
+  let signatures = "0x";
+  for (const signer of chosen) {
+    signatures += (await sign({ hash, privateKey: signer.private_key, to: "hex" })).slice(2);
+  }
+  const first = chosen[0];
+  if (!first) throw new Error("the Safe has no signers");
+  const wallet = createWalletClient({
+    account: privateKeyToAccount(first.private_key),
+    chain: foundry,
+    transport: http(CHAIN_RPC),
+  });
+  const tx = await wallet.writeContract({
+    address: safe,
+    abi: SAFE_ABI,
+    functionName: "execTransaction",
+    args: [to, 0n, data, 0, 0n, 0n, 0n, ZERO, ZERO, signatures as Hex],
+  });
+  const receipt = await chain.waitForTransactionReceipt({ hash: tx });
+  if (receipt.status !== "success") throw new Error(`the Safe transaction ${tx} failed`);
+}
+
+/** Sends ``data`` to ``to`` from ``key``'s account (anyone may execute a ready operation). */
+export async function sendFrom(key: Hex, to: Hex, data: Hex): Promise<void> {
+  const chain = createPublicClient({ chain: foundry, transport: http(CHAIN_RPC) });
+  const wallet = createWalletClient({
+    account: privateKeyToAccount(key),
+    chain: foundry,
+    transport: http(CHAIN_RPC),
+  });
+  const tx = await wallet.sendTransaction({ to, data });
+  const receipt = await chain.waitForTransactionReceipt({ hash: tx });
+  if (receipt.status !== "success") throw new Error(`${tx} failed`);
 }
