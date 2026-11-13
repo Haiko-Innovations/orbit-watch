@@ -58,6 +58,7 @@ from orbit_watch.api import keys, sessions
 from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.chain import WALLET_PREFIX
+from orbit_watch.documents import TargetPolicy
 from orbit_watch.service import RequestService, ServiceError
 from orbit_watch.settlement import SettlementError
 from orbit_watch.timeutil import parse_utc
@@ -448,6 +449,8 @@ class Api:
             "requests": [
                 {
                     "request_id": rid,
+                    "requester": record.requester,
+                    "title": json.loads(self.service.request_documents[rid]).get("title"),
                     "status": str(record.status),
                     "outcome": None if record.outcome is None else str(record.outcome),
                 }
@@ -602,6 +605,18 @@ class Api:
 
     def public_requests(self, request, now):
         return {"requests": self.service.published(now)}
+
+    def public_targets(self, request, now):
+        """The objects requests may target: the allow-list (decision D-05), which is public."""
+        policy = TargetPolicy.parse(self.service.context.policy)
+        return {
+            "targets": [
+                {"norad_id": norad_id, "name": name}
+                for norad_id, name in sorted(policy.allowed.items())
+            ],
+            "simulated": policy.simulated,
+            "description": policy.description,
+        }
 
     def public_open_requests(self, request, now):
         return {"requests": self.service.open_requests()}
@@ -839,6 +854,8 @@ def create_app(
         Route("/v1/transactions", change(api.report_transaction), methods=["POST"]),
         # Public, no key: settled requests whose embargo has passed (step 1.8).
         Route("/v1/public/requests", api.public(api.public_requests), methods=["GET"]),
+        # Public, no key: the objects requests may target (step 3.4).
+        Route("/v1/public/targets", api.public(api.public_targets), methods=["GET"]),
         # Public, no key: requests that invite observers (step 3.1, decision D-26).
         Route("/v1/public/open-requests", api.public(api.public_open_requests), methods=["GET"]),
         Route("/v1/public/requests/{request_id}", api.public(api.public_request), methods=["GET"]),

@@ -902,3 +902,37 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.3). Code:
   (#57, #58), and they were merged on 2026-11-13. Versions are now picked as
   the highest version published at least 14 days ago.
 
+### D-29 The requester's view
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.4):
+
+- **Pages**:
+  - **Your requests** (`#/my-requests`): the requests the party created.
+  - **New request** (`#/new-request`): the target from the allow-list, the
+    window and the deadline in UTC, the requirements and the time limits. It
+    creates a draft.
+  - **A request's page** (`#/requests/<id>`):
+    - its status in words and what happened so far;
+    - the terms, and the files with download links;
+    - the payments and the chain events;
+    - the requester's actions: publish, fund, cancel and challenge.
+- **The split before anything is signed.** The fund form shows the deposit
+  (observer reward + three review rewards + platform fee) and what each part
+  is for. The transaction flow then reads the same amounts from the call data
+  of `approve` and `fund` (D-28).
+- **The allow-list is public**: `GET /v1/public/targets` (D-05: the list is
+  configuration, not a secret). `GET /v1/requests` also gives each request's
+  requester and title, so a party can find its own.
+- **A requester challenges a passed result** (the form appears only then): a
+  failed result already favours the requester. An observer challenges a
+  failed one in step 3.5.
+- **Someone who is not a party** sees a request's terms and status (any key or
+  session may read them, as since phase 1), but not its documents and files
+  until they are published (D-17). The page says so instead of failing.
+- **Fresh test observations.** The service rightly refuses observations that
+  were delivered before, so the local stack writes fresh SIMULATED good
+  observations by SIM-ESPOO (`datasets/`, listed in `local-stack.json`). The
+  end-to-end tests run the stack in `web/.e2e-stack` and read the parties'
+  keys there, to play the station and the administrator through the API until
+  their views exist.
+

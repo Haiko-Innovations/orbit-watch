@@ -57,7 +57,7 @@ refusal.
 | Method and path | Role | Body | Does |
 |---|---|---|---|
 | `GET /v1/health` | none | | version and status |
-| `GET /v1/requests` | any | | all requests with status and outcome |
+| `GET /v1/requests` | any | | all requests with requester, title, status and outcome |
 | `POST /v1/requests` | requester | `{"request": <request document>, "terms": {…}}` | create a request in draft; `terms` may set `delivery_deadline`, `reservation_hours`, `challenge_period_hours`, `review_hours`, `verification_timeout_hours`, `embargo_days` |
 | `GET /v1/requests/{id}` | any | | summary and full lifecycle record |
 | `POST /v1/requests/{id}/open` | requester | | publish; freezes the terms |
@@ -75,6 +75,7 @@ refusal.
 | `POST /v1/admin/grants` | admin | `{"party": "…", "points": 1000}` | give points (phase 1 budgets) |
 | `POST /v1/admin/keys` | admin | `{"party": "…", "role": "…"}` | create a key; shown once (a replay returns `"key": null`) |
 | `POST /v1/admin/tick` | admin | | apply passed deadlines and settle finished requests |
+| `GET /v1/public/targets` | none | | the allow-list: the objects requests may target, with names ([D-29](decisions.md#d-29-the-requesters-view)) |
 | `GET /v1/public/open-requests` | none | | requests that invite observers: opened or funded, not reserved, with their request document, terms and reward split ([D-26](decisions.md#d-26-open-requests-are-public)) |
 | `GET /v1/public/requests` | none | | published requests ([data-publication.md](data-publication.md)) |
 | `GET /v1/public/requests/{id}` | none | | one published request |

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { addressLink, formatAmount, formatUnits, formatUtc, shortHex } from "./format";
+import {
+  addressLink,
+  formatAmount,
+  formatUnits,
+  formatUtc,
+  inputFromUtc,
+  parseUnits,
+  shortHex,
+  utcFromInput,
+} from "./format";
 
 describe("formatUnits", () => {
   it("places the decimal point and drops trailing zeros", () => {
@@ -45,5 +54,30 @@ describe("addresses", () => {
       "https://sepolia.basescan.org/address/0xabc",
     );
     expect(addressLink(null, "0xabc")).toBeNull();
+  });
+});
+
+describe("parseUnits", () => {
+  it("reads what a person types into token units", () => {
+    expect(parseUnits("1.3", 6)).toBe(1_300_000n);
+    expect(parseUnits("0.1", 6)).toBe(100_000n);
+    expect(parseUnits(" 5 ", 6)).toBe(5_000_000n);
+    expect(parseUnits("0", 6)).toBe(0n);
+    expect(parseUnits("2.", 6)).toBe(2_000_000n);
+  });
+
+  it("refuses what is not a plain amount, or finer than the token", () => {
+    for (const text of ["", "-1", "1e3", "1,5", "abc", "1.0000001", ".5"]) {
+      expect(parseUnits(text, 6), text).toBeNull();
+    }
+  });
+});
+
+describe("UTC inputs", () => {
+  it("reads a datetime-local value as UTC and back", () => {
+    expect(utcFromInput("2026-11-01T15:00")).toBe("2026-11-01T15:00:00.000Z");
+    expect(inputFromUtc("2026-11-01T15:00:00.000Z")).toBe("2026-11-01T15:00");
+    expect(utcFromInput("")).toBeNull();
+    expect(utcFromInput("tomorrow")).toBeNull();
   });
 });

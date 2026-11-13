@@ -112,3 +112,26 @@ def test_serve_with_the_web_application(tmp_path, built, capsys, monkeypatch):
     assert "Orbit Watch" in served["page"]
     assert "Web application on http://127.0.0.1:8000/" in capsys.readouterr().out
     assert Path(built / "index.html").exists()
+
+
+def test_the_allow_list_is_public(world):  # noqa: F811
+    """The requester's form offers the objects requests may target (step 3.4, D-05)."""
+    listed = world["client"].call("GET", "/v1/public/targets").json()
+    assert listed["simulated"] is True
+    assert {"norad_id": 339001, "name": "SIM-CUBESAT-A (SIMULATED)"} in listed["targets"]
+    assert 339009 not in [t["norad_id"] for t in listed["targets"]]  # the restricted one
+
+
+def test_the_request_list_names_requesters_and_titles(world):  # noqa: F811
+    client = world["client"]
+    requester = new_key(world, REQUESTER, "requester")
+    document = dict(REQUEST, request_id="SIM-REQ-0004", title="SIMULATED: a title")
+    client.call("POST", "/v1/requests", requester, {"request": document})
+    [listed] = client.call("GET", "/v1/requests", requester).json()["requests"]
+    assert listed == {
+        "request_id": "SIM-REQ-0004",
+        "requester": REQUESTER,
+        "title": "SIMULATED: a title",
+        "status": "draft",
+        "outcome": None,
+    }

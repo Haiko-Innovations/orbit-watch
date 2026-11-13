@@ -305,6 +305,10 @@ button {
   font-size: 0.9rem;
 }
 
+main > h2 {
+  margin: 36px 0 8px;
+}
+
 .panel {
   overflow-wrap: anywhere;
   margin: 24px 0;
@@ -371,7 +375,7 @@ label {
   font-weight: normal;
 }
 
-input:not([type="radio"]) {
+input:not([type="radio"], [type="checkbox"]) {
   width: 100%;
   max-width: 28rem;
   margin-top: 4px;
@@ -458,6 +462,59 @@ th {
   border-radius: var(--radius);
 }
 
-main > h2 {
-  margin: 36px 0 8px;
+.button-link {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+.request-list,
+.file-list,
+.progress-list {
+  display: grid;
+  gap: 8px;
+  padding-left: 1.2rem;
+}
+
+.request-list li {
+  display: grid;
+  gap: 2px;
+}
+
+.field {
+  margin: 12px 0;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0 16px;
+}
+
+select,
+textarea {
+  width: 100%;
+  max-width: 28rem;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+textarea {
+  max-width: 40rem;
+}
+
+.status-line {
+  font-size: 1.1rem;
+}
+
+.card-meta .badge {
+  margin-left: 8px;
 }

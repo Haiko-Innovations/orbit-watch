@@ -34,8 +34,12 @@ function revertData(error: unknown): Hex | undefined {
     if (typeof data === "string" && data.startsWith("0x")) found = data as Hex;
     else if (data && typeof data === "object") look(data);
   };
-  if (error instanceof BaseError) error.walk((inner) => (look(inner), found !== undefined));
-  else look(error);
+  if (error instanceof BaseError) {
+    error.walk((inner) => {
+      look(inner);
+      return found !== undefined;
+    });
+  } else look(error);
   return found;
 }
 
