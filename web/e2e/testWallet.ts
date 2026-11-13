@@ -33,7 +33,10 @@ export async function installTestWallet(
             case "eth_chainId":
               return `0x${chainId.toString(16)}`;
             case "wallet_switchEthereumChain":
-              chainId = Number.parseInt((params?.[0] as { chainId: string }).chainId, 16);
+              chainId = Number.parseInt(
+                ((params?.[0] ?? {}) as { chainId?: string }).chainId ?? "0x7a69",
+                16,
+              );
               return null;
             case "personal_sign": {
               const sign = (window as unknown as Record<string, (raw: string) => Promise<unknown>>)
