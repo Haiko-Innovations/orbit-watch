@@ -9,6 +9,7 @@ error in snake case as ``code``.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from functools import cache
 from typing import Any
@@ -33,6 +34,10 @@ from orbit_watch.chain import (
 from orbit_watch.chain.abi import EAS_ERRORS, load
 
 ZERO_UID = b"\x00" * 32
+# Blocks per eth_getLogs call to start with. Endpoints limit the range (Base's public one to
+# 200 blocks), so a refused range is narrowed to the limit the endpoint names, or halved.
+LOG_CHUNK = 2000
+MIN_LOG_CHUNK = 10
 NO_EXPIRATION = 0
 VERDICTS = ("none", "pass", "fail", "inconclusive")  # the escrow's Verdict enum
 RESULT_FIELDS = ["string", "bytes32", "bytes32", "string", "string", "string"]
@@ -103,6 +108,7 @@ class OrbitWatchChain:
             for event in (getattr(self.escrow.events, e["name"]) for e in self._event_abis())
         }
         self._block_times: dict[int, int] = {}
+        self.log_chunk = LOG_CHUNK
 
     def _event_abis(self) -> list[dict[str, Any]]:
         return [item for item in self.escrow.abi if item.get("type") == "event"]
@@ -171,10 +177,21 @@ class OrbitWatchChain:
         return self._block_times[number]
 
     def events(self, from_block: int, to_block: int) -> list[Event]:
-        """The escrow's events in a block range, in chain order."""
-        logs = self.w3.eth.get_logs(
-            {"address": self.escrow.address, "fromBlock": from_block, "toBlock": to_block}
-        )
+        """The escrow's events in a block range, in chain order, read in ranges the endpoint
+        accepts."""
+        logs: list[Any] = []
+        start = from_block
+        while start <= to_block:
+            end = min(to_block, start + self.log_chunk - 1)
+            try:
+                logs += self._query_logs(start, end)
+            except Exception as error:
+                smaller = _smaller_range(error, self.log_chunk)
+                if smaller is None:
+                    raise
+                self.log_chunk = smaller
+                continue
+            start = end + 1
         found = []
         for log in sorted(logs, key=lambda item: (item["blockNumber"], item["logIndex"])):
             event = self._events.get(log["topics"][0].to_0x_hex()) if log["topics"] else None
@@ -191,6 +208,14 @@ class OrbitWatchChain:
                 )
             )
         return found
+
+    def _query_logs(self, from_block: int, to_block: int) -> list[Any]:
+        """One eth_getLogs call for the escrow's logs."""
+        return list(
+            self.w3.eth.get_logs(
+                {"address": self.escrow.address, "fromBlock": from_block, "toBlock": to_block}
+            )
+        )
 
     def attestation(self, uid: bytes) -> dict[str, Any]:
         """An attestation of one of the escrow's schemas, with its data decoded."""
@@ -470,3 +495,21 @@ def _show(args: dict[str, Any]) -> str:
         return "0x" + value.hex() if isinstance(value, bytes) else str(value)
 
     return ", ".join(f"{k}={one(v)}" for k, v in args.items())
+
+
+def _smaller_range(error: Exception, chunk: int) -> int | None:
+    """The eth_getLogs block range to try after ``error``, if the endpoint refused ``chunk``
+    blocks as too many: the limit it names (Base's public endpoint: "eth_getLogs is limited to
+    a 200 range"), or else half. None if the error is something else, or nothing smaller is
+    left to try."""
+    response = getattr(error, "response", None)
+    text = f"{error} {getattr(response, 'text', '') or ''}".lower()
+    named = re.search(r"limited to an? (\d+) range", text)
+    if named and MIN_LOG_CHUNK <= int(named.group(1)) < chunk:
+        return int(named.group(1))
+    refused = getattr(response, "status_code", None) == 413 or any(
+        word in text for word in ("block range", "range too", "too many", "limit exceeded")
+    )
+    if not refused or chunk <= MIN_LOG_CHUNK:
+        return None
+    return max(MIN_LOG_CHUNK, chunk // 2)

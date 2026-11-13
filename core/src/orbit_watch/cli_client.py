@@ -429,8 +429,9 @@ def cmd_admin_key(args: argparse.Namespace) -> int:
         print(f"wrote the {args.role} key for {args.party} to {args.output}")
     else:
         print(result["key"])
+        article = "an" if args.role == "admin" else "a"
         print(
-            f"created a {args.role} key for {args.party}; it is shown only this once",
+            f"created {article} {args.role} key for {args.party}; it is shown only this once",
             file=sys.stderr,
         )
     return 0

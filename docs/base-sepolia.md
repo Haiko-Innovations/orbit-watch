@@ -84,10 +84,16 @@ testnet USDC for deposits. Checked on 2026-11-12:
 - **ETH:** Base lists its faucets on
   [Get Funds](https://docs.base.org/base-chain/tools/network-faucets). Each
   rate-limits claims, usually to one per 24 hours; the Coinbase Developer
-  Platform faucet gives up to 0.1 ETH per 24 hours and needs a sign-in.
-  Gas costs very little on Base Sepolia: the whole deployment cost
-  0.000036 ETH; in the smoke test below, a party's transaction cost less than
-  0.000001 ETH and the verifier's attestation about 0.0000035 ETH.
+  Platform faucet gives up to 0.1 ETH per 24 hours and needs a sign-in (one
+  claim gave us 0.0001 ETH).
+  Gas costs very little on Base Sepolia. The whole deployment cost
+  0.000036 ETH. In the phase 2 demo on 2026-11-13, a reservation, a delivery,
+  a settlement or a withdrawal cost under 0.0000005 ETH, funding a request
+  0.0000011 ETH, a vote 0.0000022 ETH and the verifier's attestation
+  0.0000035 ETH. Before it sends, a wallet must hold the gas limit times the
+  maximum fee, a few times what the transaction then costs: about
+  0.000005 ETH for a vote and 0.000008 ETH for an attestation. For the whole
+  demo, 0.00003 ETH per party and 0.0001 ETH for the verifier were plenty.
 - **USDC:** [Circle's faucet](https://faucet.circle.com), network
   **Base Sepolia**: 20 USDC per address and network every 2 hours, no
   account, with a reCAPTCHA. The token is
@@ -144,7 +150,9 @@ orbit-watch serve --dir ./ow-base-sepolia --network base-sepolia \
 
 The verifier key needs a little ETH for gas. Keep the keystore and the
 password file outside the repository and readable only by you. A service
-directory follows this escrow only.
+directory follows this escrow only, from the block where it is first started,
+and reads the chain up to date before it answers
+([chain-service.md](chain-service.md#running-the-server-on-a-chain)).
 
 ## Deploying (maintainers)
 

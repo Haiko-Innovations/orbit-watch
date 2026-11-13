@@ -643,12 +643,12 @@ def test_the_server_starts_on_a_chain_only_with_the_escrows_verifier(world, tmp_
 
 
 def test_a_refused_log_range_is_halved_and_retried(api, world, monkeypatch):
-    """Endpoints limit eth_getLogs ranges (Base's public one to about 200 blocks)."""
+    """Endpoints limit eth_getLogs ranges (Base's public one to 200 blocks)."""
     import requests
 
-    from orbit_watch.chain.link import _range_refused
+    from orbit_watch.chain.client import MIN_LOG_CHUNK, _smaller_range
 
-    real = world.chain.events
+    real = world.chain._query_logs
     spans = []
 
     def limited(start, end):
@@ -660,10 +660,53 @@ def test_a_refused_log_range_is_halved_and_retried(api, world, monkeypatch):
             raise error
         return real(start, end)
 
-    monkeypatch.setattr(world.chain, "events", limited)
+    monkeypatch.setattr(world.chain, "_query_logs", limited)
     world.local.rpc("anvil_mine", [hex(450)])
     open_and_fund(api)
-    assert world.link.log_chunk <= 100 and max(spans) > 100
+    assert world.chain.log_chunk <= 100 and max(spans) > 100
     assert api.view()["record"]["status"] == "funded"
-    assert _range_refused(ValueError("query exceeds max block range 1000"))
-    assert not _range_refused(ValueError("connection refused"))
+    assert _smaller_range(ValueError("query exceeds max block range 1000"), 2000) == 1000
+    assert _smaller_range(ValueError("connection refused"), 2000) is None
+    assert _smaller_range(ValueError("block range too large"), MIN_LOG_CHUNK) is None
+    # Base's public endpoint names its limit in the body of a 413 answer: take it at once.
+    base = requests.HTTPError("413 Client Error: Payload Too Large for url")
+    base.response = requests.Response()
+    base.response.status_code = 413
+    base.response._content = (
+        b'{"jsonrpc":"2.0","id":0,"error":{"code":-32614,'
+        b'"message":"eth_getLogs is limited to a 200 range"}}'
+    )
+    assert _smaller_range(base, 2000) == 200
+    assert _smaller_range(base, 200) == 100  # refused although within the named limit
+
+
+def test_a_new_directory_follows_the_chain_from_the_current_block(world, tmp_path):
+    """A new service directory has no requests yet, so no earlier event is its own; it does
+    not read the escrow's whole history (on Base Sepolia, 200 blocks per call)."""
+    from helpers import catalog_bytes, policy_bytes
+
+    from orbit_watch.chain.client import OrbitWatchChain
+    from orbit_watch.chain.link import ChainLink
+    from orbit_watch.service import VerificationContext, open_service
+
+    context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
+    world.local.rpc("anvil_mine", [hex(50)])
+
+    def opened(name, **options):
+        chain = OrbitWatchChain(world.w3, world.chain.escrow.address)
+        link = ChainLink(chain, world.account(VERIFIER), **options)
+        return open_service(tmp_path / name, world.service.reviewers, context, chain=link)
+
+    latest = world.chain.latest_block()
+    fresh = opened("fresh")
+    assert fresh.chain.synced_block() == latest
+    fresh.storage.close()
+    given = opened("given", from_block=7)
+    assert given.chain.synced_block() == 6
+    given.storage.close()
+    world.local.rpc("anvil_mine", [hex(5)])
+    again = opened("fresh")  # a known directory goes on from where it stopped
+    assert again.chain.synced_block() == latest
+    again.chain.sync()
+    assert again.chain.synced_block() == world.chain.latest_block() > latest
+    again.storage.close()
