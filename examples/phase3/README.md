@@ -27,7 +27,10 @@ browser stayed in the run's directory, outside the repository.
   - the requester's page was not loaded afresh;
   - after a reload, the page asked which wallet to send with.
 
-  Their requests were funded, reserved, delivered and verified on chain.
+  Their requests were funded, reserved, delivered and verified on chain. After
+  their challenge periods, each run's own service settled them as accepted
+  (`admin tick`, [3801](https://sepolia.basescan.org/tx/0x565c07df9bc1c7bc7e951ae8120340f680e5ba58560a2c1c642e11671c62a346),
+  [3802](https://sepolia.basescan.org/tx/0x8c34e3630cf72a799e5a8f8d084dad9c213567aec3b69aa5985a499f3b91ae67)).
 - **SIM-REQ-3803** went through. Its Safe scheduled adding `reviewer:sim-bertil`
   in the timelock (operation
   `0xc78f6006382cafa3f750b1f67e1325b5340b0b2ee9042736265e04a2b90e3989`,
