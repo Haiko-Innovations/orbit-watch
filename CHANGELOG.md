@@ -8,6 +8,12 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+### Added
+
+- Phase 3 plan: the web application in eight steps (3.1 to 3.8) with
+  completion criteria in `docs/roadmap.md`, and the proposed decisions P3-01
+  to P3-11 in `docs/decisions.md`.
+
 ## [0.3.0] - 2026-11-13
 
 Phase 2: settlement on a testnet. Testnet only: nothing here touches a

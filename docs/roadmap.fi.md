@@ -30,8 +30,9 @@ ja vaihe 0
 Vaiheen 0 ainoa avoin kriteeri, oikea julkinen IOD-esimerkki, on yhä avoinna
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
-**Seuraavaksi: vaihe 3**, verkkosovellus, joka suunnitellaan tarkemmin ennen
-aloitusta.
+**Seuraavaksi: vaihe 3**, verkkosovellus. Sen suunnitelma on alla, ja työ
+alkaa, kun ehdotetut päätökset P3-01–P3-11 on hyväksytty
+([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)).
 
 ## Seuraavat askeleet
 
@@ -104,9 +105,57 @@ Circlen **testi-USDC**, EAS esiasennetussa osoitteessaan, **Foundry** ja
 | ✅ **2.7 Testiverkkoon vienti** ([#34](https://github.com/Haiko-Innovations/orbit-watch/issues/34)) | Base Sepolian käyttöönottoskriptit ja asetukset, skeemojen rekisteröinti, faucet-ohjeet (testi-ETH ja -USDC), testiverkkomerkinnät kaikkialla. | Sopimukset toimivat Base Sepoliassa dokumentoitujen ohjeiden mukaan. |
 | ✅ **2.8 Vaiheen 2 demo** ([#35](https://github.com/Haiko-Innovations/orbit-watch/issues/35)) | Demo Base Sepoliassa erillisillä lompakoilla jokaiselle osapuolelle sekä vaiheen 2 yhteenveto. | Vaiheen 2 valmiskriteerit tiedostossa [plan.fi.md](plan.fi.md) täyttyvät; julkaistaan 0.3.0. |
 
-### Vaihe 3 (myöhemmin)
+### Vaihe 3: verkkosovellus (tavoiteversio 0.4.0)
 
-Verkkosovellus roolikohtaisine näkymineen; suunnitellaan tarkemmin, kun vaihe 2 on valmis.
+Vaihe 3 tuo vaiheen 2 järjestelmän selaimeen: yksi verkkosovellus, jossa on
+näkymät tilaajille, havaitsijoille, tarkistajille ja ylläpitäjille, aseman
+laatumittari ja julkinen attestaatioselain. Jokainen osapuoli allekirjoittaa
+omalla lompakollaan selaimessa, eikä selaimella ole oikeuksia, joita
+rajapinta ei anna: säännöt pysyvät palvelussa ja sopimuksissa. Edelleen vain
+testiverkko, eikä julkista käyttöönottoa, ellei toisin päätetä.
+
+Suunnitelman valinnat ovat **päätöksiä P3-01–P3-11** tiedostossa
+[decisions.md](decisions.md#phase-3-decisions) (englanniksi), ja ne odottavat
+hyväksyntää issuessa [#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46). Lyhyesti: **TypeScriptillä ja Reactilla**
+tehty yhden sivun sovellus, joka käännetään **Vitellä** ja jota Python-palvelu
+tarjoaa, lompakot **viemin** ja **EIP-6963**:n kautta, **Sign-In with
+Ethereum** ja istuntoeväste, **Biome** ja **TypeScript 7**, päästä päähän
+-testit **Playwrightilla** paikallista ketjua vasten sekä **WCAG 2.2 AA**.
+
+| Vaihe | Sisältö | Valmis, kun |
+|---|---|---|
+| **3.1 Verkkoprojekti ja paikallinen ympäristö** ([#47](https://github.com/Haiko-Innovations/orbit-watch/issues/47)) | `web/`: TypeScriptillä ja Reactilla tehty yhden sivun sovellus, joka käännetään Vitellä ja tarkistetaan `tarkistus`-tarkistuksessa (Biome, tyyppitarkistus, yksikkötestit, käännös) npm-asennuksilla, jotka eivät aja skriptejä; `orbit-watch serve --web` tarjoaa sen rajapinnan omasta osoitteesta; paikallinen ympäristö yhdellä komennolla (Anvil, sopimukset, palvelu, simuloidut osapuolet); julkiset sivut verkosta ja avoimista tilauksista. | CI kääntää ja testaa sovelluksen; Playwright-testi avaa sen paikallista ympäristöä vasten; jokainen sivu näyttää testiverkkomerkinnän. |
+| **3.2 Kirjautuminen lompakolla** ([#48](https://github.com/Haiko-Innovations/orbit-watch/issues/48)) | Lompakoiden löytäminen (EIP-6963), oikea ketju, Sign-In with Ethereum (ERC-4361) ja istuntoeväste, uloskirjautuminen; tilaajat ja asemat rekisteröityvät itse. | Päästä päähän -testi kirjautuu testilompakolla; uudelleen käytetyt, vanhentuneet ja vieraat viestit hylätään; mikään avain tai salaisuus ei päädy selaimeen, testattu. |
+| **3.3 Transaktiot selaimessa** ([#49](https://github.com/Haiko-Innovations/orbit-watch/issues/49)) | Yksi kulku jokaiselle valmistellulle transaktiolle: mitä se tekee, lompakko allekirjoittaa ja lähettää, odottava, vahvistettu tai epäonnistunut lohkoselainlinkkeineen; väärä ketju, hylätty allekirjoitus ja peruutus selitetään; saldot ja nostot. | Nosto toimii selaimessa päästä päähän; jokainen virhetilanne näytetään ja testataan. |
+| **3.4 Tilaajan näkymä** ([#50](https://github.com/Haiko-Innovations/orbit-watch/issues/50)) | Tilauksen luonti (kohde sallittujen listalta, aikaikkuna, määräaika, toimitusvaatimukset), jako ja maksut näkyvät ennen rahoitusta, rahoitus, seuranta ja haaste, aineiston ja raportin lataus, maksut ja palautukset. | Päästä päähän: selaimessa luotu ja rahoitettu tilaus toimitetaan ja tilitetään, ja sen raportti ladataan. |
+| **3.5 Havaitsijan näkymä** ([#51](https://github.com/Haiko-Innovations/orbit-watch/issues/51)) | Simuloidun aseman rekisteröinti, avoimet tilaukset ja varaus, havaintojen lähetys (SHA-256 tarkistetaan), syyt toimituksen hyväksymiselle tai hylkäämiselle, haaste, palkkioiden seuranta. | Päästä päähän: varaus ja toimitus selaimessa; hyväksytty ja hylätty toimitus näyttävät syynsä. |
+| **3.6 Tarkistajan näkymä** ([#52](https://github.com/Haiko-Innovations/orbit-watch/issues/52)) | Annetut tehtävät, raportti ja tarkistukset, hyväksyntä tai hylkäys perusteluineen EAS-attestaationa allekirjoitettuna, palkkiot ja tarkkuus. | Päästä päähän: selaimessa annetut äänet ovat attestaatioita paikallisessa ketjussa, ja kierros tilitetään. |
+| **3.7 Ylläpitäjän näkymä ja julkiset sivut** ([#53](https://github.com/Haiko-Innovations/orbit-watch/issues/53)) | Tilaukset, toimitukset, maksut, virheet ja tapahtumaloki; `tick`; tarkistajarekisteri, aikalukon jono ja Safen omassa sovelluksessa ehdotettavat Safe-transaktiot; simulaattori ja demoaineistot; aseman laatumittari ja julkinen attestaatioselain. | Päästä päähän ylläpitäjälle; näkymä ei voi tehdä mitään, minkä rajapinta kieltää, testattu; julkiset sivut toimivat kirjautumatta. |
+| **3.8 Vaiheen 3 demo** ([#54](https://github.com/Haiko-Innovations/orbit-watch/issues/54)) | Koko ketju selaimessa Base Sepoliassa, jokaisella roolilla oma lompakko, jokaisen näkymän saavutettavuuskatselmointi ja vaiheen 3 yhteenveto. | Alla olevat vaiheen 3 valmiskriteerit täyttyvät; julkaisu 0.4.0. |
+
+**Vaiheen 3 valmiskriteerit** ([P3-11](decisions.md#p3-11-phase-3-completion-criteria);
+aloitussuunnitelmassa ei ole kriteerejä vaiheelle 3):
+
+1. Verkkosovellus käynnistyy dokumentoiduilla ohjeilla paikallisessa ketjussa
+   ja Base Sepoliassa.
+2. Jokainen rooli kirjautuu omalla lompakollaan; yksityisavain,
+   siemenlause tai palvelimen salaisuus ei päädy selaimeen eikä palveluun,
+   testattu.
+3. Tilaaja luo, rahoittaa ja seuraa tilausta, lataa sen aineiston ja raportin
+   sekä näkee maksut ja palautukset selaimessa.
+4. Havaitsija rekisteröi simuloidun aseman, varaa tilauksen, toimittaa ja
+   seuraa palkkioita selaimessa.
+5. Tarkistaja näkee annetut tehtävät, allekirjoittaa äänet perusteluineen
+   EAS-attestaatioina sekä näkee palkkiot ja tarkkuuden selaimessa.
+6. Ylläpitäjä näkee tilaukset, toimitukset, maksut, virheet ja tapahtumalokin,
+   valmistelee tarkistajamuutokset Safelle ja aikalukolle sekä käynnistää
+   simulaattorin ilman oikeuksia, joita rajapinta ei anna, testattu.
+7. Odottavat, vahvistetut ja epäonnistuneet transaktiot näytetään erikseen
+   lohkoselainlinkkeineen.
+8. Aseman laatumittari ja julkinen attestaatioselain toimivat kirjautumatta.
+9. Testiverkkomerkintä näkyy jokaisella sivulla, ja simuloitu data on merkitty.
+10. Jokaisen roolin päästä päähän -testit ja jokaisen näkymän
+    saavutettavuustarkistukset ajetaan CI:ssä paikallista ketjua vasten.
 
 ## Miten työskentelemme
 

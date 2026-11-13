@@ -12,23 +12,24 @@ stations observe, and the delivery is verified automatically and reproducibly
 against public orbit data. Observers get value from day one: a quality meter
 that tells them how accurate their station is.
 
-> **Status: phase 1 is done (version 0.2.0).** Requests, optimistic
-> verification, a points ledger, an HTTP API and a command-line client all run
-> locally, with **no money and no blockchain**. Requests target civilian objects
-> only. **Simulated data is always labelled as simulated**, and automated
-> verification is a prototype, not production-ready scientific validation.
-> Phase 2, settlement on the Base Sepolia **testnet**, is under way: the
-> contracts in [`contracts/`](contracts) follow the phase 1 settlement rules,
-> refuse every chain but the testnet and a local one, and
-> [run on Base Sepolia](docs/base-sepolia.md) with testnet USDC of no value. See the [roadmap](docs/roadmap.md), the
-> [phase 1 summary](docs/phase-1-summary.md) and the [changelog](CHANGELOG.md).
+> **Status: phase 2 is done (version 0.3.0).** Requests, optimistic
+> verification, an HTTP API and a command-line client run locally, either with
+> a points ledger and no blockchain, or with settlement on the Base Sepolia
+> **testnet**: an escrow contract, EAS attestations and every party signing
+> with its own wallet, with testnet USDC of **no value**
+> ([base-sepolia.md](docs/base-sepolia.md)). No mainnet, no real money.
+> Requests target civilian objects only. **Simulated data is always labelled
+> as simulated**, and automated verification is a prototype, not
+> production-ready scientific validation. Phase 3, the web application, is
+> being planned. See the [roadmap](docs/roadmap.md), the
+> [phase 2 summary](docs/phase-2-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)
 
 You need Python 3.12 or newer.
 
 ```sh
-pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.2.0#subdirectory=core"
+pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.3.0#subdirectory=core"
 orbit-watch demo
 cat orbit-watch-demo/datasets/wrong_target/report.txt
 ```
@@ -88,7 +89,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Storage (SQLite, files by hash) | | [storage.md](docs/storage.md) |
 | HTTP API and command-line client | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Open data (CC BY 4.0, embargo, permanent URLs) | `public` | [data-publication.md](docs/data-publication.md) |
-| Escrow contract, EAS attestations and reviewer registry for the Base Sepolia **testnet** (phase 2, in progress) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [who can change what](contracts/README.md#privileges-who-can-change-what) |
+| Escrow contract, EAS attestations and reviewer registry for the Base Sepolia **testnet** (phase 2) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [who can change what](contracts/README.md#privileges-who-can-change-what) |
 | Testnet settlement adapter (Python, `evm` extra) | | [evm-adapter.md](docs/evm-adapter.md) |
 | Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | The contracts on **Base Sepolia**: addresses, faucets, who holds which key, deploying | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
@@ -139,9 +140,10 @@ The full starting plan: [docs/plan.md](docs/plan.md).
 - **Phase 1 (done, 0.2.0):** requests with a state machine, optimistic
   verification with a challenge period and a 2-of-3 reviewer round, an API, and
   a points-only "ledger" settlement adapter.
-- **Phase 2 (in progress):** settlement on an EVM L2 **testnet** with EAS attestations.
-  No mainnet, no token of our own.
-- **Phase 3:** a web application with role views.
+- **Phase 2 (done, 0.3.0):** settlement on the Base Sepolia **testnet** with
+  an escrow contract and EAS attestations. No mainnet, no token of our own.
+- **Phase 3 (planned):** a web application with role views and wallets in the
+  browser.
 
 ## Open questions
 

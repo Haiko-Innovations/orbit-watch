@@ -27,7 +27,9 @@ and phase 0 as
 phase 0's one open criterion, a real public IOD example, is still open
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
-**Next: phase 3**, the web application, planned in detail before it starts.
+**Next: phase 3**, the web application. Its plan is below; it starts when
+the proposed decisions P3-01 to P3-11 are approved
+([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)).
 
 ## Next steps
 
@@ -97,9 +99,57 @@ public timelock**, and a Python adapter on **web3.py**.
 | ✅ **2.7 Testnet deployment** ([#34](https://github.com/Haiko-Innovations/orbit-watch/issues/34)) | Deployment scripts and settings for Base Sepolia, schema registration, faucet instructions (testnet ETH and USDC), testnet labels everywhere. | The contracts run on Base Sepolia from the documented instructions. |
 | ✅ **2.8 Phase 2 demo** ([#35](https://github.com/Haiko-Innovations/orbit-watch/issues/35)) | A demo on Base Sepolia with separate wallets per party, and the phase 2 summary. | The phase 2 completion criteria in [plan.md](plan.md#phase-2-monetary-settlement-on-a-testnet-evm-l2--eas) are met; release 0.3.0. |
 
-### Phase 3 (later)
+### Phase 3: web application (target version 0.4.0)
 
-A web application with role views, planned in detail when phase 2 is done.
+Phase 3 puts the phase 2 system in the browser: one web application with
+views for requesters, observers, reviewers and administrators, a station
+quality meter and a public attestation browser. Every party signs with its
+own wallet in the browser, and the browser holds no privilege the API does not
+give: the rules stay in the service and the contracts. Still the testnet only,
+and still no public deployment unless decided otherwise.
+
+The choices behind this plan are **decisions P3-01 to P3-11** in
+[decisions.md](decisions.md#phase-3-decisions), proposed for approval in
+[#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46). In short: a **TypeScript and React** single-page app built with
+**Vite** and served by the Python service, wallets through **viem** and
+**EIP-6963**, **Sign-In with Ethereum** with a session cookie, **Biome** and
+**TypeScript 7**, end-to-end tests with **Playwright** against a local chain,
+and **WCAG 2.2 AA**.
+
+| Step | Content | Done when |
+|---|---|---|
+| **3.1 Web project and local stack** ([#47](https://github.com/Haiko-Innovations/orbit-watch/issues/47)) | `web/`: a TypeScript and React single-page app built with Vite, checked in the `tarkistus` check (Biome, type check, unit tests, build) with npm installs that run no scripts; `orbit-watch serve --web` serves it on the API's origin; a local stack in one command (Anvil, contracts, service, simulated parties); public pages for the network and the open requests. | CI builds and tests the app; a Playwright test opens it against the local stack; every page shows the testnet label. |
+| **3.2 Sign in with a wallet** ([#48](https://github.com/Haiko-Innovations/orbit-watch/issues/48)) | Wallet discovery (EIP-6963), the right chain, Sign-In with Ethereum (ERC-4361) with a session cookie, sign-out; requesters and stations sign up themselves. | An end-to-end test signs in with a test wallet; replayed, expired and foreign messages are refused; no key or secret reaches the browser, tested. |
+| **3.3 Transactions in the browser** ([#49](https://github.com/Haiko-Innovations/orbit-watch/issues/49)) | One flow for every prepared transaction: what it does, the wallet signs and sends, pending, confirmed or failed with explorer links; wrong chain, rejected signature and revert explained; balances and withdrawals. | A withdrawal runs end to end in the browser; each failure case is shown and tested. |
+| **3.4 Requester view** ([#50](https://github.com/Haiko-Innovations/orbit-watch/issues/50)) | Create a request (target from the allow-list, window, deadline, delivery requirements), see the split and fees before funding, fund, follow and challenge, download the data and report, see payments and refunds. | End to end: a request created and funded in the browser is delivered and settled, and its report downloaded. |
+| **3.5 Observer view** ([#51](https://github.com/Haiko-Innovations/orbit-watch/issues/51)) | Register a simulated station, browse and reserve open requests, upload observations (SHA-256 checked), see why a delivery was accepted or rejected, challenge, follow rewards. | End to end: reserve and deliver in the browser; accepted and rejected deliveries show their reasons. |
+| **3.6 Reviewer view** ([#52](https://github.com/Haiko-Innovations/orbit-watch/issues/52)) | Assigned tasks, the report and checks, approve or reject with a reason signed as an EAS attestation, rewards and accuracy. | End to end: votes cast in the browser are attestations on the local chain, and the round settles. |
+| **3.7 Administrator view and public pages** ([#53](https://github.com/Haiko-Innovations/orbit-watch/issues/53)) | Requests, deliveries, payments, errors and the event log; `tick`; the reviewer registry, the timelock's queue and Safe transactions to propose in the Safe's own app; simulator and demo datasets; the station quality meter and a public attestation browser. | End to end for the administrator; the view can do nothing the API refuses, tested; public pages work without signing in. |
+| **3.8 Phase 3 demo** ([#54](https://github.com/Haiko-Innovations/orbit-watch/issues/54)) | The whole chain in the browser on Base Sepolia with a wallet per role, an accessibility review of every view, and the phase 3 summary. | The phase 3 completion criteria below are met; release 0.4.0. |
+
+**Phase 3 completion criteria** ([P3-11](decisions.md#p3-11-phase-3-completion-criteria);
+the starting plan gives none for phase 3):
+
+1. The web application starts with the documented instructions, on a local
+   chain and on Base Sepolia.
+2. Each role signs in with its own wallet; no private key, seed phrase or
+   server secret reaches the browser or the service, tested.
+3. A requester creates, funds and follows a request, downloads its data and
+   report, and sees payments and refunds in the browser.
+4. An observer registers a simulated station, reserves a request, delivers
+   and follows rewards in the browser.
+5. A reviewer sees assigned tasks, signs votes with reasons as EAS
+   attestations, and sees rewards and accuracy in the browser.
+6. An administrator sees requests, deliveries, payments, errors and the event
+   log, prepares reviewer changes for the Safe and the timelock, and starts the
+   simulator, with no privilege the API does not give, tested.
+7. Pending, confirmed and failed transactions are shown apart, with explorer
+   links.
+8. The station quality meter and the public attestation browser work without
+   signing in.
+9. The testnet label is visible on every page, and simulated data is labelled.
+10. End-to-end tests of every role and accessibility checks of every view run
+    in CI against a local chain.
 
 ## How we work
 

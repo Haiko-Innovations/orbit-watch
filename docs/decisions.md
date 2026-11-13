@@ -574,3 +574,178 @@ Accepted · 2026-11-12 (with the pull request that implements step 2.7). See
 - Alternative: the deployment as a Python command next to the service. A
   Foundry script keeps deployment in the contracts project, where the tests
   already use the same governance function, and Foundry verifies the sources.
+
+## Phase 3 decisions
+
+P3-01 to P3-11 are proposed for the
+[roadmap](roadmap.md#phase-3-web-application-target-version-040)'s phase 3,
+the web application, in
+[#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46). They wait
+for the maintainer's approval. Facts were checked on 2026-11-13; the sources
+are listed under each decision. Versions are the newest releases at least 14
+days old, and they are re-checked when they are used.
+
+### P3-01 One single-page app, served by the service
+
+Proposed · 2026-11-13. The web application is one single-page app in
+TypeScript and React, built with Vite, in `web/`. Its build is static files
+that `orbit-watch serve` serves on the API's own origin, so there is no second
+server, no cross-origin requests and one place for the rules: the Python
+service stays the only backend (P-01, D-16). One app has the plan's role views
+side by side, and a party sees the views of its role. Alternatives: Next.js,
+which brings a server runtime and a second backend next to the Python API;
+plain TypeScript without a framework, which is smaller but known to fewer
+contributors.
+Sources: [React](https://www.npmjs.com/package/react) 19.1.10,
+[Vite](https://www.npmjs.com/package/vite) 8.3.5,
+[@vitejs/plugin-react](https://www.npmjs.com/package/@vitejs/plugin-react) 6.1.2
+(MIT).
+
+### P3-02 The npm supply chain
+
+Proposed · 2026-11-13. The same rules as the rest of the repository (D-07),
+for npm:
+
+- **Node 26**, the Active LTS line ("Lithium"), pinned in `web/.nvmrc` and in
+  CI through the SHA-pinned setup action.
+- **npm** with its lockfile; CI installs with `npm ci --ignore-scripts`, so no
+  package runs code at install time. Exact versions, each the newest release
+  at least 14 days old; Dependabot watches `web/` with the 14-day cooldown.
+- **Few dependencies**: React, viem and the build and test tools, nothing for
+  state, routing or styling that a few lines of our own can do.
+- **Biome** for lint and format, **TypeScript 7.0.2** for the type check.
+  typescript-eslint, the usual linter for TypeScript, supports TypeScript
+  below 6.1 only, so it would hold the type checker back a major version.
+- Licences: MIT, Apache-2.0, or MIT OR Apache-2.0; the accessibility checker
+  for tests is MPL-2.0 and is used only in development.
+
+Sources: [Node.js releases](https://nodejs.org/en/about/previous-releases),
+[npm ci](https://docs.npmjs.com/cli/v11/commands/npm-ci),
+[TypeScript](https://www.npmjs.com/package/typescript) 7.0.2 (Apache-2.0),
+[typescript-eslint](https://www.npmjs.com/package/typescript-eslint) 8.72.1
+(peer dependency `typescript >=4.8.4 <6.1.0`),
+[Biome](https://biomejs.dev/) 2.6.4 (MIT OR Apache-2.0).
+
+### P3-03 Wallets through viem and EIP-6963
+
+Proposed · 2026-11-13. The browser talks to wallets with
+[viem](https://www.npmjs.com/package/viem) 2.57.13 (MIT) alone. Injected
+wallets are discovered with EIP-6963, so several wallet extensions can live
+side by side; the app asks the wallet to add or switch to Base Sepolia
+(`wallet_addEthereumChain`, EIP-3085, whose status is Stagnant, so the app
+also shows the network's settings for adding it by hand). The browser does
+little on chain: connect, sign the sign-in message, and send the transactions
+the API prepares (D-23). Alternatives: wagmi, which adds connectors, caching
+and a query library the app does not need; WalletConnect for mobile wallets,
+which needs a project ID from the Reown dashboard, an account with a third
+party. Both can come later.
+Sources: [EIP-6963](https://eips.ethereum.org/EIPS/eip-6963) (Final),
+[EIP-3085](https://eips.ethereum.org/EIPS/eip-3085) (Stagnant),
+[viem SIWE utilities](https://viem.sh/docs/siwe/utilities/createSiweMessage),
+[Reown AppKit](https://docs.reown.com/appkit/overview).
+
+### P3-04 Sign in with the wallet
+
+Proposed · 2026-11-13. A party signs in with its registered wallet by
+Sign-In with Ethereum (ERC-4361, Final). The service writes the message, with
+its own domain, the chain, a single-use nonce and an expiry; the wallet signs
+it; the service checks the ERC-191 signature against the party's registered
+wallet and sets a session cookie that scripts cannot read (HttpOnly,
+SameSite=Strict, Secure outside localhost). Requests that change anything also
+need a matching `Origin`. Sessions expire and can be ended. Only externally
+owned accounts in phase 3: ERC-4361 asks ERC-1271 for contract accounts, which
+needs a call to the chain and comes later. The API keys (P-04) stay for the
+command line and automation. Alternative: pasting an API key into the browser,
+which keeps a long-lived secret in the page.
+Source: [ERC-4361](https://eips.ethereum.org/EIPS/eip-4361).
+
+### P3-05 Parties in the browser
+
+Proposed · 2026-11-13. One wallet belongs to one party, as in phase 2. On the
+testnet, **requesters and stations sign up themselves** in the browser: they
+choose a party ID, and their wallet's signature registers it. **Reviewers**
+are added by an administrator, and the escrow chooses them from the on-chain
+registry, which only the Safe and the timelock change (D-21). **Administrator
+parties** are created only on the server's command line
+(`orbit-watch keys create`), never through the web. A public deployment would
+need limits on sign-up (P3-10).
+
+### P3-06 The browser holds no privileges
+
+Proposed · 2026-11-13. The web application uses the documented API and the
+sign-in endpoints, nothing else; every rule stays in the service and the
+contracts, so the browser cannot do what the command line cannot. Before the
+wallet signs, the app shows what a prepared transaction does: the contract,
+the function and the amounts, read from the call data rather than taken on
+trust from the server. No server secret reaches the browser: not the verifier
+key, not API keys, not other parties' files before publication (D-17). The
+chain stays the source of payment status (P2-10), with explorer links.
+
+### P3-07 Governance through the Safe's own app
+
+Proposed · 2026-11-13. The administrator view shows the reviewer registry, the
+timelock's queued operations with their ready times, and the reviewer changes
+as Safe transactions (target, call data and the decoded call) to propose and
+sign in the Safe's own app, for example with its Transaction Builder. Orbit
+Watch uses no Safe API key and holds no signer key; the timelock's 48 hours
+stay public. The Safe Transaction Service runs on Base Sepolia and already
+lists the deployed Safe (2 of 3, 1.4.1+L2).
+Sources: [Safe Transaction Service on Base Sepolia](https://api.safe.global/tx-service/basesep/api/v1/about/),
+[Transaction Builder](https://help.safe.global/en/articles/40841-transaction-builder).
+
+### P3-08 Tests
+
+Proposed · 2026-11-13. Unit tests with Vitest; end-to-end tests with
+Playwright for every role against a local stack (Anvil, the contracts, the
+service), with a test wallet injected into the page as an EIP-1193 provider
+that signs with Anvil's test keys; accessibility checks with axe on every view.
+All of it runs in the `tarkistus` check; CI never touches a public testnet and
+holds no keys (P2-08).
+Sources: [Vitest](https://vitest.dev/) 4.1.12 (MIT),
+[Playwright](https://playwright.dev/docs/intro) 1.64.1 (Apache-2.0),
+[axe-core for Playwright](https://github.com/dequelabs/axe-core-npm) 4.14.0
+(MPL-2.0, development only).
+
+### P3-09 Accessibility, language and labels
+
+Proposed · 2026-11-13. WCAG 2.2 level AA: every view works with the keyboard
+and a screen reader, in light and dark colours. The interface is in English
+(D-09), with its strings in one place so that a Finnish translation can follow.
+Every page shows "Base Sepolia testnet, no real value", and simulated data says
+so wherever it appears (D-04).
+Source: [WCAG 2.2](https://www.w3.org/TR/WCAG22/).
+
+### P3-10 No public deployment in phase 3
+
+Proposed · 2026-11-13. As in phases 1 and 2 (P-03, P2-11), the service and the
+web application run locally; the contracts and attestations are public on the
+testnet. A public demo is its own decision, because it needs hosting, TLS,
+rate limits and limits on sign-up, and the verifier key away from the
+maintainer's machine (D-24). **Open: does the maintainer want a public demo in
+phase 3?**
+
+### P3-11 Phase 3 completion criteria
+
+Proposed · 2026-11-13. The starting plan gives none for phase 3. Phase 3 is
+done when:
+
+1. The web application starts with the documented instructions, on a local
+   chain and on Base Sepolia.
+2. Each role signs in with its own wallet; no private key, seed phrase or
+   server secret reaches the browser or the service, tested.
+3. A requester creates, funds and follows a request, downloads its data and
+   report, and sees payments and refunds in the browser.
+4. An observer registers a simulated station, reserves a request, delivers
+   and follows rewards in the browser.
+5. A reviewer sees assigned tasks, signs votes with reasons as EAS
+   attestations, and sees rewards and accuracy in the browser.
+6. An administrator sees requests, deliveries, payments, errors and the event
+   log, prepares reviewer changes for the Safe and the timelock, and starts the
+   simulator, with no privilege the API does not give, tested.
+7. Pending, confirmed and failed transactions are shown apart, with explorer
+   links.
+8. The station quality meter and the public attestation browser work without
+   signing in.
+9. The testnet label is visible on every page, and simulated data is labelled.
+10. End-to-end tests of every role and accessibility checks of every view run
+    in CI against a local chain.
