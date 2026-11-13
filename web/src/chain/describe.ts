@@ -1,6 +1,7 @@
 import {
   type Abi,
   type Address,
+  decodeAbiParameters,
   decodeFunctionData,
   getAddress,
   type Hex,
@@ -48,7 +49,17 @@ export interface Described {
 export interface Expected {
   /** The SHA-256 (hex) of the file the party chose to deliver. */
   deliverySha256?: string;
+  /** The vote the reviewer chose: approve or reject, the SHA-256 (hex) of its reasons, and
+   * the SHA-256 of the observations it reviewed. */
+  vote?: { approve: boolean; reasonSha256: string; deliverySha256: string };
 }
+
+const VOTE_FIELDS = [
+  { type: "string" },
+  { type: "bytes32" },
+  { type: "bool" },
+  { type: "bytes32" },
+] as const;
 
 export class RefusedTransaction extends Error {
   constructor(message: string) {
@@ -166,15 +177,36 @@ function describeOne(
 
   if (isAddressEqual(to, chain.eas as Address)) {
     const call = decode(easAbi, transaction.data);
-    const request = ((call.args ?? []) as readonly unknown[])[0] as { schema?: Hex } | undefined;
+    const request = ((call.args ?? []) as readonly unknown[])[0] as
+      | { schema?: Hex; data?: { data?: Hex } }
+      | undefined;
     if (call.functionName !== "attest" || request?.schema !== chain.vote_schema) {
       throw new RefusedTransaction(t.refused.function(call.functionName));
+    }
+    let vote: readonly [string, Hex, boolean, Hex];
+    try {
+      vote = decodeAbiParameters(VOTE_FIELDS, request.data?.data ?? "0x");
+    } catch {
+      throw new RefusedTransaction(t.refused.unreadable);
+    }
+    const [voteRequest, delivery, approve, reason] = vote;
+    if (requestId === null || voteRequest !== requestId) {
+      throw new RefusedTransaction(t.refused.request);
+    }
+    const wanted = expected.vote;
+    if (
+      wanted !== undefined &&
+      (approve !== wanted.approve ||
+        reason.toLowerCase() !== `0x${wanted.reasonSha256.toLowerCase()}` ||
+        delivery.toLowerCase() !== `0x${wanted.deliverySha256.toLowerCase()}`)
+    ) {
+      throw new RefusedTransaction(t.refused.vote);
     }
     return {
       ...base,
       contract: t.contracts.eas,
       functionName: call.functionName,
-      title: t.vote.title(requestId ?? ""),
+      title: t.vote.title(approve, requestId),
       detail: t.vote.detail,
     };
   }

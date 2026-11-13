@@ -14,6 +14,7 @@ export const strings = {
     myRequests: "Your requests",
     myObservations: "Your observations",
     myStation: "Your station",
+    tasks: "Your review tasks",
   },
   skip: "Skip to content",
   loading: "Loading…",
@@ -180,7 +181,8 @@ export const strings = {
     deliverDetail: (sha: string) =>
       `The file's SHA-256 ${sha} goes on chain; the file goes to the service.`,
     vote: {
-      title: (id: string) => `Record your vote on ${id}`,
+      title: (approve: boolean, id: string) =>
+        `Record your vote: ${approve ? "approve" : "reject"} the delivery for ${id}`,
       detail: "Your vote becomes a public EAS attestation signed by your wallet.",
     },
     refused: {
@@ -194,6 +196,7 @@ export const strings = {
         "The transaction would send ether, which Orbit Watch never asks for, so it was not sent.",
       request: "The transaction is about another request than the one shown, so it was not sent.",
       file: "The transaction records another file than the one you chose, so it was not sent.",
+      vote: "The transaction records another vote, reason or delivery than yours, so it was not sent.",
       function: (name: string) => `The call ${name} is not one you make here, so it was not sent.`,
       contract: (to: string) =>
         `${to} is not one of Orbit Watch's contracts, so the transaction was not sent.`,
@@ -378,6 +381,53 @@ export const strings = {
       skipped: "skipped",
       inconclusive: "inconclusive",
     } as Record<string, string>,
+  },
+  tasks: {
+    title: "Your review tasks",
+    intro:
+      "Each round brings you its real task and a calibration task with a known answer. They look alike on purpose: answer every one carefully.",
+    none: "No open tasks. You get tasks when the escrow chooses you for a round.",
+    due: (at: string) => `Answer by ${at}`,
+    verdict: (verdict: string) => `Automated result: ${verdict}`,
+    challenge: "Challenge",
+    open: "Review it",
+    record: "Your record",
+    calibration: "Calibration tasks",
+    calibrationLine: (answered: number, correct: number, accuracy: number | null) =>
+      `${answered} answered, ${correct} correct${accuracy === null ? "" : ` (${Math.round(accuracy * 100)} %)`}`,
+    votes: "Votes",
+    votesLine: (
+      rounds: number,
+      total: number,
+      rate: number | null,
+      agreed: number,
+      decided: number,
+    ) =>
+      `${rounds} in real rounds, ${total} answers in all${rate === null ? "" : ` (${Math.round(rate * 100)} % approvals)`}; agreed with ${agreed} of ${decided} decided outcomes`,
+    flags: "Notes",
+    flagText: {
+      low_accuracy: "Calibration accuracy is low: please review more carefully.",
+      approves_almost_everything: "You approve almost everything: check each task on its own.",
+      missed_tasks: "Some tasks passed their deadline unanswered.",
+    } as Record<string, string>,
+    rewards: "Your review rewards wait for you in the escrow:",
+  },
+  task: {
+    title: "Review task",
+    notFound: "This task is not among your open tasks: it may be answered or past its deadline.",
+    request: "The request",
+    files: "Files to review",
+    challenge: "Why it was challenged",
+    formTitle: "Your answer",
+    choice: "Approve or reject",
+    formIntro:
+      "Approve if the delivery meets the request; reject if it does not. Give your reasons: they are kept, and their SHA-256 goes into your vote.",
+    approve: "Approve: the delivery meets the request",
+    reject: "Reject: it does not",
+    reason: "Your reasons",
+    prepare: "Answer",
+    recorded: "Your answer is recorded. Thank you.",
+    back: "Back to your tasks",
   },
   footer: {
     source: "Source code",

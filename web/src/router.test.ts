@@ -18,6 +18,11 @@ describe("parseHash", () => {
     expect(parseHash("#/requests/bad%20id")).toEqual({ page: "not-found" });
     expect(parseHash("#/my-requests")).toEqual({ page: "my-requests" });
     expect(parseHash("#/new-request")).toEqual({ page: "new-request" });
+    expect(parseHash("#/tasks")).toEqual({ page: "tasks" });
+    expect(parseHash(paths.task("task-eca9bfa388a8343d8f6e"))).toEqual({
+      page: "task",
+      id: "task-eca9bfa388a8343d8f6e",
+    });
   });
 
   it("calls everything else not found", () => {

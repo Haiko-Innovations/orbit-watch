@@ -12,6 +12,8 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { OpenRequestsPage } from "./pages/OpenRequestsPage";
 import { RequestPage } from "./pages/RequestPage";
 import { StationPage } from "./pages/StationPage";
+import { TaskPage } from "./pages/TaskPage";
+import { TasksPage } from "./pages/TasksPage";
 import { paths, type Route, useRoute } from "./router";
 import { strings } from "./strings";
 import { useResource } from "./useResource";
@@ -37,6 +39,8 @@ const titles: Record<Route["page"], string> = {
   "my-requests": strings.myRequests.title,
   "my-observations": strings.myObservations.title,
   station: strings.station.title,
+  tasks: strings.tasks.title,
+  task: strings.task.title,
   "new-request": strings.newRequest.title,
   request: strings.request.terms,
   "not-found": strings.notFound.title,
@@ -77,6 +81,7 @@ export function App() {
 
   const chain = service.state === "ready" ? service.value.chain : null;
   const requestId = route.page === "request" ? route.id : null;
+  const taskId = route.page === "task" ? route.id : null;
   const signedIn = session.state === "ready" ? session.value : null;
   return (
     <>
@@ -109,6 +114,11 @@ export function App() {
                 {strings.nav.myStation}
               </NavLink>
             </>
+          ) : null}
+          {signedIn?.role === "reviewer" ? (
+            <NavLink href={paths.tasks} current={route.page === "tasks" || route.page === "task"}>
+              {strings.nav.tasks}
+            </NavLink>
           ) : null}
           {signedIn?.role === "requester" ? (
             <NavLink
@@ -150,6 +160,8 @@ export function App() {
                 case "new-request":
                 case "my-observations":
                 case "station":
+                case "tasks":
+                case "task":
                 case "request":
                   return (
                     <Loaded resource={session} reload={reloadSession}>
@@ -164,6 +176,10 @@ export function App() {
                           <MyObservationsPage session={current} />
                         ) : route.page === "station" ? (
                           <StationPage session={current} />
+                        ) : route.page === "tasks" ? (
+                          <TasksPage session={current} />
+                        ) : route.page === "task" ? (
+                          <TaskPage id={taskId ?? ""} chain={chain} session={current} />
                         ) : (
                           <RequestPage id={requestId ?? ""} chain={chain} session={current} />
                         )

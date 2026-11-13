@@ -289,3 +289,34 @@ export interface VerificationReport {
   summary: string;
   checks: { id: string; title: string; result: string; reason: string }[];
 }
+
+/** A review task (GET /v1/tasks): real and calibration tasks look alike on purpose. */
+export interface ReviewTask {
+  task_id: string;
+  request_sha256: string;
+  observations_sha256: string;
+  report_sha256: string;
+  automated_verdict: string;
+  challenge_reason: string;
+  due: string;
+}
+
+export interface ReviewerProfile {
+  reviewer: string;
+  calibration: {
+    answered: number;
+    correct: number;
+    accuracy: number | null;
+    missed: number;
+    open: number;
+  };
+  votes: {
+    total: number;
+    approvals: number;
+    approval_rate: number | null;
+    real_rounds: number;
+    agreed_with_outcome: number;
+    decided_rounds: number;
+  };
+  flags: string[];
+}

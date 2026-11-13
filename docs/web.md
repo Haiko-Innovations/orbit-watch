@@ -1,13 +1,14 @@
 # The web application
 
-Phase 3, steps 3.1 to 3.5. Code: [`web/`](../web). Decisions:
+Phase 3, steps 3.1 to 3.6. Code: [`web/`](../web). Decisions:
 [P3-01 to P3-11](decisions.md#phase-3-decisions),
 [D-25](decisions.md#d-25-the-web-project),
 [D-26](decisions.md#d-26-open-requests-are-public),
 [D-27](decisions.md#d-27-signing-in-with-a-wallet),
 [D-28](decisions.md#d-28-transactions-in-the-browser),
-[D-29](decisions.md#d-29-the-requesters-view) and
-[D-30](decisions.md#d-30-the-observers-view).
+[D-29](decisions.md#d-29-the-requesters-view),
+[D-30](decisions.md#d-30-the-observers-view) and
+[D-31](decisions.md#d-31-the-reviewers-view).
 
 > **Testnet only, no real value.** The web application runs locally
 > ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)). Every page
@@ -41,7 +42,10 @@ records exactly that. The request's parties see why the automated
 verification passed or failed, check by check; an observer may challenge a
 failed result.
 
-The reviewer and administrator views follow in steps 3.6 and 3.7
+| Your review tasks | `#/tasks` | a reviewer's open tasks, real and calibration alike, and its record: calibration accuracy, votes, notes |
+| A task | `#/tasks/<id>` | the request, the challenge's reason, the files, the automated verification check by check, and the answer: approve or reject with reasons. A vote in a real round is the reviewer's EAS attestation, signed in its wallet; the page checks the answer, the reasons' SHA-256 and the delivery in the call data first |
+
+The administrator view follows in step 3.7
 ([roadmap](roadmap.md#phase-3-web-application-target-version-040)).
 
 ## Signing in
