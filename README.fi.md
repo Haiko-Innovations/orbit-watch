@@ -15,25 +15,24 @@ tarkistetaan automaattisesti ja toistettavasti julkista ratadataa vasten.
 Havaitsijat hyötyvät heti ensimmäisestä päivästä: laatumittari kertoo, kuinka
 tarkka heidän asemansa on.
 
-> **Tila: vaihe 1 on valmis (versio 0.2.0).** Tilaukset, optimistinen
-> tarkistus, pistekirjanpito, HTTP-rajapinta ja komentoriviasiakas toimivat
-> paikallisesti, **ilman rahaa ja ilman lohkoketjua**. Tilaukset koskevat vain
-> siviilikohteita. **Simuloitu data on aina merkitty simuloiduksi**, ja
-> automaattinen tarkistus on prototyyppi, ei tuotantovalmis tieteellinen
-> validointi. Vaihe 2, tilitys Base Sepolia -**testiverkossa**, on alkanut:
-> hakemiston [`contracts/`](contracts) sopimukset noudattavat vaiheen 1
-> tilityssääntöjä, kieltäytyvät toimimasta muualla kuin testiverkossa ja
-> paikallisessa ketjussa ja [toimivat Base Sepoliassa](docs/base-sepolia.md)
-> arvottomalla testi-USDC:llä.
-> Katso [tiekartta](docs/roadmap.fi.md),
-> [vaiheen 1 yhteenveto](docs/phase-1-summary.fi.md) ja [muutosloki](CHANGELOG.md).
+> **Tila: vaihe 2 on valmis (versio 0.3.0).** Tilaukset, optimistinen
+> tarkistus, HTTP-rajapinta ja komentoriviasiakas toimivat paikallisesti,
+> joko pistekirjanpidolla ilman lohkoketjua tai tilityksellä Base Sepolia
+> -**testiverkossa**: escrow-sopimus, EAS-attestaatiot ja jokainen osapuoli
+> allekirjoittaa omalla lompakollaan, ja testi-USDC:llä **ei ole arvoa**
+> ([base-sepolia.md](docs/base-sepolia.md)). Ei pääverkkoa eikä oikeaa rahaa.
+> Tilaukset koskevat vain siviilikohteita. **Simuloitu data on aina merkitty
+> simuloiduksi**, ja automaattinen tarkistus on prototyyppi, ei tuotantovalmis
+> tieteellinen validointi. Vaihe 3, verkkosovellus, on suunnitteilla. Katso
+> [tiekartta](docs/roadmap.fi.md),
+> [vaiheen 2 yhteenveto](docs/phase-2-summary.fi.md) ja [muutosloki](CHANGELOG.md).
 
 ## Kokeile (kolme komentoa)
 
 Tarvitset Python 3.12:n tai uudemman.
 
 ```sh
-pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.2.0#subdirectory=core"
+pip install "orbit-watch @ git+https://github.com/Haiko-Innovations/orbit-watch.git@v0.3.0#subdirectory=core"
 orbit-watch demo
 cat orbit-watch-demo/datasets/wrong_target/report.txt
 ```
@@ -93,7 +92,7 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | Tallennus (SQLite, tiedostot tiivisteen mukaan) | | [storage.md](docs/storage.md) |
 | HTTP-rajapinta ja komentoriviasiakas | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Avoin data (CC BY 4.0, embargo, pysyvät osoitteet) | `public` | [data-publication.md](docs/data-publication.md) |
-| Escrow-sopimus, EAS-attestaatiot ja tarkistajarekisteri Base Sepolia -**testiverkkoon** (vaihe 2, kesken) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [kuka voi muuttaa mitä](contracts/README.md#privileges-who-can-change-what) |
+| Escrow-sopimus, EAS-attestaatiot ja tarkistajarekisteri Base Sepolia -**testiverkkoon** (vaihe 2) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [kuka voi muuttaa mitä](contracts/README.md#privileges-who-can-change-what) |
 | Testiverkon tilityssovitin (Python, `evm`-lisäosa) | | [evm-adapter.md](docs/evm-adapter.md) |
 | Palvelu, rajapinta ja komentorivi **testiverkossa**: omat lompakot, allekirjoitus omalla avainsäilöllä, transaktiot lohkoselainlinkkeineen | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | Sopimukset **Base Sepoliassa**: osoitteet, faucetit, kuka hallitsee mitäkin avainta, käyttöönotto | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
@@ -143,9 +142,10 @@ Koko aloitussuunnitelma: [docs/plan.fi.md](docs/plan.fi.md).
 - **Vaihe 1 (valmis, 0.2.0):** tilaukset tilakoneella, optimistinen tarkistus
   haastejaksolla ja 2/3-tarkistajakierroksella, API sekä pelkkiä pisteitä
   kirjaava ledger-tilityssovitin.
-- **Vaihe 2 (käynnissä):** tilitys EVM L2 -**testiverkossa**
-  EAS-attestaatioilla. Ei pääverkkoa, ei omaa tokenia.
-- **Vaihe 3:** verkkosovellus roolikohtaisine näkymineen.
+- **Vaihe 2 (valmis, 0.3.0):** tilitys Base Sepolia -**testiverkossa**
+  escrow-sopimuksella ja EAS-attestaatioilla. Ei pääverkkoa, ei omaa tokenia.
+- **Vaihe 3 (suunnitteilla):** verkkosovellus roolikohtaisine näkymineen ja
+  lompakkoineen selaimessa.
 
 ## Avoimet kysymykset
 
