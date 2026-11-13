@@ -395,6 +395,13 @@ def cmd_serve(args: argparse.Namespace) -> int:
             f"On chain {chain.chain.chain_id} ({chain.notice}): escrow "
             f"{chain.chain.escrow.address}, verifier {chain.verifier.address}"
         )
+        # Catch up before answering, so the first request does not wait for it.
+        try:
+            chain.sync()
+        except Exception as error:  # the node is down; each request tries again
+            _err(f"warning: cannot read the chain yet: {error}")
+        else:
+            print(f"Followed the chain to block {chain.synced_block()}")
     try:
         uvicorn.run(create_app(service), host=args.host, port=args.port)
     finally:
@@ -414,8 +421,6 @@ def _apply_network(args: argparse.Namespace) -> None:
         )
     args.escrow = record["escrow"]
     args.chain_rpc = args.chain_rpc or public_rpc(record["chain_id"])
-    if args.from_block is None:
-        args.from_block = record["from_block"]
 
 
 def _chain_link(args: argparse.Namespace):
@@ -437,7 +442,7 @@ def _chain_link(args: argparse.Namespace):
         "verifier keystore password: ",
         env="ORBIT_WATCH_VERIFIER_PASSWORD_FILE",
     )
-    return ChainLink(chain, load_keystore(keystore, password), from_block=args.from_block or 0)
+    return ChainLink(chain, load_keystore(keystore, password), from_block=args.from_block)
 
 
 def cmd_keys_create(args: argparse.Namespace) -> int:
@@ -454,7 +459,8 @@ def cmd_keys_create(args: argparse.Namespace) -> int:
     finally:
         storage.close()
     print(key)
-    _err(f"created a {args.role} key for {args.party}; it is shown only this once")
+    article = "an" if args.role == "admin" else "a"
+    _err(f"created {article} {args.role} key for {args.party}; it is shown only this once")
     return EXIT_OK
 
 
@@ -692,8 +698,8 @@ def build_parser() -> argparse.ArgumentParser:
     chain.add_argument(
         "--network",
         choices=["base-sepolia"],
-        help="a deployment this version knows: its escrow, first block and public RPC "
-        "endpoint (override the endpoint with --chain-rpc)",
+        help="a deployment this version knows: its escrow and public RPC endpoint "
+        "(override the endpoint with --chain-rpc)",
     )
     chain.add_argument("--chain-rpc", help="the chain's JSON-RPC endpoint")
     chain.add_argument("--escrow", help="the escrow contract's address")
@@ -709,7 +715,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--from-block",
         type=int,
         default=None,
-        help="the escrow's deployment block (default: the network's, or 0)",
+        help="a new service directory follows the chain from this block (default: the "
+        "current block, since no earlier event can belong to its requests)",
     )
     serve.set_defaults(handler=cmd_serve)
 

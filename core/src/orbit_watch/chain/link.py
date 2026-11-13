@@ -103,9 +103,11 @@ def _at(seconds: int) -> datetime:
 class ChainLink:
     """Puts a stored ``RequestService`` on the chain of ``chain`` (see the module text).
 
-    ``verifier`` is the service's only key and must be the escrow's verifier. The service
-    reads the chain from ``from_block`` (the escrow's deployment block) and waits up to
-    ``receipt_timeout`` seconds for a transaction before calling it pending.
+    ``verifier`` is the service's only key and must be the escrow's verifier. A new service
+    directory has no requests yet, so no earlier event can be its own: it follows the chain
+    from the current block, or from ``from_block`` if given, and then from where it stopped.
+    The service waits up to ``receipt_timeout`` seconds for a transaction before calling it
+    pending.
     """
 
     def __init__(
@@ -113,7 +115,7 @@ class ChainLink:
         chain: OrbitWatchChain,
         verifier: LocalAccount,
         *,
-        from_block: int = 0,
+        from_block: int | None = None,
         receipt_timeout: float = 60.0,
     ):
         if verifier.address != chain.verifier:
@@ -147,8 +149,9 @@ class ChainLink:
                     "not_a_chain_service",
                     "this service directory was started without a chain; use a new one",
                 )
+            start = self.chain.latest_block() + 1 if self.from_block is None else self.from_block
             with self.db.transaction():
-                for name, value in {**wanted, "synced_block": str(self.from_block - 1)}.items():
+                for name, value in {**wanted, "synced_block": str(start - 1)}.items():
                     self.db.execute(
                         "INSERT INTO chain_settings (name, value) VALUES (?, ?)", (name, value)
                     )
@@ -530,11 +533,15 @@ class ChainLink:
     def _request_ids(self) -> dict[str, str]:
         return {request_key(rid).hex(): rid for rid in self.service.records}
 
+    def synced_block(self) -> int:
+        """The last block whose events the service has applied."""
+        return int(self._settings()["synced_block"])
+
     def sync(self) -> list[str]:
         """Apply the escrow's new events to the requests they belong to. Returns the IDs of
         the requests that changed."""
         latest = self.chain.latest_block()
-        start = int(self._settings()["synced_block"]) + 1
+        start = self.synced_block() + 1
         changed: list[str] = []
         try:
             with self.db.transaction():
@@ -550,10 +557,11 @@ class ChainLink:
                     try:
                         events = self.chain.events(start, end)
                     except Exception as error:
-                        if self.log_chunk > MIN_LOG_CHUNK and _range_refused(error):
-                            self.log_chunk = max(MIN_LOG_CHUNK, self.log_chunk // 2)
-                            continue
-                        raise
+                        smaller = _smaller_range(error, self.log_chunk)
+                        if smaller is None:
+                            raise
+                        self.log_chunk = smaller
+                        continue
                     changed += self._mirror(events, ids)
                     start = end + 1
                 self.db.execute(
@@ -803,7 +811,7 @@ class ChainLink:
             "fee_recipient": chain.fee_recipient,
             "explorer": EXPLORERS.get(chain.chain_id),
             "local": chain.chain_id == ANVIL_CHAIN_ID,
-            "synced_block": int(self._settings()["synced_block"]),
+            "synced_block": self.synced_block(),
         }
 
     def balance(self, party: str) -> dict[str, Any]:
@@ -881,10 +889,19 @@ class ChainLink:
         }
 
 
-def _range_refused(error: Exception) -> bool:
-    """Whether an endpoint refused an eth_getLogs block range as too large."""
+def _smaller_range(error: Exception, chunk: int) -> int | None:
+    """The eth_getLogs block range to try after ``error``, if the endpoint refused ``chunk``
+    blocks as too many: the limit it names (Base's public endpoint: "eth_getLogs is limited to
+    a 200 range"), or else half. None if the error is something else, or nothing smaller is
+    left to try."""
     response = getattr(error, "response", None)
-    if getattr(response, "status_code", None) == 413:
-        return True
-    text = str(error).lower()
-    return any(word in text for word in ("block range", "range too", "too many", "limit exceeded"))
+    text = f"{error} {getattr(response, 'text', '') or ''}".lower()
+    named = re.search(r"limited to an? (\d+) range", text)
+    if named and MIN_LOG_CHUNK <= int(named.group(1)) < chunk:
+        return int(named.group(1))
+    refused = getattr(response, "status_code", None) == 413 or any(
+        word in text for word in ("block range", "range too", "too many", "limit exceeded")
+    )
+    if not refused or chunk <= MIN_LOG_CHUNK:
+        return None
+    return max(MIN_LOG_CHUNK, chunk // 2)

@@ -2,9 +2,9 @@
 
 ``deployments/<network>.json`` in this package is the deployment record that
 ``contracts/script/DeployOrbitWatch.s.sol`` wrote; a test keeps it equal to the copy in
-``contracts/deployments/``. The server takes the escrow and its first block from it
-(``orbit-watch serve --network base-sepolia``), and the command line falls back to the
-network's public RPC endpoint.
+``contracts/deployments/``. The server takes the escrow from it
+(``orbit-watch serve --network base-sepolia``), and the server and the command line fall back
+to the network's public RPC endpoint.
 
 **Testnet only, no real value.**
 """

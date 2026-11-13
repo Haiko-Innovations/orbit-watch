@@ -12,7 +12,7 @@ seurataan [GitHubin milestoneissa](https://github.com/Haiko-Innovations/orbit-wa
 
 Jokainen pull request, joka saa tiekartan vaiheen valmiiksi, päivittää myös tämän sivun.
 
-## Tilanne (12.11.2026)
+## Tilanne (13.11.2026)
 
 **Vaihe 2 on valmis** ja julkaistu versiona 0.3.0: tilitys Base Sepolia
 -testiverkossa Circlen testi-USDC:llä. Päivittämätön escrow-sopimus pitää

@@ -83,7 +83,8 @@ def test_serve_takes_its_settings_from_the_network(monkeypatch):
 
     args = parser.parse_args(base)
     cli._apply_network(args)
-    assert args.escrow == FAKE["escrow"] and args.from_block == 123
+    assert args.escrow == FAKE["escrow"]
+    assert args.from_block is None  # a new directory starts at the current block
     assert args.chain_rpc == "https://sepolia.base.org"
 
     args = parser.parse_args([*base, "--chain-rpc", "http://my-node", "--from-block", "200"])

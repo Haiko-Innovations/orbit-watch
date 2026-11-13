@@ -10,7 +10,7 @@ plan is in [plan.md](plan.md); decisions and their reasons are in
 
 Every pull request that finishes a roadmap step also updates this page.
 
-## Status (2026-11-12)
+## Status (2026-11-13)
 
 **Phase 2 is done** and released as version 0.3.0: settlement on the Base
 Sepolia testnet with Circle's testnet USDC. A non-upgradeable escrow holds the

@@ -47,8 +47,8 @@ verification as soon as it holds the file of a delivery that is on chain.
 
 ## The chain decides
 
-The service follows the escrow's events, from its deployment block onwards, at
-the start of every API call. It applies each event to the request's lifecycle
+The service follows the escrow's events, from the block where its directory
+was first started onwards, when it starts and at the start of every API call. It applies each event to the request's lifecycle
 record at its block's time, one transaction at a time, by the same rules as in
 phase 1:
 
@@ -105,11 +105,10 @@ orbit-watch serve --dir ./ow-testnet --network base-sepolia \
   --verifier-keystore ~/secrets/orbit-watch/verifier.json
 ```
 
-`--network base-sepolia` takes the escrow, its first block and Base's public
-RPC endpoint from the deployment record in the package
-([base-sepolia.md](base-sepolia.md)); `--chain-rpc` overrides the endpoint.
-For another escrow, for example on a local chain, give `--chain-rpc`,
-`--escrow` and `--from-block` instead.
+`--network base-sepolia` takes the escrow and Base's public RPC endpoint from
+the deployment record in the package ([base-sepolia.md](base-sepolia.md));
+`--chain-rpc` overrides the endpoint. For another escrow, for example on a
+local chain, give `--chain-rpc` and `--escrow` instead.
 
 - The verifier keystore is an encrypted JSON keystore, for example one made
   with `cast wallet import`. Keep it outside the repository and readable only
@@ -120,6 +119,13 @@ For another escrow, for example on a local chain, give `--chain-rpc`,
 - A service directory follows one escrow on one chain, from its first start.
   Another chain or escrow is refused, and so is a directory that was started
   without a chain.
+- A new directory has no requests yet, so no earlier event can be its own: it
+  follows the chain from the current block (`--from-block` sets another first
+  block), and afterwards from where it stopped. The server reads the chain up
+  to date before it answers. After a long stop that takes a while: Base's
+  public endpoint returns the events of at most 200 blocks per call, and Base
+  Sepolia makes 5 blocks a second, so a day is over 2,000 calls. The server
+  takes the limit an endpoint names, or halves the range until it is accepted.
 - Points are not used on chain: `admin grant` is refused, and `balance` shows
   the wallet's tokens and what it can withdraw.
 

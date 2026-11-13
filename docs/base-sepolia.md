@@ -144,7 +144,9 @@ orbit-watch serve --dir ./ow-base-sepolia --network base-sepolia \
 
 The verifier key needs a little ETH for gas. Keep the keystore and the
 password file outside the repository and readable only by you. A service
-directory follows this escrow only.
+directory follows this escrow only, from the block where it is first started,
+and reads the chain up to date before it answers
+([chain-service.md](chain-service.md#running-the-server-on-a-chain)).
 
 ## Deploying (maintainers)
 

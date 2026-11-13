@@ -8,7 +8,7 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-11-12
+## [0.3.0] - 2026-11-13
 
 Phase 2: settlement on a testnet. Testnet only: nothing here touches a
 mainnet or real money.
@@ -110,8 +110,15 @@ mainnet or real money.
   `orbit-watch chain` and `GET /v1/chain` also show the reviewer registry, and
   reporting a transaction on its own shows the testnet notice.
 - The service reads the escrow's events in smaller block ranges when an
-  endpoint refuses a range: Base's public endpoint answers at most about 200
-  blocks per query.
+  endpoint refuses a range, taking the limit the endpoint names: Base's public
+  endpoint answers at most 200 blocks per query.
+- A new service directory follows the chain from the current block, since no
+  earlier event can belong to its requests, and `serve` reads the chain up to
+  date before it answers. Before, a new directory on Base Sepolia read the
+  escrow's events from its deployment block, about a thousand queries after
+  half a day at 5 blocks a second, and its first request timed out.
+  `--from-block` no longer defaults to the deployment record's block.
+- Creating an admin key says "an admin key".
 - `admin tick` shows the transactions the service sent on chain, and
   `request show` no longer prints "until None" for a reservation that ended
   with a delivery.
