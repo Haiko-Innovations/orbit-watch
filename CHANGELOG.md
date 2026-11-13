@@ -71,6 +71,14 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   exactly that. The parties see why a delivery passed or failed, check by
   check, and an observer may challenge a failed result. A wallet without ETH
   is told to get some from a faucet (D-30).
+- The reviewer's view (phase 3, step 3.6): Your review tasks, with the
+  reviewer's record (calibration accuracy, votes in real rounds, notes), and a
+  page per task with the request, the challenge's reason, the files, the
+  automated verification check by check, and the answer. A vote in a real
+  round is the reviewer's own EAS attestation, signed in its wallet after the
+  page has checked the answer, the reasons' SHA-256 and the delivery in the
+  call data; a calibration answer is recorded at once (D-31). The local stack
+  seeds a request in review.
 
 ### Changed
 

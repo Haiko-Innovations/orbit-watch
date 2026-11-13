@@ -99,8 +99,10 @@ describe("describePrepared", () => {
     expect(second?.detail).toContain("three review rewards of 0.1 TESTUSD");
   });
 
-  it("reads a vote, and only a vote, to EAS", () => {
-    const attest = (schema: Hex) =>
+  it("reads a vote, and only the reviewer's own vote, to EAS", () => {
+    const delivery = `0x${"cd".repeat(32)}` as Hex;
+    const reason = `0x${"ef".repeat(32)}` as Hex;
+    const attest = (schema: Hex, requestId = "SIM-REQ-3006", approve = true) =>
       encodeFunctionData({
         abi: easAbi,
         functionName: "attest",
@@ -112,19 +114,49 @@ describe("describePrepared", () => {
               expirationTime: 0n,
               revocable: false,
               refUID: `0x${"44".repeat(32)}`,
-              data: encodeAbiParameters([{ type: "bool" }], [true]),
+              data: encodeAbiParameters(
+                [{ type: "string" }, { type: "bytes32" }, { type: "bool" }, { type: "bytes32" }],
+                [requestId, delivery, approve, reason],
+              ),
               value: 0n,
             },
           },
         ],
       });
+    const mine = { approve: true, reasonSha256: "ef".repeat(32), deliverySha256: "cd".repeat(32) };
     const [vote] = describePrepared(
-      prepared(chain.eas, attest(VOTE_SCHEMA), "SIM-REQ-3002"),
+      prepared(chain.eas, attest(VOTE_SCHEMA), "SIM-REQ-3006"),
       chain,
       ACCOUNT,
+      { vote: mine },
     );
-    expect(vote?.title).toBe("Record your vote on SIM-REQ-3002");
-    expect(refusal(prepared(chain.eas, attest(RESULT_SCHEMA), "SIM-REQ-3002"))).toContain("attest");
+    expect(vote?.title).toBe("Record your vote: approve the delivery for SIM-REQ-3006");
+    const refusedWith = (item: Prepared, expected = { vote: mine }) => {
+      try {
+        describePrepared(item, chain, ACCOUNT, expected);
+      } catch (error) {
+        return (error as Error).message;
+      }
+      return "not refused";
+    };
+    // The other answer, other reasons, another delivery or another request: not sent.
+    expect(
+      refusedWith(prepared(chain.eas, attest(VOTE_SCHEMA, "SIM-REQ-3006", false), "SIM-REQ-3006")),
+    ).toContain("another vote");
+    expect(
+      refusedWith(prepared(chain.eas, attest(VOTE_SCHEMA), "SIM-REQ-3006"), {
+        vote: { ...mine, reasonSha256: "00".repeat(32) },
+      }),
+    ).toContain("another vote");
+    expect(
+      refusedWith(prepared(chain.eas, attest(VOTE_SCHEMA), "SIM-REQ-3006"), {
+        vote: { ...mine, deliverySha256: "00".repeat(32) },
+      }),
+    ).toContain("another vote");
+    expect(
+      refusedWith(prepared(chain.eas, attest(VOTE_SCHEMA, "SIM-REQ-3001"), "SIM-REQ-3006")),
+    ).toContain("another request");
+    expect(refusal(prepared(chain.eas, attest(RESULT_SCHEMA), "SIM-REQ-3006"))).toContain("attest");
   });
 
   it("refuses what is not this party's call to Orbit Watch on this chain", () => {

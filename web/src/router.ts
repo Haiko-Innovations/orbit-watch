@@ -14,9 +14,11 @@ export type Route =
         | "new-request"
         | "my-observations"
         | "station"
+        | "tasks"
         | "not-found";
     }
-  | { page: "request"; id: string };
+  | { page: "request"; id: string }
+  | { page: "task"; id: string };
 
 export const paths = {
   network: "#/",
@@ -27,10 +29,13 @@ export const paths = {
   newRequest: "#/new-request",
   myObservations: "#/my-observations",
   station: "#/station",
+  tasks: "#/tasks",
+  task: (id: string) => `#/tasks/${encodeURIComponent(id)}`,
   request: (id: string) => `#/requests/${encodeURIComponent(id)}`,
 } as const;
 
 const REQUEST_ID = /^\/requests\/([A-Za-z0-9._-]{1,64})$/;
+const TASK_ID = /^\/tasks\/([A-Za-z0-9._-]{1,128})$/;
 
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#/, "").replace(/\/+$/, "") || "/";
@@ -51,9 +56,14 @@ export function parseHash(hash: string): Route {
       return { page: "my-observations" };
     case "/station":
       return { page: "station" };
+    case "/tasks":
+      return { page: "tasks" };
     default: {
-      const request = REQUEST_ID.exec(decodeURIComponent(path));
-      return request?.[1] ? { page: "request", id: request[1] } : { page: "not-found" };
+      const decoded = decodeURIComponent(path);
+      const request = REQUEST_ID.exec(decoded);
+      if (request?.[1]) return { page: "request", id: request[1] };
+      const task = TASK_ID.exec(decoded);
+      return task?.[1] ? { page: "task", id: task[1] } : { page: "not-found" };
     }
   }
 }

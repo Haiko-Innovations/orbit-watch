@@ -9,10 +9,12 @@ One command starts, on this machine only:
   application on one port;
 * SIMULATED parties (a requester, four stations, the reviewers) with LOCAL TEST keys and
   registered wallets, and worthless TestUSD for the requester;
-* five SIMULATED requests: four funded and open for observers, one opened but not funded;
+* six SIMULATED requests: five funded (four open for observers), one opened but not funded;
 * one SIMULATED request that ran its course: SIM-ESPOO delivered good observations, nobody
   challenged, and the escrow credited the station 1 TESTUSD and the requester 0.3 back,
   for them to withdraw. Seeding it moves the chain's clock to 2026-11-02 05:01 UTC;
+* SIM-REQ-3006 in review: SIM-ESPOO delivered good observations, the requester challenged
+  them, and the escrow chose three reviewers, who have their tasks;
 * fresh SIMULATED good observations of SIM-CUBESAT-A by SIM-ESPOO, never delivered yet,
   in ``datasets/`` (the service refuses data delivered before).
 
@@ -63,12 +65,15 @@ REQUESTS = [  # request id, title, funded
     ("SIM-REQ-3003", "Confirm SIM-CUBESAT-A's orbit (not funded yet)", False),
     ("SIM-REQ-3004", "Follow SIM-CUBESAT-A after its first manoeuvre", True),
     ("SIM-REQ-3005", "Check SIM-CUBESAT-A's period", True),
+    ("SIM-REQ-3006", "Re-check SIM-CUBESAT-A (challenged, in review)", True),
 ]
 SETTLED = ("SIM-REQ-3000", "Identify SIM-CUBESAT-A (delivered and accepted)")
 AFTER_WINDOW = "2026-11-02T04:00:00Z"  # the requests' window ended at 03:00
 AFTER_CHALLENGE = "2026-11-02T05:01:00Z"  # its one-hour challenge period is over
 ADMIN = "admin:local"
 FRESH_SEEDS = (201, 202)  # SIM-ESPOO's good observations for tests, unlike the seeded ones
+IN_REVIEW = "SIM-REQ-3006"
+IN_REVIEW_SEED = 203
 
 
 class StackError(RuntimeError):
@@ -88,6 +93,7 @@ class LocalStack:
 
         self.directory = directory
         self.datasets: list[str] = []
+        self.in_review: dict = {}
         self.parties = [REQUESTER, *STATIONS, *REVIEWERS]
         self.deployment = Deployment(
             GENESIS,
@@ -256,26 +262,51 @@ class LocalStack:
         if settled["summary"]["outcome"] != "accepted":
             raise StackError(f"{request_id} was not accepted: {settled['summary']}")
 
+    def good_observations(self, seed: int) -> bytes:
+        """SIM-ESPOO's SIMULATED good observations of the requests' target, drawn with ``seed``."""
+        start, end = _window()
+        return _sim_json(
+            parse_catalog(packaged("catalog.json")),
+            target_id=TARGET,
+            profile=load_profile("sim-cmos-gps"),
+            start=start,
+            end=end,
+            seed=seed,
+            max_passes=2,
+        )
+
+    def seed_in_review(self) -> dict:
+        """A request whose result its requester challenged, so that the escrow chose three
+        reviewers: the reviewer view's tests vote on it."""
+        observations = self.directory / "requests" / f"{IN_REVIEW}.observations.json"
+        observations.write_bytes(self.good_observations(IN_REVIEW_SEED))
+        self.cli(ESPOO, "reserve", IN_REVIEW, sign=True)
+        self.cli(ESPOO, "submit", str(observations), "--request", IN_REVIEW, sign=True)
+        self.cli(
+            REQUESTER,
+            "challenge",
+            IN_REVIEW,
+            "--reason",
+            "SIMULATED: the track may belong to the neighbouring CubeSat.",
+            sign=True,
+        )
+        record = json.loads(self.cli(REQUESTER, "request", "show", IN_REVIEW))["record"]
+        if record["status"] != "in_review":
+            raise StackError(f"{IN_REVIEW} is {record['status']}, not in review")
+        return {
+            "request_id": IN_REVIEW,
+            "reviewers": record["reviewers"],
+            "delivery_sha256": record["delivery_sha256"],
+        }
+
     def write_datasets(self) -> list[str]:
         """Good observations that pass verification and were never delivered."""
         folder = self.directory / "datasets"
         folder.mkdir(exist_ok=True)
-        catalog = parse_catalog(packaged("catalog.json"))
-        start, end = _window()
         written = []
         for seed in FRESH_SEEDS:
             path = folder / f"station-SIM-ESPOO-{seed}.json"
-            path.write_bytes(
-                _sim_json(
-                    catalog,
-                    target_id=TARGET,
-                    profile=load_profile("sim-cmos-gps"),
-                    start=start,
-                    end=end,
-                    seed=seed,
-                    max_passes=2,
-                )
-            )
+            path.write_bytes(self.good_observations(seed))
             written.append(str(path))
         return written
 
@@ -303,6 +334,7 @@ class LocalStack:
             "requests": [request_id for request_id, _, _ in REQUESTS],
             "settled": SETTLED[0],
             "datasets": {ESPOO: self.datasets},
+            "in_review": self.in_review,
         }
 
     def stop(self) -> None:
@@ -354,6 +386,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         stack.seed()
         stack.seed_settled()
+        stack.in_review = stack.seed_in_review()
         stack.datasets = stack.write_datasets()
         info = directory / "local-stack.json"
         info.write_text(json.dumps(stack.describe(), indent=2) + "\n", encoding="utf-8")

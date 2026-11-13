@@ -8,11 +8,11 @@ import {
   type RequestDocument,
   type RequestView,
   type Session,
-  type VerificationReport,
 } from "../api";
 import type { Prepared } from "../chain/describe";
 import { actionKey, SendFlow } from "../components/SendFlow";
 import { Loaded, MaybeLink } from "../components/Status";
+import { Verification } from "../components/Verification";
 import { formatAmount, formatUnits, formatUtc, parseUnits, shortHex } from "../format";
 import { paths } from "../router";
 import { strings } from "../strings";
@@ -547,37 +547,6 @@ function ObserverActions({
     );
   }
   return null;
-}
-
-/** The automated verification's checks, with their reasons: why it passed or failed. */
-function Verification({ sha }: { sha: string }) {
-  const v = strings.verification;
-  const load = useCallback(() => getJson<VerificationReport>(`/v1/files/${sha}`), [sha]);
-  const [report, reload] = useResource(load);
-  return (
-    <>
-      <h2>{v.title}</h2>
-      <Loaded resource={report} reload={reload}>
-        {(value) => (
-          <>
-            <p>
-              <strong>{v.verdict(value.verdict)}</strong> · {value.summary}
-            </p>
-            <ul className="checks">
-              {value.checks.map((check) => (
-                <li key={check.id} className={`check check-${check.result}`}>
-                  <strong>
-                    {check.title}: {v.results[check.result] ?? check.result}
-                  </strong>
-                  <span>{check.reason}</span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </Loaded>
-    </>
-  );
 }
 
 function Files({ view }: { view: RequestView }) {

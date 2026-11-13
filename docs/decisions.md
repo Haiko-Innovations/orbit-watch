@@ -985,3 +985,37 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.5):
   the URL answers before the seeding is done. Since step 3.1 the first tests
   could therefore start too early; the slow seeding of step 3.4 made it show.
 
+### D-31 The reviewer's view
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.6):
+
+- **Pages**:
+  - **Your review tasks** (`#/tasks`): the open tasks with their deadlines,
+    automated results and challenge reasons, and the reviewer's record. The
+    record shows calibration accuracy, votes in real rounds apart from all
+    answers, agreement with decided outcomes, and the notes calibration raises
+    (D-14).
+  - **A task's page** (`#/tasks/<id>`): the request, why it was challenged,
+    the three files to download, the automated verification check by check,
+    and the answer: approve or reject, with reasons.
+- **Real and calibration tasks look alike** until the answer, as since phase
+  1. The answer then differs:
+  - a vote in a real round is the reviewer's own EAS attestation, prepared
+    by the service (`202`) and signed in the reviewer's wallet;
+  - a calibration answer is recorded at once (`200`).
+
+  So a reviewer can tell them apart after answering. This is the open point
+  of D-23 and stays for a later phase.
+- **The vote is read from its call data before the wallet sees it**:
+  - the EAS schema is the vote schema;
+  - the request ID in the attestation is the prepared request's;
+  - the answer is the one chosen;
+  - the reasons' SHA-256 is the one the page computes from the reasons sent;
+  - the delivery's SHA-256 is the task's observation file.
+
+  Anything else is refused (extends D-28).
+- **The local stack seeds SIM-REQ-3006 in review**: SIM-ESPOO delivered
+  fresh good observations, the requester challenged them, and the escrow
+  chose three of the six SIMULATED reviewers. The end-to-end tests let two of
+  them vote in the browser, and the round settles.
+
