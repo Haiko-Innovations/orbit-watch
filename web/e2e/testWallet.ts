@@ -1,12 +1,22 @@
 import type { Page } from "@playwright/test";
-import { BaseError, createWalletClient, type Hex, http, keccak256, toBytes } from "viem";
+import {
+  BaseError,
+  type Chain,
+  createWalletClient,
+  type Hex,
+  http,
+  keccak256,
+  toBytes,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { foundry } from "viem/chains";
 
 // A test wallet for the end-to-end tests (decision P3-08). It announces itself to the page
 // as an EIP-6963 wallet. Its key stays in the test runner, which signs and sends when the
-// page asks; reads go to the local chain, as a real wallet forwards them to its node.
-// The keys are LOCAL TEST keys, the same that core/tests/anvil.py derives from a name.
+// page asks; reads go to the chain's node, as a real wallet forwards them. In the tests
+// the chain is the local one and the keys are LOCAL TEST keys, the same that
+// core/tests/anvil.py derives from a name; the phase 3 demo (web/demo) uses it on Base
+// Sepolia with testnet keys that never leave the runner.
 
 export const CHAIN_PORT = 8591; // the local stack's chain in the end-to-end tests
 export const CHAIN_RPC = `http://127.0.0.1:${CHAIN_PORT}`;
@@ -23,6 +33,8 @@ interface Options {
   /** Refuse to switch networks. */
   refuseSwitch?: boolean;
   name?: string;
+  /** The chain and its node (default: the local stack's chain). */
+  network?: { chain: Chain; rpc: string };
 }
 
 type Answer = { result?: unknown; error?: { code: number; message: string; data?: unknown } };
@@ -49,7 +61,8 @@ export async function installTestWallet(
   options: Options = {},
 ): Promise<string> {
   const account = privateKeyToAccount(key);
-  const wallet = createWalletClient({ account, chain: foundry, transport: http(CHAIN_RPC) });
+  const { chain, rpc } = options.network ?? { chain: foundry, rpc: CHAIN_RPC };
+  const wallet = createWalletClient({ account, chain, transport: http(rpc) });
 
   await page.exposeFunction("orbitWatchTestSign", async (raw: Hex): Promise<Answer> => {
     if (options.decline) return { error: { code: 4001, message: "User rejected the request." } };
@@ -78,7 +91,7 @@ export async function installTestWallet(
   await page.exposeFunction(
     "orbitWatchTestRead",
     async (method: string, params: unknown[]): Promise<Answer> => {
-      const response = await fetch(CHAIN_RPC, {
+      const response = await fetch(rpc, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
@@ -87,8 +100,8 @@ export async function installTestWallet(
     },
   );
   await page.addInitScript(
-    ({ address, name, refuseSwitch }) => {
-      let chainId = 31337;
+    ({ address, name, refuseSwitch, home }) => {
+      let chainId = home;
       const fail = (code: number, message: string, data?: unknown) =>
         Object.assign(new Error(message), { code, data });
       const bridge = window as unknown as Record<string, (...args: unknown[]) => Promise<unknown>>;
@@ -116,14 +129,14 @@ export async function installTestWallet(
             case "wallet_addEthereumChain":
               if (refuseSwitch) throw fail(4001, "User rejected the request.");
               chainId = Number.parseInt(
-                ((params?.[0] ?? {}) as { chainId?: string }).chainId ?? "0x7a69",
+                ((params?.[0] ?? {}) as { chainId?: string }).chainId ?? `0x${home.toString(16)}`,
                 16,
               );
               return null;
             case "personal_sign":
               return call("orbitWatchTestSign", params?.[0]);
             case "eth_sendTransaction":
-              if (chainId !== 31337) throw fail(4901, "The wallet is on another network.");
+              if (chainId !== home) throw fail(4901, "The wallet is on another network.");
               return call("orbitWatchTestSend", params?.[0]);
             default:
               return call("orbitWatchTestRead", method, params ?? []);
@@ -151,6 +164,7 @@ export async function installTestWallet(
       address: account.address,
       name: options.name ?? "Test wallet (LOCAL keys)",
       refuseSwitch: options.refuseSwitch ?? false,
+      home: chain.id,
     },
   );
   return account.address;

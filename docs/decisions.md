@@ -1077,3 +1077,44 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.7):
     quality report out (`POST /v1/public/quality`). The file is not kept,
     it is at most 2 MiB, and scoring does not hold the service's lock.
 
+
+### D-33 The phase 3 demo and the accessibility review
+
+Accepted · 2026-11-13 (with the pull request that implements step 3.8):
+
+- **The demo is a recorded browser run on Base Sepolia**
+  ([`web/demo`](../web/demo), `npm run demo:base-sepolia`). It is not part of
+  CI, because it uses the maintainer's testnet keys (D-24) and spends testnet
+  ETH. It writes [`examples/phase3`](../examples/phase3): a transcript with
+  every transaction on the block explorer and every attestation on EAS Scan,
+  a summary, screenshots and the Safe batch file. Videos of every role's
+  browser stay in the run's directory, outside the repository, for their
+  size.
+- **Each role has its own wallet**: the end-to-end tests' EIP-6963 wallet,
+  holding the role's testnet key. The test runner opens the key from its
+  encrypted keystore. The page asks the wallet to sign and send, and the key
+  reaches neither the page nor the service, as in criterion 2 of P3-11. A
+  wallet extension such as MetaMask or Rabby works the same way through
+  EIP-6963, but the recorded run does not use one.
+- **Who comes how**:
+  - The requester and the station sign up in the browser.
+  - The administrator registers the reviewers' wallets with API keys (P3-05).
+    It has a testnet wallet of its own, which needs no ETH to sign in.
+- **The Safe's part is signed outside the Safe app.** Two of the Safe's three
+  owners sign the downloaded batch file's transaction, and one executes it.
+  Their keys sign in the test runner, as their wallets would in the Safe app;
+  the Safe app's own pages are not part of the run. The recorded run's
+  operation adds `reviewer:sim-dana` to the registry, and an earlier run's
+  adds `reviewer:sim-bertil`, as phase 2 planned (D-24). Each is ready 48
+  hours later, and then anyone may execute it.
+- **The accessibility review is a test**
+  ([`web/e2e/a11y.spec.ts`](../web/e2e/a11y.spec.ts),
+  [accessibility.md](accessibility.md)). It opens every view as the role that
+  uses it, and checks:
+  - axe in light and dark colours;
+  - the keyboard alone: every stop shown with a focus indicator, no trap, and
+    the skip link to the heading;
+  - reflow at 320 CSS pixels (WCAG 1.4.10).
+
+  CI runs it on every pull request. Screen readers, other browsers and tests
+  with users are open (P3-10).

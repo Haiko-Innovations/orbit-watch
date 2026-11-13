@@ -50,15 +50,15 @@
           },
           {
             "role": "observations",
-            "sha256": "1e8450d79bb857e0eb7bcab66869f78dc5286e6316e85cadbe0c655e9356fcd1",
-            "size": 4380,
-            "url": "/v1/public/files/1e8450d79bb857e0eb7bcab66869f78dc5286e6316e85cadbe0c655e9356fcd1"
+            "sha256": "1c99e97271af493c21de1f05fe97a55c350fcc79603c8cab35d3a0c56314553e",
+            "size": 4375,
+            "url": "/v1/public/files/1c99e97271af493c21de1f05fe97a55c350fcc79603c8cab35d3a0c56314553e"
           },
           {
             "role": "report",
-            "sha256": "974f34e66b88fb43c1ee1a613636c3a848982e3a6cb423a88724e37ff32f3dc4",
-            "size": 10509,
-            "url": "/v1/public/files/974f34e66b88fb43c1ee1a613636c3a848982e3a6cb423a88724e37ff32f3dc4"
+            "sha256": "bc9561ea64f86de97e838e6e34475fd892346f4c1be8df59a5de4a284b19cb3e",
+            "size": 10504,
+            "url": "/v1/public/files/bc9561ea64f86de97e838e6e34475fd892346f4c1be8df59a5de4a284b19cb3e"
           }
         ],
         "simulated": true
@@ -72,9 +72,9 @@
         "outcome_reason": "reviewers rejected 2-1",
         "automated_verdict": "fail",
         "reviewers": [
-          "reviewer:sim-fatima",
           "reviewer:sim-chen",
-          "reviewer:sim-aino"
+          "reviewer:sim-aino",
+          "reviewer:sim-fatima"
         ],
         "votes": [
           [
@@ -119,7 +119,7 @@
               }
             ]
           },
-          "reference": "ledger:18"
+          "reference": "ledger:19"
         }
       },
       "publication": {
@@ -139,15 +139,15 @@
           },
           {
             "role": "observations",
-            "sha256": "e77c6e0300889f87b6b3cdd9d55fa0cbb100827476066afffd4160c871f423d2",
-            "size": 4529,
-            "url": "/v1/public/files/e77c6e0300889f87b6b3cdd9d55fa0cbb100827476066afffd4160c871f423d2"
+            "sha256": "d38770a3ef5b6f142bcf306f30355ca974409469c98ff00e0484f43dedc59580",
+            "size": 4524,
+            "url": "/v1/public/files/d38770a3ef5b6f142bcf306f30355ca974409469c98ff00e0484f43dedc59580"
           },
           {
             "role": "report",
-            "sha256": "5f4211d309522df1b6816bb834307aefb0bf7cddf6e1baa9a46bcc1f93d818b7",
-            "size": 10968,
-            "url": "/v1/public/files/5f4211d309522df1b6816bb834307aefb0bf7cddf6e1baa9a46bcc1f93d818b7"
+            "sha256": "a4a22f5595f0725ead8a9a66604858ca2f2ee2260651f6f12ef7dd8546403e8c",
+            "size": 10963,
+            "url": "/v1/public/files/a4a22f5595f0725ead8a9a66604858ca2f2ee2260651f6f12ef7dd8546403e8c"
           }
         ],
         "simulated": true
@@ -196,15 +196,15 @@
           },
           {
             "role": "observations",
-            "sha256": "c862e8e2296096fc77d1eab7f1034420bfa75491758980901381d30030102bf3",
-            "size": 2947,
-            "url": "/v1/public/files/c862e8e2296096fc77d1eab7f1034420bfa75491758980901381d30030102bf3"
+            "sha256": "f25a796b27584f33621dec9605936bf7091598ec04141c6297a78ac842deceb1",
+            "size": 2942,
+            "url": "/v1/public/files/f25a796b27584f33621dec9605936bf7091598ec04141c6297a78ac842deceb1"
           },
           {
             "role": "report",
-            "sha256": "6087be056ec78c08a303cb2abdd4f9a4e82bf7be3622b90835d09c534ca40c70",
-            "size": 8805,
-            "url": "/v1/public/files/6087be056ec78c08a303cb2abdd4f9a4e82bf7be3622b90835d09c534ca40c70"
+            "sha256": "af449a8ea3f60e065d363111ea33c6a61a217d9f2d8ce8234681402f32e233b8",
+            "size": 8800,
+            "url": "/v1/public/files/af449a8ea3f60e065d363111ea33c6a61a217d9f2d8ce8234681402f32e233b8"
           }
         ],
         "simulated": true
@@ -218,13 +218,13 @@
         "outcome_reason": "no 2-of-3 majority before the review deadline",
         "automated_verdict": "pass",
         "reviewers": [
-          "reviewer:sim-fatima",
           "reviewer:sim-chen",
-          "reviewer:sim-bertil"
+          "reviewer:sim-bertil",
+          "reviewer:sim-aino"
         ],
         "votes": [
           [
-            "reviewer:sim-fatima",
+            "reviewer:sim-chen",
             true
           ]
         ],
@@ -236,7 +236,7 @@
             "deposit": 130,
             "payouts": [
               {
-                "party": "reviewer:sim-fatima",
+                "party": "reviewer:sim-chen",
                 "points": 10,
                 "reason": "review"
               },
@@ -267,15 +267,15 @@
           },
           {
             "role": "observations",
-            "sha256": "a5453dc1f0718e4b72f64d92b7df55e5af1c96858f40066ebaf580f3b8201e40",
-            "size": 3126,
-            "url": "/v1/public/files/a5453dc1f0718e4b72f64d92b7df55e5af1c96858f40066ebaf580f3b8201e40"
+            "sha256": "26bfc637696df406241f653a4883bdb824ab02f7dfccd93c5c8bd4e13e52ef63",
+            "size": 3121,
+            "url": "/v1/public/files/26bfc637696df406241f653a4883bdb824ab02f7dfccd93c5c8bd4e13e52ef63"
           },
           {
             "role": "report",
-            "sha256": "c24ee43d90dadb61bb89b3e6fa597ec2b08c592522fd5e0e9fca4b40c6f1f3f2",
-            "size": 9420,
-            "url": "/v1/public/files/c24ee43d90dadb61bb89b3e6fa597ec2b08c592522fd5e0e9fca4b40c6f1f3f2"
+            "sha256": "a5ca4aefc24a2d0eebd0e605f65d1e0b1795ccfaa9f998da45b3f1b636269891",
+            "size": 9415,
+            "url": "/v1/public/files/a5ca4aefc24a2d0eebd0e605f65d1e0b1795ccfaa9f998da45b3f1b636269891"
           }
         ],
         "simulated": true
@@ -335,8 +335,8 @@
     "station:SIM-TAMPERE": 0,
     "reviewer:sim-aino": 10,
     "reviewer:sim-bertil": 0,
-    "reviewer:sim-chen": 10,
-    "reviewer:sim-fatima": 20
+    "reviewer:sim-chen": 20,
+    "reviewer:sim-fatima": 10
   },
   "escrow_total": 0,
   "reviewer_profiles": {
@@ -345,15 +345,15 @@
       "as_of": "2026-11-10T00:00:00.000Z",
       "calibration_version": "1.0",
       "calibration": {
-        "answered": 1,
-        "correct": 0,
-        "accuracy": 0.0,
+        "answered": 2,
+        "correct": 1,
+        "accuracy": 0.5,
         "missed": 0,
         "open": 0
       },
       "votes": {
-        "total": 2,
-        "approvals": 2,
+        "total": 3,
+        "approvals": 3,
         "approval_rate": 1.0,
         "real_rounds": 1,
         "agreed_with_outcome": 0,
@@ -394,10 +394,10 @@
         "open": 0
       },
       "votes": {
-        "total": 3,
-        "approvals": 1,
-        "approval_rate": 0.3333,
-        "real_rounds": 1,
+        "total": 4,
+        "approvals": 2,
+        "approval_rate": 0.5,
+        "real_rounds": 2,
         "agreed_with_outcome": 1,
         "decided_rounds": 1
       },
@@ -408,17 +408,17 @@
       "as_of": "2026-11-10T00:00:00.000Z",
       "calibration_version": "1.0",
       "calibration": {
-        "answered": 2,
-        "correct": 2,
+        "answered": 1,
+        "correct": 1,
         "accuracy": 1.0,
         "missed": 0,
         "open": 0
       },
       "votes": {
-        "total": 4,
-        "approvals": 2,
-        "approval_rate": 0.5,
-        "real_rounds": 2,
+        "total": 2,
+        "approvals": 0,
+        "approval_rate": 0.0,
+        "real_rounds": 1,
         "agreed_with_outcome": 1,
         "decided_rounds": 1
       },

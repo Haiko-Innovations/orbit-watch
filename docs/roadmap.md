@@ -12,28 +12,21 @@ Every pull request that finishes a roadmap step also updates this page.
 
 ## Status (2026-11-13)
 
-**Phase 2 is done** and released as version 0.3.0: settlement on the Base
-Sepolia testnet with Circle's testnet USDC. A non-upgradeable escrow holds the
-deposits, the automated results and reviewer votes are EAS attestations, the
-reviewer registry sits behind a Safe 2-of-3 multisig and a 48-hour timelock,
-and the service, API and command line run on the chain with every party
-signing with its own wallet. The contracts are deployed on Base Sepolia
-([base-sepolia.md](base-sepolia.md)), and the phase 2 demo ran there with a
-wallet per party. See the [phase 2 summary](phase-2-summary.md).
+**Phase 3 is done** and released as version 0.4.0: the web application.
+Every party signs in and signs with its own wallet in the browser; requesters,
+observers, reviewers and administrators each have their views; the station
+quality meter and the attestation browser are public pages; and every role's
+end-to-end test and the accessibility review of every view run in CI against
+a local chain. The phase 3 demo ran the whole chain in the browser on Base
+Sepolia with a wallet per role. See the [phase 3 summary](phase-3-summary.md).
+The service still runs locally only
+([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
 
-Phase 1 was released as version 0.2.0 ([phase 1 summary](phase-1-summary.md))
-and phase 0 as
-[version 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0);
+Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
+phase 1 as version 0.2.0 ([phase 1 summary](phase-1-summary.md)) and phase 0
+as [version 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0);
 phase 0's one open criterion, a real public IOD example, is still open
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
-
-**Phase 3 is under way**: the web application. Its decisions P3-01 to
-P3-11 were approved on 2026-11-13 ([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)). Done so far: the app's
-project in `web/`, served by the service, its public pages and a local stack
-in one command (3.1), signing in with a wallet (3.2), transactions in the
-browser with balances and withdrawals (3.3), the requester's (3.4),
-observer's (3.5) and reviewer's (3.6) views, and the administrator view with
-the public attestation browser and quality meter (3.7) ([web.md](web.md)).
 
 ## Next steps
 
@@ -129,7 +122,7 @@ and **WCAG 2.2 AA**.
 | ✅ **3.5 Observer view** ([#51](https://github.com/Haiko-Innovations/orbit-watch/issues/51)) | Register a simulated station, browse and reserve open requests, upload observations (SHA-256 checked), see why a delivery was accepted or rejected, challenge, follow rewards. | End to end: reserve and deliver in the browser; accepted and rejected deliveries show their reasons. |
 | ✅ **3.6 Reviewer view** ([#52](https://github.com/Haiko-Innovations/orbit-watch/issues/52)) | Assigned tasks, the report and checks, approve or reject with a reason signed as an EAS attestation, rewards and accuracy. | End to end: votes cast in the browser are attestations on the local chain, and the round settles. |
 | ✅ **3.7 Administrator view and public pages** ([#53](https://github.com/Haiko-Innovations/orbit-watch/issues/53)) | Requests, deliveries, payments, errors and the event log; `tick`; the reviewer registry, the timelock's queue and Safe transactions to propose in the Safe's own app; simulator and demo datasets; the station quality meter and a public attestation browser. | End to end for the administrator; the view can do nothing the API refuses, tested; public pages work without signing in. |
-| **3.8 Phase 3 demo** ([#54](https://github.com/Haiko-Innovations/orbit-watch/issues/54)) | The whole chain in the browser on Base Sepolia with a wallet per role, an accessibility review of every view, and the phase 3 summary. | The phase 3 completion criteria below are met; release 0.4.0. |
+| ✅ **3.8 Phase 3 demo** ([#54](https://github.com/Haiko-Innovations/orbit-watch/issues/54)) | The whole chain in the browser on Base Sepolia with a wallet per role, an accessibility review of every view, and the phase 3 summary. | The phase 3 completion criteria below are met; release 0.4.0. |
 
 **Phase 3 completion criteria** ([P3-11](decisions.md#p3-11-phase-3-completion-criteria);
 the starting plan gives none for phase 3):

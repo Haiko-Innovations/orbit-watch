@@ -61,7 +61,9 @@ a {
   text-underline-offset: 0.15em;
 }
 
-:focus-visible {
+:focus-visible,
+/* Date and time fields take focus in their parts, inside the field: mark the whole field. */
+input[type="datetime-local"]:focus-within {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
@@ -394,6 +396,7 @@ input[aria-invalid="true"] {
 .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin: 16px 0;
 }
@@ -546,6 +549,10 @@ textarea {
 main h3 {
   margin: 24px 0 8px;
   font-size: 1rem;
+}
+
+.panel h3:first-child {
+  margin-top: 0;
 }
 
 .state-waiting {

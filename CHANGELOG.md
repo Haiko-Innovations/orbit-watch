@@ -8,6 +8,12 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-13
+
+Phase 3: the web application, with each party's own wallet in the browser.
+Testnet only: nothing here touches a mainnet or real money, and the service
+runs locally.
+
 ### Added
 
 - Phase 3 plan: the web application in eight steps (3.1 to 3.8) with
@@ -100,6 +106,21 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   `--network` takes from the deployment record. The local stack governs like
   Base Sepolia, with a Safe of LOCAL TEST signers and a 60-second timelock,
   and its administrator signs in with a wallet (D-32).
+- The phase 3 demo (step 3.8): the whole chain in the browser on Base
+  Sepolia, every role with its own wallet, recorded in
+  `examples/phase3/transcript.md` with screenshots, every transaction on the
+  block explorer and every attestation on EAS Scan. A requester and a
+  station sign up, the request is funded, reserved, delivered, verified,
+  challenged and settled after two reviewers vote, and the parties withdraw.
+  The administrator prepares adding a reviewer, and the Safe schedules the
+  downloaded batch file in the timelock. The demo is
+  `npm run demo:base-sepolia` in `web/`; its wallet signs with testnet
+  keystores in the test runner (D-33).
+- An accessibility review of every view (`docs/accessibility.md`): axe in
+  light and dark colours, the keyboard alone (every stop reachable and shown,
+  no trap, the skip link) and reflow at 320 pixels, for all 17 views, in CI
+  (`web/e2e/a11y.spec.ts`).
+- The phase 3 summary (`docs/phase-3-summary.md`).
 
 ### Changed
 
@@ -112,6 +133,8 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Fixed
 
+- Date and time fields showed no focus indicator while one of their parts had
+  focus; the whole field is now outlined.
 - The end-to-end tests waited for the local stack's health URL or its "Ready"
   line, whichever came first, so they could start before the stack had seeded
   its requests; they now wait for the line (D-30).
@@ -320,7 +343,8 @@ is simulated and labelled as such.
 - Apache 2.0 licence, Contributor Covenant 3.0, contributing guide and README in
   English and Finnish, issue templates, roadmap, decision log and release process.
 
-[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0

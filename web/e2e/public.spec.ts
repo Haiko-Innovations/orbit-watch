@@ -42,7 +42,7 @@ test("the network page shows the local chain and its contracts", async ({ page }
   await expect(details).toContainText("31337");
   await expect(details).toContainText("TESTUSD");
   await expect(details).toContainText("none (local chain)");
-  await expect(page.getByRole("contentinfo")).toContainText("0.4.0.dev0");
+  await expect(page.getByRole("contentinfo")).toContainText("0.4.0");
 });
 
 test("open requests list the funded and the unfunded SIMULATED requests", async ({ page }) => {

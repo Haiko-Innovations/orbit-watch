@@ -14,30 +14,21 @@ Jokainen pull request, joka saa tiekartan vaiheen valmiiksi, päivittää myös 
 
 ## Tilanne (13.11.2026)
 
-**Vaihe 2 on valmis** ja julkaistu versiona 0.3.0: tilitys Base Sepolia
--testiverkossa Circlen testi-USDC:llä. Päivittämätön escrow-sopimus pitää
-talletukset, automaattisen tarkistuksen tulokset ja tarkistajien äänet ovat
-EAS-attestaatioita, tarkistajarekisteri on Safe-monisignatuurin (2/3) ja 48
-tunnin aikalukon takana, ja palvelu, rajapinta ja komentorivi toimivat ketjun
-päällä niin, että jokainen osapuoli allekirjoittaa omalla lompakollaan.
-Sopimukset on viety Base Sepoliaan ([base-sepolia.md](base-sepolia.md)), ja
-vaiheen 2 demo ajettiin siellä jokaiselle osapuolelle omalla lompakolla.
-Katso [vaiheen 2 yhteenveto](phase-2-summary.fi.md).
+**Vaihe 3 on valmis** ja julkaistu versiona 0.4.0: verkkosovellus. Jokainen
+osapuoli kirjautuu ja allekirjoittaa omalla lompakollaan selaimessa; tilaajilla,
+havaitsijoilla, tarkistajilla ja ylläpitäjillä on omat näkymänsä; aseman
+laatumittari ja attestaatioselain ovat julkisia sivuja; ja jokaisen roolin
+päästä päähän -testit sekä jokaisen näkymän saavutettavuuskatselmointi
+ajetaan CI:ssä paikallista ketjua vasten. Vaiheen 3 demossa koko ketju
+ajettiin selaimessa Base Sepoliassa, jokaisella roolilla oma lompakko. Katso
+[vaiheen 3 yhteenveto](phase-3-summary.fi.md). Palvelu toimii yhä vain
+paikallisesti ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
 
-Vaihe 1 julkaistiin versiona 0.2.0 ([vaiheen 1 yhteenveto](phase-1-summary.fi.md))
-ja vaihe 0
+Vaihe 2 julkaistiin versiona 0.3.0 ([vaiheen 2 yhteenveto](phase-2-summary.fi.md)),
+vaihe 1 versiona 0.2.0 ([vaiheen 1 yhteenveto](phase-1-summary.fi.md)) ja vaihe 0
 [versiona 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0).
 Vaiheen 0 ainoa avoin kriteeri, oikea julkinen IOD-esimerkki, on yhä avoinna
 ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
-
-**Vaihe 3 on käynnissä**: verkkosovellus. Sen päätökset P3-01–P3-11
-hyväksyttiin 13.11.2026 ([#46](https://github.com/Haiko-Innovations/orbit-watch/issues/46)). Valmiina: sovelluksen projekti
-hakemistossa `web/`, palvelu tarjoaa sen, julkiset sivut ja paikallinen
-ympäristö yhdellä komennolla (3.1), kirjautuminen lompakolla (3.2),
-transaktiot selaimessa saldoineen ja nostoineen (3.3), tilaajan (3.4),
-havaitsijan (3.5) ja tarkistajan (3.6) näkymät sekä ylläpitäjän näkymä,
-julkinen attestaatioselain ja laatumittari (3.7)
-([web.md](web.md), englanniksi).
 
 ## Seuraavat askeleet
 
@@ -136,7 +127,7 @@ Ethereum** ja istuntoeväste, **Biome** ja **TypeScript 7**, päästä päähän
 | ✅ **3.5 Havaitsijan näkymä** ([#51](https://github.com/Haiko-Innovations/orbit-watch/issues/51)) | Simuloidun aseman rekisteröinti, avoimet tilaukset ja varaus, havaintojen lähetys (SHA-256 tarkistetaan), syyt toimituksen hyväksymiselle tai hylkäämiselle, haaste, palkkioiden seuranta. | Päästä päähän: varaus ja toimitus selaimessa; hyväksytty ja hylätty toimitus näyttävät syynsä. |
 | ✅ **3.6 Tarkistajan näkymä** ([#52](https://github.com/Haiko-Innovations/orbit-watch/issues/52)) | Annetut tehtävät, raportti ja tarkistukset, hyväksyntä tai hylkäys perusteluineen EAS-attestaationa allekirjoitettuna, palkkiot ja tarkkuus. | Päästä päähän: selaimessa annetut äänet ovat attestaatioita paikallisessa ketjussa, ja kierros tilitetään. |
 | ✅ **3.7 Ylläpitäjän näkymä ja julkiset sivut** ([#53](https://github.com/Haiko-Innovations/orbit-watch/issues/53)) | Tilaukset, toimitukset, maksut, virheet ja tapahtumaloki; `tick`; tarkistajarekisteri, aikalukon jono ja Safen omassa sovelluksessa ehdotettavat Safe-transaktiot; simulaattori ja demoaineistot; aseman laatumittari ja julkinen attestaatioselain. | Päästä päähän ylläpitäjälle; näkymä ei voi tehdä mitään, minkä rajapinta kieltää, testattu; julkiset sivut toimivat kirjautumatta. |
-| **3.8 Vaiheen 3 demo** ([#54](https://github.com/Haiko-Innovations/orbit-watch/issues/54)) | Koko ketju selaimessa Base Sepoliassa, jokaisella roolilla oma lompakko, jokaisen näkymän saavutettavuuskatselmointi ja vaiheen 3 yhteenveto. | Alla olevat vaiheen 3 valmiskriteerit täyttyvät; julkaisu 0.4.0. |
+| ✅ **3.8 Vaiheen 3 demo** ([#54](https://github.com/Haiko-Innovations/orbit-watch/issues/54)) | Koko ketju selaimessa Base Sepoliassa, jokaisella roolilla oma lompakko, jokaisen näkymän saavutettavuuskatselmointi ja vaiheen 3 yhteenveto. | Alla olevat vaiheen 3 valmiskriteerit täyttyvät; julkaisu 0.4.0. |
 
 **Vaiheen 3 valmiskriteerit** ([P3-11](decisions.md#p3-11-phase-3-completion-criteria);
 aloitussuunnitelmassa ei ole kriteerejä vaiheelle 3):
