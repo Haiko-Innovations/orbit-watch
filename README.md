@@ -145,6 +145,9 @@ The full starting plan: [docs/plan.md](docs/plan.md).
   an escrow contract and EAS attestations. No mainnet, no token of our own.
 - **Phase 3 (done, 0.4.0):** a web application with role views and wallets in
   the browser.
+- **Phase 4 (planned):** the service and the web application online as a
+  public sandbox on the testnet, still SIMULATED
+  ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)).
 
 ## Open questions
 

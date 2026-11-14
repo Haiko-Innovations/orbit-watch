@@ -10,7 +10,7 @@ plan is in [plan.md](plan.md); decisions and their reasons are in
 
 Every pull request that finishes a roadmap step also updates this page.
 
-## Status (2026-11-13)
+## Status (2026-11-14)
 
 **Phase 3 is done** and released as version 0.4.0: the web application.
 Every party signs in and signs with its own wallet in the browser; requesters,
@@ -21,6 +21,10 @@ a local chain. The phase 3 demo ran the whole chain in the browser on Base
 Sepolia with a wallet per role. See the [phase 3 summary](phase-3-summary.md).
 The service still runs locally only
 ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
+
+**Phase 4 is planned**: a public testnet service, the service and the web
+application online on Base Sepolia, still SIMULATED. Its decisions P4-01 to
+P4-13 wait for approval ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)).
 
 Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
 phase 1 as version 0.2.0 ([phase 1 summary](phase-1-summary.md)) and phase 0
@@ -147,6 +151,62 @@ the starting plan gives none for phase 3):
 9. The testnet label is visible on every page, and simulated data is labelled.
 10. End-to-end tests of every role and accessibility checks of every view run
     in CI against a local chain.
+
+### Phase 4: a public testnet service (target version 0.5.0)
+
+Phase 4 puts the service and the web application online, so that observers
+and requesters can try the whole chain with their own wallets without
+installing anything. It is still the Base Sepolia testnet only, and everything
+is still SIMULATED: no real money, no real observations. On the way, the
+service learns to run on its own. It gets limits against abuse, a privacy
+notice and terms, backups, monitoring and a review before it is announced.
+
+The choices behind this plan are **decisions P4-01 to P4-13** in
+[decisions.md](decisions.md#phase-4-decisions), proposed in [#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67) and
+waiting for approval. In short:
+- **one small server in Finland** that runs only Orbit Watch, at a
+  **subdomain of haikoinnovations.com** with **automatic HTTPS**;
+- **one process with SQLite**, as now, which **runs on its own** with a
+  dedicated RPC endpoint;
+- **limits** without third-party CAPTCHAs, and a **privacy notice and terms**;
+- **container images** deployed by digest, **daily backups** off the server,
+  and **monitoring**;
+- **only the verifier key** on the server.
+
+| Step | Content | Done when |
+|---|---|---|
+| **4.1 The service runs on its own** ([#68](https://github.com/Haiko-Innovations/orbit-watch/issues/68)) | A background task follows the chain at an interval: it applies events, attests, settles and applies deadlines without `tick`, up to a confirmation depth; it resumes after a restart; a health endpoint and structured logs. | On a local chain a request settles, and another expires, with no API call in between; a restart in the middle resumes; tested. |
+| **4.2 Limits and a dedicated RPC endpoint** ([#69](https://github.com/Haiko-Innovations/orbit-watch/issues/69)) | Limits per IP address and per party on sign-in, sign-up, new requests, uploads and the quality meter (`429` with `Retry-After`); the chain read through a dedicated RPC endpoint whose key is a server secret. | Every public and sign-in endpoint's limits tested; the RPC key never in a response, log or the browser, tested. |
+| **4.3 Privacy notice and terms** ([#70](https://github.com/Haiko-Innovations/orbit-watch/issues/70)) | Both in English and Finnish, linked from every page; station coordinates to about a kilometre; deleting a station profile and ending sessions; log retention; the session cookie checked against the law, with its source. | The pages work without signing in; deletion and coordinate precision tested; the data inventory documented. |
+| **4.4 Container image** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | The web application and the service from the lock files, a base image pinned by digest, a non-root user, a read-only file system; built in CI, published on release tags with its digest. | CI builds the image and runs the end-to-end tests against it; no secret in the image, checked. |
+| **4.5 Server, domain and TLS** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | The server, the subdomain, Caddy with automatic HTTPS, a firewall, automatic security updates, a deploy script that runs an image by its digest. | The service answers over HTTPS, not yet announced; a deploy and a rollback done with the script. |
+| **4.6 Backups, monitoring and runbooks** ([#73](https://github.com/Haiko-Innovations/orbit-watch/issues/73)) | Daily encrypted backups off the server, kept 14 days; an uptime check with alerts; disk and backup-age checks; a read-only mode; runbooks. | A restore drill passed; an alert reached the maintainer; the runbooks documented. |
+| **4.7 Keys and the review before the launch** ([#74](https://github.com/Haiko-Innovations/orbit-watch/issues/74)) | The verifier key to the server and off the maintainer's machine; the Safe's signers as decided; a security checklist, a screen reader test by a person, a real wallet extension. | The review done; each finding fixed or recorded. |
+| **4.8 Launch and phase 4 summary** ([#75](https://github.com/Haiko-Innovations/orbit-watch/issues/75)) | The service opens, with a short announcement for the maintainer to post; the phase 4 summary. | The phase 4 completion criteria below are met; release 0.5.0. |
+
+**Phase 4 completion criteria** ([P4-13](decisions.md#p4-13-phase-4-completion-criteria),
+proposed):
+
+1. The service and the web application run publicly at their address over
+   HTTPS, on Base Sepolia only, with the testnet label and the SIMULATED label
+   on every page.
+2. Requests are attested, settled and expired on time without anyone calling
+   `tick`, and the service resumes after a restart, tested.
+3. Every public and sign-in endpoint has documented limits, tested.
+4. The privacy notice and the terms are linked from every page, and personal
+   data, its retention and its deletion are documented and implemented.
+5. The server holds only the verifier key; no secret is in the repository,
+   the image or the browser, tested; the runbook for a leaked key is written.
+6. A release is deployed from its image by digest with the documented
+   script, and a rollback has been done.
+7. Backups run every day off the server, and a restore drill has passed.
+8. Monitoring alerts the maintainer when the service or its backups fail,
+   tried once.
+9. The review before the launch is done: the security checklist, a screen
+   reader test by a person and a real wallet extension; each finding fixed or
+   recorded.
+10. Every CI check still passes, including every role's end-to-end test
+    against a local chain; release 0.5.0.
 
 ## How we work
 

@@ -8,6 +8,12 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+### Added
+
+- Phase 4 plan: a public testnet service in eight steps (4.1 to 4.8) with
+  completion criteria in `docs/roadmap.md`, and the proposed decisions P4-01 to
+  P4-13 in `docs/decisions.md`, for approval in #67.
+
 ### Fixed
 
 - The phase 1 demo told another story after every release: its reviewer rounds

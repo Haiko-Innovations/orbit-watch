@@ -147,6 +147,9 @@ Koko aloitussuunnitelma: [docs/plan.fi.md](docs/plan.fi.md).
   escrow-sopimuksella ja EAS-attestaatioilla. Ei pääverkkoa, ei omaa tokenia.
 - **Vaihe 3 (valmis, 0.4.0):** verkkosovellus roolikohtaisine näkymineen ja
   lompakkoineen selaimessa.
+- **Vaihe 4 (suunniteltu):** palvelu ja verkkosovellus verkossa julkisena
+  hiekkalaatikkona testiverkossa, yhä SIMULOITUNA
+  ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)).
 
 ## Avoimet kysymykset
 

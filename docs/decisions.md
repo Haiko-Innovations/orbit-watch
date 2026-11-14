@@ -1118,3 +1118,203 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.8):
 
   CI runs it on every pull request. Screen readers, other browsers and tests
   with users are open (P3-10).
+
+## Phase 4 decisions
+
+P4-01 to P4-13 are proposed for the
+[roadmap](roadmap.md#phase-4-a-public-testnet-service-target-version-050)'s
+phase 4, a public testnet service, in
+[#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67). They wait
+for the maintainer's approval. Facts were checked on 2026-11-14; the sources
+are listed under each decision. Versions are chosen, and checked, when they are
+used.
+
+### P4-01 A public sandbox on the testnet
+
+Proposed · 2026-11-14. Phase 4 puts the service and the web application
+online, so that people can try the whole chain with their own wallets without
+installing anything. Everything else stays as it is:
+- Base Sepolia only: no mainnet, no real money, no token of our own;
+- everything SIMULATED: the built-in simulated objects, reference orbits,
+  allow-list and stations.
+
+Real reference orbits and real observations are not in phase 4. They need
+decisions of their own: the data source's terms, licences, and the personal
+data of real observers. They are left for a later phase.
+
+### P4-02 A small server in Finland that runs only Orbit Watch
+
+Proposed · 2026-11-14. One small virtual server in a data centre in Finland,
+on Haiko Innovations' account, runs Orbit Watch and nothing else. The
+provider and its cost are the maintainer's choice. Hetzner, for example, lists
+a data centre park in Helsinki.
+
+Alternatives:
+- **Spark through Tailscale Funnel**: no extra cost, but the machine holds
+  other projects' secrets and keys. Funnel serves only the tailnet's `*.ts.net`
+  names, on ports 443, 8443 and 10000, and is in beta.
+- **Vercel functions**: they do not fit one long-running process with SQLite,
+  a chain follower and a key, without rewriting the service.
+
+Sources:
+[Hetzner data centres](https://docs.hetzner.com/general/others/data-centers-and-connection/)
+("Data Center Park Helsinki, Finland"),
+[Tailscale Funnel](https://tailscale.com/kb/1223/funnel) ("Funnel can only
+use DNS names in your tailnet's domain"; "currently in beta").
+
+### P4-03 A subdomain of Haiko Innovations, with automatic HTTPS
+
+Proposed · 2026-11-14. "Orbit Watch" is a working name: its trademark and
+domain checks are not done. So the service lives at a subdomain of
+`haikoinnovations.com`, not at a domain of its own. The maintainer chooses the
+name. Caddy, as the reverse proxy, gets the TLS certificate and renews it.
+Source: [Caddy automatic HTTPS](https://caddyserver.com/docs/automatic-https)
+("provisions TLS certificates for all your sites and keeps them renewed"; it
+needs ports 80 and 443 open, and a writeable, persistent data directory).
+
+### P4-04 One process, SQLite and files on a persistent volume
+
+Proposed · 2026-11-14. As now, one service process keeps its state in SQLite
+and the file store, here on a persistent volume, with Caddy in front. There is
+no PostgreSQL and no object storage yet. The SQL stays portable
+([P-02](#p-02-sqlite-with-plain-sql-migrations)) for when one server is not
+enough.
+
+### P4-05 The service runs on its own
+
+Proposed · 2026-11-14. Today the service acts only when someone calls it or
+runs `tick`. In phase 4, a background task in the service follows the chain at
+an interval, and does the service's own work:
+- applies the escrow's events;
+- attests results;
+- settles decided requests;
+- applies passed deadlines.
+
+Other details:
+- It reads only up to a confirmation depth behind the newest block, so that a
+  reorganisation does not undo what it has applied.
+- It resumes from the database after a restart.
+- A health endpoint tells monitoring whether it keeps up.
+
+### P4-06 A dedicated RPC endpoint for the service
+
+Proposed · 2026-11-14. Base's public endpoints "are free, rate limited, and
+best effort", and "not suitable for production apps". The public service
+reads the chain through a dedicated RPC provider, with the public endpoint as
+a fallback. Its key is a server secret that never reaches a response, a log
+or the browser. Wallets in the browser use their own endpoints, as now.
+Source: [Base network information](https://docs.base.org/chain/network-information).
+
+### P4-07 Limits against abuse, in the service
+
+Proposed · 2026-11-14. The service limits, per IP address and per party:
+sign-in and sign-up attempts, new requests, uploads and quality meter runs. It
+answers `429 Too Many Requests` with `Retry-After`. The limits are settings
+and are documented.
+
+There is no third-party CAPTCHA. It would load another origin's scripts,
+which the content security policy forbids (D-25), and send visitors' data
+elsewhere.
+
+### P4-08 Personal data, a privacy notice and terms of use
+
+Proposed · 2026-11-14. Haiko Innovations Oy is the controller.
+
+The data, kept to the minimum:
+- wallet addresses and party names, which are public on the chain or in
+  requests;
+- station profiles;
+- the sign-in session;
+- IP addresses in the server's logs, kept for at most 14 days.
+
+No analytics, no trackers, no third-party content.
+
+A station may be someone's home, so the public service keeps station
+coordinates to two decimals, about a kilometre. A party can delete its station
+profile and end its sessions. What is on the chain cannot be deleted, and the
+notice says so.
+
+A privacy notice and terms of use, in English and Finnish, are linked from
+every page. The terms say: testnet only, no value, SIMULATED data, no
+warranty, civilian objects only.
+
+The only cookie is the `HttpOnly` sign-in session. Whether it needs consent is
+checked in step 4.3 against section 205 of the Act on Electronic
+Communications Services (917/2014) and Traficom's guidance. The result is
+recorded with its source. On 2026-11-14 the text could not be read from
+Finlex, so it is not stated here.
+
+### P4-09 The server holds only the verifier key
+
+Proposed · 2026-11-14. The server holds one key: the verifier's, in its
+encrypted keystore, with the password in a file that only the service's user
+can read. After the move, the key leaves the maintainer's machine (D-24),
+except for one encrypted offline copy for recovery.
+
+The escrow's verifier cannot be changed. If the key leaks, the remedy is a
+new escrow and a new service directory, and a runbook describes it.
+
+**Open:** whether the Safe's three signers go to three different people
+before the launch, by `swapOwner` in the Safe app, or the maintainer keeps
+them for the testnet and the page says so.
+
+### P4-10 Releases as container images, deployed by digest
+
+Proposed · 2026-11-14. CI builds a container image on every pull request and
+publishes it on every release tag to GitHub's container registry. The image
+holds the built web application and the service, with:
+- dependencies from the lock files;
+- a base image pinned by digest;
+- a non-root user;
+- a read-only file system except the data volume.
+
+The maintainer deploys an image by its digest with a documented script, and
+rolls back to the previous digest. No deployment credential is kept in
+GitHub.
+
+### P4-11 Operations
+
+Proposed · 2026-11-14:
+- **Backups:** every day, the database (SQLite's online backup) and the file
+  store, encrypted and copied off the server, kept for 14 days. A restore
+  drill runs before the launch and after every schema migration.
+- **Monitoring:** an external uptime check of the health endpoint, alerts to
+  the maintainer, and checks of the disk and of the newest backup's age.
+- **Incidents:** a read-only mode refuses changes and keeps the public pages.
+  Runbooks cover deploy, rollback, restore and a leaked key.
+
+### P4-12 A review before the launch
+
+Proposed · 2026-11-14. Before the service is announced:
+- a security review against a short checklist taken from OWASP ASVS level 1:
+  authentication, sessions, input, headers, limits, secrets and logging;
+- an accessibility test with a screen reader, done by a person
+  ([accessibility.md](accessibility.md#not-covered));
+- a run with a real wallet extension.
+
+Each finding is fixed or recorded.
+
+### P4-13 Phase 4 completion criteria
+
+Proposed · 2026-11-14. Phase 4 is done when:
+
+1. The service and the web application run publicly at their address over
+   HTTPS, on Base Sepolia only, with the testnet label and the SIMULATED label
+   on every page.
+2. Requests are attested, settled and expired on time without anyone calling
+   `tick`, and the service resumes after a restart, tested.
+3. Every public and sign-in endpoint has documented limits, tested.
+4. The privacy notice and the terms are linked from every page, and personal
+   data, its retention and its deletion are documented and implemented.
+5. The server holds only the verifier key; no secret is in the repository,
+   the image or the browser, tested; the runbook for a leaked key is written.
+6. A release is deployed from its image by digest with the documented
+   script, and a rollback has been done.
+7. Backups run every day off the server, and a restore drill has passed.
+8. Monitoring alerts the maintainer when the service or its backups fail,
+   tried once.
+9. The review before the launch is done: the security checklist, a screen
+   reader test by a person and a real wallet extension; each finding fixed or
+   recorded.
+10. Every CI check still passes, including every role's end-to-end test
+    against a local chain; release 0.5.0.
