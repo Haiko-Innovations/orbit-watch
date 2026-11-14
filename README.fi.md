@@ -147,6 +147,9 @@ Koko aloitussuunnitelma: [docs/plan.fi.md](docs/plan.fi.md).
   escrow-sopimuksella ja EAS-attestaatioilla. Ei pääverkkoa, ei omaa tokenia.
 - **Vaihe 3 (valmis, 0.4.0):** verkkosovellus roolikohtaisine näkymineen ja
   lompakkoineen selaimessa.
+- **Vaihe 4 (suunniteltu):** palvelu ja verkkosovellus verkossa julkisena
+  hiekkalaatikkona testiverkossa, yhä SIMULOITUNA
+  ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)).
 
 ## Avoimet kysymykset
 
@@ -157,6 +160,10 @@ Koko aloitussuunnitelma: [docs/plan.fi.md](docs/plan.fi.md).
   luvan julkaista se (katso [examples/real-iod/](examples/real-iod)).
 - **Vakuudet** varauksille ja tarkistajille leimasinhyväksynnän ja salaisen yhteistyön estämiseksi.
 - **Täysi riitojenratkaisu.**
+- **Hajautus:** pitkällä aikavälillä ei riippuvuutta yhdestä ihmisestä,
+  koneesta tai yrityksestä, vaan yhteisön ajama ja päättämä verkko; suunta,
+  ei vielä suunnitelma ([decentralisation.md](docs/decentralisation.md),
+  englanniksi).
 - **Yhteistyö:** IAU CPS (SatChecker ja SCORE), Unistellar ja SETI, SatNOGS
   sekä SeeSat-L-harrastajayhteisö.
 - **Sääntely**, jos joskus mukaan tulee oikeaa rahaa (MiCA, maksupalvelut).
