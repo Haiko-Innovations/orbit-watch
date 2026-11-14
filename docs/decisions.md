@@ -1121,13 +1121,17 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.8):
 
 ## Phase 4 decisions
 
-P4-01 to P4-13 are proposed for the
+P4-01 to P4-16 are proposed for the
 [roadmap](roadmap.md#phase-4-a-public-testnet-service-target-version-050)'s
 phase 4, a public testnet service, in
 [#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67). They wait
-for the maintainer's approval. Facts were checked on 2026-11-14; the sources
-are listed under each decision. Versions are chosen, and checked, when they are
-used.
+for the maintainer's approval. They were discussed with the maintainer on
+2026-11-14: hosting on Vercel and Neon, PostgreSQL everywhere the service keeps
+state, a design that can move to other hosts, and a path that stays open to a
+network run by the community
+([decentralisation.md](decentralisation.md)). Facts were checked on
+2026-11-14; the sources are listed under each decision. Versions are chosen,
+and checked, when they are used.
 
 ### P4-01 A public sandbox on the testnet
 
@@ -1142,81 +1146,148 @@ Real reference orbits and real observations are not in phase 4. They need
 decisions of their own: the data source's terms, licences, and the personal
 data of real observers. They are left for a later phase.
 
-### P4-02 A small server in Finland that runs only Orbit Watch
+### P4-02 Hosting on Vercel and Neon
 
-Proposed · 2026-11-14. One small virtual server in a data centre in Finland,
-on Haiko Innovations' account, runs Orbit Watch and nothing else. The
-provider and its cost are the maintainer's choice. Hetzner, for example, lists
-a data centre park in Helsinki.
+Proposed · 2026-11-14. The service runs as a Python function on Haiko
+Innovations' Vercel Pro team, and its database is a Neon PostgreSQL project
+from the Vercel Marketplace. Pro is already paid for other projects, and its
+monthly credit covers a sandbox's functions. Neon's Free plan is enough if
+the scheduled follower runs every 15 minutes (P4-06). Launch is pay as you go
+and is taken only when needed.
+
+Why not as it is: the service was one long-running process with SQLite and
+files on its own disk, its whole state in memory behind one lock, and a key in
+a keystore file. Vercel functions are short-lived, run many instances at once
+and have a read-only file system, so P4-04 to P4-06 change the service first.
 
 Alternatives:
-- **Spark through Tailscale Funnel**: no extra cost, but the machine holds
-  other projects' secrets and keys. Funnel serves only the tailnet's `*.ts.net`
-  names, on ports 443, 8443 and 10000, and is in beta.
-- **Vercel functions**: they do not fit one long-running process with SQLite,
-  a chain follower and a key, without rewriting the service.
+- **A small server of our own in Finland**: almost no code change, but a
+  monthly fee and server upkeep (updates, firewall, TLS, disk). It stays
+  possible at any time (P4-05).
+- **Spark through Tailscale Funnel**: no cost, but the machine holds other
+  projects' secrets, and Funnel serves only `*.ts.net` names and is in beta.
 
 Sources:
-[Hetzner data centres](https://docs.hetzner.com/general/others/data-centers-and-connection/)
-("Data Center Park Helsinki, Finland"),
-[Tailscale Funnel](https://tailscale.com/kb/1223/funnel) ("Funnel can only
-use DNS names in your tailnet's domain"; "currently in beta").
+- [Vercel Python runtime](https://vercel.com/docs/functions/runtimes/python)
+  ("run ASGI … and WSGI"; Python 3.12 to 3.14);
+- [Vercel runtimes](https://vercel.com/docs/functions/runtimes)
+  ("read-only filesystem with writable `/tmp`");
+- [Vercel function limits](https://vercel.com/docs/functions/limitations)
+  (4.5 MB request and response bodies; 500 MB Python bundles; 300 s by
+  default and 800 s at most on Pro);
+- [Vercel Pro](https://vercel.com/docs/plans/pro-plan) ("$20 in monthly
+  credit");
+- [Neon plans](https://neon.com/docs/introduction/plans) (Free: 100 CU-hours
+  per project per month, scale to zero after 5 minutes, 6 hours of restore)
+  and [pricing](https://neon.com/pricing) (compute is suspended until the next
+  billing period when the hours run out; Launch at $0.106 per CU-hour with no
+  minimum).
 
-### P4-03 A subdomain of Haiko Innovations, with automatic HTTPS
+The service's dependencies take 122 MB, measured on 2026-11-14.
+
+### P4-03 A subdomain of Haiko Innovations
 
 Proposed · 2026-11-14. "Orbit Watch" is a working name: its trademark and
 domain checks are not done. So the service lives at a subdomain of
 `haikoinnovations.com`, not at a domain of its own. The maintainer chooses the
-name. Caddy, as the reverse proxy, gets the TLS certificate and renews it.
-Source: [Caddy automatic HTTPS](https://caddyserver.com/docs/automatic-https)
-("provisions TLS certificates for all your sites and keeps them renewed"; it
-needs ports 80 and 443 open, and a writeable, persistent data directory).
+name. Vercel serves it over HTTPS. The web application and the API stay on
+one origin: the static build at `/`, and the function at `/v1/`. So the
+content security policy keeps `connect-src 'self'` (D-25).
 
-### P4-04 One process, SQLite and files on a persistent volume
+### P4-04 PostgreSQL wherever the service keeps state
 
-Proposed · 2026-11-14. As now, one service process keeps its state in SQLite
-and the file store, here on a persistent volume, with Caddy in front. There is
-no PostgreSQL and no object storage yet. The SQL stays portable
-([P-02](#p-02-sqlite-with-plain-sql-migrations)) for when one server is not
-enough.
+Proposed · 2026-11-14. Replaces
+[P-02](#p-02-sqlite-with-plain-sql-migrations) once accepted. P-02 said that
+"PostgreSQL is reconsidered when a public service is planned". This is that
+plan.
 
-### P4-05 The service runs on its own
+The service keeps its state, its files included, in PostgreSQL, everywhere:
+in production, in the local stack and in the tests. There is one backend and
+no choice of two:
+- the stateless service relies on PostgreSQL's locks and concurrent
+  transactions, which SQLite cannot test;
+- two backends would double every change.
 
-Proposed · 2026-11-14. Today the service acts only when someone calls it or
-runs `tick`. In phase 4, a background task in the service follows the chain at
-an interval, and does the service's own work:
-- applies the escrow's events;
-- attests results;
-- settles decided requests;
-- applies passed deadlines.
+What this means:
+- **Files in the database.** Requests, observations and reports are a few
+  kilobytes each.
+- **The open core needs no database.** The command-line tools for the
+  format, verification, the simulator, the quality meter and the demos work
+  as now.
+- **The local stack starts PostgreSQL itself** in a container, as it starts
+  Anvil.
+- **Tests that need a database are skipped without one.** CI always runs
+  them (`ORBIT_WATCH_PG_TESTS=1`), as it does the chain tests.
+- **No migration of old directories.** The testnet's earlier service
+  directories are not moved: their state comes from the chain, and their
+  demos are in `examples/`.
 
-Other details:
-- It reads only up to a confirmation depth behind the newest block, so that a
-  reorganisation does not undo what it has applied.
-- It resumes from the database after a restart.
-- A health endpoint tells monitoring whether it keeps up.
+### P4-05 Portable by design
 
-### P4-06 A dedicated RPC endpoint for the service
+Proposed · 2026-11-14. Moving from Vercel and Neon to a server of our own, or
+to a network of community nodes later
+([decentralisation.md](decentralisation.md)), must not need code changes:
+- **One plain ASGI application.** Its settings come from environment
+  variables (`DATABASE_URL`, the RPC endpoint, the verifier key).
+- **Vercel only in thin files:** `vercel.json` (routes, the schedule) and a
+  few-line entry file that calls `create_app()`.
+- **The follower is an authenticated HTTP call.** The Vercel schedule makes
+  it, a timer can, and `orbit-watch serve --follow` runs the same loop in the
+  process.
+- **Limits per IP address and per party live in the database too**, so they
+  hold without Vercel's firewall.
+- **Standard PostgreSQL only**, through psycopg, with nothing specific to
+  Neon. Locks are transaction-scoped advisory locks
+  (`pg_advisory_xact_lock`), which work behind a connection pooler.
+- **CI builds the container image on every pull request** and runs the
+  end-to-end tests against it, so the server path stays tested.
+
+### P4-06 The service runs on its own
+
+Proposed · 2026-11-14. The service has no state outside PostgreSQL. Each call
+works in a transaction, reads what it needs from the database and, to change
+anything, takes the same advisory lock. So two instances never apply one
+change twice.
+
+A follower does the service's own work without anyone calling `tick`:
+- it applies the escrow's events;
+- it attests results;
+- it settles decided requests;
+- it applies passed deadlines.
+
+The follower runs on a Vercel schedule every 15 minutes, which keeps Neon's
+Free plan within its hours (about 61 of 100 CU-hours a month). It also runs
+on every call, as now. It reads only up to a confirmation depth behind the
+newest block, and a health endpoint tells monitoring whether it keeps up.
+Source: [Vercel cron jobs](https://vercel.com/docs/cron-jobs/usage-and-pricing)
+(Pro: "Once per minute", 100 jobs; marked as legacy and moving to Schedules,
+which is used where available).
+
+### P4-07 A dedicated RPC endpoint for the service
 
 Proposed · 2026-11-14. Base's public endpoints "are free, rate limited, and
-best effort", and "not suitable for production apps". The public service
-reads the chain through a dedicated RPC provider, with the public endpoint as
-a fallback. Its key is a server secret that never reaches a response, a log
-or the browser. Wallets in the browser use their own endpoints, as now.
+best effort", and "not suitable for production apps". The service reads the
+chain through a dedicated RPC provider, with the public endpoint as a
+fallback. Its key is a server secret that never reaches a response, a log or
+the browser. Wallets in the browser use their own endpoints, as now.
 Source: [Base network information](https://docs.base.org/chain/network-information).
 
-### P4-07 Limits against abuse, in the service
+### P4-08 Limits against abuse
 
-Proposed · 2026-11-14. The service limits, per IP address and per party:
-sign-in and sign-up attempts, new requests, uploads and quality meter runs. It
-answers `429 Too Many Requests` with `Retry-After`. The limits are settings
-and are documented.
+Proposed · 2026-11-14:
+- **Vercel's firewall** limits requests per IP address.
+- **The service** limits, per IP address and per party and in the database,
+  sign-in and sign-up attempts, new requests, uploads and quality meter runs.
+  It answers `429 Too Many Requests` with `Retry-After`.
+- **Bodies are at most 4 MB**, under Vercel's 4.5 MB.
+- **No third-party CAPTCHA.** It would load another origin's scripts, which
+  the content security policy forbids (D-25).
 
-There is no third-party CAPTCHA. It would load another origin's scripts,
-which the content security policy forbids (D-25), and send visitors' data
-elsewhere.
+The limits are settings and are documented.
+Source: [Vercel WAF rate limiting](https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting)
+("available on all plans").
 
-### P4-08 Personal data, a privacy notice and terms of use
+### P4-09 Personal data, a privacy notice and terms of use
 
 Proposed · 2026-11-14. Haiko Innovations Oy is the controller.
 
@@ -1225,7 +1296,7 @@ The data, kept to the minimum:
   requests;
 - station profiles;
 - the sign-in session;
-- IP addresses in the server's logs, kept for at most 14 days.
+- IP addresses in logs, kept for at most 14 days.
 
 No analytics, no trackers, no third-party content.
 
@@ -1239,51 +1310,88 @@ every page. The terms say: testnet only, no value, SIMULATED data, no
 warranty, civilian objects only.
 
 The only cookie is the `HttpOnly` sign-in session. Whether it needs consent is
-checked in step 4.3 against section 205 of the Act on Electronic
+checked in step 4.4 against section 205 of the Act on Electronic
 Communications Services (917/2014) and Traficom's guidance. The result is
 recorded with its source. On 2026-11-14 the text could not be read from
 Finlex, so it is not stated here.
 
-### P4-09 The server holds only the verifier key
+### P4-10 The database's protection
 
-Proposed · 2026-11-14. The server holds one key: the verifier's, in its
-encrypted keystore, with the password in a file that only the service's user
-can read. After the move, the key leaves the maintainer's machine (D-24),
-except for one encrypted offline copy for recovery.
+Proposed · 2026-11-14. A server of our own could keep its database closed to
+the internet. Neon's endpoint is reachable from anywhere, behind TLS and a
+password. Its protections are:
+- **two roles**: the service's role can only read and write its own tables,
+  and a separate role runs the migrations at deployment;
+- **the connection string in one place only**: the production environment's
+  secret on Vercel; never in the repository, a log, a preview, CI or a
+  developer's machine, since development uses a local PostgreSQL;
+- **`sslmode=verify-full`**, which Neon recommends;
+- **a runbook** to change the password at once if it may have leaked.
 
-The escrow's verifier cannot be changed. If the key leaks, the remedy is a
-new escrow and a new service directory, and a runbook describes it.
+Who gets the password can change the service's off-chain state: for example,
+which wallet belongs to which party, or the stored files. They cannot do
+three things:
+- move money, since the escrow decides and every party signs itself;
+- use the verifier key, which is not in the database;
+- sign in as anyone, since API keys and sessions are stored only as their
+  SHA-256.
 
-**Open:** whether the Safe's three signers go to three different people
-before the launch, by `swapOwner` in the Safe app, or the maintainer keeps
-them for the testnet and the page says so.
+For a testnet sandbox with SIMULATED data this level is accepted. Before real
+data or real money, the choice is Neon's IP Allow or private networking (Scale
+plan), or a server of our own with a closed database (P4-05).
 
-### P4-10 Releases as container images, deployed by digest
+Sources:
+- [Neon secure connections](https://neon.com/docs/connect/connect-securely)
+  ("Neon rejects connections that do not use SSL/TLS");
+- [Neon IP Allow](https://neon.com/docs/introduction/ip-allow) ("available
+  with the Neon Scale plan");
+- [Vercel static IPs](https://vercel.com/docs/networking/static-ips) (a Pro
+  add-on, "$100/month per project").
 
-Proposed · 2026-11-14. CI builds a container image on every pull request and
-publishes it on every release tag to GitHub's container registry. The image
-holds the built web application and the service, with:
-- dependencies from the lock files;
-- a base image pinned by digest;
-- a non-root user;
-- a read-only file system except the data volume.
-
-The maintainer deploys an image by its digest with a documented script, and
-rolls back to the previous digest. No deployment credential is kept in
-GitHub.
-
-### P4-11 Operations
+### P4-11 Keys
 
 Proposed · 2026-11-14:
-- **Backups:** every day, the database (SQLite's online backup) and the file
-  store, encrypted and copied off the server, kept for 14 days. A restore
-  drill runs before the launch and after every schema migration.
-- **Monitoring:** an external uptime check of the health endpoint, alerts to
-  the maintainer, and checks of the disk and of the newest backup's age.
-- **Incidents:** a read-only mode refuses changes and keeps the public pages.
-  Runbooks cover deploy, rollback, restore and a leaked key.
+- **The verifier key** is the production environment's write-only secret on
+  Vercel, and no preview or developer has it. After the move it leaves the
+  maintainer's machine (D-24), except for one encrypted offline copy for
+  recovery.
+- **The escrow's verifier cannot be changed.** If the key leaks, the remedy
+  is a new escrow and a new database, and a runbook describes it.
+- **Open:** the Safe's three signers go to different people before the
+  launch, by `swapOwner` in the Safe app. This is the first step from one
+  person's keys towards the community's
+  ([decentralisation.md](decentralisation.md)).
 
-### P4-12 A review before the launch
+Source: [Vercel secrets](https://vercel.com/docs/environment-variables/sensitive-environment-variables)
+("Secret values are write-only after saving").
+
+### P4-12 Releases and deployment
+
+Proposed · 2026-11-14:
+- **Production follows a release.** Vercel's production branch is a branch
+  named `production`, and the maintainer moves it to a release tag. A
+  rollback moves it back.
+- **No deployment credential in GitHub.**
+- **Every pull request gets a preview** without secrets and without the
+  production database.
+- **CI builds the container image** (P4-05); it is published with the
+  release.
+
+### P4-13 Operations
+
+Proposed · 2026-11-14:
+- **Backups.** Neon's Free plan restores only 6 hours back. So every day a
+  GitHub Actions job takes a `pg_dump`, encrypts it to the maintainer's public
+  key and keeps it for 14 days. The repository is public, so encryption is
+  required. A restore drill runs before the launch and after every schema
+  migration.
+- **Monitoring.** An external uptime check of the health endpoint, alerts to
+  the maintainer, and a check of Neon's monthly hours.
+- **Incidents.** A read-only mode refuses changes and keeps the public pages.
+  Runbooks cover deployment, rollback, restore, a leaked key and a leaked
+  database password.
+
+### P4-14 A review before the launch
 
 Proposed · 2026-11-14. Before the service is announced:
 - a security review against a short checklist taken from OWASP ASVS level 1:
@@ -1294,7 +1402,20 @@ Proposed · 2026-11-14. Before the service is announced:
 
 Each finding is fixed or recorded.
 
-### P4-13 Phase 4 completion criteria
+### P4-15 Nothing that closes the way to a community network
+
+Proposed · 2026-11-14. In the long run Orbit Watch should depend on no single
+person, machine or company, and the community should decide how its network
+is run ([decentralisation.md](decentralisation.md)). Phase 4 builds nothing
+that would close that way:
+- no state outside the database;
+- truth on the chain;
+- files by their SHA-256;
+- deterministic verification;
+- releases that anyone can run;
+- no automatic updates pushed to other people's machines.
+
+### P4-16 Phase 4 completion criteria
 
 Proposed · 2026-11-14. Phase 4 is done when:
 
@@ -1302,19 +1423,23 @@ Proposed · 2026-11-14. Phase 4 is done when:
    HTTPS, on Base Sepolia only, with the testnet label and the SIMULATED label
    on every page.
 2. Requests are attested, settled and expired on time without anyone calling
-   `tick`, and the service resumes after a restart, tested.
-3. Every public and sign-in endpoint has documented limits, tested.
-4. The privacy notice and the terms are linked from every page, and personal
+   `tick`. The service keeps no state outside PostgreSQL, and two instances
+   never apply one change twice, tested.
+3. PostgreSQL is the service's only database, in production, in the local
+   stack and in CI, and the local stack still starts in one command.
+4. The same release also runs as a container against any PostgreSQL with
+   documented commands, and CI tests the image end to end.
+5. Every public and sign-in endpoint has documented limits, tested.
+6. The privacy notice and the terms are linked from every page, and personal
    data, its retention and its deletion are documented and implemented.
-5. The server holds only the verifier key; no secret is in the repository,
-   the image or the browser, tested; the runbook for a leaked key is written.
-6. A release is deployed from its image by digest with the documented
-   script, and a rollback has been done.
-7. Backups run every day off the server, and a restore drill has passed.
-8. Monitoring alerts the maintainer when the service or its backups fail,
-   tried once.
-9. The review before the launch is done: the security checklist, a screen
-   reader test by a person and a real wallet extension; each finding fixed or
-   recorded.
-10. Every CI check still passes, including every role's end-to-end test
-    against a local chain; release 0.5.0.
+7. Only the production environment holds the verifier key and the database
+   password. No secret is in the repository, a preview, the image or the
+   browser, tested. The runbooks for a leaked key and a leaked password are
+   written.
+8. A release is deployed by moving the production branch, and a rollback has
+   been done.
+9. Encrypted backups run every day outside Vercel and Neon, a restore drill
+   has passed, and monitoring has alerted the maintainer once.
+10. The review before the launch is done, each finding fixed or recorded;
+    every CI check still passes, including every role's end-to-end test;
+    release 0.5.0.

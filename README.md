@@ -158,6 +158,9 @@ The full starting plan: [docs/plan.md](docs/plan.md).
   permission to publish it (see [examples/real-iod/](examples/real-iod)).
 - **Bonds** for reservations and reviewers against rubber-stamping and collusion.
 - **Full dispute resolution.**
+- **Decentralisation:** in the long run, no dependence on a single person,
+  machine or company, and a network the community runs and decides on; a
+  direction, not yet a plan ([decentralisation.md](docs/decentralisation.md)).
 - **Collaboration:** IAU CPS (SatChecker and SCORE), Unistellar and SETI,
   SatNOGS and the SeeSat-L amateur community.
 - **Regulation**, if real money is ever involved (MiCA, payment services). The
