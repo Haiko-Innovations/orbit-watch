@@ -12,7 +12,7 @@ seurataan [GitHubin milestoneissa](https://github.com/Haiko-Innovations/orbit-wa
 
 Jokainen pull request, joka saa tiekartan vaiheen valmiiksi, päivittää myös tämän sivun.
 
-## Tilanne (13.11.2026)
+## Tilanne (14.11.2026)
 
 **Vaihe 3 on valmis** ja julkaistu versiona 0.4.0: verkkosovellus. Jokainen
 osapuoli kirjautuu ja allekirjoittaa omalla lompakollaan selaimessa; tilaajilla,
@@ -23,6 +23,10 @@ ajetaan CI:ssä paikallista ketjua vasten. Vaiheen 3 demossa koko ketju
 ajettiin selaimessa Base Sepoliassa, jokaisella roolilla oma lompakko. Katso
 [vaiheen 3 yhteenveto](phase-3-summary.fi.md). Palvelu toimii yhä vain
 paikallisesti ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
+
+**Vaihe 4 on suunniteltu**: julkinen testiverkkopalvelu, eli palvelu ja
+verkkosovellus verkossa Base Sepoliassa, yhä SIMULOITUNA. Sen päätökset
+P4-01–P4-16 hyväksyttiin 14.11.2026 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)), ja työ alkaa askeleesta 4.1.
 
 Vaihe 2 julkaistiin versiona 0.3.0 ([vaiheen 2 yhteenveto](phase-2-summary.fi.md)),
 vaihe 1 versiona 0.2.0 ([vaiheen 1 yhteenveto](phase-1-summary.fi.md)) ja vaihe 0
@@ -152,6 +156,87 @@ aloitussuunnitelmassa ei ole kriteerejä vaiheelle 3):
 9. Testiverkkomerkintä näkyy jokaisella sivulla, ja simuloitu data on merkitty.
 10. Jokaisen roolin päästä päähän -testit ja jokaisen näkymän
     saavutettavuustarkistukset ajetaan CI:ssä paikallista ketjua vasten.
+
+### Vaihe 4: julkinen testiverkkopalvelu (tavoiteversio 0.5.0)
+
+Vaihe 4 vie palvelun ja verkkosovelluksen verkkoon, jotta havaitsijat ja
+tilaajat voivat kokeilla koko ketjua omilla lompakoillaan asentamatta mitään.
+Edelleen vain Base Sepolia -testiverkko, ja kaikki on yhä SIMULOITUA: ei
+oikeaa rahaa eikä oikeita havaintoja. Samalla palvelu siirtyy PostgreSQLiin,
+muuttuu tilattomaksi ja oppii toimimaan itse. Se saa rajat väärinkäyttöä
+vastaan, tietosuojaselosteen ja käyttöehdot, varmuuskopiot, valvonnan ja
+katselmoinnin ennen julkistusta.
+
+Suunnitelman valinnat ovat **päätökset P4-01–P4-16** tiedostossa
+[decisions.md](decisions.md#phase-4-decisions) (englanniksi). Ne on ehdotettu
+issuessa [#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67), ja ne hyväksyttiin 14.11.2026. Lyhyesti:
+- **Vercel ja Neon** Haiko Innovationsin nykyisillä tasoilla, alkuun
+  **Vercelin omassa osoitteessa**;
+- **PostgreSQL kaikkialla, missä palvelu tallentaa tilaa**, SQLiten (P-02)
+  tilalle;
+- **tilaton palvelu**, joka toimii itse: seuranta 15 minuutin välein ja oma
+  RPC-päätepiste;
+- **siirrettävä rakenne**: sama julkaisu toimii myös konttina minkä tahansa
+  PostgreSQLin kanssa;
+- **rajat** ilman kolmannen osapuolen CAPTCHAa sekä **tietosuojaseloste ja
+  käyttöehdot**;
+- **tietokanta suojattuna** rooleilla ja salaisuuksilla, ja salaisuuksista
+  **vain tarkistusavain** palvelulla;
+- julkaisut otetaan käyttöön siirtämällä **production-haaraa**,
+  **päivittäiset salatut varmuuskopiot** ja **valvonta**;
+- **ei mitään, mikä sulkisi tien yhteisön ylläpitämään verkkoon**
+  ([decentralisation.md](decentralisation.md), englanniksi).
+
+| Askel | Sisältö | Valmis, kun |
+|---|---|---|
+| **4.1 PostgreSQL** ([#68](https://github.com/Haiko-Innovations/orbit-watch/issues/68)) | Palvelun tallennus PostgreSQLiin tiedostoineen SQLiten tilalle; paikallinen ympäristö käynnistää PostgreSQLin kontissa; kantaa tarvitsevat testit ajetaan CI:ssä aina ja paikallisesti, kun PostgreSQL on saatavilla. | Jokainen testi menee läpi PostgreSQLillä CI:ssä; paikallinen ympäristö käynnistyy yhdellä komennolla; avoimen ytimen komentorivi ei tarvitse kantaa. |
+| **4.2 Tilaton palvelu, joka toimii itse** ([#69](https://github.com/Haiko-Innovations/orbit-watch/issues/69)) | Ei tilaa kannan ulkopuolella: transaktio jokaiselle kutsulle ja advisory lock muutoksille; seuranta todennettuna kutsuna (ajastus, ajastin tai `serve --follow`), joka soveltaa tapahtumat, attestoi, tilittää ja soveltaa määräajat vahvistussyvyyteen asti; terveystarkistus; konttikuva rakennetaan ja testataan CI:ssä. | Kaksi instanssia ei koskaan tee samaa muutosta kahdesti; tilaus tilitetään ja toinen vanhenee ilman `tick`iä; kuva läpäisee päästä päähän -testit; testattu. |
+| **4.3 Rajat ja oma RPC-päätepiste** ([#70](https://github.com/Haiko-Innovations/orbit-watch/issues/70)) | Rajat IP-osoitetta ja osapuolta kohden kannassa, Vercelin palomuuri edessä; pyynnöt enintään 4 Mt; ketju luetaan omasta RPC-päätepisteestä, jonka avain on salaisuus. | Jokaisen julkisen ja kirjautumisen päätepisteen rajat testattu; RPC-avain ei koskaan vastauksessa, lokissa tai selaimessa, testattu. |
+| **4.4 Tietosuojaseloste ja käyttöehdot** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | Molemmat englanniksi ja suomeksi, linkki jokaiselta sivulta; aseman koordinaatit noin kilometrin tarkkuudella; asemaprofiilin poisto ja istuntojen lopetus; lokien säilytys; istuntoevästeen asema lain mukaan lähteineen. | Sivut toimivat kirjautumatta; poisto ja koordinaattien tarkkuus testattu; tietoluettelo dokumentoitu. |
+| **4.5 Vercel ja Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | Vercel-projekti ja Neon-kanta Haiko Innovationsin tileillä, Vercelin omassa osoitteessa, kannan kaksi roolia, salaisuudet vain tuotannossa, esikatselut ilman niitä, production-haara. | Palvelu vastaa HTTPS:llä, vielä julkistamatta; käyttöönotto ja paluu edelliseen tehty production-haaraa siirtämällä. |
+| **4.6 Varmuuskopiot, valvonta ja ohjeet** ([#73](https://github.com/Haiko-Innovations/orbit-watch/issues/73)) | Päivittäinen salattu `pg_dump` GitHub Actionsilla, säilytys 14 päivää; saatavuusvalvonta hälytyksineen; Neonin tuntien seuranta; vain luku -tila; toimintaohjeet. | Palautusharjoitus läpäisty; hälytys tavoitti ylläpitäjän; ohjeet dokumentoitu. |
+| **4.7 Avaimet ja katselmointi ennen julkistusta** ([#74](https://github.com/Haiko-Innovations/orbit-watch/issues/74)) | Tarkistusavain tuotannon salaisuudeksi ja pois ylläpitäjän koneelta; Safen allekirjoittajat päätöksen mukaan; tietoturvatarkistuslista, ihmisen tekemä ruudunlukijatesti, oikea lompakkolaajennus. | Katselmointi tehty; jokainen löydös korjattu tai kirjattu. |
+| **4.8 Julkistus ja vaiheen 4 yhteenveto** ([#75](https://github.com/Haiko-Innovations/orbit-watch/issues/75)) | Palvelu avataan, ylläpitäjälle lyhyt julkistusteksti; vaiheen 4 yhteenveto. | Alla olevat vaiheen 4 valmiskriteerit täyttyvät; julkaistaan 0.5.0. |
+
+**Vaiheen 4 valmiskriteerit** ([P4-16](decisions.md#p4-16-phase-4-completion-criteria)):
+
+1. Palvelu ja verkkosovellus toimivat julkisesti osoitteessaan HTTPS:llä,
+   vain Base Sepoliassa, ja jokaisella sivulla on testiverkkomerkintä ja
+   SIMULOITU-merkintä.
+2. Tilaukset attestoidaan, tilitetään ja vanhenevat ajallaan ilman, että
+   kukaan kutsuu `tick`iä. Palvelulla ei ole tilaa PostgreSQLin ulkopuolella,
+   eikä kaksi instanssia koskaan tee samaa muutosta kahdesti, testattu.
+3. PostgreSQL on palvelun ainoa tietokanta tuotannossa, paikallisessa
+   ympäristössä ja CI:ssä, ja paikallinen ympäristö käynnistyy yhä yhdellä
+   komennolla.
+4. Sama julkaisu toimii myös konttina minkä tahansa PostgreSQLin kanssa
+   dokumentoiduilla komennoilla, ja CI testaa kuvan päästä päähän.
+5. Jokaisella julkisella ja kirjautumisen päätepisteellä on dokumentoidut
+   rajat, testattu.
+6. Tietosuojaseloste ja käyttöehdot ovat linkitettyinä jokaiselta sivulta,
+   ja henkilötiedot, niiden säilytys ja poisto on dokumentoitu ja toteutettu.
+7. Vain tuotantoympäristöllä on tarkistusavain ja kannan salasana.
+   Salaisuuksia ei ole repossa, esikatselussa, kuvassa eikä selaimessa,
+   testattu. Ohjeet vuotaneelle avaimelle ja salasanalle on kirjoitettu.
+8. Julkaisu otetaan käyttöön siirtämällä production-haaraa, ja paluu
+   edelliseen on tehty.
+9. Salatut varmuuskopiot tehdään joka päivä Vercelin ja Neonin ulkopuolelle,
+   palautusharjoitus on läpäisty, ja valvonta on hälyttänyt ylläpitäjälle
+   kerran.
+10. Katselmointi ennen julkistusta on tehty ja jokainen löydös korjattu tai
+    kirjattu; jokainen CI-tarkistus menee yhä läpi, myös jokaisen roolin
+    päästä päähän -testi; julkaistaan 0.5.0.
+
+### Myöhemmin: yhteisön ylläpitämä verkko
+
+Pitkällä aikavälillä Orbit Watchin ei pitäisi riippua yhdestä ihmisestä,
+koneesta tai yrityksestä, ja yhteisön pitäisi päättää, miten sen verkkoa
+ajetaan: julkinen ehdotusprosessi, Safen allekirjoittajat yhteisöstä,
+tilattomat solmut, joita kuka tahansa voi ajaa, ja tarkistussolmut, jotka
+sopivat tuloksesta k/n-periaatteella yhden avaimen sijaan. Tämä on suunta,
+ei suunnitelma: katso [decentralisation.md](decentralisation.md)
+(englanniksi). Siihen tarvitaan apua yhteisöltä
+([#77](https://github.com/Haiko-Innovations/orbit-watch/issues/77)).
 
 ## Miten työskentelemme
 
