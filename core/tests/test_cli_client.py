@@ -40,10 +40,10 @@ def free_port():
 
 
 @pytest.fixture
-def server(tmp_path):
+def server(tmp_path, database):
     registry = ReviewerRegistry.parse(packaged("reviewers.json"))
     context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
-    service = open_service(tmp_path / "service", registry, context)
+    service = open_service(database, registry, context)
     clock = Clock()
     with service.storage.db.transaction():
         admin = keys.create_key(service.storage.db, "admin:maintainer", "admin", clock())

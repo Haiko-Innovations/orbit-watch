@@ -53,11 +53,10 @@ class Client:
 
 
 @pytest.fixture
-def world(tmp_path):
-    directory = tmp_path / "service"
+def world(database):
     registry = ReviewerRegistry.parse(packaged("reviewers.json"))
     context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
-    service = open_service(directory, registry, context)
+    service = open_service(database, registry, context)
     clock = Clock()
     with service.storage.db.transaction():
         admin = keys.create_key(service.storage.db, "admin:maintainer", "admin", clock())
@@ -67,7 +66,7 @@ def world(tmp_path):
         "clock": clock,
         "client": client,
         "admin": admin,
-        "directory": directory,
+        "database": database,
         "registry": registry,
         "context": context,
     }
@@ -296,7 +295,7 @@ def test_new_keys_are_shown_once(world):
 def test_state_and_keys_survive_a_restart(world):
     requester, station = funded_request(world)
     world["service"].storage.close()
-    service = open_service(world["directory"], world["registry"], world["context"])
+    service = open_service(world["database"], world["registry"], world["context"])
     world["service"] = service
     client = Client(TestClient(create_app(service, clock=world["clock"])))
     view = client.call("GET", "/v1/requests/SIM-REQ-0001", requester).json()
@@ -308,12 +307,12 @@ def test_state_and_keys_survive_a_restart(world):
     assert response.status_code == 200
 
 
-def test_keys_command_and_serve_wiring(tmp_path, capsys, monkeypatch):
+def test_keys_command_and_serve_wiring(database, capsys, monkeypatch):
     from orbit_watch.cli import main
 
-    directory = tmp_path / "svc"
+    directory = database
     assert (
-        main(["keys", "create", "--dir", str(directory), "--role", "admin", "--party", "admin:me"])
+        main(["keys", "create", "--database", directory, "--role", "admin", "--party", "admin:me"])
         == 0
     )
     printed = capsys.readouterr()
@@ -324,8 +323,8 @@ def test_keys_command_and_serve_wiring(tmp_path, capsys, monkeypatch):
             [
                 "keys",
                 "create",
-                "--dir",
-                str(directory),
+                "--database",
+                directory,
                 "--role",
                 "station",
                 "--party",
@@ -346,6 +345,6 @@ def test_keys_command_and_serve_wiring(tmp_path, capsys, monkeypatch):
     import uvicorn
 
     monkeypatch.setattr(uvicorn, "run", fake_run)
-    assert main(["serve", "--dir", str(directory), "--port", "8123"]) == 0
+    assert main(["serve", "--database", directory, "--port", "8123"]) == 0
     assert calls == {"host": "127.0.0.1", "port": 8123, "status": 200}
     assert "SIMULATED" in capsys.readouterr().out

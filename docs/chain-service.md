@@ -47,7 +47,7 @@ verification as soon as it holds the file of a delivery that is on chain.
 
 ## The chain decides
 
-The service follows the escrow's events, from the block where its directory
+The service follows the escrow's events, from the block where its database
 was first started onwards, when it starts and at the start of every API call. It applies each event to the request's lifecycle
 record at its block's time, one transaction at a time, by the same rules as in
 phase 1:
@@ -108,7 +108,7 @@ reviewer gets no tasks, but can still vote straight on chain.
 ## Running the server on a chain
 
 ```sh
-orbit-watch serve --dir ./ow-testnet --network base-sepolia \
+ORBIT_WATCH_DATABASE_URL=postgresql://… orbit-watch serve --network base-sepolia \
   --verifier-keystore ~/secrets/orbit-watch/verifier.json
 ```
 
@@ -123,10 +123,10 @@ local chain, give `--chain-rpc` and `--escrow` instead.
   `--verifier-password-file`, from `$ORBIT_WATCH_VERIFIER_PASSWORD_FILE` or
   from a prompt. The key must be the escrow's verifier, and it needs testnet
   ETH for gas.
-- A service directory follows one escrow on one chain, from its first start.
-  Another chain or escrow is refused, and so is a directory that was started
+- A service database follows one escrow on one chain, from its first start.
+  Another chain or escrow is refused, and so is a database that was started
   without a chain.
-- A new directory has no requests yet, so no earlier event can be its own: it
+- A new database has no requests yet, so no earlier event can be its own: it
   follows the chain from the current block (`--from-block` sets another first
   block), and afterwards from where it stopped. The server reads the chain up
   to date before it answers. After a long stop that takes a while: Base's

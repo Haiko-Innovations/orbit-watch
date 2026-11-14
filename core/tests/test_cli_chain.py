@@ -54,12 +54,12 @@ def free_port():
 
 
 @pytest.fixture
-def server(tmp_path):
+def server(tmp_path, database):
     require_local_chain()
     import uvicorn
     from eth_account import Account
 
-    world = ChainWorld(tmp_path / "service")
+    world = ChainWorld(database)
     with world.service.storage.db.transaction():
         admin = keys.create_key(world.service.storage.db, "admin:sim", "admin", world.link.now())
     recorder = Recorder(create_app(world.service))
@@ -252,9 +252,14 @@ def test_the_whole_chain_from_the_command_line(server, capsys):
     sent = b"\n".join(server["recorder"].seen)
     assert b"Authorization" in sent or b"authorization" in sent  # the recorder works
     assert not [s for s in secrets if s in sent]
+    # Everything in the service's database, files included.
+    db = world.service.storage.db
     stored = b"".join(
-        path.read_bytes() for path in (server["tmp"] / "service").rglob("*") if path.is_file()
+        repr(row).encode() + b"".join(v for v in row.values() if isinstance(v, bytes))
+        for table in sorted(db.tables())
+        for row in db.query(f'SELECT * FROM "{table}"')
     )
+    assert b"SIM-REQ" in stored  # the dump holds the service's data
     assert not [s for s in secrets if s in stored]
 
 

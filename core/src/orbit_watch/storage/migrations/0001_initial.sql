@@ -1,9 +1,11 @@
--- Orbit Watch phase 1 storage, migration 0001.
--- Plain SQL (decision P-02). Keep it portable: no SQLite-only types or functions.
+-- Orbit Watch storage, migration 0001 (phase 1). PostgreSQL since phase 4 (decision P4-04,
+-- which replaced P-02's SQLite); plain SQL, standard types.
 
+-- Every kept file, by its SHA-256: requests, observations and reports. Never deleted.
 CREATE TABLE files (
     sha256 TEXT PRIMARY KEY CHECK (length(sha256) = 64),
-    size INTEGER NOT NULL CHECK (size >= 0)
+    size BIGINT NOT NULL CHECK (size >= 0),
+    content BYTEA NOT NULL
 );
 
 CREATE TABLE requests (
@@ -43,7 +45,7 @@ CREATE TABLE review_tasks (
 CREATE INDEX review_tasks_by_reviewer ON review_tasks (reviewer);
 
 CREATE TABLE ledger_entries (
-    seq INTEGER PRIMARY KEY,
+    seq BIGINT PRIMARY KEY,
     idempotency_key TEXT NOT NULL UNIQUE,
     fingerprint TEXT NOT NULL,
     operation TEXT NOT NULL,
@@ -52,10 +54,10 @@ CREATE TABLE ledger_entries (
 );
 
 CREATE TABLE ledger_postings (
-    seq INTEGER NOT NULL REFERENCES ledger_entries (seq),
+    seq BIGINT NOT NULL REFERENCES ledger_entries (seq),
     position INTEGER NOT NULL,
     account TEXT NOT NULL,
-    amount INTEGER NOT NULL,
+    amount BIGINT NOT NULL,
     PRIMARY KEY (seq, position)
 );
 
@@ -65,7 +67,7 @@ CREATE TABLE ledger_settled (
 );
 
 CREATE TABLE attestations (
-    seq INTEGER PRIMARY KEY REFERENCES ledger_entries (seq),
+    seq BIGINT PRIMARY KEY REFERENCES ledger_entries (seq),
     request_id TEXT NOT NULL,
     attester TEXT NOT NULL,
     kind TEXT NOT NULL,

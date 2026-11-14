@@ -13,17 +13,20 @@ The API is an optional part of the package:
 
 ```sh
 pip install "orbit-watch[api] @ git+https://github.com/Haiko-Innovations/orbit-watch.git#subdirectory=core"
-orbit-watch keys create --dir ./ow-service --role admin --party admin:me   # prints the key once
-orbit-watch serve --dir ./ow-service                                        # http://127.0.0.1:8000/v1/
+export ORBIT_WATCH_DATABASE_URL=postgresql://user@localhost/orbit_watch   # a PostgreSQL database
+orbit-watch keys create --role admin --party admin:me   # prints the key once
+orbit-watch serve                                       # http://127.0.0.1:8000/v1/
 ```
 
 `--catalog`, `--policy` and `--reviewers` default to the built-in SIMULATED
 data. `--web web/dist` also serves the built web application at `/`, on the
 API's own origin ([web.md](web.md)), and `--origin` names the addresses
 browsers use for it, if not the service's own ([signing in](#signing-in-with-a-wallet)). Every response carries a strict content
-security policy ([D-25](decisions.md#d-25-the-web-project)). The service directory holds the database and the files
-([storage.md](storage.md)); a running server holds it exclusively, so create
-the first admin key before starting it and the rest through the API.
+security policy ([D-25](decisions.md#d-25-the-web-project)). The service keeps its state, files
+included, in PostgreSQL: `--database`, or `ORBIT_WATCH_DATABASE_URL` or
+`DATABASE_URL` ([storage.md](storage.md)). A running server holds its schema
+exclusively until step 4.2, so create the first admin key before starting it
+and the rest through the API.
 
 ## Keys and roles
 

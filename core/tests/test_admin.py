@@ -108,11 +108,11 @@ def test_safe_app_links_exist_only_for_base_sepolia():
 
 
 @pytest.fixture
-def plain(tmp_path):
+def plain(database):
     """A phase 1 service (points, no chain) with an admin key and a requester key."""
     registry = ReviewerRegistry.parse(packaged("reviewers.json"))
     context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
-    service = open_service(tmp_path / "service", registry, context)
+    service = open_service(database, registry, context)
     now = parse_utc("2026-11-01T12:00:00Z")
     with service.storage.db.transaction():
         admin = keys.create_key(service.storage.db, "admin:maintainer", "admin", now)
@@ -229,17 +229,17 @@ def test_the_quality_meter_scores_a_file_without_a_key_and_keeps_nothing(plain):
 
 
 @pytest.fixture
-def world(tmp_path):
+def world(database):
     require_local_chain()
-    made = ChainWorld(tmp_path / "service")
+    made = ChainWorld(database)
     yield made
     made.stop()
 
 
 @pytest.fixture
-def governed(tmp_path):
+def governed(database):
     require_local_chain()
-    made = ChainWorld(tmp_path / "governed", governance=True, parties=(NEWCOMER,))
+    made = ChainWorld(database, governance=True, parties=(NEWCOMER,))
     yield made
     made.stop()
 

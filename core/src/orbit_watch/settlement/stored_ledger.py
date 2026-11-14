@@ -1,4 +1,4 @@
-"""The points ledger, persisted in SQLite (phase 1, step 1.5).
+"""The points ledger, persisted in the database (phase 1, step 1.5; PostgreSQL since step 4.1).
 
 Same rules and same behaviour as ``LedgerAdapter``; every journal entry, every
 settled request and every attestation is also written to the database inside
@@ -17,7 +17,7 @@ from orbit_watch.settlement.ledger import JournalEntry, LedgerAdapter, Posting
 from orbit_watch.storage import Database, StorageError
 
 
-class SqliteLedgerAdapter(LedgerAdapter):
+class StoredLedgerAdapter(LedgerAdapter):
     name = "ledger"
 
     def __init__(self, db: Database) -> None:
@@ -106,7 +106,7 @@ class SqliteLedgerAdapter(LedgerAdapter):
         return receipt
 
     def grant(self, party: str, points: int, *, key: str) -> Receipt:
-        return self._guarded(lambda: super(SqliteLedgerAdapter, self).grant(party, points, key=key))
+        return self._guarded(lambda: super(StoredLedgerAdapter, self).grant(party, points, key=key))
 
     def fund(
         self,
@@ -118,14 +118,14 @@ class SqliteLedgerAdapter(LedgerAdapter):
         record: RequestRecord | None = None,
     ) -> Receipt:
         return self._guarded(
-            lambda: super(SqliteLedgerAdapter, self).fund(request_id, requester, points, key=key)
+            lambda: super(StoredLedgerAdapter, self).fund(request_id, requester, points, key=key)
         )
 
     def reserve(
         self, request_id: str, station: str, *, key: str, record: RequestRecord | None = None
     ) -> Receipt:
         return self._guarded(
-            lambda: super(SqliteLedgerAdapter, self).reserve(request_id, station, key=key)
+            lambda: super(StoredLedgerAdapter, self).reserve(request_id, station, key=key)
         )
 
     def attest(
@@ -141,7 +141,7 @@ class SqliteLedgerAdapter(LedgerAdapter):
     ) -> Receipt:
         def call() -> Receipt:
             before = len(self.attestations)
-            receipt = super(SqliteLedgerAdapter, self).attest(
+            receipt = super(StoredLedgerAdapter, self).attest(
                 request_id, attester, kind, subject_sha256, value, key=key
             )
             if len(self.attestations) > before:
@@ -168,7 +168,7 @@ class SqliteLedgerAdapter(LedgerAdapter):
         self, plan: SettlementPlan, *, key: str, record: RequestRecord | None = None
     ) -> Receipt:
         def call() -> Receipt:
-            receipt = super(SqliteLedgerAdapter, self).settle(plan, key=key)
+            receipt = super(StoredLedgerAdapter, self).settle(plan, key=key)
             self._mark_settled(plan.request_id)
             return receipt
 
@@ -178,7 +178,7 @@ class SqliteLedgerAdapter(LedgerAdapter):
         self, request_id: str, requester: str, *, key: str, record: RequestRecord | None = None
     ) -> Receipt:
         def call() -> Receipt:
-            receipt = super(SqliteLedgerAdapter, self).refund(request_id, requester, key=key)
+            receipt = super(StoredLedgerAdapter, self).refund(request_id, requester, key=key)
             self._mark_settled(request_id)
             return receipt
 

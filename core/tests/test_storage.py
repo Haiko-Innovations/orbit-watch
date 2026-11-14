@@ -1,6 +1,6 @@
-"""Storage (phase 1, step 1.5): migrations, files, the SQLite ledger and restarts."""
+"""Storage (phase 1, step 1.5; PostgreSQL since step 4.1): migrations, files, the stored
+ledger and restarts."""
 
-import itertools
 import json
 from datetime import timedelta
 from pathlib import Path
@@ -20,7 +20,7 @@ from orbit_watch.service import (
 )
 from orbit_watch.settlement import scenarios as sc
 from orbit_watch.settlement.ledger import LedgerAdapter
-from orbit_watch.settlement.sqlite_ledger import SqliteLedgerAdapter
+from orbit_watch.settlement.stored_ledger import StoredLedgerAdapter
 from orbit_watch.storage import Database, FileStore, StorageError, available_migrations
 from orbit_watch.timeutil import parse_utc
 
@@ -37,15 +37,12 @@ ACCEPTABLE = (
 # ------------------------------------------------------------------ database
 
 
-def test_migrations_from_an_empty_database(tmp_path):
-    with Database(tmp_path / "db.sqlite3") as db:
+def test_migrations_from_an_empty_database(database):
+    with Database(database) as db:
         assert db.schema_version() == 0
         assert db.migrate() == [v for v, _, _ in available_migrations()]
         assert db.schema_version() == len(available_migrations())
         assert db.migrate() == []  # nothing left to do
-        tables = {
-            row["name"] for row in db.query("SELECT name FROM sqlite_master WHERE type = 'table'")
-        }
         assert {
             "requests",
             "files",
@@ -57,18 +54,19 @@ def test_migrations_from_an_empty_database(tmp_path):
             "ledger_settled",
             "attestations",
             "schema_migrations",
-        } <= tables
+            "governance_operations",
+            "chain_attestations",
+        } <= db.tables()
 
 
-def test_changed_or_unknown_migrations_are_refused(tmp_path):
-    path = tmp_path / "db.sqlite3"
-    with Database(path) as db:
+def test_changed_or_unknown_migrations_are_refused(database):
+    with Database(database) as db:
         db.migrate()
         db.execute("UPDATE schema_migrations SET sha256 = 'x' WHERE version = 1")
         with pytest.raises(StorageError) as error:
             db.migrate()
         assert error.value.code == "migration_changed"
-    with Database(path) as db:
+    with Database(database) as db:
         row = db.query("SELECT sha256 FROM schema_migrations WHERE version = 1")[0]
         assert row["sha256"] == "x"  # the failed migration run changed nothing else
         digest = sha256_bytes(available_migrations()[0][2].encode())
@@ -79,22 +77,43 @@ def test_changed_or_unknown_migrations_are_refused(tmp_path):
         assert error.value.code == "newer_schema"
 
 
-def test_one_process_at_a_time(tmp_path):
-    path = tmp_path / "db.sqlite3"
-    with Database(path):
+def test_one_process_at_a_time(database):
+    with Database(database):
         with pytest.raises(StorageError) as error:
-            Database(path)
+            Database(database)
         assert error.value.code == "in_use"
-    Database(path).close()  # free again after closing
+    Database(database).close()  # free again after closing
 
 
-def test_transactions_roll_back_and_nest(tmp_path):
-    with Database(tmp_path / "db.sqlite3") as db:
+def test_schemas_are_separate_services(make_database):
+    with Database(make_database()) as one, Database(make_database()) as two:
+        one.migrate()
+        assert two.tables() == set()  # another schema in the same database
+
+
+def test_a_database_without_a_schema_or_server_is_refused(database):
+    from psycopg.conninfo import make_conninfo
+
+    with pytest.raises(StorageError) as error:
+        Database(make_conninfo(database, options="-c search_path=nowhere"))
+    assert error.value.code == "cannot_open"
+    with pytest.raises(StorageError) as error:
+        Database("postgresql://nobody:secret-password@127.0.0.1:1/none?connect_timeout=2")
+    assert error.value.code == "cannot_open"
+    assert "secret-password" not in str(error.value)
+
+
+def test_transactions_roll_back_and_nest(database):
+    with Database(database) as db:
         db.migrate()
         with pytest.raises(RuntimeError), db.transaction():
-            db.execute("INSERT INTO files (sha256, size) VALUES (?, 1)", ("a" * 64,))
+            db.execute(
+                "INSERT INTO files (sha256, size, content) VALUES (?, 1, ?)", ("a" * 64, b"a")
+            )
             with db.transaction():
-                db.execute("INSERT INTO files (sha256, size) VALUES (?, 1)", ("b" * 64,))
+                db.execute(
+                    "INSERT INTO files (sha256, size, content) VALUES (?, 1, ?)", ("b" * 64, b"b")
+                )
             raise RuntimeError("boom")
         assert db.query("SELECT COUNT(*) AS n FROM files")[0]["n"] == 0
 
@@ -102,43 +121,44 @@ def test_transactions_roll_back_and_nest(tmp_path):
 # ------------------------------------------------------------------ files
 
 
-def test_file_store_is_content_addressed_and_checks_integrity(tmp_path):
-    store = FileStore(tmp_path / "files")
-    digest = store.put(b"observations")
-    assert digest == sha256_bytes(b"observations") and store.put(b"observations") == digest
-    assert store.get(digest) == b"observations" and digest in store
-    assert store.path(digest).parent.name == digest[:2]
-    store.path(digest).write_bytes(b"tampered")
-    with pytest.raises(StorageError) as error:
-        store.get(digest)
-    assert error.value.code == "corrupt_file"
-    with pytest.raises(StorageError) as error:
-        store.get("0" * 64)
-    assert error.value.code == "missing_file"
-    with pytest.raises(StorageError) as error:
-        store.path("../etc/passwd")
-    assert error.value.code == "bad_hash"
+def test_file_store_is_content_addressed_and_checks_integrity(database):
+    with Database(database) as db:
+        db.migrate()
+        store = FileStore(db)
+        digest = store.put(b"observations")
+        assert digest == sha256_bytes(b"observations") and store.put(b"observations") == digest
+        assert store.get(digest) == b"observations" and digest in store
+        assert db.query("SELECT size FROM files")[0]["size"] == len(b"observations")
+        db.execute("UPDATE files SET content = ? WHERE sha256 = ?", (b"tampered", digest))
+        with pytest.raises(StorageError) as error:
+            store.get(digest)
+        assert error.value.code == "corrupt_file"
+        with pytest.raises(StorageError) as error:
+            store.get("0" * 64)
+        assert error.value.code == "missing_file"
+        with pytest.raises(StorageError) as error:
+            store.get("../etc/passwd")
+        assert error.value.code == "bad_hash"
 
 
 # ------------------------------------------------------------------ ledger
 
 
-def test_sqlite_ledger_passes_the_adapter_suite(tmp_path):
-    counter = itertools.count()
+def test_stored_ledger_passes_the_adapter_suite(make_database):
     opened = []
 
     def factory(budgets):
-        db = Database(tmp_path / f"ledger-{next(counter)}.sqlite3")
+        db = Database(make_database())
         db.migrate()
         opened.append(db)
-        ledger = SqliteLedgerAdapter(db)
+        ledger = StoredLedgerAdapter(db)
         for party, points in sorted(budgets.items()):
             ledger.grant(party, points, key=f"budget/{party}")
         return ledger
 
     assert sc.check_adapter(factory) == []
     for db in opened:
-        rebuilt = SqliteLedgerAdapter(db)
+        rebuilt = StoredLedgerAdapter(db)
         assert rebuilt.total() == 0
         assert all(
             rebuilt.escrow(r) == 0 for r in {e.request_id for e in rebuilt.journal} if r is not None
@@ -146,7 +166,7 @@ def test_sqlite_ledger_passes_the_adapter_suite(tmp_path):
         db.close()
 
 
-def test_sqlite_ledger_matches_the_memory_ledger(tmp_path):
+def test_stored_ledger_matches_the_memory_ledger(database):
     def drive(ledger):
         driver = sc.Driver(ledger, lc.create(sc.scenario_terms("SIM-SAME"), sc.T0))
         for step in sc.SCENARIOS[3].steps:
@@ -156,12 +176,12 @@ def test_sqlite_ledger_matches_the_memory_ledger(tmp_path):
 
     memory = LedgerAdapter()
     memory.grant(sc.REQUESTER, 1000, key="budget")
-    with Database(tmp_path / "l.sqlite3") as db:
+    with Database(database) as db:
         db.migrate()
-        stored = SqliteLedgerAdapter(db)
+        stored = StoredLedgerAdapter(db)
         stored.grant(sc.REQUESTER, 1000, key="budget")
         assert drive(stored) == drive(memory)
-        assert SqliteLedgerAdapter(db).export() == memory.export()  # after a rebuild
+        assert StoredLedgerAdapter(db).export() == memory.export()  # after a rebuild
 
 
 # ------------------------------------------------------------------ service
@@ -221,13 +241,13 @@ def snapshot(service):
     }
 
 
-def test_state_survives_every_restart_and_matches_the_memory_service(tmp_path):
+def test_state_survives_every_restart_and_matches_the_memory_service(database):
     memory = RequestService(LedgerAdapter(), registry(), context())
     memory.adapter.grant(REQUESTER, 1000, key="budget")
     for step in steps():
         step(memory)
 
-    directory = tmp_path / "service"
+    directory = database
     service = open_service(directory, registry(), context())
     service.adapter.grant(REQUESTER, 1000, key="budget")
     for step in steps():
@@ -244,8 +264,8 @@ def test_state_survives_every_restart_and_matches_the_memory_service(tmp_path):
     service.storage.close()
 
 
-def test_a_refused_call_leaves_storage_unchanged(tmp_path):
-    directory = tmp_path / "service"
+def test_a_refused_call_leaves_storage_unchanged(database):
+    directory = database
     service = open_service(directory, registry(), context())
     service.create(request_bytes(), REQUESTER, T0)
     service.open("SIM-REQ-0001", REQUESTER, T0 + timedelta(minutes=1))
@@ -261,8 +281,8 @@ def test_a_refused_call_leaves_storage_unchanged(tmp_path):
     reopened.storage.close()
 
 
-def test_a_crash_in_the_middle_of_a_call_rolls_everything_back(tmp_path, monkeypatch):
-    directory = tmp_path / "service"
+def test_a_crash_in_the_middle_of_a_call_rolls_everything_back(database, monkeypatch):
+    directory = database
     service = open_service(directory, registry(), context())
     service.adapter.grant(REQUESTER, 1000, key="budget")
     for step in steps()[:4]:
@@ -283,9 +303,20 @@ def test_a_crash_in_the_middle_of_a_call_rolls_everything_back(tmp_path, monkeyp
     service.storage.close()
 
 
-def test_a_second_process_cannot_open_the_same_service(tmp_path):
-    service = open_service(tmp_path / "service", registry(), context())
+def test_a_second_process_cannot_open_the_same_service(database):
+    service = open_service(database, registry(), context())
     with pytest.raises(StorageError) as error:
-        open_service(tmp_path / "service", registry(), context())
+        open_service(database, registry(), context())
     assert error.value.code == "in_use"
     service.storage.close()
+
+
+def test_ci_uses_the_tests_postgres_image(repo_root):
+    """CI's service container, the tests' own container and the demo's run the same
+    PostgreSQL."""
+    from postgres import POSTGRES_IMAGE
+
+    workflow = (repo_root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    assert f"image: {POSTGRES_IMAGE}" in workflow
+    demo = (repo_root / "web" / "demo" / "serve.sh").read_text(encoding="utf-8")
+    assert f'image="{POSTGRES_IMAGE}"' in demo

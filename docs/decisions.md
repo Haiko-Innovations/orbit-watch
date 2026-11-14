@@ -95,7 +95,8 @@ Litestar) is chosen at step 1.6 after checking their current documentation.
 
 ### P-02 SQLite with plain SQL migrations
 
-Accepted · 2026-11-11. SQLite from the Python standard library, schema changes as numbered
+Replaced by [P4-04](#p4-04-postgresql-wherever-the-service-keeps-state) · 2026-11-14
+(accepted 2026-11-11). SQLite from the Python standard library, schema changes as numbered
 SQL files, observation files stored by their SHA-256 in a local directory.
 Nothing to install, easy to test, enough for a reference implementation.
 Alternative: PostgreSQL from the start, which a public service would need later.
@@ -1448,3 +1449,47 @@ Accepted · 2026-11-14. Phase 4 is done when:
 10. The review before the launch is done, each finding fixed or recorded;
     every CI check still passes, including every role's end-to-end test;
     release 0.5.0.
+
+### D-34 PostgreSQL storage
+
+Accepted · 2026-11-14 (with the pull request that implements step 4.1,
+[P4-04](#p4-04-postgresql-wherever-the-service-keeps-state)):
+
+- **The driver is psycopg 3** (`psycopg[binary]`, in the `api` extra): 3.3.6,
+  the newest release at least 14 days old. It is LGPL-3.0, used unmodified as
+  a library, and its binary package brings libpq. Storage imports it only
+  when a database is opened, so the open core's command-line tools need neither
+  psycopg nor a database.
+- **PostgreSQL 18, as on Neon**, which supports 14 to 18. The tests, CI, the
+  local stack and the demo run the official image `postgres:18.6`, the newest
+  minor release at least 14 days old, pinned by digest. A test keeps all four
+  on the same image.
+- **A database is a libpq URL or connection string**: `--database`, or
+  `ORBIT_WATCH_DATABASE_URL`, or `DATABASE_URL`, the name that Vercel's Neon
+  integration sets. Messages name the database and the schema, never the
+  connection string, which may hold a password.
+- **The schema:**
+  - files go in `files.content` (`BYTEA`);
+  - numbers that can grow (blocks, amounts, sizes) are `BIGINT`;
+  - `chain_conflicts` keeps its order in an identity column instead of SQLite's
+    `rowid`;
+  - the code keeps writing `?` placeholders, which storage turns into
+    psycopg's `%s`.
+- **One process per schema until step 4.2.** The service still keeps its state
+  in memory, so it holds a session advisory lock on its schema and a second
+  process gets `in_use`, as with SQLite's exclusive mode.
+- **Tests:**
+  - every test gets schemas of its own, named also as the connections'
+    application name, so that dropping a schema ends any connection a test left
+    open;
+  - the server is `ORBIT_WATCH_TEST_DATABASE_URL`, or a container the tests
+    start when Docker is there;
+  - without either, those tests are skipped unless `ORBIT_WATCH_PG_TESTS=1`;
+  - CI runs one service container for the whole job.
+- **Earlier SQLite directories are not migrated** (P4-04).
+
+Sources: [psycopg on PyPI](https://pypi.org/project/psycopg/) (3.3.6 of
+2026-09-18; LGPL-3.0-only),
+[Neon's version policy](https://neon.com/docs/postgresql/postgres-version-policy)
+("Neon currently supports Postgres 14, 15, 16, 17, and 18"), and the
+[official PostgreSQL image](https://hub.docker.com/_/postgres) (tag 18.6).

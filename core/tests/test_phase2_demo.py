@@ -47,7 +47,7 @@ def free_port():
 
 
 @pytest.fixture
-def setting(tmp_path):
+def setting(tmp_path, database):
     require_local_chain()
     import uvicorn
     from eth_account import Account
@@ -68,7 +68,7 @@ def setting(tmp_path):
     chain = OrbitWatchChain(local.w3, deployment.escrow.address)
     link = ChainLink(chain, deployment.accounts[VERIFIER], receipt_timeout=30)
     context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
-    service = open_service(tmp_path / "service", REGISTRY, context, chain=link)
+    service = open_service(database, REGISTRY, context, chain=link)
     with service.storage.db.transaction():
         admin = keys.create_key(service.storage.db, "admin:sim", "admin", link.now())
     port = free_port()

@@ -92,13 +92,12 @@ def test_the_app_needs_a_build(world, tmp_path):  # noqa: F811
         create_app(world["service"], web=tmp_path / "empty")
 
 
-def test_serve_with_the_web_application(tmp_path, built, capsys, monkeypatch):
+def test_serve_with_the_web_application(tmp_path, built, capsys, monkeypatch, database):
     import uvicorn
 
     from orbit_watch.cli import EXIT_USAGE, main
 
-    directory = tmp_path / "svc"
-    missing = main(["serve", "--dir", str(directory), "--web", str(tmp_path / "nope")])
+    missing = main(["serve", "--database", database, "--web", str(tmp_path / "nope")])
     assert missing == EXIT_USAGE
     assert "npm run build" in capsys.readouterr().err
 
@@ -108,7 +107,7 @@ def test_serve_with_the_web_application(tmp_path, built, capsys, monkeypatch):
         served["page"] = TestClient(app).get("/").text
 
     monkeypatch.setattr(uvicorn, "run", fake_run)
-    assert main(["serve", "--dir", str(directory), "--web", str(built)]) == 0
+    assert main(["serve", "--database", database, "--web", str(built)]) == 0
     assert "Orbit Watch" in served["page"]
     assert "Web application on http://127.0.0.1:8000/" in capsys.readouterr().out
     assert Path(built / "index.html").exists()

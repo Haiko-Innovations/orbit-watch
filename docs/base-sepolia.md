@@ -143,14 +143,14 @@ come in the phase 2 demo (step 2.8).
 ## Running the service on Base Sepolia
 
 ```sh
-orbit-watch serve --dir ./ow-base-sepolia --network base-sepolia \
+ORBIT_WATCH_DATABASE_URL=postgresql://… orbit-watch serve --network base-sepolia \
   --verifier-keystore ~/secrets/orbit-watch/verifier.json \
   --verifier-password-file ~/secrets/orbit-watch/password
 ```
 
 The verifier key needs a little ETH for gas. Keep the keystore and the
 password file outside the repository and readable only by you. A service
-directory follows this escrow only, from the block where it is first started,
+database follows this escrow only, from the block where it is first started,
 and reads the chain up to date before it answers
 ([chain-service.md](chain-service.md#running-the-server-on-a-chain)).
 

@@ -390,11 +390,17 @@ def cmd_serve(args: argparse.Namespace) -> int:
         except ImportError:
             _err('the chain needs the optional "evm" dependencies: pip install "orbit-watch[evm]"')
             return EXIT_USAGE
-    service = open_service(args.dir, registry, context, chain=chain)
+    database = _database(args)
+    if database is None:
+        return EXIT_USAGE
+    service = open_service(database, registry, context, chain=chain)
     for note in notes:
         print(f"note: {note}")
     origins = args.origin or _default_origins(args.host, args.port)
-    print(f"Orbit Watch API {__version__} for {args.dir} on http://{args.host}:{args.port}/v1/")
+    print(
+        f"Orbit Watch API {__version__} for {_database_name(service)} "
+        f"on http://{args.host}:{args.port}/v1/"
+    )
     if args.web:
         print(f"Web application on http://{args.host}:{args.port}/")
     if chain is not None:
@@ -474,11 +480,44 @@ def _chain_link(args: argparse.Namespace):
     )
 
 
+DATABASE_VARIABLES = ("ORBIT_WATCH_DATABASE_URL", "DATABASE_URL")
+DATABASE_HELP = (
+    "the service's PostgreSQL database, as a libpq URL or connection string (default: "
+    "$ORBIT_WATCH_DATABASE_URL or $DATABASE_URL; a password on the command line ends up in "
+    "the shell history)"
+)
+
+
+def _database(args: argparse.Namespace) -> str | None:
+    """The service's PostgreSQL database: --database, or the first of
+    ``DATABASE_VARIABLES`` that is set (decision P4-04)."""
+    found = args.database or next(
+        (os.environ[name] for name in DATABASE_VARIABLES if os.environ.get(name)), None
+    )
+    if not found:
+        _err(
+            "give the service's PostgreSQL database: --database, or "
+            f"{' or '.join('$' + name for name in DATABASE_VARIABLES)}"
+        )
+    return found
+
+
+def _database_name(service) -> str:
+    """The database and schema, for messages; never the connection string, which may hold
+    a password."""
+    db = service.storage.db
+    info = db.connection.info
+    return f"the database {info.dbname} on {info.host}, schema {db.schema}"
+
+
 def cmd_keys_create(args: argparse.Namespace) -> int:
     from orbit_watch.api import keys
     from orbit_watch.storage import Storage
 
-    storage = Storage(args.dir)
+    database = _database(args)
+    if database is None:
+        return EXIT_USAGE
+    storage = Storage(database)
     try:
         with storage.db.transaction():
             key = keys.create_key(storage.db, args.party, args.role, datetime.now(tz=UTC))
@@ -707,11 +746,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     serve = commands.add_parser(
         "serve",
-        help="run the phase 1 HTTP API for a service directory (local use only)",
-        description="Run the phase 1 HTTP API. The service's state lives in --dir. "
-        "Needs the optional api dependencies. Local use only: no TLS.",
+        help="run the HTTP API for a service's PostgreSQL database",
+        description="Run the HTTP API. The service's state lives in PostgreSQL (--database). "
+        "Needs the optional api dependencies. No TLS of its own: put it behind a proxy or a "
+        "platform that provides HTTPS.",
     )
-    serve.add_argument("--dir", required=True, help="service directory (created if missing)")
+    serve.add_argument(
+        "--database",
+        help=DATABASE_HELP,
+    )
     serve.add_argument("--host", default="127.0.0.1", help="address to listen on")
     serve.add_argument("--port", type=int, default=8000, help="port (default 8000)")
     serve.add_argument("--catalog", help="reference orbits (default: built-in SIMULATED)")
@@ -775,7 +818,10 @@ def build_parser() -> argparse.ArgumentParser:
     keys_commands = keys_parser.add_subparsers(dest="keys_command", metavar="command")
     keys_commands.required = True
     create = keys_commands.add_parser("create", help="create a key and print it once")
-    create.add_argument("--dir", required=True, help="service directory")
+    create.add_argument(
+        "--database",
+        help=DATABASE_HELP,
+    )
     create.add_argument(
         "--role", required=True, choices=["requester", "station", "reviewer", "admin"]
     )

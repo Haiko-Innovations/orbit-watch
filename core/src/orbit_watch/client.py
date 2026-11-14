@@ -107,7 +107,7 @@ class ApiClient:
             raise ClientError(
                 "unreachable",
                 f"cannot reach {self.api} ({error.reason}); is the server running? "
-                "(orbit-watch serve --dir ...)",
+                "(orbit-watch serve --database ...)",
             ) from None
 
     def get(self, path: str, **kwargs: Any) -> Any:

@@ -35,7 +35,6 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 from orbit_watch import calibration as cal
@@ -755,26 +754,31 @@ class RequestService:
 
 
 def open_service(
-    directory: str | Path,
+    database: str,
     reviewers: ReviewerRegistry,
     context: VerificationContext,
     *,
     chain: Any = None,
     **options: Any,
 ) -> RequestService:
-    """A service whose state lives in ``directory`` (SQLite and files) and survives restarts.
+    """A service whose state, files included, lives in the PostgreSQL ``database`` (a libpq
+    connection string or URL) and survives restarts (decision P4-04).
 
-    Opening the same directory from a second process fails with
+    Opening the same database schema from a second process fails with
     ``StorageError("in_use")``. With ``chain`` (an ``orbit_watch.chain.link.ChainLink``)
     the service works on that testnet chain (step 2.6).
     """
-    from orbit_watch.settlement.sqlite_ledger import SqliteLedgerAdapter
+    from orbit_watch.settlement.stored_ledger import StoredLedgerAdapter
 
-    storage = Storage(directory)
-    service = RequestService(
-        SqliteLedgerAdapter(storage.db), reviewers, context, storage=storage, **options
-    )
-    service._reload()
+    storage = Storage(database)
+    try:
+        service = RequestService(
+            StoredLedgerAdapter(storage.db), reviewers, context, storage=storage, **options
+        )
+        service._reload()
+    except BaseException:
+        storage.close()
+        raise
     if chain is not None:
         try:
             chain.attach(service)

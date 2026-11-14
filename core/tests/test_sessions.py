@@ -33,9 +33,9 @@ class WallClock:
 
 
 @pytest.fixture
-def world(tmp_path):
+def world(database):
     require_local_chain()
-    made = ChainWorld(tmp_path / "service")
+    made = ChainWorld(database)
     yield made
     made.stop()
 
@@ -272,16 +272,14 @@ def test_signing_out_ends_the_session(world, clock):
     assert stale.get("/v1/session").json() == {"session": None}
 
 
-def test_sign_in_needs_a_chain(tmp_path):
+def test_sign_in_needs_a_chain(database):
     from helpers import catalog_bytes, packaged, policy_bytes
 
     from orbit_watch.reviewers import ReviewerRegistry
     from orbit_watch.service import VerificationContext, open_service
 
     context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
-    service = open_service(
-        tmp_path / "ledger", ReviewerRegistry.parse(packaged("reviewers.json")), context
-    )
+    service = open_service(database, ReviewerRegistry.parse(packaged("reviewers.json")), context)
     http = TestClient(create_app(service, origins=[ORIGIN]), base_url=ORIGIN)
     asked = challenge(http, "0x" + "11" * 20)
     assert asked.json()["error"]["code"] == "not_on_chain"
@@ -300,7 +298,7 @@ def test_the_api_starts_without_the_evm_extra():
     assert done.stdout.strip() == "ok", done.stderr
 
 
-def test_serve_takes_the_web_origins(tmp_path, capsys, monkeypatch):
+def test_serve_takes_the_web_origins(make_database, capsys, monkeypatch):
     import uvicorn
 
     from orbit_watch.cli import EXIT_USAGE, _default_origins, main
@@ -310,9 +308,10 @@ def test_serve_takes_the_web_origins(tmp_path, capsys, monkeypatch):
         "http://localhost:8787",
     ]
     assert _default_origins("0.0.0.0", 80) == ["http://0.0.0.0:80"]
-    bad = main(["serve", "--dir", str(tmp_path / "x"), "--origin", "orbit.example/app"])
+    bad = main(["serve", "--database", make_database(), "--origin", "orbit.example/app"])
     assert bad == EXIT_USAGE and "web origin" in capsys.readouterr().err
     seen = {}
     monkeypatch.setattr(uvicorn, "run", lambda app, host, port: seen.update(app=app))
-    assert main(["serve", "--dir", str(tmp_path / "y"), "--origin", "https://orbit.example"]) == 0
+    good = ["serve", "--database", make_database(), "--origin", "https://orbit.example"]
+    assert main(good) == 0
     assert json.loads(TestClient(seen["app"]).get("/v1/health").text)["status"] == "ok"

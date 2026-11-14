@@ -23,7 +23,7 @@ CREATE TABLE transactions (
     action TEXT NOT NULL,
     request_id TEXT,
     status TEXT NOT NULL CHECK (status IN ('pending', 'confirmed', 'failed')),
-    block INTEGER,
+    block BIGINT,
     error TEXT,
     reported_at TEXT NOT NULL
 );
@@ -35,7 +35,7 @@ CREATE INDEX transactions_by_request ON transactions (request_id);
 CREATE TABLE chain_events (
     tx_hash TEXT NOT NULL,
     log_index INTEGER NOT NULL,
-    block INTEGER NOT NULL,
+    block BIGINT NOT NULL,
     request_id TEXT NOT NULL,
     event TEXT NOT NULL,
     at TEXT NOT NULL,
@@ -62,6 +62,7 @@ CREATE TABLE chain_uploads (
 -- Escrow events that do not fit a request's record, for example someone else funding the
 -- same request ID with other terms. They are shown, never applied.
 CREATE TABLE chain_conflicts (
+    seq BIGINT GENERATED ALWAYS AS IDENTITY,
     tx_hash TEXT NOT NULL,
     log_index INTEGER NOT NULL,
     request_id TEXT NOT NULL,
