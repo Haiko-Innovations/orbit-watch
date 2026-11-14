@@ -8,7 +8,9 @@ One command starts, on this machine only:
   timelock owns the reviewer registry and a 2-of-3 Safe of LOCAL TEST signers proposes to
   it; the local timelock waits 60 seconds, not 48 hours;
 * the request service on that chain, with the API and, given ``--web``, the built web
-  application on one port;
+  application on one port. Its PostgreSQL database is a schema on the server named by
+  ``ORBIT_WATCH_TEST_DATABASE_URL``, or else on a PostgreSQL that the stack starts in
+  Docker and removes when it stops (tests/postgres.py);
 * SIMULATED parties (a requester, four stations, the reviewers, an administrator) with
   LOCAL TEST keys and registered wallets, and worthless TestUSD for the requester;
 * six SIMULATED requests: five funded (four open for observers), one opened but not funded;
@@ -35,6 +37,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import shutil
 import signal
 import sys
@@ -47,6 +50,7 @@ from pathlib import Path
 from anvil import LOCAL_TIMELOCK_DELAY, SAFE_SIGNERS, SAFE_THRESHOLD, Deployment, unavailable
 from chain_world import GENESIS, PLATFORM, REGISTRY, REVIEWERS, VERIFIER
 from helpers import catalog_bytes, policy_bytes
+from postgres import SERVER_VARIABLE, Container, docker_available, drop_schema, new_schema
 
 from orbit_watch.catalog import parse_catalog
 from orbit_watch.sim.phase1_demo import ESPOO, KUOPIO, OULU, REQUESTER, TAMPERE, _deliveries
@@ -86,6 +90,21 @@ class LocalStack:
     """The running stack; ``stop()`` ends it."""
 
     def __init__(self, directory: Path, port: int, web: Path | None, chain_port: int = 0):
+        self.directory = directory
+        self.container: Container | None = None
+        server = os.environ.get(SERVER_VARIABLE)
+        if not server:
+            self.container = Container("orbit-watch-local-db")
+            server = self.container.conninfo
+        self.db_server = server
+        self.schema, self.database = new_schema(server, prefix="local_stack")
+        try:
+            self._start(directory, port, web, chain_port)
+        except BaseException:
+            self._remove_database()
+            raise
+
+    def _start(self, directory: Path, port: int, web: Path | None, chain_port: int) -> None:
         import uvicorn
 
         from orbit_watch.api import create_app, keys
@@ -120,7 +139,7 @@ class LocalStack:
             safe=self.deployment.safe.address,
         )
         context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
-        self.service = open_service(directory / "service", REGISTRY, context, chain=link)
+        self.service = open_service(self.database, REGISTRY, context, chain=link)
         with self.service.storage.db.transaction():
             now = link.now()
             self.admin = keys.create_key(self.service.storage.db, ADMIN, "admin", now)
@@ -329,6 +348,8 @@ class LocalStack:
             "escrow": self.deployment.escrow.address,
             "token": self.deployment.usd.address,
             "admin_key": self.admin,
+            # A LOCAL PostgreSQL with trust authentication: no password to protect.
+            "database": self.database,
             "admin": {
                 "party": ADMIN,
                 "key": self.admin,
@@ -374,6 +395,14 @@ class LocalStack:
         self.thread.join(timeout=10)
         self.service.storage.close()
         self.deployment.chain.stop()
+        self._remove_database()
+
+    def _remove_database(self) -> None:
+        """The stack's schema goes, and the PostgreSQL it started with it."""
+        if self.container is not None:
+            self.container.stop()
+        else:
+            drop_schema(self.db_server, self.schema)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -399,6 +428,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     reason = unavailable()
+    if reason is None and not os.environ.get(SERVER_VARIABLE) and not docker_available():
+        reason = f"PostgreSQL is needed: install Docker, or set {SERVER_VARIABLE}"
     if reason:
         print(f"local stack: {reason}", file=sys.stderr)
         return 2
@@ -406,8 +437,11 @@ def main(argv: list[str] | None = None) -> int:
     directory = args.dir or Path(tempfile.mkdtemp(prefix="orbit-watch-local-"))
     if args.replace and (directory / "local-stack.json").is_file():
         shutil.rmtree(directory)  # an earlier local stack's state, and nothing else
-    if (directory / "service").exists():
-        print(f"local stack: {directory} is in use; give a new --dir", file=sys.stderr)
+    if (directory / "local-stack.json").exists():
+        print(
+            f"local stack: {directory} holds a local stack; give --replace or a new --dir",
+            file=sys.stderr,
+        )
         return 2
     directory.mkdir(parents=True, exist_ok=True)
 
@@ -423,7 +457,7 @@ def main(argv: list[str] | None = None) -> int:
         info = directory / "local-stack.json"
         info.write_text(json.dumps(stack.describe(), indent=2) + "\n", encoding="utf-8")
         print("LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.")
-        print(f"API: {stack.api}/v1/   chain: {stack.rpc}")
+        print(f"API: {stack.api}/v1/   chain: {stack.rpc}   PostgreSQL schema: {stack.schema}")
         if args.web:
             print(f"Web application: {stack.api}/")
         print(f"Keys, wallets and addresses: {info}")

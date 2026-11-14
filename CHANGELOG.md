@@ -17,6 +17,18 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   service, and nothing that closes the way to a network the community runs.
   The long-term direction for that network is in `docs/decentralisation.md`.
 
+### Changed
+
+- The service keeps its state, files included, in PostgreSQL instead of SQLite
+  (phase 4, step 4.1; P4-04, D-34). `orbit-watch serve` and
+  `orbit-watch keys create` take `--database` (a libpq URL), or
+  `ORBIT_WATCH_DATABASE_URL` or `DATABASE_URL`, instead of `--dir`. psycopg is
+  part of the `api` extra. The open core's command-line tools need no database.
+  The local stack starts a PostgreSQL of its own in Docker. The tests that need a
+  database start one too, or use `ORBIT_WATCH_TEST_DATABASE_URL`, and are
+  skipped without either unless `ORBIT_WATCH_PG_TESTS=1`, as in CI. Earlier
+  SQLite service directories are not migrated.
+
 ### Fixed
 
 - The phase 1 demo told another story after every release: its reviewer rounds

@@ -26,7 +26,8 @@ paikallisesti ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
 
 **Vaihe 4 on suunniteltu**: julkinen testiverkkopalvelu, eli palvelu ja
 verkkosovellus verkossa Base Sepoliassa, yhä SIMULOITUNA. Sen päätökset
-P4-01–P4-16 hyväksyttiin 14.11.2026 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)), ja työ alkaa askeleesta 4.1.
+P4-01–P4-16 hyväksyttiin 14.11.2026 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)). Valmiina: palvelun tallennus
+PostgreSQLiin (4.1).
 
 Vaihe 2 julkaistiin versiona 0.3.0 ([vaiheen 2 yhteenveto](phase-2-summary.fi.md)),
 vaihe 1 versiona 0.2.0 ([vaiheen 1 yhteenveto](phase-1-summary.fi.md)) ja vaihe 0
@@ -189,7 +190,7 @@ issuessa [#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67), ja n
 
 | Askel | Sisältö | Valmis, kun |
 |---|---|---|
-| **4.1 PostgreSQL** ([#68](https://github.com/Haiko-Innovations/orbit-watch/issues/68)) | Palvelun tallennus PostgreSQLiin tiedostoineen SQLiten tilalle; paikallinen ympäristö käynnistää PostgreSQLin kontissa; kantaa tarvitsevat testit ajetaan CI:ssä aina ja paikallisesti, kun PostgreSQL on saatavilla. | Jokainen testi menee läpi PostgreSQLillä CI:ssä; paikallinen ympäristö käynnistyy yhdellä komennolla; avoimen ytimen komentorivi ei tarvitse kantaa. |
+| ✅ **4.1 PostgreSQL** ([#68](https://github.com/Haiko-Innovations/orbit-watch/issues/68)) | Palvelun tallennus PostgreSQLiin tiedostoineen SQLiten tilalle; paikallinen ympäristö käynnistää PostgreSQLin kontissa; kantaa tarvitsevat testit ajetaan CI:ssä aina ja paikallisesti, kun PostgreSQL on saatavilla. | Jokainen testi menee läpi PostgreSQLillä CI:ssä; paikallinen ympäristö käynnistyy yhdellä komennolla; avoimen ytimen komentorivi ei tarvitse kantaa. |
 | **4.2 Tilaton palvelu, joka toimii itse** ([#69](https://github.com/Haiko-Innovations/orbit-watch/issues/69)) | Ei tilaa kannan ulkopuolella: transaktio jokaiselle kutsulle ja advisory lock muutoksille; seuranta todennettuna kutsuna (ajastus, ajastin tai `serve --follow`), joka soveltaa tapahtumat, attestoi, tilittää ja soveltaa määräajat vahvistussyvyyteen asti; terveystarkistus; konttikuva rakennetaan ja testataan CI:ssä. | Kaksi instanssia ei koskaan tee samaa muutosta kahdesti; tilaus tilitetään ja toinen vanhenee ilman `tick`iä; kuva läpäisee päästä päähän -testit; testattu. |
 | **4.3 Rajat ja oma RPC-päätepiste** ([#70](https://github.com/Haiko-Innovations/orbit-watch/issues/70)) | Rajat IP-osoitetta ja osapuolta kohden kannassa, Vercelin palomuuri edessä; pyynnöt enintään 4 Mt; ketju luetaan omasta RPC-päätepisteestä, jonka avain on salaisuus. | Jokaisen julkisen ja kirjautumisen päätepisteen rajat testattu; RPC-avain ei koskaan vastauksessa, lokissa tai selaimessa, testattu. |
 | **4.4 Tietosuojaseloste ja käyttöehdot** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | Molemmat englanniksi ja suomeksi, linkki jokaiselta sivulta; aseman koordinaatit noin kilometrin tarkkuudella; asemaprofiilin poisto ja istuntojen lopetus; lokien säilytys; istuntoevästeen asema lain mukaan lähteineen. | Sivut toimivat kirjautumatta; poisto ja koordinaattien tarkkuus testattu; tietoluettelo dokumentoitu. |

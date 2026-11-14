@@ -79,7 +79,7 @@ def test_unknown_networks_and_incomplete_records(tmp_path):
 def test_serve_takes_its_settings_from_the_network(monkeypatch):
     monkeypatch.setattr(networks, "deployment", lambda name: FAKE)
     parser = cli.build_parser()
-    base = ["serve", "--dir", "x", "--network", "base-sepolia", "--verifier-keystore", "k"]
+    base = ["serve", "--database", "x", "--network", "base-sepolia", "--verifier-keystore", "k"]
 
     args = parser.parse_args(base)
     cli._apply_network(args)
@@ -97,11 +97,11 @@ def test_serve_takes_its_settings_from_the_network(monkeypatch):
     assert refused.value.code == "other_escrow"
 
     with pytest.raises(SystemExit):
-        parser.parse_args(["serve", "--dir", "x", "--network", "base-mainnet"])
+        parser.parse_args(["serve", "--database", "unused", "--network", "base-mainnet"])
 
 
 def test_serve_on_a_network_needs_the_verifier_key(capsys):
-    code = cli.main(["serve", "--dir", "x", "--network", "base-sepolia"])
+    code = cli.main(["serve", "--database", "unused", "--network", "base-sepolia"])
     assert code == cli.EXIT_USAGE
     assert "give --verifier-keystore" in capsys.readouterr().err
 

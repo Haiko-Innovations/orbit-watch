@@ -51,7 +51,7 @@ def chain():
         (CONTRACTS / name).unlink(missing_ok=True)
 
 
-def test_the_deployment_script_on_a_local_chain(chain, tmp_path):
+def test_the_deployment_script_on_a_local_chain(chain, tmp_path, make_database):
     from eth_account import Account
 
     from orbit_watch.chain.client import OrbitWatchChain
@@ -126,14 +126,14 @@ def test_the_deployment_script_on_a_local_chain(chain, tmp_path):
     escrow = OrbitWatchChain(chain.w3, record["escrow"])
     with pytest.raises(ChainError) as refused:
         open_service(
-            tmp_path / "wrong",
+            make_database(),
             registry,
             context,
             chain=ChainLink(escrow, deployer, from_block=record["from_block"]),
         )
     assert refused.value.code == "not_the_verifier"
     link = ChainLink(escrow, verifier, from_block=record["from_block"])
-    service = open_service(tmp_path / "service", registry, context, chain=link)
+    service = open_service(make_database(), registry, context, chain=link)
     try:
         info = link.info()
         assert info["registry"] == record["registry"]

@@ -25,8 +25,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# The phase 1 HTTP API (decision D-16). Not needed for the command-line tools.
+# The HTTP API (decision D-16) and its PostgreSQL storage (decision P4-04). Not needed
+# for the command-line tools. psycopg is LGPL-3.0, used unmodified as a library; its
+# binary package brings libpq.
 api = [
+    "psycopg[binary]>=3.3",
     "starlette>=1.10",
     "uvicorn>=0.54",
 ]

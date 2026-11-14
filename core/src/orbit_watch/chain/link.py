@@ -916,7 +916,7 @@ class ChainLink:
             (request_id,),
         )
         conflicts = self.db.query(
-            "SELECT * FROM chain_conflicts WHERE request_id = ? ORDER BY rowid", (request_id,)
+            "SELECT * FROM chain_conflicts WHERE request_id = ? ORDER BY seq", (request_id,)
         )
         return {
             "on_chain": on_chain,
@@ -955,7 +955,7 @@ class ChainLink:
         events = self.db.query(
             "SELECT * FROM chain_events ORDER BY block DESC, log_index DESC LIMIT ?", (limit,)
         )
-        conflicts = self.db.query("SELECT * FROM chain_conflicts ORDER BY rowid DESC")
+        conflicts = self.db.query("SELECT * FROM chain_conflicts ORDER BY seq DESC")
         return {
             "chain": self.info(),
             "events": [

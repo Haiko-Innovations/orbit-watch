@@ -1,30 +1,36 @@
-"""Storage for phase 1 (step 1.5): SQLite and content-addressed files.
+"""Storage: one PostgreSQL database (phase 1, step 1.5; PostgreSQL since phase 4, step 4.1).
 
-Decision P-02: SQLite from the Python standard library, schema changes as
-numbered plain-SQL migrations, and observation files and reports kept in a
-directory by their SHA-256. A hash identifies a file; it does not replace
-keeping it, so files are never deleted.
+Decision P4-04, which replaced P-02: PostgreSQL wherever the service keeps state, in
+production, in the local stack and in the tests. Schema changes are numbered plain-SQL
+migrations. Files (requests, observations, reports) are kept in the database by their
+SHA-256; a hash identifies a file, it does not replace keeping it, so files are never
+deleted.
 
-One process at a time: the database is opened in SQLite's exclusive locking
-mode, and a second process that opens it gets ``StorageError("in_use")``. The
-service keeps its working state in memory and writes every change through to
-the database inside one transaction per operation.
+A database is named by a libpq connection string or URL (``postgresql://…``). A
+``search_path`` in its ``options`` selects a schema; the tests give every test one.
+
+One service process per schema: the service holds a session advisory lock for as long as
+it is open, and a second process gets ``StorageError("in_use")``. The service keeps its
+working state in memory and writes every change through to the database inside one
+transaction per operation. (Step 4.2 makes the service stateless.)
+
+psycopg is imported only when a database is opened, so the command-line tools that keep
+no state need neither psycopg nor a database.
 """
 
 from __future__ import annotations
 
-import os
+import functools
 import re
-import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from importlib import resources
-from pathlib import Path
 from typing import Any
 
 from orbit_watch.canonical import sha256_bytes
 
 _MIGRATION_RE = re.compile(r"^(\d{4})_([a-z0-9_]+)\.sql$")
+_SHA256_RE = re.compile(r"[0-9a-f]{64}")
 
 
 class StorageError(RuntimeError):
@@ -48,31 +54,45 @@ def available_migrations() -> list[tuple[int, str, str]]:
     return found
 
 
-class Database:
-    """A SQLite database for one Orbit Watch service."""
+@functools.lru_cache(maxsize=512)
+def _placeholders(sql: str) -> str:
+    """The SQL in psycopg's parameter style: ``?`` becomes ``%s`` (and a literal ``%``
+    becomes ``%%``). Orbit Watch's SQL never has a literal question mark."""
+    return sql.replace("%", "%%").replace("?", "%s")
 
-    def __init__(self, path: str | Path):
-        self.path = str(path)
+
+class Database:
+    """A PostgreSQL database (or one schema in it) for one Orbit Watch service."""
+
+    def __init__(self, conninfo: str):
+        import psycopg
+        from psycopg.rows import dict_row
+
         try:
             # The connection may be used from a server's worker threads; callers
             # serialise access (the API holds one lock around every call).
-            self.connection = sqlite3.connect(
-                self.path, isolation_level=None, timeout=0, check_same_thread=False
-            )
-            self.connection.row_factory = sqlite3.Row
-            self.connection.execute("PRAGMA foreign_keys = ON")
-            self.connection.execute("PRAGMA locking_mode = EXCLUSIVE")
-            # Take the exclusive lock now, so a second process fails at once.
-            self.connection.execute("BEGIN EXCLUSIVE")
-            self.connection.execute("COMMIT")
-        except sqlite3.OperationalError as error:
-            if "locked" in str(error):
-                raise StorageError("in_use", f"{self.path} is used by another process") from None
-            raise StorageError("cannot_open", f"cannot open {self.path}: {error}") from None
+            self.connection = psycopg.connect(conninfo, autocommit=True, row_factory=dict_row)
+        except psycopg.Error as error:
+            # libpq's message names the host and the user, never the password.
+            raise StorageError("cannot_open", f"cannot open the database: {error}") from None
         self._depth = 0
+        schema = self.query("SELECT current_schema() AS s")[0]["s"]
+        if schema is None:
+            self.close()
+            raise StorageError("cannot_open", "the database's search_path names no schema")
+        self.schema = schema
+        # One service per schema, until step 4.2 makes the service stateless.
+        held = self.query(
+            "SELECT pg_try_advisory_lock(hashtext('orbit-watch/' || current_database() "
+            "|| '/' || current_schema())) AS held"
+        )[0]["held"]
+        if not held:
+            self.close()
+            raise StorageError("in_use", f"the schema {schema} is used by another process")
 
     def close(self) -> None:
-        self.connection.close()
+        if not self.connection.closed:
+            self.connection.close()
 
     def __enter__(self) -> Database:
         return self
@@ -94,23 +114,20 @@ class Database:
             finally:
                 self._depth -= 1
             return
-        self.connection.execute("BEGIN IMMEDIATE")
         self._depth = 1
         try:
-            yield
-        except BaseException:
-            self.connection.execute("ROLLBACK")
-            raise
-        else:
-            self.connection.execute("COMMIT")
+            with self.connection.transaction():
+                yield
         finally:
             self._depth = 0
 
-    def execute(self, sql: str, parameters: tuple[Any, ...] = ()) -> sqlite3.Cursor:
-        return self.connection.execute(sql, parameters)
+    def execute(self, sql: str, parameters: tuple[Any, ...] = ()) -> Any:
+        if parameters:
+            return self.connection.execute(_placeholders(sql), parameters)
+        return self.connection.execute(sql)
 
-    def query(self, sql: str, parameters: tuple[Any, ...] = ()) -> list[sqlite3.Row]:
-        return self.connection.execute(sql, parameters).fetchall()
+    def query(self, sql: str, parameters: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
+        return self.execute(sql, parameters).fetchall()
 
     def schema_version(self) -> int:
         if not self._has_migrations_table():
@@ -118,12 +135,16 @@ class Database:
         row = self.query("SELECT MAX(version) AS v FROM schema_migrations")[0]
         return row["v"] or 0
 
-    def _has_migrations_table(self) -> bool:
-        return bool(
-            self.query(
-                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'"
-            )
+    def tables(self) -> set[str]:
+        """The tables of this schema."""
+        rows = self.query(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'"
         )
+        return {row["table_name"] for row in rows}
+
+    def _has_migrations_table(self) -> bool:
+        return "schema_migrations" in self.tables()
 
     def migrate(self) -> list[int]:
         """Apply the migrations that are missing. Returns the versions applied."""
@@ -166,69 +187,58 @@ def _statements(sql: str) -> list[str]:
 
 
 class FileStore:
-    """Files kept by their SHA-256 under ``root/ab/abcdef...``. Never deleted."""
+    """Files kept in the database by their SHA-256, checked on every read. Never deleted."""
 
-    def __init__(self, root: str | Path):
-        self.root = Path(root)
-        self.root.mkdir(parents=True, exist_ok=True)
+    def __init__(self, db: Database):
+        self.db = db
 
-    def path(self, sha256: str) -> Path:
-        if not re.fullmatch(r"[0-9a-f]{64}", sha256):
+    @staticmethod
+    def _check(sha256: str) -> None:
+        if not _SHA256_RE.fullmatch(sha256):
             raise StorageError("bad_hash", f"not a SHA-256: {sha256!r}")
-        return self.root / sha256[:2] / sha256
 
     def put(self, data: bytes) -> str:
         digest = sha256_bytes(data)
-        target = self.path(digest)
-        if target.exists():
-            return digest
-        target.parent.mkdir(parents=True, exist_ok=True)
-        temporary = target.with_name(target.name + ".part")
-        with open(temporary, "wb") as handle:
-            handle.write(data)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, target)
+        self.db.execute(
+            "INSERT INTO files (sha256, size, content) VALUES (?, ?, ?) "
+            "ON CONFLICT (sha256) DO NOTHING",
+            (digest, len(data), data),
+        )
         return digest
 
     def get(self, sha256: str) -> bytes:
-        try:
-            data = self.path(sha256).read_bytes()
-        except FileNotFoundError:
-            raise StorageError("missing_file", f"file {sha256} is missing") from None
+        self._check(sha256)
+        rows = self.db.query("SELECT content FROM files WHERE sha256 = ?", (sha256,))
+        if not rows:
+            raise StorageError("missing_file", f"file {sha256} is missing")
+        data = bytes(rows[0]["content"])
         if sha256_bytes(data) != sha256:
             raise StorageError("corrupt_file", f"file {sha256} does not match its hash")
         return data
 
     def __contains__(self, sha256: str) -> bool:
-        return self.path(sha256).exists()
+        self._check(sha256)
+        return bool(self.db.query("SELECT 1 FROM files WHERE sha256 = ?", (sha256,)))
 
 
 class Storage:
-    """A service's database and file store in one directory."""
+    """A service's database, files included."""
 
-    DATABASE = "orbit-watch.sqlite3"
-    FILES = "files"
-
-    def __init__(self, directory: str | Path):
-        self.directory = Path(directory)
-        self.directory.mkdir(parents=True, exist_ok=True)
-        self.db = Database(self.directory / self.DATABASE)
-        self.db.migrate()
-        self.files = FileStore(self.directory / self.FILES)
+    def __init__(self, conninfo: str):
+        self.db = Database(conninfo)
+        try:
+            self.db.migrate()
+        except BaseException:
+            self.db.close()
+            raise
+        self.files = FileStore(self.db)
 
     def close(self) -> None:
         self.db.close()
 
     def put_file(self, data: bytes) -> str:
-        """Keep a file. A rolled-back transaction can leave an unlisted file on disk,
-        which is harmless: files are addressed by content."""
-        digest = self.files.put(data)
-        self.db.execute(
-            "INSERT INTO files (sha256, size) VALUES (?, ?) ON CONFLICT (sha256) DO NOTHING",
-            (digest, len(data)),
-        )
-        return digest
+        """Keep a file, in the caller's transaction."""
+        return self.files.put(data)
 
     def has_file(self, sha256: str) -> bool:
         return bool(self.db.query("SELECT 1 FROM files WHERE sha256 = ?", (sha256,)))

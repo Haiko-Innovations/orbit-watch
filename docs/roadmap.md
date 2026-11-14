@@ -24,7 +24,8 @@ The service still runs locally only
 
 **Phase 4 is planned**: a public testnet service, the service and the web
 application online on Base Sepolia, still SIMULATED. Its decisions P4-01 to
-P4-16 were approved on 2026-11-14 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)), and work starts with step 4.1.
+P4-16 were approved on 2026-11-14 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)). Done so far: the service's storage on
+PostgreSQL (4.1).
 
 Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
 phase 1 as version 0.2.0 ([phase 1 summary](phase-1-summary.md)) and phase 0
@@ -182,7 +183,7 @@ approved on 2026-11-14. In short:
 
 | Step | Content | Done when |
 |---|---|---|
-| **4.1 PostgreSQL** ([#68](https://github.com/Haiko-Innovations/orbit-watch/issues/68)) | The service's storage on PostgreSQL, files included, replacing SQLite; the local stack starts PostgreSQL in a container; tests that need a database run in CI always and locally when PostgreSQL is there. | Every test passes on PostgreSQL in CI; the local stack starts in one command; the open core's command-line tools need no database. |
+| ✅ **4.1 PostgreSQL** ([#68](https://github.com/Haiko-Innovations/orbit-watch/issues/68)) | The service's storage on PostgreSQL, files included, replacing SQLite; the local stack starts PostgreSQL in a container; tests that need a database run in CI always and locally when PostgreSQL is there. | Every test passes on PostgreSQL in CI; the local stack starts in one command; the open core's command-line tools need no database. |
 | **4.2 A stateless service that runs on its own** ([#69](https://github.com/Haiko-Innovations/orbit-watch/issues/69)) | No state outside the database: a transaction per call and an advisory lock for changes; a follower as an authenticated call (schedule, timer or `serve --follow`) that applies events, attests, settles and applies deadlines, up to a confirmation depth; a health endpoint; the container image built and tested in CI. | Two instances never apply one change twice; a request settles and another expires without `tick`; the image passes the end-to-end tests; tested. |
 | **4.3 Limits and a dedicated RPC endpoint** ([#70](https://github.com/Haiko-Innovations/orbit-watch/issues/70)) | Limits per IP address and per party in the database, Vercel's firewall in front; bodies at most 4 MB; the chain read through a dedicated RPC endpoint whose key is a secret. | Every public and sign-in endpoint's limits tested; the RPC key never in a response, log or the browser, tested. |
 | **4.4 Privacy notice and terms** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | Both in English and Finnish, linked from every page; station coordinates to about a kilometre; deleting a station profile and ending sessions; log retention; the session cookie checked against the law, with its source. | The pages work without signing in; deletion and coordinate precision tested; the data inventory documented. |

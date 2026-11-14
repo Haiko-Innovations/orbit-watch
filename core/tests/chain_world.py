@@ -9,8 +9,6 @@ verifier key.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from anvil import Deployment
 from helpers import catalog_bytes, packaged, policy_bytes
 
@@ -37,7 +35,7 @@ class ChainWorld:
     ``governance``, a timelock owns the reviewer registry and a Safe proposes to it, as on
     Base Sepolia (step 3.7)."""
 
-    def __init__(self, directory: Path, *, governance: bool = False, parties: tuple = ()):
+    def __init__(self, database: str, *, governance: bool = False, parties: tuple = ()):
         self.deployment = Deployment(
             GENESIS,
             reviewers=REVIEWERS,
@@ -48,7 +46,7 @@ class ChainWorld:
         )
         self.local = self.deployment.chain
         self.w3 = self.local.w3
-        self.directory = directory
+        self.database = database
         deployer = self.deployment.deployer
         usd = self.deployment.usd
         self.local.send(deployer, usd.functions.mint(self.address(REQUESTER), BUDGET))
@@ -64,7 +62,7 @@ class ChainWorld:
             safe=None if safe is None else safe.address,
         )
         context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
-        return open_service(self.directory, REGISTRY, context, chain=link)
+        return open_service(self.database, REGISTRY, context, chain=link)
 
     @property
     def link(self) -> ChainLink:

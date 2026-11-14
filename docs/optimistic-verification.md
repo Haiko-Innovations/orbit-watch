@@ -33,7 +33,7 @@ people look at it.
 
 The service takes the time from its callers. `tick(now)` applies passed
 deadlines to every request and settles finished ones. With `open_service` the
-state is stored in SQLite and files ([storage.md](storage.md), step 1.5); the
+state is stored in PostgreSQL ([storage.md](storage.md), steps 1.5 and 4.1); the
 HTTP API comes in step 1.6.
 
 ## Who reviews

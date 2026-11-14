@@ -120,9 +120,9 @@ class Api:
 
 
 @pytest.fixture
-def world(tmp_path):
+def world(database):
     require_local_chain()
-    made = ChainWorld(tmp_path / "service")
+    made = ChainWorld(database)
     yield made
     made.stop()
 
@@ -593,7 +593,9 @@ def test_a_reason_given_only_on_chain_is_shown_by_its_hash(api, world):
     )
 
 
-def test_the_server_starts_on_a_chain_only_with_the_escrows_verifier(world, tmp_path, capsys):
+def test_the_server_starts_on_a_chain_only_with_the_escrows_verifier(
+    world, tmp_path, capsys, make_database
+):
     import argparse
 
     from eth_account import Account
@@ -602,7 +604,7 @@ def test_the_server_starts_on_a_chain_only_with_the_escrows_verifier(world, tmp_
 
     rpc = world.w3.provider.endpoint_uri
     # The chain options come together.
-    assert main(["serve", "--dir", str(tmp_path / "x"), "--chain-rpc", rpc]) == 2
+    assert main(["serve", "--database", "unused", "--chain-rpc", rpc]) == 2
     assert "together" in capsys.readouterr().err
     password = tmp_path / "password"
     password.write_text("pw\n")
@@ -628,17 +630,18 @@ def test_the_server_starts_on_a_chain_only_with_the_escrows_verifier(world, tmp_
     with pytest.raises(ChainError) as error:
         link_with(STATION)
     assert error.value.code == "not_the_verifier"
-    # A service directory started without a chain cannot move onto one.
+    # A service database started without a chain cannot move onto one.
     from helpers import catalog_bytes, policy_bytes
 
     from orbit_watch.service import VerificationContext, open_service
 
     context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
-    plain = open_service(tmp_path / "plain", world.service.reviewers, context)
+    database = make_database()
+    plain = open_service(database, world.service.reviewers, context)
     plain.create(REQUEST, REQUESTER, parse_utc("2026-11-01T12:00:00Z"))
     plain.storage.close()
     with pytest.raises(ChainError) as error:
-        open_service(tmp_path / "plain", world.service.reviewers, context, chain=link)
+        open_service(database, world.service.reviewers, context, chain=link)
     assert error.value.code == "not_a_chain_service"
 
 
@@ -680,8 +683,8 @@ def test_a_refused_log_range_is_halved_and_retried(api, world, monkeypatch):
     assert _smaller_range(base, 200) == 100  # refused although within the named limit
 
 
-def test_a_new_directory_follows_the_chain_from_the_current_block(world, tmp_path):
-    """A new service directory has no requests yet, so no earlier event is its own; it does
+def test_a_new_database_follows_the_chain_from_the_current_block(world, make_database):
+    """A new service database has no requests yet, so no earlier event is its own; it does
     not read the escrow's whole history (on Base Sepolia, 200 blocks per call)."""
     from helpers import catalog_bytes, policy_bytes
 
@@ -692,10 +695,13 @@ def test_a_new_directory_follows_the_chain_from_the_current_block(world, tmp_pat
     context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
     world.local.rpc("anvil_mine", [hex(50)])
 
+    databases: dict[str, str] = {}
+
     def opened(name, **options):
         chain = OrbitWatchChain(world.w3, world.chain.escrow.address)
         link = ChainLink(chain, world.account(VERIFIER), **options)
-        return open_service(tmp_path / name, world.service.reviewers, context, chain=link)
+        database = databases.setdefault(name, make_database())
+        return open_service(database, world.service.reviewers, context, chain=link)
 
     latest = world.chain.latest_block()
     fresh = opened("fresh")
@@ -705,7 +711,7 @@ def test_a_new_directory_follows_the_chain_from_the_current_block(world, tmp_pat
     assert given.chain.synced_block() == 6
     given.storage.close()
     world.local.rpc("anvil_mine", [hex(5)])
-    again = opened("fresh")  # a known directory goes on from where it stopped
+    again = opened("fresh")  # a known database goes on from where it stopped
     assert again.chain.synced_block() == latest
     again.chain.sync()
     assert again.chain.synced_block() == world.chain.latest_block() > latest

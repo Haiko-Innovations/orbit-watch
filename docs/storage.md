@@ -1,35 +1,49 @@
 # Storage
 
-Phase 1, step 1.5. Code: [`core/src/orbit_watch/storage/`](../core/src/orbit_watch/storage),
-[`settlement/sqlite_ledger.py`](../core/src/orbit_watch/settlement/sqlite_ledger.py)
+Phase 1, step 1.5; PostgreSQL since phase 4, step 4.1. Code:
+[`core/src/orbit_watch/storage/`](../core/src/orbit_watch/storage),
+[`settlement/stored_ledger.py`](../core/src/orbit_watch/settlement/stored_ledger.py)
 and `open_service` in [`service.py`](../core/src/orbit_watch/service.py).
+Decisions: [P4-04](decisions.md#p4-04-postgresql-wherever-the-service-keeps-state)
+(which replaced P-02's SQLite) and
+[D-34](decisions.md#d-34-postgresql-storage).
 
-A service opened with `open_service(directory, reviewers, context)` keeps its
-whole state in one directory and survives restarts:
+A service opened with `open_service(database, reviewers, context)` keeps its
+whole state, files included, in one PostgreSQL database and survives restarts.
+`database` is a libpq URL or connection string, such as
+`postgresql://user@host/dbname`. A `search_path` in its `options` selects a
+schema, so several services can share one database, one schema each; the tests
+give every test a schema of its own.
 
-```
-directory/
-  orbit-watch.sqlite3   requests, deliveries, settlements, review tasks, the points journal
-  files/ab/abcdef…      observation files, reports and request documents, by SHA-256
-```
+`orbit-watch serve` and `orbit-watch keys create` take the database from
+`--database`, or else from `ORBIT_WATCH_DATABASE_URL` or `DATABASE_URL`. A URL
+with a password on the command line ends up in the shell history, so prefer the
+environment. Messages name the database and the schema, never the connection
+string.
+
+The open core's command-line tools (validate, convert, verify, simulate, the
+quality meter and the demos) keep no state and need no database. psycopg, the
+PostgreSQL driver, is part of the `api` extra.
 
 ## Database
 
-SQLite from the Python standard library, with the schema in numbered plain-SQL
-migrations ([decision P-02](decisions.md#p-02-sqlite-with-plain-sql-migrations)):
+PostgreSQL through [psycopg](https://www.psycopg.org/) 3, with the schema in
+numbered plain-SQL migrations:
 [`storage/migrations/`](../core/src/orbit_watch/storage/migrations).
 
 - `migrate()` applies missing migrations in one transaction and records each
   one with the SHA-256 of its SQL. A migration that was changed after it was
   applied, or a database with migrations this version does not know, is
   refused (`migration_changed`, `newer_schema`).
-- The SQL avoids SQLite-only features (it uses standard types and
-  `ON CONFLICT` upserts), so a later move to PostgreSQL stays small.
+- The SQL is standard PostgreSQL with nothing specific to one provider
+  ([P4-05](decisions.md#p4-05-portable-by-design)). Numbers that can grow
+  (blocks, amounts, sizes) are `BIGINT`. The code writes `?` placeholders, which
+  the storage layer turns into psycopg's `%s`.
 
 | Table | Holds |
 |---|---|
 | `requests` | each request's full lifecycle record as JSON, plus its status for queries |
-| `files` | the SHA-256 and size of every kept file |
+| `files` | every kept file: its SHA-256, size and content |
 | `deliveries` | station, observation file, report and automated verdict per request |
 | `settlements` | the settlement plan and the ledger reference per request |
 | `review_tasks` | real and calibration review tasks |
@@ -42,11 +56,11 @@ migrations ([decision P-02](decisions.md#p-02-sqlite-with-plain-sql-migrations))
 
 ## Files
 
-Observation files, reports and request documents are kept under `files/` by
-their SHA-256 and are **never deleted**: a hash identifies a file, it does not
-replace keeping it. Every read checks the hash (`corrupt_file`). Writing is
-atomic (a temporary file, then a rename). A transaction that is rolled back can
-leave a file on disk that no table lists, which is harmless.
+Observation files, reports and request documents are kept in the `files`
+table by their SHA-256 (`content`, `BYTEA`) and are **never deleted**: a hash
+identifies a file, it does not replace keeping it. Every read checks the hash
+(`corrupt_file`). A file is written in the caller's transaction, so a rolled
+back call leaves no file behind.
 
 ## Consistency
 
@@ -58,10 +72,11 @@ leave a file on disk that no table lists, which is harmless.
   database. Business refusals (`ServiceError`) have no side effects; for
   example, a challenge that comes too late is refused and the request is settled
   by the next `tick`.
-- **One process at a time.** The database is opened in SQLite's exclusive
-  locking mode. A second process that opens the same directory gets
-  `StorageError("in_use")`. This is enough for phase 1, which has no public
-  service ([P-03](decisions.md#p-03-no-public-deployment-in-phase-1)).
+- **One process per schema, for now.** The service keeps its working state in
+  memory, so it holds a session advisory lock on its schema for as long as it
+  is open. A second process gets `StorageError("in_use")`. Step 4.2 makes the
+  service stateless, with a transaction-scoped lock per change instead
+  ([P4-06](decisions.md#p4-06-the-service-runs-on-its-own)).
 - **Rebuilt on start.** The service rebuilds its working state from the
   database, and the points ledger rebuilds its balances from the journal; an
   unbalanced or out-of-order journal is refused (`broken_journal`).
@@ -69,9 +84,18 @@ leave a file on disk that no table lists, which is harmless.
 ## Tests
 
 - Migrations from an empty database, changed and unknown migrations.
-- The SQLite ledger passes the same settlement scenario suite as the memory
+- The stored ledger passes the same settlement scenario suite as the memory
   ledger and gives the same journal.
 - A full request history run with a restart after every step ends in exactly
   the same state as the same history in memory.
 - A refused call and a crash in the middle of a call leave the stored state
   unchanged.
+
+The tests that need a database run against the server named by
+`ORBIT_WATCH_TEST_DATABASE_URL`, or else against a PostgreSQL they start in
+Docker ([`core/tests/postgres.py`](../core/tests/postgres.py)): PostgreSQL 18
+as on Neon, the official image pinned by digest, on `127.0.0.1` only, with
+trust authentication and its data in memory. Every test gets schemas of its
+own, dropped afterwards. Without Docker or a server those tests are skipped,
+unless `ORBIT_WATCH_PG_TESTS=1`, as in CI, where a service container runs the
+same image. The local stack takes its database the same way.

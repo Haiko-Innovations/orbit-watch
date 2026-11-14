@@ -124,7 +124,10 @@ requester 0.3 TESTUSD.
 ## Run it
 
 You need Node 26 (the version in `web/.nvmrc`) and npm 11, and for the local
-stack Foundry 1.8.6 and uv ([contracts/README.md](../contracts/README.md)).
+stack Foundry 1.8.6, uv ([contracts/README.md](../contracts/README.md)) and
+Docker, in which the stack starts its own PostgreSQL. With
+`ORBIT_WATCH_TEST_DATABASE_URL` set, it takes a schema on that server instead
+([storage.md](storage.md#tests)).
 
 ```sh
 cd contracts && forge build                 # the contracts, for the local chain
@@ -134,7 +137,7 @@ cd ../core && uv run python tests/local_stack.py --web ../web/dist
 
 Then open <http://127.0.0.1:8787/>. The local stack is a LOCAL Anvil chain
 with Base Sepolia's EAS code and fresh Orbit Watch contracts, the service on
-it, SIMULATED parties (a requester, four stations, the reviewers, an
+it with its PostgreSQL, SIMULATED parties (a requester, four stations, the reviewers, an
 administrator) with registered wallets, and SIMULATED requests in every
 state the views need. As on Base Sepolia, a timelock owns the reviewer
 registry and a Safe of three LOCAL TEST signers proposes to it; the local
@@ -146,7 +149,7 @@ a local chain. Stop it with Ctrl+C.
 Against a service on Base Sepolia instead:
 
 ```sh
-orbit-watch serve --dir ./ow-base-sepolia --network base-sepolia \
+ORBIT_WATCH_DATABASE_URL=postgresql://… orbit-watch serve --network base-sepolia \
   --verifier-keystore … --web web/dist
 ```
 

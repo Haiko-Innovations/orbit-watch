@@ -58,6 +58,12 @@ uv run pytest
 uv run ruff check . && uv run ruff format --check .
 ```
 
+The service keeps its state in PostgreSQL. With Docker installed, the tests
+start a PostgreSQL of their own; without it, or without
+`ORBIT_WATCH_TEST_DATABASE_URL`, the tests that need a database are skipped
+([docs/storage.md](docs/storage.md#tests)). The open core (formats,
+verification, the simulator, the quality meter) needs no database.
+
 With plain pip:
 
 ```sh

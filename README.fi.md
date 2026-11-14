@@ -89,7 +89,7 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | Tilauksen elinkaari, optimistinen tarkistus, tarkistajakierrokset | | [lifecycle.md](docs/lifecycle.md), [optimistic-verification.md](docs/optimistic-verification.md) |
 | Tilityssäännöt ja pistekirjanpito | | [settlement.md](docs/settlement.md) |
 | Tarkistajien tarkkuus tunnetun vastauksen tehtävillä | | [reviewer-accuracy.md](docs/reviewer-accuracy.md) |
-| Tallennus (SQLite, tiedostot tiivisteen mukaan) | | [storage.md](docs/storage.md) |
+| Tallennus (PostgreSQL, tiedostot tiivisteen mukaan) | | [storage.md](docs/storage.md) |
 | HTTP-rajapinta ja komentoriviasiakas | `serve`, `request`, `reserve`, `submit`, `challenge`, `review`, `admin` | [api.md](docs/api.md) |
 | Avoin data (CC BY 4.0, embargo, pysyvät osoitteet) | `public` | [data-publication.md](docs/data-publication.md) |
 | Escrow-sopimus, EAS-attestaatiot ja tarkistajarekisteri Base Sepolia -**testiverkkoon** (vaihe 2) | `forge test` | [escrow.md](docs/escrow.md), [attestations.md](docs/attestations.md), [kuka voi muuttaa mitä](contracts/README.md#privileges-who-can-change-what) |

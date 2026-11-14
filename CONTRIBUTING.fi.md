@@ -60,6 +60,12 @@ uv run pytest
 uv run ruff check . && uv run ruff format --check .
 ```
 
+Palvelu tallentaa tilansa PostgreSQLiin. Jos Docker on asennettu, testit
+käynnistävät oman PostgreSQLin; ilman sitä tai ilman muuttujaa
+`ORBIT_WATCH_TEST_DATABASE_URL` tietokantaa tarvitsevat testit ohitetaan
+([docs/storage.md](docs/storage.md#tests), englanniksi). Avoin ydin
+(formaatit, tarkistus, simulaattori, laatumittari) ei tarvitse tietokantaa.
+
 Pelkällä pipillä:
 
 ```sh
