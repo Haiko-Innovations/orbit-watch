@@ -24,7 +24,7 @@ The service still runs locally only
 
 **Phase 4 is planned**: a public testnet service, the service and the web
 application online on Base Sepolia, still SIMULATED. Its decisions P4-01 to
-P4-13 wait for approval ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)).
+P4-16 were approved on 2026-11-14 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)), and work starts with step 4.1.
 
 Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
 phase 1 as version 0.2.0 ([phase 1 summary](phase-1-summary.md)) and phase 0
@@ -164,9 +164,9 @@ review before it is announced.
 
 The choices behind this plan are **decisions P4-01 to P4-16** in
 [decisions.md](decisions.md#phase-4-decisions), proposed in [#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67) and
-waiting for approval. In short:
-- **Vercel and Neon** on the plans Haiko Innovations already has, at a
-  **subdomain of haikoinnovations.com**;
+approved on 2026-11-14. In short:
+- **Vercel and Neon** on the plans Haiko Innovations already has, at
+  **Vercel's own address** to begin with;
 - **PostgreSQL wherever the service keeps state**, replacing SQLite (P-02);
 - **a stateless service** that runs on its own, with a follower every 15
   minutes and a dedicated RPC endpoint;
@@ -186,13 +186,12 @@ waiting for approval. In short:
 | **4.2 A stateless service that runs on its own** ([#69](https://github.com/Haiko-Innovations/orbit-watch/issues/69)) | No state outside the database: a transaction per call and an advisory lock for changes; a follower as an authenticated call (schedule, timer or `serve --follow`) that applies events, attests, settles and applies deadlines, up to a confirmation depth; a health endpoint; the container image built and tested in CI. | Two instances never apply one change twice; a request settles and another expires without `tick`; the image passes the end-to-end tests; tested. |
 | **4.3 Limits and a dedicated RPC endpoint** ([#70](https://github.com/Haiko-Innovations/orbit-watch/issues/70)) | Limits per IP address and per party in the database, Vercel's firewall in front; bodies at most 4 MB; the chain read through a dedicated RPC endpoint whose key is a secret. | Every public and sign-in endpoint's limits tested; the RPC key never in a response, log or the browser, tested. |
 | **4.4 Privacy notice and terms** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | Both in English and Finnish, linked from every page; station coordinates to about a kilometre; deleting a station profile and ending sessions; log retention; the session cookie checked against the law, with its source. | The pages work without signing in; deletion and coordinate precision tested; the data inventory documented. |
-| **4.5 Vercel and Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | The Vercel project and the Neon database in Haiko Innovations' accounts, the subdomain, the two database roles, secrets only in production, previews without them, the production branch. | The service answers over HTTPS, not yet announced; a deployment and a rollback done by moving the production branch. |
+| **4.5 Vercel and Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | The Vercel project and the Neon database in Haiko Innovations' accounts, at Vercel's own address, the two database roles, secrets only in production, previews without them, the production branch. | The service answers over HTTPS, not yet announced; a deployment and a rollback done by moving the production branch. |
 | **4.6 Backups, monitoring and runbooks** ([#73](https://github.com/Haiko-Innovations/orbit-watch/issues/73)) | A daily encrypted `pg_dump` by GitHub Actions kept 14 days; an uptime check with alerts; a check of Neon's hours; a read-only mode; runbooks. | A restore drill passed; an alert reached the maintainer; the runbooks documented. |
 | **4.7 Keys and the review before the launch** ([#74](https://github.com/Haiko-Innovations/orbit-watch/issues/74)) | The verifier key to the production secret and off the maintainer's machine; the Safe's signers as decided; a security checklist, a screen reader test by a person, a real wallet extension. | The review done; each finding fixed or recorded. |
 | **4.8 Launch and phase 4 summary** ([#75](https://github.com/Haiko-Innovations/orbit-watch/issues/75)) | The service opens, with a short announcement for the maintainer to post; the phase 4 summary. | The phase 4 completion criteria below are met; release 0.5.0. |
 
-**Phase 4 completion criteria** ([P4-16](decisions.md#p4-16-phase-4-completion-criteria),
-proposed):
+**Phase 4 completion criteria** ([P4-16](decisions.md#p4-16-phase-4-completion-criteria)):
 
 1. The service and the web application run publicly at their address over
    HTTPS, on Base Sepolia only, with the testnet label and the SIMULATED label
@@ -225,7 +224,9 @@ In the long run Orbit Watch should depend on no single person, machine or
 company, and the community should decide how its network is run: a public
 proposal process, Safe signers from the community, stateless nodes that anyone
 can run, and verifier nodes that agree k of n instead of one key. This is a
-direction, not a plan: see [decentralisation.md](decentralisation.md).
+direction, not a plan: see [decentralisation.md](decentralisation.md). It
+needs help from the community
+([#77](https://github.com/Haiko-Innovations/orbit-watch/issues/77)).
 
 ## How we work
 

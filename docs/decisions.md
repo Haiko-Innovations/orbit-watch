@@ -1121,11 +1121,13 @@ Accepted · 2026-11-13 (with the pull request that implements step 3.8):
 
 ## Phase 4 decisions
 
-P4-01 to P4-16 are proposed for the
+P4-01 to P4-16 were proposed for the
 [roadmap](roadmap.md#phase-4-a-public-testnet-service-target-version-050)'s
 phase 4, a public testnet service, in
-[#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67). They wait
-for the maintainer's approval. They were discussed with the maintainer on
+[#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67), and approved
+by the maintainer on 2026-11-14. The service starts at Vercel's own address
+(P4-03), and the Safe's keys stay with the maintainer until there is a
+community to share them with (P4-11). They were discussed with the maintainer on
 2026-11-14: hosting on Vercel and Neon, PostgreSQL everywhere the service keeps
 state, a design that can move to other hosts, and a path that stays open to a
 network run by the community
@@ -1135,7 +1137,7 @@ and checked, when they are used.
 
 ### P4-01 A public sandbox on the testnet
 
-Proposed · 2026-11-14. Phase 4 puts the service and the web application
+Accepted · 2026-11-14. Phase 4 puts the service and the web application
 online, so that people can try the whole chain with their own wallets without
 installing anything. Everything else stays as it is:
 - Base Sepolia only: no mainnet, no real money, no token of our own;
@@ -1148,7 +1150,7 @@ data of real observers. They are left for a later phase.
 
 ### P4-02 Hosting on Vercel and Neon
 
-Proposed · 2026-11-14. The service runs as a Python function on Haiko
+Accepted · 2026-11-14. The service runs as a Python function on Haiko
 Innovations' Vercel Pro team, and its database is a Neon PostgreSQL project
 from the Vercel Marketplace. Pro is already paid for other projects, and its
 monthly credit covers a sandbox's functions. Neon's Free plan is enough if
@@ -1185,18 +1187,19 @@ Sources:
 
 The service's dependencies take 122 MB, measured on 2026-11-14.
 
-### P4-03 A subdomain of Haiko Innovations
+### P4-03 Vercel's own address first
 
-Proposed · 2026-11-14. "Orbit Watch" is a working name: its trademark and
-domain checks are not done. So the service lives at a subdomain of
-`haikoinnovations.com`, not at a domain of its own. The maintainer chooses the
-name. Vercel serves it over HTTPS. The web application and the API stay on
+Accepted · 2026-11-14. The service starts at the address Vercel gives the
+project (`<project>.vercel.app`), served over HTTPS. "Orbit Watch" is a working
+name, and its trademark and domain checks are not done. So it gets no domain of
+its own; a subdomain of `haikoinnovations.com` can follow when the maintainer
+wants one. The web application and the API stay on
 one origin: the static build at `/`, and the function at `/v1/`. So the
 content security policy keeps `connect-src 'self'` (D-25).
 
 ### P4-04 PostgreSQL wherever the service keeps state
 
-Proposed · 2026-11-14. Replaces
+Accepted · 2026-11-14. Replaces
 [P-02](#p-02-sqlite-with-plain-sql-migrations) once accepted. P-02 said that
 "PostgreSQL is reconsidered when a public service is planned". This is that
 plan.
@@ -1224,7 +1227,7 @@ What this means:
 
 ### P4-05 Portable by design
 
-Proposed · 2026-11-14. Moving from Vercel and Neon to a server of our own, or
+Accepted · 2026-11-14. Moving from Vercel and Neon to a server of our own, or
 to a network of community nodes later
 ([decentralisation.md](decentralisation.md)), must not need code changes:
 - **One plain ASGI application.** Its settings come from environment
@@ -1244,7 +1247,7 @@ to a network of community nodes later
 
 ### P4-06 The service runs on its own
 
-Proposed · 2026-11-14. The service has no state outside PostgreSQL. Each call
+Accepted · 2026-11-14. The service has no state outside PostgreSQL. Each call
 works in a transaction, reads what it needs from the database and, to change
 anything, takes the same advisory lock. So two instances never apply one
 change twice.
@@ -1265,7 +1268,7 @@ which is used where available).
 
 ### P4-07 A dedicated RPC endpoint for the service
 
-Proposed · 2026-11-14. Base's public endpoints "are free, rate limited, and
+Accepted · 2026-11-14. Base's public endpoints "are free, rate limited, and
 best effort", and "not suitable for production apps". The service reads the
 chain through a dedicated RPC provider, with the public endpoint as a
 fallback. Its key is a server secret that never reaches a response, a log or
@@ -1274,7 +1277,7 @@ Source: [Base network information](https://docs.base.org/chain/network-informati
 
 ### P4-08 Limits against abuse
 
-Proposed · 2026-11-14:
+Accepted · 2026-11-14:
 - **Vercel's firewall** limits requests per IP address.
 - **The service** limits, per IP address and per party and in the database,
   sign-in and sign-up attempts, new requests, uploads and quality meter runs.
@@ -1289,7 +1292,7 @@ Source: [Vercel WAF rate limiting](https://vercel.com/docs/vercel-firewall/verce
 
 ### P4-09 Personal data, a privacy notice and terms of use
 
-Proposed · 2026-11-14. Haiko Innovations Oy is the controller.
+Accepted · 2026-11-14. Haiko Innovations Oy is the controller.
 
 The data, kept to the minimum:
 - wallet addresses and party names, which are public on the chain or in
@@ -1317,7 +1320,7 @@ Finlex, so it is not stated here.
 
 ### P4-10 The database's protection
 
-Proposed · 2026-11-14. A server of our own could keep its database closed to
+Accepted · 2026-11-14. A server of our own could keep its database closed to
 the internet. Neon's endpoint is reachable from anywhere, behind TLS and a
 password. Its protections are:
 - **two roles**: the service's role can only read and write its own tables,
@@ -1350,24 +1353,26 @@ Sources:
 
 ### P4-11 Keys
 
-Proposed · 2026-11-14:
+Accepted · 2026-11-14:
 - **The verifier key** is the production environment's write-only secret on
   Vercel, and no preview or developer has it. After the move it leaves the
   maintainer's machine (D-24), except for one encrypted offline copy for
   recovery.
 - **The escrow's verifier cannot be changed.** If the key leaks, the remedy
   is a new escrow and a new database, and a runbook describes it.
-- **Open:** the Safe's three signers go to different people before the
-  launch, by `swapOwner` in the Safe app. This is the first step from one
-  person's keys towards the community's
-  ([decentralisation.md](decentralisation.md)).
+- **The Safe's three keys stay with the maintainer** (D-24): there is no
+  community yet to share them with. Moving them to different people, by
+  `swapOwner` in the Safe app, is the first step from one person's keys towards
+  the community's, and it needs help from the community
+  ([#77](https://github.com/Haiko-Innovations/orbit-watch/issues/77),
+  [decentralisation.md](decentralisation.md)).
 
 Source: [Vercel secrets](https://vercel.com/docs/environment-variables/sensitive-environment-variables)
 ("Secret values are write-only after saving").
 
 ### P4-12 Releases and deployment
 
-Proposed · 2026-11-14:
+Accepted · 2026-11-14:
 - **Production follows a release.** Vercel's production branch is a branch
   named `production`, and the maintainer moves it to a release tag. A
   rollback moves it back.
@@ -1379,7 +1384,7 @@ Proposed · 2026-11-14:
 
 ### P4-13 Operations
 
-Proposed · 2026-11-14:
+Accepted · 2026-11-14:
 - **Backups.** Neon's Free plan restores only 6 hours back. So every day a
   GitHub Actions job takes a `pg_dump`, encrypts it to the maintainer's public
   key and keeps it for 14 days. The repository is public, so encryption is
@@ -1393,7 +1398,7 @@ Proposed · 2026-11-14:
 
 ### P4-14 A review before the launch
 
-Proposed · 2026-11-14. Before the service is announced:
+Accepted · 2026-11-14. Before the service is announced:
 - a security review against a short checklist taken from OWASP ASVS level 1:
   authentication, sessions, input, headers, limits, secrets and logging;
 - an accessibility test with a screen reader, done by a person
@@ -1404,7 +1409,7 @@ Each finding is fixed or recorded.
 
 ### P4-15 Nothing that closes the way to a community network
 
-Proposed · 2026-11-14. In the long run Orbit Watch should depend on no single
+Accepted · 2026-11-14. In the long run Orbit Watch should depend on no single
 person, machine or company, and the community should decide how its network
 is run ([decentralisation.md](decentralisation.md)). Phase 4 builds nothing
 that would close that way:
@@ -1417,7 +1422,7 @@ that would close that way:
 
 ### P4-16 Phase 4 completion criteria
 
-Proposed · 2026-11-14. Phase 4 is done when:
+Accepted · 2026-11-14. Phase 4 is done when:
 
 1. The service and the web application run publicly at their address over
    HTTPS, on Base Sepolia only, with the testnet label and the SIMULATED label

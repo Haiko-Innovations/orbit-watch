@@ -106,6 +106,13 @@ rough consensus, elected signers, delays and the right to leave do not.
    reproducible and signed by several people, so a bad release cannot slip
    into every node at once.
 
+## Help wanted
+
+There is no community yet to share the keys and the work with, so the
+maintainer still holds the Safe's keys (P4-11). We are looking for people who
+would sign for the Safe, co-maintain the project or sign releases:
+[#77](https://github.com/Haiko-Innovations/orbit-watch/issues/77).
+
 ## Open problems
 
 - **Calibration without a trusted party**: for example commit and reveal
@@ -123,8 +130,9 @@ rough consensus, elected signers, delays and the right to leave do not.
 
 ## A possible order
 
-1. **Phase 4**: the public sandbox, stateless and portable, with the Safe's
-   signers moved to different people (P4-11).
+1. **Phase 4**: the public sandbox, stateless and portable. The Safe's keys
+   stay with the maintainer until there are people to share them with (P4-11,
+   [#77](https://github.com/Haiko-Innovations/orbit-watch/issues/77)).
 2. **Governance**: the proposal process, several maintainers and account
    holders, signed reproducible releases, community signers.
 3. **Nodes**: static web application and stateless API nodes run by others,
