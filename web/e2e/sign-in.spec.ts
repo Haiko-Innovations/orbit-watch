@@ -78,7 +78,10 @@ test("a party signs out everywhere: every browser's session ends", async ({ brow
   await expect(laptop.page.getByRole("heading", { level: 1, name: "Network" })).toBeVisible();
   expect(await (await phone.page.request.get("/v1/session")).json()).toEqual({ session: null });
   await phone.page.reload();
-  await expect(phone.page.getByRole("link", { name: "Sign in" })).toBeVisible();
+  // The account page says so too: the main navigation offers to sign in again.
+  const nav = phone.page.getByRole("navigation", { name: "Main" });
+  await expect(nav.getByRole("link", { name: "Sign in" })).toBeVisible();
+  await expect(phone.page.getByText("You are not signed in.")).toBeVisible();
   for (const { context } of browsers) await context.close();
 });
 
