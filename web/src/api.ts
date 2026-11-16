@@ -71,8 +71,16 @@ export async function postFile<T>(
   );
 }
 
-export async function deleteJson<T>(path: string, fetcher: typeof fetch = fetch): Promise<T> {
-  return call<T>(path, { method: "DELETE" }, fetcher);
+/** DELETE: signing out needs no key; deleting a record is a change with one. */
+export async function deleteJson<T>(
+  path: string,
+  idempotencyKey?: string,
+  fetcher: typeof fetch = fetch,
+): Promise<T> {
+  const headers: Record<string, string> = idempotencyKey
+    ? { "Idempotency-Key": idempotencyKey }
+    : {};
+  return call<T>(path, { method: "DELETE", headers }, fetcher);
 }
 
 // The session cookie travels by itself: same origin, HttpOnly (decision P3-04).

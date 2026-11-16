@@ -52,6 +52,7 @@ import time
 import urllib.request
 import uuid
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import replace
 from pathlib import Path
 
 from anvil import LOCAL_TIMELOCK_DELAY, SAFE_SIGNERS, SAFE_THRESHOLD, Deployment, unavailable
@@ -59,6 +60,7 @@ from chain_world import GENESIS, PLATFORM, REGISTRY, REVIEWERS, VERIFIER
 from helpers import catalog_bytes, policy_bytes
 from postgres import SERVER_VARIABLE, Container, docker_available, drop_schema, new_schema
 
+from orbit_watch.api.privacy import STATION_DECIMALS
 from orbit_watch.catalog import parse_catalog
 from orbit_watch.sim.phase1_demo import ESPOO, KUOPIO, OULU, REQUESTER, TAMPERE, _deliveries
 from orbit_watch.sim.phase1_demo import _packaged as packaged
@@ -179,9 +181,12 @@ class LocalStack:
             for p in (port, DEV_SERVER_PORT)
             for host in ("127.0.0.1", "localhost")
         ]
+        # Seeded without the station coordinates' precision (the phase 1 demo's deliveries
+        # are more precise), which applies from then on, as in `orbit-watch serve`.
+        self.app = create_app(self.service, web=web, origins=self.origins)
         self.server = uvicorn.Server(
             uvicorn.Config(
-                create_app(self.service, web=web, origins=self.origins),
+                self.app,
                 host="127.0.0.1",
                 port=own_port,
                 log_level="warning",
@@ -379,13 +384,42 @@ class LocalStack:
         if settled["summary"]["outcome"] != "accepted":
             raise StackError(f"{request_id} was not accepted: {settled['summary']}")
 
+    @staticmethod
+    def espoo_profile():
+        """SIM-ESPOO's profile at its place to about a kilometre, as the service keeps it
+        (step 4.4)."""
+        profile = load_profile("sim-cmos-gps")
+        station = profile.station
+        place = replace(
+            station,
+            latitude_deg=round(station.latitude_deg, STATION_DECIMALS),
+            longitude_deg=round(station.longitude_deg, STATION_DECIMALS),
+        )
+        return replace(profile, station=place)
+
+    def wrong_target_observations(self) -> bytes:
+        """SIM-ESPOO's SIMULATED positions of SIM-CUBESAT-B, labelled as the requests' target:
+        a delivery that fails verification (the scenario ``wrong_target``)."""
+        start, end = _window()
+        return _sim_json(
+            parse_catalog(packaged("catalog.json")),
+            target_id=TARGET,
+            observed_id=339002,
+            profile=self.espoo_profile(),
+            start=start,
+            end=end,
+            seed=103,
+            max_passes=2,
+            notes="SIMULATED: positions of SIM-CUBESAT-B, labelled as SIM-CUBESAT-A.",
+        )
+
     def good_observations(self, seed: int) -> bytes:
         """SIM-ESPOO's SIMULATED good observations of the requests' target, drawn with ``seed``."""
         start, end = _window()
         return _sim_json(
             parse_catalog(packaged("catalog.json")),
             target_id=TARGET,
-            profile=load_profile("sim-cmos-gps"),
+            profile=self.espoo_profile(),
             start=start,
             end=end,
             seed=seed,
@@ -425,6 +459,8 @@ class LocalStack:
             path = folder / f"station-SIM-ESPOO-{seed}.json"
             path.write_bytes(self.good_observations(seed))
             written.append(str(path))
+        self.wrong_target = folder / "station-SIM-ESPOO-wrong-target.json"
+        self.wrong_target.write_bytes(self.wrong_target_observations())
         return written
 
     def describe(self) -> dict:
@@ -478,6 +514,7 @@ class LocalStack:
             "requests": [request_id for request_id, _, _ in REQUESTS],
             "settled": SETTLED[0],
             "datasets": {ESPOO: self.datasets},
+            "wrong_target": {ESPOO: str(self.wrong_target)},
             "in_review": self.in_review,
         }
 
@@ -556,7 +593,9 @@ def main(argv: list[str] | None = None) -> int:
         stack.in_review = stack.seed_in_review()
         stack.datasets = stack.write_datasets()
         if args.image:
-            stack.serve_from_image()
+            stack.serve_from_image()  # `orbit-watch serve`: its defaults apply
+        else:
+            stack.app.state.api.station_decimals = STATION_DECIMALS
         info = directory / "local-stack.json"
         info.write_text(json.dumps(stack.describe(), indent=2) + "\n", encoding="utf-8")
         print("LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.")

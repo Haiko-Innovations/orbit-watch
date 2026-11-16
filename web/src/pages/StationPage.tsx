@@ -1,7 +1,8 @@
 import { useCallback, useId, useState } from "react";
-import { ApiError, getJson, putJson, type Session, type StationProfile } from "../api";
+import { ApiError, deleteJson, getJson, putJson, type Session, type StationProfile } from "../api";
 import { actionKey } from "../components/SendFlow";
 import { Loaded } from "../components/Status";
+import { paths } from "../router";
 import { strings } from "../strings";
 import { useResource } from "../useResource";
 
@@ -54,6 +55,7 @@ function ProfileForm({
     lon: useId(),
     alt: useId(),
     hint: useId(),
+    precision: useId(),
   };
   const first = templates[0];
   const startFrom = templates.find((t) => current?.id.endsWith(t.id)) ?? first;
@@ -148,6 +150,7 @@ function ProfileForm({
           <label htmlFor={ids.lat}>{s.latitude}</label>
           <input
             id={ids.lat}
+            aria-describedby={ids.precision}
             inputMode="decimal"
             value={latitude}
             onChange={(e) => setLatitude(e.target.value)}
@@ -157,6 +160,7 @@ function ProfileForm({
           <label htmlFor={ids.lon}>{s.longitude}</label>
           <input
             id={ids.lon}
+            aria-describedby={ids.precision}
             inputMode="decimal"
             value={longitude}
             onChange={(e) => setLongitude(e.target.value)}
@@ -172,6 +176,9 @@ function ProfileForm({
           />
         </div>
       </div>
+      <p id={ids.precision} className="muted">
+        {s.precision} <a href={paths.privacy}>{s.privacy}</a>
+      </p>
       {message ? (
         <p className={message.ok ? "ok" : "problem"} role={message.ok ? "status" : "alert"}>
           {message.text}
@@ -183,6 +190,54 @@ function ProfileForm({
         </button>
       </div>
     </form>
+  );
+}
+
+/** Deleting the profile (step 4.4), asked twice: once to start, once to be sure. */
+function RemoveProfile({ session, onRemoved }: { session: Session; onRemoved: () => void }) {
+  const [asking, setAsking] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function remove() {
+    setBusy(true);
+    setProblem(null);
+    try {
+      await deleteJson(`/v1/stations/${encodeURIComponent(session.party)}/profile`, actionKey());
+      setAsking(false);
+      onRemoved();
+    } catch (error) {
+      setProblem(error instanceof ApiError ? error.message : String(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="panel">
+      {asking ? (
+        <fieldset>
+          <legend>{s.removeConfirm}</legend>
+          <div className="actions">
+            <button type="button" onClick={() => void remove()} disabled={busy}>
+              {s.removeYes}
+            </button>
+            <button type="button" className="secondary" onClick={() => setAsking(false)}>
+              {s.removeNo}
+            </button>
+          </div>
+        </fieldset>
+      ) : (
+        <button type="button" className="secondary" onClick={() => setAsking(true)}>
+          {s.remove}
+        </button>
+      )}
+      {problem ? (
+        <p className="problem" role="alert">
+          {problem}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -205,15 +260,23 @@ export function StationPage({ session }: { session: Session }) {
   const [loaded, reload] = useResource(load);
   // A saved profile shows at once, without reloading the form (which keeps its message).
   const [saved, setSaved] = useState<StationProfile | null>(null);
+  const [removed, setRemoved] = useState(false);
+  // A deleted profile starts the form anew; a saved one keeps it (and its message).
+  const [generation, setGeneration] = useState(0);
   return (
     <>
       <h1 tabIndex={-1}>{s.title}</h1>
       <p className="lead">{s.intro}</p>
       <Loaded resource={loaded} reload={reload}>
         {({ templates, current: stored }) => {
-          const current = saved ?? stored;
+          const current = removed ? null : (saved ?? stored);
           return (
             <>
+              {removed ? (
+                <p className="ok" role="status">
+                  {s.removed}
+                </p>
+              ) : null}
               {current ? (
                 <dl className="details">
                   <dt>{s.stationId}</dt>
@@ -233,11 +296,25 @@ export function StationPage({ session }: { session: Session }) {
                 <p>{s.none}</p>
               )}
               <ProfileForm
+                key={generation}
                 session={session}
                 templates={templates}
                 current={current}
-                onSaved={setSaved}
+                onSaved={(profile) => {
+                  setRemoved(false);
+                  setSaved(profile);
+                }}
               />
+              {current ? (
+                <RemoveProfile
+                  session={session}
+                  onRemoved={() => {
+                    setSaved(null);
+                    setRemoved(true);
+                    setGeneration((n) => n + 1);
+                  }}
+                />
+              ) : null}
             </>
           );
         }}

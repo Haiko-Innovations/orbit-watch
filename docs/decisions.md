@@ -1317,7 +1317,8 @@ The only cookie is the `HttpOnly` sign-in session. Whether it needs consent is
 checked in step 4.4 against section 205 of the Act on Electronic
 Communications Services (917/2014) and Traficom's guidance. The result is
 recorded with its source. On 2026-11-14 the text could not be read from
-Finlex, so it is not stated here.
+Finlex, so it is not stated here. It was read in step 4.4: see
+[D-37](#d-37-personal-data-in-the-service).
 
 ### P4-10 The database's protection
 
@@ -1632,3 +1633,90 @@ and [Vercel WAF rate limiting](https://vercel.com/docs/vercel-firewall/vercel-wa
 ("available on all plans"; Pro: "40 per project", window "Minimum: 10s,
 Maximum: 10mins", "Fixed window").
 
+
+### D-37 Personal data in the service
+
+Accepted · 2026-11-16 (with the pull request that implements step 4.4,
+[P4-09](#p4-09-personal-data-a-privacy-notice-and-terms-of-use)). The inventory
+is [personal-data.md](personal-data.md):
+
+- **The privacy notice and the terms of use are Markdown files** in
+  [`docs/legal`](legal), in English and Finnish. The web application reads them
+  as they are: a small reader turns the part of Markdown they use into page
+  elements, never into HTML, and refuses anything else, so the same text is read
+  on GitHub and in the application. A unit test reads all four, and checks that
+  each Finnish file has the English one's sections and lists. The pages are at
+  `#/privacy` and `#/terms` (`/fi` for Finnish), need neither the service nor
+  signing in, and every page's footer links to all four. The sign-up form names
+  the terms and the notice before its button. Haiko Innovations Oy, the
+  controller, reviews both before the service is announced (step 4.8).
+- **The session cookie needs no consent.** Section 205 of the Act on Electronic
+  Communications Services (917/2014) requires consent for storing data on a
+  user's device, but its second subsection exempts storage "joka on välttämätöntä
+  palvelun tarjoajalle sellaisen palvelun tarjoamiseksi, jota tilaaja tai
+  palvelun käyttäjä on nimenomaisesti pyytänyt" ("necessary for the service
+  provider to provide a service that the subscriber or user has specifically
+  requested"), and its third allows it "ainoastaan palvelun vaatimassa
+  laajuudessa" ("only to the extent required for the service"). Traficom's
+  cookie guidance names "kirjautuminen sivuston suojattuihin osiin" (signing in
+  to the protected parts of a site) as a strictly necessary cookie, for which
+  consent is not needed. `ow_session` is set only when someone signs in, only
+  for that, for at most 12 hours, `HttpOnly` and `SameSite=Strict`, and the
+  application stores nothing else in the browser. So it needs no consent, and
+  the notice still describes it, as Traficom recommends. A cookie that
+  remembered a sign-in beyond the session would need this checked again.
+  Sources: section 205 in Finnish from
+  [Finlex's open data](https://opendata.finlex.fi/finlex/avoindata/v1/akn/fi/act/statute-consolidated/2014/917)
+  (consolidated version `fin@20221211`, consolidated on 2026-06-16; Finlex's
+  web pages show the text only with JavaScript), the
+  [unofficial English translation](https://finlex.fi/en/legislation/translations/2014/eng/917)
+  (amendments up to 1207/2020, "legally binding only in Finnish and Swedish"),
+  and [Traficom: Evästeet](https://www.kyberturvallisuuskeskus.fi/fi/toimintamme/saantely-ja-valvonta/evasteet)
+  (updated 2026-10-12; not legally binding as such). Read on 2026-11-16.
+- **Station coordinates to about a kilometre.** `orbit-watch serve` rounds a
+  profile's latitude and longitude to two decimals of a degree, and refuses a
+  delivered Orbit Watch JSON file whose station coordinates are more precise
+  (`422 too_precise`). The service does not round a file: the file is kept
+  exactly as delivered, since its SHA-256 is what the chain and the attestations
+  name, and moving a station by up to 600 m would make its observations fail
+  verification. Observations simulated with a profile use the rounded place, so
+  they pass. `--station-decimals` (or `ORBIT_WATCH_STATION_DECIMALS`) sets
+  another precision, or `off`. `create_app` applies none unless asked, so the
+  open core's tools and the tests keep data as given; the local stack seeds
+  first, then applies two decimals, as `serve` does.
+- **Deleting.** A station deletes its profile (`DELETE
+  /v1/stations/{party}/profile`; the station or an administrator). The copies
+  of its answers that the idempotency records keep go with it: the records now
+  keep the call's path (migration 0009). Its deliveries stay, as the record of
+  their requests. A party ends its session (`DELETE /v1/session`) or every one
+  of its sessions, in every browser (`DELETE /v1/sessions`). An account is not
+  deleted from the browser: its name and wallet are the record of what it did,
+  and an administrator handles a request to delete one.
+- **Retention.** Ending a session deletes its row. `api/privacy.py`'s `sweep`
+  deletes expired sessions, sign-in messages an hour after they expire (so that
+  a late answer is told "expired"), the limits' counts whose window has passed
+  and idempotency records after 24 hours, about as long as payment APIs keep
+  theirs. After 24 hours the same `Idempotency-Key` makes a new call; every
+  change also refuses a repeat by its own rules (a request ID, a lifecycle
+  status, a transaction hash). The follower runs the sweep, and so does every
+  sign-in, so it runs even without a schedule.
+- **No IP address in the service's own logs.** `orbit-watch serve` runs uvicorn
+  without its access log; `--access-log` turns it on, for a host that keeps it
+  at most 14 days.
+- **Left for step 4.5, and recorded here so that it is not missed.** Vercel keeps
+  runtime logs for 1 day on Pro, but for 30 days with Observability Plus, which is
+  "enabled by default" for teams that became Pro on or after 2026-04-03. Step 4.5
+  checks the team and keeps runtime logs to at most 14 days, or else changes the
+  notice first; Vercel's documentation does not say whether runtime logs hold
+  the client's IP address. The Neon project is created in AWS Frankfurt
+  (`aws-eu-central-1`), since a project's region cannot be changed later. Step
+  4.6 checks the transfer terms for the backups that GitHub keeps.
+  Sources: [Vercel runtime logs](https://vercel.com/docs/logs/runtime),
+  [Observability Plus](https://vercel.com/docs/observability/observability-plus),
+  [Vercel DPA](https://vercel.com/legal/dpa) (2021 standard contractual clauses),
+  [Vercel privacy notice](https://vercel.com/legal/privacy-policy) (EU–U.S. Data
+  Privacy Framework),
+  [Neon regions](https://neon.com/docs/introduction/regions),
+  [Databricks privacy notice](https://www.databricks.com/legal/privacynotice)
+  (the Data Privacy Framework covers "Databricks, Inc., Neon, LLC"). Read on
+  2026-11-16.

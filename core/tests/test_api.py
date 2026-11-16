@@ -336,8 +336,8 @@ def test_keys_command_and_serve_wiring(database, capsys, monkeypatch):
 
     calls = {}
 
-    def fake_run(app, host, port):
-        calls.update(host=host, port=port)
+    def fake_run(app, host, port, **options):
+        calls.update(host=host, port=port, **options)
         client = TestClient(app)
         response = client.get("/v1/requests", headers={"Authorization": f"Bearer {key}"})
         calls["status"] = response.status_code
@@ -346,5 +346,6 @@ def test_keys_command_and_serve_wiring(database, capsys, monkeypatch):
 
     monkeypatch.setattr(uvicorn, "run", fake_run)
     assert main(["serve", "--database", directory, "--port", "8123"]) == 0
-    assert calls == {"host": "127.0.0.1", "port": 8123, "status": 200}
+    # No access log by default: the service writes no IP address to its logs (step 4.4).
+    assert calls == {"host": "127.0.0.1", "port": 8123, "access_log": False, "status": 200}
     assert "SIMULATED" in capsys.readouterr().out

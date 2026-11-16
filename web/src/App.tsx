@@ -6,6 +6,7 @@ import { TestnetBanner } from "./components/TestnetBanner";
 import { AccountPage } from "./pages/AccountPage";
 import { AdminPage } from "./pages/AdminPage";
 import { AttestationsPage } from "./pages/AttestationsPage";
+import { LegalPage, legalTitle } from "./pages/LegalPage";
 import { MyObservationsPage } from "./pages/MyObservationsPage";
 import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { NetworkPage } from "./pages/NetworkPage";
@@ -49,8 +50,24 @@ const titles: Record<Route["page"], string> = {
   admin: strings.admin.title,
   attestations: strings.attestations.title,
   quality: strings.quality.title,
+  privacy: strings.footer.privacy,
+  terms: strings.footer.terms,
   "not-found": strings.notFound.title,
 };
+
+/** A page's title; the privacy notice and the terms in their own language. */
+function pageTitle(route: Route): string {
+  return route.page === "privacy" || route.page === "terms"
+    ? legalTitle(route.page, route.lang)
+    : titles[route.page];
+}
+
+/** What makes a page another page, for the title and the focus. */
+function pageKey(route: Route): string {
+  return route.page === "privacy" || route.page === "terms"
+    ? `${route.page}/${route.lang}`
+    : route.page;
+}
 
 function NavLink({
   href,
@@ -76,14 +93,17 @@ export function App() {
   const first = useRef(true);
 
   // A new page gets its own title, and keyboard and screen reader users land on its heading.
+  const key = pageKey(route);
+  const heading = pageTitle(route);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `key` names the page
   useEffect(() => {
-    document.title = `${titles[route.page]} · ${strings.appName}`;
+    document.title = `${heading} · ${strings.appName}`;
     if (first.current) {
       first.current = false;
       return;
     }
     main.current?.querySelector<HTMLElement>("h1")?.focus();
-  }, [route.page]);
+  }, [key]);
 
   const chain = service.state === "ready" ? service.value.chain : null;
   const requestId = route.page === "request" ? route.id : null;
@@ -161,6 +181,9 @@ export function App() {
       <main ref={main} id="main">
         {route.page === "not-found" ? (
           <NotFoundPage />
+        ) : route.page === "privacy" || route.page === "terms" ? (
+          // Without the service and without signing in (decision P4-09).
+          <LegalPage document={route.page} lang={route.lang} />
         ) : (
           <Loaded resource={service} reload={reload}>
             {({ health, chain }) => {
@@ -238,6 +261,16 @@ export function App() {
         >
           {strings.footer.source}
         </a>
+        <nav aria-label={strings.footer.legal} className="legal-links">
+          <a href={paths.privacy}>{strings.footer.privacy}</a>
+          <a href={paths.terms}>{strings.footer.terms}</a>
+          <a href={paths.legal("privacy", "fi")} lang="fi" hrefLang="fi">
+            {strings.footer.privacyFi}
+          </a>
+          <a href={paths.legal("terms", "fi")} lang="fi" hrefLang="fi">
+            {strings.footer.termsFi}
+          </a>
+        </nav>
       </footer>
     </>
   );

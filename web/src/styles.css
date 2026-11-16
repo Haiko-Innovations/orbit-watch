@@ -307,6 +307,22 @@ button {
   font-size: 0.9rem;
 }
 
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  flex-basis: 100%;
+}
+
+/* The privacy notice and the terms of use (step 4.4): text to read, in a readable measure. */
+.legal {
+  max-width: 70ch;
+}
+
+.legal-language {
+  margin: 0 0 8px;
+}
+
 main > h2 {
   margin: 36px 0 8px;
 }

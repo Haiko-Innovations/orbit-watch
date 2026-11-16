@@ -1,6 +1,7 @@
-# The image is built from these files only (Dockerfile): the Python package and the web
-# application's sources. Nothing else from the working tree reaches the build, so local
-# state, keys and build output never end up in an image.
+# The image is built from these files only (Dockerfile): the Python package, the web
+# application's sources, and the privacy notice and terms that it shows. Nothing else
+# from the working tree reaches the build, so local state, keys and build output never
+# end up in an image.
 *
 !core/pyproject.toml
 !core/uv.lock
@@ -8,6 +9,7 @@
 !core/LICENSE
 !core/src/
 !web/
+!docs/legal/
 web/node_modules/
 web/dist/
 web/.e2e-stack/

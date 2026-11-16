@@ -103,7 +103,7 @@ def test_serve_with_the_web_application(tmp_path, built, capsys, monkeypatch, da
 
     served = {}
 
-    def fake_run(app, host, port):
+    def fake_run(app, host, port, **options):
         served["page"] = TestClient(app).get("/").text
 
     monkeypatch.setattr(uvicorn, "run", fake_run)

@@ -99,6 +99,11 @@ export const strings = {
     signUp: "Sign up and sign in",
     reviewersNote:
       "Reviewers and administrators are added by the maintainers and sign in with a wallet they registered.",
+    accept: "By signing up you accept the",
+    terms: "terms of use",
+    privacyBefore: "The",
+    privacy: "privacy notice",
+    privacyAfter: "says what the service keeps about you and for how long.",
     tryAgain: "Choose a wallet again",
     failed: "Signing in did not work",
   },
@@ -110,6 +115,8 @@ export const strings = {
     wallet: "Wallet",
     expires: "Session ends",
     signOut: "Sign out",
+    signOutEverywhere: "Sign out everywhere",
+    signOutEverywhereHint: "Ends your sessions in every browser where you signed in, this one too.",
     roles: {
       requester: "Requester",
       station: "Observer station",
@@ -347,6 +354,15 @@ export const strings = {
     saved: "Saved.",
     invalid: "Check the fields: latitude −90 to 90, longitude −180 to 180, and a name.",
     stationId: "Station ID",
+    precision:
+      "The service keeps your station's place to two decimals of a degree, about a kilometre, and refuses observation files with more precise station coordinates.",
+    privacy: "Privacy notice",
+    remove: "Delete the profile",
+    removeConfirm:
+      "Delete your station's profile? Its place and instrument are deleted. Observations you delivered stay, as the record of their requests.",
+    removeYes: "Delete it",
+    removeNo: "Keep it",
+    removed: "Your station's profile is deleted.",
   },
   myObservations: {
     title: "Your observations",
@@ -609,5 +625,14 @@ export const strings = {
   footer: {
     source: "Source code",
     licence: "Code Apache 2.0, data CC BY 4.0",
+    legal: "Privacy and terms",
+    privacy: "Privacy notice",
+    terms: "Terms of use",
+    privacyFi: "Tietosuojaseloste",
+    termsFi: "Käyttöehdot",
+  },
+  legal: {
+    inFinnish: "Suomeksi",
+    inEnglish: "In English",
   },
 } as const;

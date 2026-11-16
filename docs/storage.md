@@ -56,6 +56,12 @@ numbered plain-SQL migrations:
 | `governance_operations`, `chain_attestations` | on a testnet chain only (migration 0006, step 3.7): the operations of the timelock that owns the reviewer registry, from its events, and the EAS attestations behind the escrow's results and votes, read once ([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)) |
 | `service_state` | one row (migration 0007, step 4.2): the state's version, which every change raises, and when the follower last ran ([D-35](decisions.md#d-35-the-stateless-service-the-follower-and-the-image)) |
 | `signin_challenges`, `sessions` | signing in with a wallet (migration 0004, step 3.2): the sign-in messages the service wrote, each usable once, and browser sessions by the SHA-256 of their cookie; `wallets.signed_message` keeps the message a party signed when it signed up in the browser ([D-27](decisions.md#d-27-signing-in-with-a-wallet)) |
+| `api_keys`, `idempotency` | API keys by their SHA-256 (migration 0002, step 1.6), and a copy of each change's answer by party and `Idempotency-Key`, kept for 24 hours (its path and expiry: migration 0009, step 4.4) |
+| `rate_limits` | the limits' counts per fixed window (migration 0008, step 4.3): a party, or an IP address as a keyed SHA-256 only, deleted when the window has passed ([D-36](decisions.md#d-36-limits-the-body-limit-and-the-dedicated-rpc-endpoint)) |
+
+What these tables keep about people, who sees it and for how long is in
+[personal-data.md](personal-data.md) (step 4.4). `api/privacy.py`'s `sweep`
+deletes what is no longer needed; the follower and every sign-in run it.
 
 ## Files
 
