@@ -17,8 +17,10 @@ WORKDIR /src/web
 COPY web/package.json web/package-lock.json web/.npmrc ./
 # Exactly the lock file; no package runs an install script (decision P3-02).
 RUN npm ci --ignore-scripts
-# The web application imports the contracts' ABIs from the Python package.
+# The web application imports the contracts' ABIs from the Python package, and the privacy
+# notice and the terms of use from the docs.
 COPY core/src/orbit_watch/chain/abi /src/core/src/orbit_watch/chain/abi
+COPY docs/legal /src/docs/legal
 COPY web/ ./
 RUN npm run build
 

@@ -81,6 +81,10 @@ function SignUpForm({
         {s.nameHint}
       </p>
       {valid ? <p>{s.yourParty(party)}</p> : null}
+      <p className="muted">
+        {s.accept} <a href={paths.terms}>{s.terms}</a>. {s.privacyBefore}{" "}
+        <a href={paths.privacy}>{s.privacy}</a> {s.privacyAfter}
+      </p>
       <div className="actions">
         <button type="submit" disabled={!valid}>
           {s.signUp}

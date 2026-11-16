@@ -44,6 +44,10 @@ function views(browser: Browser): View[] {
     { name: "Station quality meter", path: "/#/quality", heading: "Station quality meter" },
     { name: "Sign in", path: "/#/sign-in", heading: "Sign in" },
     { name: "Page not found", path: "/#/nowhere", heading: "Page not found" },
+    { name: "Privacy notice", path: "/#/privacy", heading: "Privacy notice" },
+    { name: "Tietosuojaseloste", path: "/#/privacy/fi", heading: "Tietosuojaseloste" },
+    { name: "Terms of use", path: "/#/terms", heading: "Terms of use" },
+    { name: "Käyttöehdot", path: "/#/terms/fi", heading: "Käyttöehdot" },
     { name: "Your account", path: "/#/account", heading: "Your account", party: REQUESTER },
     { name: "Your requests", path: "/#/my-requests", heading: "Your requests", party: REQUESTER },
     { name: "New request", path: "/#/new-request", heading: "New request", party: REQUESTER },
@@ -103,6 +107,11 @@ async function open(browser: Browser, view: View): Promise<Page> {
   await page.goto(path);
   await expect(page.getByRole("heading", { level: 1, name: view.heading })).toBeVisible();
   await expect(page.getByText("Loading…")).toHaveCount(0);
+  // Every page links to the privacy notice and the terms, in both languages (step 4.4).
+  const legal = page
+    .getByRole("contentinfo")
+    .getByRole("navigation", { name: "Privacy and terms" });
+  await expect(legal.getByRole("link")).toHaveCount(4);
   return page;
 }
 

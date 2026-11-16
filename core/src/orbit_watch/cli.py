@@ -378,6 +378,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
     except LimitsError as error:
         _err(f"--limits: {error}")
         return EXIT_USAGE
+    station_decimals = _station_decimals(args.station_decimals)
+    if station_decimals == -1:
+        _err("--station-decimals: give a whole number from 0 to 8, or off")
+        return EXIT_USAGE
     registry, context, notes = _service_inputs(args)
     chain = None
     if args.network:
@@ -437,22 +441,37 @@ def cmd_serve(args: argparse.Namespace) -> int:
         follow_secret=secret,
         limits=limits,
         client_ip_header=args.client_ip_header,
+        station_decimals=station_decimals,
     )
     if limits is None:
         print("Limits against abuse: off")
     else:
         where = f"the {args.client_ip_header} header" if args.client_ip_header else "connections"
         print(f"Limits against abuse: on (IP addresses from {where})")
+    if station_decimals is None:
+        print("Station coordinates: kept as given")
+    else:
+        print(f"Station coordinates: kept to {station_decimals} decimals of a degree")
     if secret:
         print("A schedule may run the follower: /v1/internal/follow (with its secret)")
     if args.follow:
         start_follower(app, args.follow)
         print(f"The follower runs every {args.follow:g} seconds")
     try:
-        uvicorn.run(app, host=args.host, port=args.port)
+        uvicorn.run(app, host=args.host, port=args.port, access_log=args.access_log)
     finally:
         service.storage.close()
     return EXIT_OK
+
+
+def _station_decimals(setting: str) -> int | None:
+    """``--station-decimals``: None for off, -1 for a setting that is neither."""
+    text = setting.strip().lower()
+    if text == "off":
+        return None
+    if text.isdigit() and int(text) <= 8:
+        return int(text)
+    return -1
 
 
 def _default_origins(host: str, port: int) -> list[str]:
@@ -815,6 +834,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="behind a proxy you trust, the header it sets to the caller's IP address, e.g. "
         "x-real-ip on Vercel (default: $ORBIT_WATCH_CLIENT_IP_HEADER, or else the "
         "connection's address). Never name a header that callers can set themselves",
+    )
+    serve.add_argument(
+        "--station-decimals",
+        default=os.environ.get("ORBIT_WATCH_STATION_DECIMALS") or "2",
+        metavar="N",
+        help="keep station coordinates to N decimals of a degree: profiles are rounded and "
+        "more precise delivered files refused (default: $ORBIT_WATCH_STATION_DECIMALS, or "
+        "else 2, about a kilometre; off keeps them as given). Docs: personal-data.md",
+    )
+    serve.add_argument(
+        "--access-log",
+        action="store_true",
+        help="log every request with the caller's IP address (off by default: the service "
+        "writes no IP address to its logs; keep such a log for at most 14 days)",
     )
     serve.add_argument("--catalog", help="reference orbits (default: built-in SIMULATED)")
     serve.add_argument("--policy", help="target allow-list (default: built-in SIMULATED)")

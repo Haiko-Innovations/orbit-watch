@@ -233,14 +233,20 @@ def lookup(db: Database, token: str | None, now: datetime) -> Session | None:
 
 
 def end(db: Database, token: str | None, now: datetime) -> bool:
+    """End one session: signing out. Its row goes with it (step 4.4: nothing is kept of a
+    session that has ended)."""
     if not token:
         return False
     cursor = db.execute(
-        "UPDATE sessions SET ended_at = ? WHERE token_hash = ? AND ended_at IS NULL",
-        (format_utc(now), token_hash(token)),
-        state=False,
+        "DELETE FROM sessions WHERE token_hash = ?", (token_hash(token),), state=False
     )
     return cursor.rowcount > 0
+
+
+def end_all(db: Database, party: str) -> int:
+    """End every session of ``party``, in every browser: the number ended."""
+    cursor = db.execute("DELETE FROM sessions WHERE party = ?", (party,), state=False)
+    return cursor.rowcount
 
 
 def party_taken(db: Database, party: str) -> bool:

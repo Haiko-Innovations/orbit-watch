@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { generatePrivateKey } from "viem/accounts";
-import { giveGasMoney } from "./stack";
+import { giveGasMoney, wrongTargetPath } from "./stack";
 import { installTestWallet, localTestKey } from "./testWallet";
 
 // The observer's view (phase 3, step 3.5), against the local stack: SIM-REQ-3004 and
@@ -13,7 +13,7 @@ import { installTestWallet, localTestKey } from "./testWallet";
 
 test.describe.configure({ mode: "serial" });
 
-const WRONG_TARGET = fileURLToPath(
+const PRECISE_FILE = fileURLToPath(
   new URL("../../examples/simulated/datasets/wrong_target/observations.json", import.meta.url),
 );
 
@@ -100,6 +100,44 @@ test("a new station registers its profile, simulates observations and they pass"
   await expect(page.getByRole("link", { name: /first manoeuvre/ })).toBeVisible();
 });
 
+test("a station's place is kept to a kilometre, and it deletes its profile", async ({ page }) => {
+  await installTestWallet(page, generatePrivateKey());
+  await page.goto("/#/sign-in");
+  await page.getByRole("button", { name: "Test wallet (LOCAL keys)" }).click();
+  await page.getByLabel("an observer: I run a station").check();
+  await page.getByLabel("Name").fill("SIM-PRIVACY");
+  await page.getByRole("button", { name: "Sign up and sign in" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Your station" }).click();
+  const latitude = page.getByLabel("Latitude (degrees, north positive)");
+  await expect(latitude).toHaveAccessibleDescription(/about a kilometre/);
+  await page.getByLabel("Station name").fill("Simulated station near Kuopio");
+  await latitude.fill("62.89237");
+  await page.getByLabel("Longitude (degrees, east positive)").fill("27.67814");
+  await page.getByRole("button", { name: "Save the profile" }).click();
+  await expect(page.getByRole("status")).toContainText("Saved.");
+  const details = page.locator("dl.details");
+  await expect(details).toContainText("62.89");
+  await expect(details).toContainText("27.68");
+  await expect(details).not.toContainText("62.892");
+  await audit(page);
+
+  await page.getByRole("button", { name: "Delete the profile" }).click();
+  await expect(page.getByRole("group", { name: /Delete your station's profile/ })).toBeVisible();
+  await audit(page);
+  await page.getByRole("button", { name: "Keep it" }).click();
+  await expect(details).toContainText("62.89");
+  await page.getByRole("button", { name: "Delete the profile" }).click();
+  await page.getByRole("button", { name: "Delete it" }).click();
+  await expect(page.getByRole("status")).toContainText("Your station's profile is deleted.");
+  await expect(page.getByText("You have not registered your station yet.")).toBeVisible();
+  const left = await page.request.get("/v1/stations/station%3ASIM-PRIVACY/profile");
+  expect((await left.json()).error.code).toBe("no_profile");
+  await page.reload();
+  await expect(page.getByText("You have not registered your station yet.")).toBeVisible();
+});
+
 test("a station delivers its own file, sees why it failed, and challenges", async ({ page }) => {
   await installTestWallet(page, localTestKey("station:SIM-ESPOO"));
   await page.goto("/#/sign-in");
@@ -107,8 +145,15 @@ test("a station delivers its own file, sees why it failed, and challenges", asyn
   await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
 
   await reserve(page, "SIM-REQ-3005");
-  await page.getByLabel("Observation file").setInputFiles(WRONG_TARGET);
-  const expected = createHash("sha256").update(readFileSync(WRONG_TARGET)).digest("hex");
+  // The example file places SIM-ESPOO to a metre: the service keeps a kilometre (step 4.4).
+  await page.getByLabel("Observation file").setInputFiles(PRECISE_FILE);
+  await page.getByRole("button", { name: "Prepare the delivery" }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "this service keeps station coordinates to 2 decimals of a degree",
+  );
+  const wrongTarget = wrongTargetPath("station:SIM-ESPOO");
+  await page.getByLabel("Observation file").setInputFiles(wrongTarget);
+  const expected = createHash("sha256").update(readFileSync(wrongTarget)).digest("hex");
   await expect(page.getByTestId("delivery-sha256")).toHaveText(expected);
   await page.getByRole("button", { name: "Prepare the delivery" }).click();
   await sendAll(page, "Record your delivery for SIM-REQ-3005");

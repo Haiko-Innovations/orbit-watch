@@ -66,7 +66,7 @@ from starlette.staticfiles import StaticFiles
 
 from orbit_watch import __version__
 from orbit_watch import lifecycle as lc
-from orbit_watch.api import keys, sessions
+from orbit_watch.api import keys, privacy, sessions
 from orbit_watch.api.limits import Limits, RateLimited, client_ip
 from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
@@ -233,6 +233,7 @@ class Api:
         follow_max_age: float = FOLLOW_MAX_AGE,
         limits: Limits | None = None,
         client_ip_header: str | None = None,
+        station_decimals: int | None = None,
     ):
         if service.storage is None:
             raise ValueError("the API needs a stored service (open_service)")
@@ -251,6 +252,8 @@ class Api:
         # Limits against abuse (step 4.3): None applies none.
         self.limits = limits
         self.client_ip_header = client_ip_header.lower() if client_ip_header else None
+        # Station coordinates to this many decimals (step 4.4): None keeps them as given.
+        self.station_decimals = station_decimals
 
     # ------------------------------------------------------------------ plumbing
 
@@ -383,11 +386,20 @@ class Api:
                 # The key is looked up in the change's own transaction, under the lock: two
                 # processes that get the same call never both make the change.
                 with self.db.transaction():
+                    moment = int(self.wall_clock().timestamp())
                     stored = self.db.query(
-                        "SELECT request_hash, status_code, response_json FROM idempotency "
-                        "WHERE party = ? AND idempotency_key = ?",
+                        "SELECT request_hash, status_code, response_json, expires_at "
+                        "FROM idempotency WHERE party = ? AND idempotency_key = ?",
                         (principal.party, key),
                     )
+                    if stored and (stored[0]["expires_at"] or 0) <= moment:
+                        # Remembered for a day only (step 4.4): after that, a new call.
+                        self.db.execute(
+                            "DELETE FROM idempotency WHERE party = ? AND idempotency_key = ?",
+                            (principal.party, key),
+                            state=False,
+                        )
+                        stored = []
                     if stored:
                         if stored[0]["request_hash"] != request_hash:
                             raise ApiError(
@@ -401,10 +413,20 @@ class Api:
                         )
                     status, payload = work(principal, request, body, now, key)
                     kept = store_response(payload) if store_response else payload
+                    lifetime = int(privacy.IDEMPOTENCY_LIFETIME.total_seconds())
                     self.db.execute(
                         "INSERT INTO idempotency (party, idempotency_key, request_hash, "
-                        "status_code, response_json) VALUES (?, ?, ?, ?, ?)",
-                        (principal.party, key, request_hash, status, json.dumps(kept)),
+                        "status_code, response_json, path, expires_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            principal.party,
+                            key,
+                            request_hash,
+                            status,
+                            json.dumps(kept),
+                            request.url.path,
+                            moment + lifetime,
+                        ),
                     )
             except BaseException:
                 self.service._reload()
@@ -460,6 +482,8 @@ class Api:
             with self.db.transaction():
                 changed = self.service.tick(self.clock())
                 sent = self.chain.follow_up() if self.chain is not None else []
+                # What the service no longer needs goes too (step 4.4).
+                privacy.sweep(self.db, self.wall_clock())
                 followed = format_utc(self.wall_clock())
                 # Not part of the state a process keeps in memory: no reload elsewhere.
                 self.db.execute(
@@ -581,6 +605,10 @@ class Api:
         fmt = request.query_params.get("format")
         if fmt not in (None, "json", "iod", "tdm"):
             raise ApiError("invalid_format", "format must be json, iod or tdm")
+        if self.station_decimals is not None and fmt in (None, "json"):
+            problem = privacy.too_precise(body, self.station_decimals)
+            if problem:
+                raise ApiError("too_precise", problem)
         if self.service.on_chain(request_id):
             prepared = self.chain.prepare_delivery(request_id, principal.party, body, now, fmt)
             if prepared is not None:
@@ -710,6 +738,7 @@ class Api:
                 raise ApiError(
                     "address_taken", f"{address} is already {owner}'s wallet: sign in instead"
                 )
+        privacy.sweep(self.db, now)  # also where no follower runs (step 4.4)
         message = sessions.issue_challenge(
             self.db,
             origin=origin,
@@ -773,6 +802,17 @@ class Api:
         response.delete_cookie(sessions.COOKIE, path="/", httponly=True, samesite="strict")
         return response
 
+    def end_sessions(self, request, body, now):
+        """End every session of the signed-in party, in every browser (step 4.4)."""
+        self._origin(request)
+        session = sessions.lookup(self.db, request.cookies.get(sessions.COOKIE), now)
+        if session is None:
+            raise ApiError("unauthorized", "sign in to end your sessions")
+        ended = sessions.end_all(self.db, session.party)
+        response = JSONResponse({"party": session.party, "ended": ended})
+        response.delete_cookie(sessions.COOKIE, path="/", httponly=True, samesite="strict")
+        return response
+
     def public_requests(self, request, now):
         return {"requests": self.service.published(now)}
 
@@ -833,6 +873,8 @@ class Api:
         name = party.split(":", 1)[1]
         if document["station"]["id"] != name:
             raise ApiError("wrong_station", f"the profile's station id must be {name}")
+        if self.station_decimals is not None:
+            document = privacy.rounded_station(document, self.station_decimals)
         self.db.execute(
             "INSERT INTO station_profiles (party, profile_json, updated_at) VALUES (?, ?, ?) "
             "ON CONFLICT (party) DO UPDATE SET profile_json = excluded.profile_json, "
@@ -840,6 +882,19 @@ class Api:
             (party, dumps_pretty(document, sort_keys=False), format_utc(now)),
         )
         return 200, self._profile(party)
+
+    def delete_station_profile(self, principal, request, body, now, key):
+        """A station deletes its profile, and with it the copies of its answers that the
+        idempotency records keep (step 4.4). Its deliveries stay: they are the record."""
+        self._require(principal, "station", "admin")
+        party = self._own_station(principal, request)
+        deleted = self.db.execute("DELETE FROM station_profiles WHERE party = ?", (party,)).rowcount
+        self.db.execute(
+            "DELETE FROM idempotency WHERE party = ? AND path = ?",
+            (party, request.url.path),
+            state=False,
+        )
+        return 200, {"party": party, "deleted": deleted > 0}
 
     def simulate_observations(self, principal, request, body, now):
         """SIMULATED observations of a reserved request's target, made with the station's
@@ -859,10 +914,13 @@ class Api:
         if found is None:
             raise ApiError("no_profile", "register your station profile first")
         terms = record.terms
+        profile = found["profile"]
+        if self.station_decimals is not None:  # saved before the service rounded them
+            profile = privacy.rounded_station(profile, self.station_decimals)
         observations = simulate(
             parse_catalog(self.service.context.catalog),
             terms.target_norad_id,
-            StationProfile.from_document(found["profile"]),
+            StationProfile.from_document(profile),
             terms.window_start,
             terms.window_end,
             seed=secrets.randbits(31),
@@ -1323,11 +1381,13 @@ def create_app(
     follow_max_age: float = FOLLOW_MAX_AGE,
     limits: Limits | None = None,
     client_ip_header: str | None = None,
+    station_decimals: int | None = None,
 ) -> Starlette:
     """The ASGI application for a stored service; with ``web``, the directory of the built
     web application, served at ``/`` (step 3.1). Browsers sign in from ``origins`` only
     (step 3.2). With ``follow_secret``, a schedule can run the follower (step 4.2); the
-    ``Api`` is ``app.state.api``."""
+    ``Api`` is ``app.state.api``. ``limits`` (step 4.3) and ``station_decimals`` (step 4.4)
+    apply none by default; ``orbit-watch serve`` applies both."""
     if clock is None:
         # On a chain the service keeps the chain's time, which its deadlines use.
         clock = service.chain.now if service.chain is not None else lambda: datetime.now(tz=UTC)
@@ -1340,6 +1400,7 @@ def create_app(
         follow_max_age=follow_max_age,
         limits=limits,
         client_ip_header=client_ip_header,
+        station_decimals=station_decimals,
     )
     read, change = (
         lambda f: api.endpoint(f, mutating=False),
@@ -1410,6 +1471,7 @@ def create_app(
         Route("/v1/session", api.session_route(api.get_session), methods=["GET"]),
         Route("/v1/session", api.session_route(api.sign_in, limited=True), methods=["POST"]),
         Route("/v1/session", api.session_route(api.sign_out), methods=["DELETE"]),
+        Route("/v1/sessions", api.session_route(api.end_sessions), methods=["DELETE"]),
         Route("/v1/wallet", read(api.get_wallet), methods=["GET"]),
         Route("/v1/wallet", change(api.register_wallet), methods=["POST"]),
         Route("/v1/wallet/withdraw", change(api.withdraw), methods=["POST"]),
@@ -1421,6 +1483,11 @@ def create_app(
         Route("/v1/public/station-templates", api.public(api.station_templates), methods=["GET"]),
         Route("/v1/stations/{party}/profile", read(api.get_station_profile), methods=["GET"]),
         Route("/v1/stations/{party}/profile", change(api.put_station_profile), methods=["PUT"]),
+        Route(
+            "/v1/stations/{party}/profile",
+            change(api.delete_station_profile),
+            methods=["DELETE"],
+        ),
         Route(
             "/v1/requests/{request_id}/simulate",
             read(api.simulate_observations),

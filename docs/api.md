@@ -52,13 +52,15 @@ shown once.
 
 ## Idempotency
 
-Every `POST` needs an `Idempotency-Key` header (1–128 characters), scoped to
-the caller's party. The first successful response is stored in the same
-database transaction as the change. Sending the same call again with the same
-key returns that response with `Idempotent-Replayed: true` and changes
-nothing. Using the key for a different call returns `409 key_reused`. Refused
-calls change nothing and are not stored, so a key can be reused after a
-refusal.
+Every change (a `POST`, and a `PUT` or `DELETE` of a station profile) needs an
+`Idempotency-Key` header (1–128 characters), scoped to the caller's party. The
+first successful response is stored in the same database transaction as the
+change. Sending the same call again with the same key returns that response
+with `Idempotent-Replayed: true` and changes nothing. Using the key for a
+different call returns `409 key_reused`. Refused calls change nothing and are
+not stored, so a key can be reused after a refusal. A key is remembered for
+24 hours ([step 4.4](#personal-data)); after that, the same key makes a new
+call.
 
 ## Endpoints
 
@@ -93,7 +95,8 @@ refusal.
 | `POST /v1/admin/simulate` | admin | `{"profile": "sim-cmos-gps", "norad_id": 339001, "start": "…", "end": "…", "max_passes": 2}` | SIMULATED observations by a built-in station profile of an allowed target, in a window of at most three days; changes nothing |
 | `GET /v1/public/station-templates` | none | | the built-in SIMULATED station profiles, as starting points ([D-30](decisions.md#d-30-the-observers-view)) |
 | `GET /v1/stations/{party}/profile` | that station, admin | | the station's profile |
-| `PUT /v1/stations/{party}/profile` | that station | `{"profile": <station profile>}` | register or replace the profile; its station ID is the party's own name |
+| `PUT /v1/stations/{party}/profile` | that station | `{"profile": <station profile>}` | register or replace the profile; its station ID is the party's own name; `serve` keeps its coordinates to two decimals ([personal data](#personal-data)) |
+| `DELETE /v1/stations/{party}/profile` | that station, admin | | delete the profile: `{"party", "deleted": true}`, or `false` if there was none |
 | `POST /v1/requests/{id}/simulate` | the station that reserved it, with a profile | | SIMULATED observations of the request's target in its window, made with the station's profile: `{file_name, format, observations, sha256, simulated}`; changes nothing |
 | `GET /v1/public/targets` | none | | the allow-list: the objects requests may target, with names ([D-29](decisions.md#d-29-the-requesters-view)) |
 | `GET /v1/public/open-requests` | none | | requests that invite observers: opened or funded, not reserved, with their request document, terms and reward split ([D-26](decisions.md#d-26-open-requests-are-public)) |
@@ -154,7 +157,9 @@ keystore and its password file read-only and add
 with the dedicated RPC endpoint in `ORBIT_WATCH_CHAIN_RPC`
 ([chain-service.md](chain-service.md#running-the-server-on-a-chain)). Behind a
 proxy, name its client address header (`ORBIT_WATCH_CLIENT_IP_HEADER`) for
-the [limits](#limits-against-abuse).
+the [limits](#limits-against-abuse). Station coordinates are kept to two
+decimals (`ORBIT_WATCH_STATION_DECIMALS`), and the service writes no access log
+([personal data](#personal-data)).
 
 ## On a testnet chain
 
@@ -193,6 +198,7 @@ another escrow, the server settles funded requests on the escrow contract: see
 | `POST /v1/session` | none, from a web origin | `{"message": "…", "signature": "0x…"}` | sign in: sets the session cookie |
 | `GET /v1/session` | the session cookie | | the signed-in party, or `null` |
 | `DELETE /v1/session` | the session cookie, from its origin | | sign out |
+| `DELETE /v1/sessions` | the session cookie, from its origin | | sign out everywhere: ends every session of the signed-in party, `{"party", "ended": n}` |
 | `GET /v1/wallet` | any | | your party, its wallet and the message to sign to register one |
 | `POST /v1/wallet` | any | `{"address": "0x…", "signature": "0x…"}` | register your wallet (EIP-191 signature of the message) |
 | `POST /v1/wallet/withdraw` | any | | `202`: the `withdraw` transaction to sign |
@@ -215,6 +221,11 @@ browser signs in instead of holding an API key:
    `ow_session` (`HttpOnly`, `SameSite=Strict`) for 12 hours. With it, the
    rest of the API works as with the party's own key. A change also needs the
    `Origin` it was signed in on.
+
+Signing out deletes the session; `DELETE /v1/sessions` deletes every session of
+the party, in every browser. Ended and expired sessions, and sign-in messages an
+hour after they expire, are deleted by the follower and by every new sign-in
+([personal data](#personal-data)).
 
 Refusals: `forbidden_origin` and `wrong_origin` (403), `unknown_message`,
 `message_used`, `message_expired` and `bad_signature` (422), `unknown_wallet`
@@ -266,6 +277,31 @@ failed sign-ins are what the limit is for.
 - **In front of the service**, Vercel's firewall limits requests per IP
   address on every path (step 4.5).
 
+## Personal data
+
+Phase 4, step 4.4 ([D-37](decisions.md#d-37-personal-data-in-the-service)). The
+inventory of every table and log is [personal-data.md](personal-data.md), and
+the web application shows the [privacy notice](legal/privacy-notice.md) and the
+[terms of use](legal/terms-of-use.md), in English and Finnish.
+
+- **Station coordinates to about a kilometre.** `orbit-watch serve` rounds a
+  station profile's latitude and longitude to two decimals of a degree, and
+  refuses a delivered Orbit Watch JSON file whose station coordinates are more
+  precise, with `422 too_precise`; the file is kept as delivered, since its
+  SHA-256 is what the chain names. `--station-decimals N` (or
+  `ORBIT_WATCH_STATION_DECIMALS`) sets another precision, `off` none. IOD and
+  CCSDS TDM files name a station that the service's own sites file places.
+  `create_app` applies no precision unless `station_decimals` is given.
+- **Deleting.** A station deletes its profile with
+  `DELETE /v1/stations/{party}/profile`, which also deletes the copies of its
+  answers that the idempotency records keep. A party ends its sessions with
+  `DELETE /v1/session`, or all of them with `DELETE /v1/sessions`.
+- **Retention.** The follower, and every sign-in, delete ended and expired
+  sessions, sign-in messages an hour after they expire, the limits' counts
+  whose window has passed, and idempotency records older than 24 hours.
+- **No IP address in the service's logs.** `orbit-watch serve` writes no access
+  log unless `--access-log` is given.
+
 ## Errors
 
 Errors are JSON: `{"error": {"code": "…", "message": "…"}}`. The codes are
@@ -278,7 +314,7 @@ stable; the HTTP status follows from the code:
 | 404 | `unknown_request`, `unknown_task`, `no_report`, `unknown_file`, `unknown_transaction`, `not_on_chain` |
 | 409 | `forbidden_in_status`, `already_voted`, `duplicate_request`, `key_reused`; on a chain `no_wallet`, `wallet_already_set`, `address_taken`, `already_on_chain`, `insufficient_balance`, `nothing_to_withdraw`, `points_not_used`, `sign_on_chain` |
 | 413 | `too_large` (bodies over 4,000,000 bytes, [step 4.3](#limits-against-abuse)) |
-| 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers` |
+| 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers`, `too_precise` ([personal data](#personal-data)) |
 | 429 | `rate_limited`, with `Retry-After` in seconds ([limits](#limits-against-abuse)) |
 | 503 | `verification_unavailable`, `chain_unavailable` |
 

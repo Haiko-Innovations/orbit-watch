@@ -33,6 +33,8 @@ interface StackInfo {
   parties: Record<string, Party>;
   /** Fresh SIMULATED good observations by station, never delivered yet. */
   datasets: Record<string, string[]>;
+  /** SIMULATED observations of the wrong object by station: they fail verification. */
+  wrong_target: Record<string, string>;
 }
 
 const INFO = new URL("../.e2e-stack/local-stack.json", import.meta.url);
@@ -46,6 +48,13 @@ export function freshObservations(station: string, index: number): Buffer {
   const path = stackInfo().datasets[station]?.[index];
   if (!path) throw new Error(`the local stack has no dataset ${index} for ${station}`);
   return readFileSync(path);
+}
+
+/** ``station``'s observations of the wrong object, to its place's kilometre. */
+export function wrongTargetPath(station: string): string {
+  const path = stackInfo().wrong_target[station];
+  if (!path) throw new Error(`the local stack has no wrong-target file for ${station}`);
+  return path;
 }
 
 function keyOf(party: string): string {

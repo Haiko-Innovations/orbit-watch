@@ -46,5 +46,6 @@ def test_only_the_sources_reach_the_image(repo_root):
         "core/LICENSE",
         "core/src/",
         "web/",
+        "docs/legal/",  # the privacy notice and the terms, which the application shows
     }
     assert {"web/node_modules/", "web/.e2e-stack/", "web/demo/"} <= set(lines)

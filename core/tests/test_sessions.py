@@ -311,7 +311,7 @@ def test_serve_takes_the_web_origins(make_database, capsys, monkeypatch):
     bad = main(["serve", "--database", make_database(), "--origin", "orbit.example/app"])
     assert bad == EXIT_USAGE and "web origin" in capsys.readouterr().err
     seen = {}
-    monkeypatch.setattr(uvicorn, "run", lambda app, host, port: seen.update(app=app))
+    monkeypatch.setattr(uvicorn, "run", lambda app, host, port, **options: seen.update(app=app))
     good = ["serve", "--database", make_database(), "--origin", "https://orbit.example"]
     assert main(good) == 0
     assert json.loads(TestClient(seen["app"]).get("/v1/health").text)["status"] == "ok"

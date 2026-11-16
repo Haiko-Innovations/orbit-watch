@@ -48,11 +48,38 @@ test("a station with a registered wallet signs in and out", async ({ page, conte
   expect(visible).toEqual({ cookie: "", local: 0, session: 0 });
   expect(await page.content()).not.toContain(cookie?.value ?? "missing");
 
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Network" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
   const after = await page.request.get("/v1/session");
   expect(await after.json()).toEqual({ session: null });
+});
+
+test("a party signs out everywhere: every browser's session ends", async ({ browser }) => {
+  // A new account of its own, signed in from two browsers: the first signs it up.
+  const key = generatePrivateKey();
+  const browsers = [];
+  for (let i = 0; i < 2; i += 1) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await installTestWallet(page, key);
+    await chooseTestWallet(page);
+    if (i === 0) {
+      await page.getByLabel("a requester: I ask for observations").check();
+      await page.getByLabel("Name").fill("SIM-EVERYWHERE");
+      await page.getByRole("button", { name: "Sign up and sign in" }).click();
+    }
+    await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
+    browsers.push({ context, page });
+  }
+  const [laptop, phone] = browsers as [(typeof browsers)[0], (typeof browsers)[0]];
+  await expect(laptop.page.getByText("Ends your sessions in every browser")).toBeVisible();
+  await laptop.page.getByRole("button", { name: "Sign out everywhere" }).click();
+  await expect(laptop.page.getByRole("heading", { level: 1, name: "Network" })).toBeVisible();
+  expect(await (await phone.page.request.get("/v1/session")).json()).toEqual({ session: null });
+  await phone.page.reload();
+  await expect(phone.page.getByRole("link", { name: "Sign in" })).toBeVisible();
+  for (const { context } of browsers) await context.close();
 });
 
 test("a new wallet signs up as an observer station", async ({ page }) => {
@@ -68,6 +95,13 @@ test("a new wallet signs up as an observer station", async ({ page }) => {
   await page.getByLabel("an observer: I run a station").check();
   await page.getByLabel("Name").fill("SIM-TEST-STATION");
   await expect(page.getByText("Your account will be station:SIM-TEST-STATION.")).toBeVisible();
+  // The terms and the privacy notice come before the button (step 4.4).
+  const form = page.locator("form.panel");
+  await expect(form.getByRole("link", { name: "terms of use" })).toHaveAttribute("href", "#/terms");
+  await expect(form.getByRole("link", { name: "privacy notice" })).toHaveAttribute(
+    "href",
+    "#/privacy",
+  );
   await page.getByRole("button", { name: "Sign up and sign in" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
   await expect(page.locator("dl.details").first()).toContainText("station:SIM-TEST-STATION");

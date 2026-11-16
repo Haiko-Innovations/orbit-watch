@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { type ChainInfo, deleteJson, getJson, postJson, type Session } from "../api";
 import type { Prepared } from "../chain/describe";
 import type { TransactionView } from "../chain/send";
@@ -142,6 +142,7 @@ export function AccountPage({
   onSignedOut: () => void;
 }) {
   const [problem, setProblem] = useState<string | null>(null);
+  const everywhereHint = useId();
   if (session === null) {
     return (
       <>
@@ -153,9 +154,10 @@ export function AccountPage({
       </>
     );
   }
-  async function signOut() {
+  /** Sign out here, or everywhere: every session of this account (step 4.4). */
+  async function signOut(everywhere: boolean) {
     try {
-      await deleteJson("/v1/session");
+      await deleteJson(everywhere ? "/v1/sessions" : "/v1/session");
       onSignedOut();
       window.location.hash = paths.network;
     } catch (error) {
@@ -181,9 +183,22 @@ export function AccountPage({
         <dt>{s.expires}</dt>
         <dd>{formatUtc(session.expires_at)}</dd>
       </dl>
-      <button type="button" className="secondary" onClick={signOut}>
-        {s.signOut}
-      </button>
+      <div className="actions">
+        <button type="button" className="secondary" onClick={() => void signOut(false)}>
+          {s.signOut}
+        </button>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => void signOut(true)}
+          aria-describedby={everywhereHint}
+        >
+          {s.signOutEverywhere}
+        </button>
+      </div>
+      <p id={everywhereHint} className="muted">
+        {s.signOutEverywhereHint}
+      </p>
       {problem ? (
         <p className="problem" role="alert">
           {problem}

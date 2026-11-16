@@ -49,6 +49,18 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   with Base's public endpoint as its fallback when the dedicated one is down or
   busy. Its URL, which holds the provider's key, never reaches a response, a
   log or the browser, and tests look for it at debug level.
+- A privacy notice and terms of use, in English and Finnish (phase 4, step 4.4;
+  P4-09, D-37): `docs/legal`, shown by the web application at `#/privacy` and
+  `#/terms` without signing in and linked from every page. `docs/personal-data.md`
+  lists everything the service keeps about people, who sees it and for how long.
+- A station deletes its profile (`DELETE /v1/stations/{party}/profile`, a
+  button on "Your station"), and a party signs out everywhere
+  (`DELETE /v1/sessions`, a button on "Your account").
+- `orbit-watch serve --station-decimals N` (default 2, about a kilometre, or
+  `ORBIT_WATCH_STATION_DECIMALS`): station profiles are kept to that precision,
+  and a delivered file with more precise station coordinates is refused with
+  `422 too_precise`. `--access-log` logs requests with IP addresses, which
+  `serve` no longer does by default.
 
 ### Changed
 
@@ -60,6 +72,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   sent to two processes at once is made once.
 - Bodies are at most 4,000,000 bytes, under Vercel's 4.5 MB, instead of 10 MiB
   (step 4.3). A larger body is refused with `413` before any route reads it.
+- What the service no longer needs is deleted (step 4.4, D-37): signing out
+  deletes the session, and the follower and every sign-in delete expired
+  sessions, sign-in messages an hour after they expire, past limit counts and
+  idempotency records older than 24 hours. An `Idempotency-Key` is remembered
+  for 24 hours (migration 0009).
 
 - The service keeps its state, files included, in PostgreSQL instead of SQLite
   (phase 4, step 4.1; P4-04, D-34). `orbit-watch serve` and

@@ -10,7 +10,8 @@ Phase 3, steps 3.1 to 3.8. Code: [`web/`](../web). Decisions:
 [D-30](decisions.md#d-30-the-observers-view),
 [D-31](decisions.md#d-31-the-reviewers-view),
 [D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages) and
-[D-33](decisions.md#d-33-the-phase-3-demo-and-the-accessibility-review).
+[D-33](decisions.md#d-33-the-phase-3-demo-and-the-accessibility-review); in
+phase 4, [D-37](decisions.md#d-37-personal-data-in-the-service).
 Accessibility: [accessibility.md](accessibility.md).
 
 > **Testnet only, no real value.** The web application runs locally
@@ -28,13 +29,13 @@ What it has so far:
 | Network | `#/` | the service's version, the chain, the escrow, registry, token, EAS schemas, verifier and explorer, with explorer links on Base Sepolia |
 | Open requests | `#/requests` | requests that invite observers: target, window, deadline, rewards and requirements ([`GET /v1/public/open-requests`](api.md)) |
 | Sign in | `#/sign-in` | the wallets in this browser; signing in, or signing up as a requester or a station |
-| Your account | `#/account` | the signed-in party, its role and wallet, when the session ends; signing out; the wallet's balance and the credit waiting in the escrow, with a withdrawal; the party's transactions with their status |
+| Your account | `#/account` | the signed-in party, its role and wallet, when the session ends; signing out, here or everywhere; the wallet's balance and the credit waiting in the escrow, with a withdrawal; the party's transactions with their status |
 
 | Your requests | `#/my-requests` | a requester's requests |
 | New request | `#/new-request` | a form for a draft request: target from the allow-list, window, deadline, requirements, time limits |
 | A request | `#/requests/<id>` | its status and progress, terms, files, payments and chain events; for its requester: publish, fund (the deposit and its split first), cancel, challenge a passed result |
 
-| Your station | `#/station` | a station's profile: a SIMULATED instrument with the station's own name and place; only the station sees it |
+| Your station | `#/station` | a station's profile: a SIMULATED instrument with the station's own name and place, kept to about a kilometre; only the station sees it, and it can delete it |
 | Your observations | `#/my-observations` | the requests a station reserved or delivered |
 
 On Open requests a signed-in station reserves a funded request. On the
@@ -52,7 +53,13 @@ failed result.
 | Station quality meter | `#/quality` | public: an observation file in, its quality report out; the file is not kept ([quality-meter.md](quality-meter.md)) |
 | Administration | `#/admin` | administrators only: every request with its status, delivery and payments; errors, transactions and the event log; `tick`; the reviewer registry, the timelock's operations and the data for the Safe; the simulator and the demo datasets |
 
-The public pages need no sign-in. The administrator view uses the API only,
+| Privacy notice | `#/privacy`, `#/privacy/fi` | public: what the service keeps about people, why and for how long, in English and Finnish ([`docs/legal`](legal), [personal-data.md](personal-data.md)) |
+| Terms of use | `#/terms`, `#/terms/fi` | public: testnet only, SIMULATED data, what may be done, the CC BY 4.0 publication, no warranty |
+
+Every page's footer links to the privacy notice and the terms in both
+languages. Those pages are the Markdown files in `docs/legal`, read by a small
+reader of the part of Markdown they use (`web/src/legal/markdown.ts`), and need
+neither the service nor signing in. The public pages need no sign-in. The administrator view uses the API only,
 and the API checks every call's role, so the view can do nothing the API
 refuses ([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)).
 
