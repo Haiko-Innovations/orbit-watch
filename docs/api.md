@@ -161,6 +161,15 @@ the [limits](#limits-against-abuse). Station coordinates are kept to two
 decimals (`ORBIT_WATCH_STATION_DECIMALS`), and the service writes no access log
 ([personal data](#personal-data)).
 
+Any ASGI server can run the service without the command line:
+`uvicorn orbit_watch.asgi:app` sets it up from the environment, with
+`ORBIT_WATCH_NETWORK` and `ORBIT_WATCH_ORIGINS` for `serve`'s `--network` and
+`--origin`, the verifier key in `ORBIT_WATCH_VERIFIER_KEY`, the role that every
+transaction runs as in `ORBIT_WATCH_DATABASE_ROLE`, and libpq's TLS mode in
+`ORBIT_WATCH_DATABASE_SSLMODE`. Without a database it answers every call
+`503 not_configured`. This is how the public service runs on Vercel
+([deployment.md](deployment.md)).
+
 ## On a testnet chain
 
 Phase 2, step 2.6. Started with `--network base-sepolia` and

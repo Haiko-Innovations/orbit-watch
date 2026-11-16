@@ -53,6 +53,19 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   P4-09, D-37): `docs/legal`, shown by the web application at `#/privacy` and
   `#/terms` without signing in and linked from every page. `docs/personal-data.md`
   lists everything the service keeps about people, who sees it and for how long.
+- The public testnet service on Vercel and Neon, in Frankfurt (phase 4, step
+  4.5; D-38): `vercel.json` deploys the web application and the API together,
+  a cron job runs the follower every 15 minutes, and a firewall rule limits
+  each IP address. `docs/deployment.md` describes the settings, the database,
+  and deploying and rolling back by moving the `production` branch.
+- `orbit_watch.asgi`: the service as an ASGI application set up by the
+  environment, for any ASGI server (`uvicorn orbit_watch.asgi:app`); without a
+  database it answers `503 not_configured`. The verifier key may come from
+  `ORBIT_WATCH_VERIFIER_KEY`.
+- `ORBIT_WATCH_DATABASE_ROLE`: every transaction runs as a role that may only
+  read and write the service's tables; the database's owner runs the
+  migrations. `ORBIT_WATCH_DATABASE_SSLMODE` sets libpq's TLS mode, with
+  `certifi`'s roots for `verify-full`.
 - A station deletes its profile (`DELETE /v1/stations/{party}/profile`, a
   button on "Your station"), and a party signs out everywhere
   (`DELETE /v1/sessions`, a button on "Your account").
@@ -72,6 +85,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   sent to two processes at once is made once.
 - Bodies are at most 4,000,000 bytes, under Vercel's 4.5 MB, instead of 10 MiB
   (step 4.3). A larger body is refused with `413` before any route reads it.
+- The storage layer opens a lost database connection again, and uses no
+  server-side prepared statements, so that it works behind a pooler and with a
+  database that scales to zero (step 4.5).
+- The hosting provider's logs are kept for 30 days instead of 14 (step 4.5,
+  D-38); the privacy notice says so.
 - What the service no longer needs is deleted (step 4.4, D-37): signing out
   deletes the session, and the follower and every sign-in delete expired
   sessions, sign-in messages an hour after they expire, past limit counts and

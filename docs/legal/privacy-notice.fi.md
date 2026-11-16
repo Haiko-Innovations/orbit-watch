@@ -18,7 +18,7 @@ Palvelu säilyttää niin vähän kuin pystyy. Siinä ei ole analytiikkaa, seura
 - **Mitä teet palvelussa.** Tilauksesi ja niiden otsikot, toimittamasi havaintotiedostot, tarkistusraportit ja perustelut, jotka annat haastaessasi tuloksen tai arvioidessasi toimituksen. Havaintotiedostossa on asemasi sijainti samalla kahden desimaalin tarkkuudella; palvelu hylkää tätä tarkemmat tiedostot. Näitä tietoja näkevät tilauksen osapuolet ja ylläpitäjät. Kun tilaus on tilitetty ja sen enintään 30 päivän embargo on päättynyt, sen tilaus, havainnot ja raportti julkaistaan kaikille CC BY 4.0 -lisenssillä.
 - **Transaktiosi.** Palvelulle ilmoittamiesi transaktioiden tiivisteet ja tila. Itse transaktiot ovat lohkoketjussa.
 - **Vastausten kopiot.** Kun muutat jotain, palvelu säilyttää vastauksensa kopion 24 tuntia, jotta muutos ei tapahdu kahdesti, jos selaimesi kysyy uudelleen.
-- **IP-osoitteet.** Palvelu ei tallenna IP-osoitettasi. Jotta kukaan ei kuormittaisi palvelua liikaa, se laskee kutsuja osoitteittain ja säilyttää sitä varten vain osoitteen avaimella lasketun tiivisteen. Jokainen laskuri poistetaan aikaikkunansa päättyessä, viimeistään tunnin kuluttua. Palvelu ei kirjoita IP-osoitteita omiin lokeihinsa. Palveluntarjoajamme käsittelee IP-osoitettasi toimittaakseen sivut ja suojatakseen palvelua hyökkäyksiltä, ja sen lokeja säilytetään enintään 14 päivää.
+- **IP-osoitteet.** Palvelu ei tallenna IP-osoitettasi. Jotta kukaan ei kuormittaisi palvelua liikaa, se laskee kutsuja osoitteittain ja säilyttää sitä varten vain osoitteen avaimella lasketun tiivisteen. Jokainen laskuri poistetaan aikaikkunansa päättyessä, viimeistään tunnin kuluttua. Palvelu ei kirjoita IP-osoitteita omiin lokeihinsa. Palveluntarjoajamme käsittelee IP-osoitettasi toimittaakseen sivut ja suojatakseen palvelua hyökkäyksiltä, ja sen lokeja säilytetään enintään 30 päivää.
 - **Sähköposti.** Jos kirjoitat meille, säilytämme viestiäsi niin kauan kuin sen käsittely vaatii.
 
 Muuta palvelu ei sinusta kerää. Tiliin tarvitset lompakon ja nimen; kaikki muu on sinun päätettävissäsi. Älä kirjoita henkilötietoja otsikoihin, nimiin tai perusteluihin: ne näytetään muille ja ne voidaan julkaista.
@@ -41,8 +41,8 @@ Palvelu asettaa yhden evästeen, `ow_session`, ja vain kun kirjaudut sisään. S
 
 ## Kuka muu käsittelee tietojasi
 
-- **Vercel Inc.** ylläpitää palvelua ja verkkosovellusta Yhdysvalloissa. Se käsittelee IP-osoitettasi ja pyyntöjäsi puolestamme.
-- **Neon**, joka on osa Databricks, Inc. -yhtiötä, ylläpitää palvelun tietokantaa EU:n alueella puolestamme.
+- **Vercel Inc.**, yhdysvaltalainen yhtiö, ylläpitää palvelua ja verkkosovellusta puolestamme. Palvelu toimii Frankfurtissa, ja Vercelin verkko toimittaa sivut sinua lähimmästä toimipisteestään. Se käsittelee IP-osoitettasi ja pyyntöjäsi.
+- **Neon**, joka on osa Databricks, Inc. -yhtiötä, ylläpitää palvelun tietokantaa Frankfurtissa puolestamme.
 - **GitHub, Inc.** säilyttää tietokannan päivittäiset varmuuskopiot. Ne salataan ennen lähettämistä, joten GitHub ei voi lukea niitä.
 - **Lohkoketju.** Base Sepolia ja sen attestaatiopalvelu ovat julkisia: kuka tahansa voi lukea, mitä niissä on. Palvelu lukee lohkoketjua lohkoketjupalvelun tarjoajan kautta, eikä lähetä sille sinusta mitään, mikä ei jo ole julkista ketjussa.
 
@@ -54,7 +54,7 @@ Vercel ja Databricks ovat sitoutuneet EU:n ja Yhdysvaltojen väliseen tietosuoja
 - Istunnot: kunnes kirjaudut ulos, enintään 12 tuntia.
 - IP-osoitekohtaiset laskurit: aikaikkunansa loppuun, enintään tunnin.
 - Vastausten kopiot: 24 tuntia.
-- Palveluntarjoajan lokit: enintään 14 päivää.
+- Palveluntarjoajan lokit: enintään 30 päivää.
 - Asemasi profiili: kunnes poistat sen.
 - Tilisi, tilauksesi, toimituksesi, raporttisi ja perustelusi: niin kauan kuin testiverkkopalvelu toimii, koska ne ovat verkon tallenne. Kun palvelu suljetaan, sen tietokanta poistetaan.
 - Varmuuskopiot: jokaista päivittäistä, salattua varmuuskopiota säilytetään 14 päivää, joten palvelusta poistettu tieto katoaa varmuuskopioista 14 päivän kuluttua.

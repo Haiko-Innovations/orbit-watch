@@ -26,8 +26,10 @@ The service still runs locally only
 application online on Base Sepolia, still SIMULATED. Its decisions P4-01 to
 P4-16 were approved on 2026-11-14 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)). Done so far: the service's storage on
 PostgreSQL (4.1), a stateless service with a follower and a container image
-tested in CI (4.2), and limits against abuse with a dedicated RPC endpoint whose
-key stays secret (4.3).
+tested in CI (4.2), limits against abuse with a dedicated RPC endpoint whose
+key stays secret (4.3), and a privacy notice and terms of use in English and
+Finnish (4.4). The service runs on Vercel and Neon in Frankfurt, not announced
+yet (4.5, [deployment.md](deployment.md)).
 
 Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
 phase 1 as version 0.2.0 ([phase 1 summary](phase-1-summary.md)) and phase 0

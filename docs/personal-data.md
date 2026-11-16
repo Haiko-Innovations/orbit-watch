@@ -55,7 +55,7 @@ Legal bases (GDPR article 6(1)): **b**, the contract, that is the terms of use;
 | Limit counts: a party, or an IP address as a keyed SHA-256 (IPv6 per /64) | `rate_limits`, keyed with `service_state.limit_key` | the service only | until the window ends, at most an hour | `Limits.hit`, `sweep` | f |
 | API keys, for the command line: SHA-256 and party | `api_keys` | administrators | until revoked | an administrator | b |
 | IP addresses in the service's own logs | nowhere: `orbit-watch serve` writes no access log unless `--access-log` is given | | | | |
-| The hosting provider's request logs, which may hold IP addresses | Vercel | the maintainers | at most 14 days (set in step 4.5) | Vercel | f |
+| The hosting provider's request logs, which may hold IP addresses | Vercel | the maintainers | at most 30 days: Vercel's runtime logs with Observability Plus ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)) | Vercel | f |
 | Backups of the database | encrypted `pg_dump`, in GitHub Actions (step 4.6) | the maintainer's private key only | 14 days ([P4-13](decisions.md#p4-13-operations)) | expiry | f |
 | Email to us | the maintainers' mailbox | the maintainers | while it is handled | the maintainers | b, f |
 | Wallet address, transactions, attestations and votes naming request IDs, file and reason SHA-256s | Base Sepolia, EAS | public | permanently | cannot be deleted | |
@@ -65,17 +65,20 @@ the public service runs on the chain and keeps no points.
 
 ## Who else handles it
 
-- **Vercel Inc.**, hosting (United States): a processor under its DPA, which
-  includes the 2021 standard contractual clauses; Vercel is certified under the
-  EU–U.S. Data Privacy Framework.
-- **Neon** (Databricks, Inc.), the database: a processor. The project is
-  created in an EU region, AWS Frankfurt (`aws-eu-central-1`), in step 4.5; a
-  Neon project's region cannot be changed later. Databricks names Neon, LLC in
-  its Data Privacy Framework certification.
+- **Vercel Inc.**, hosting: a processor under its DPA, which includes the 2021
+  standard contractual clauses; Vercel is certified under the EU–U.S. Data
+  Privacy Framework. The function runs in Frankfurt (`fra1`), and the static
+  pages are served from Vercel's network ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)).
+- **Neon** (Databricks, Inc.), the database: a processor. The project is in
+  AWS Frankfurt (`aws-eu-central-1`, Vercel's `fra1`), on the Free plan; a Neon
+  project's region cannot be changed later. Databricks names Neon, LLC in its
+  Data Privacy Framework certification.
 - **GitHub, Inc.**, the encrypted backups (step 4.6), which it cannot read.
-- **The RPC provider** (step 4.5) answers the service's reads of the chain. The
-  service sends it nothing about anyone that is not already public on the
-  chain. The browser's wallet uses its own provider, which the user chooses.
+- **The RPC provider** answers the service's reads of the chain: Base's public
+  endpoint until a dedicated one is chosen
+  ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)). The service sends
+  it nothing about anyone that is not already public on the chain. The
+  browser's wallet uses its own provider, which the user chooses.
 
 ## Requests from the people the data is about
 

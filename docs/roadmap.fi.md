@@ -28,8 +28,10 @@ paikallisesti ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
 verkkosovellus verkossa Base Sepoliassa, yhä SIMULOITUNA. Sen päätökset
 P4-01–P4-16 hyväksyttiin 14.11.2026 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)). Valmiina: palvelun tallennus
 PostgreSQLiin (4.1), tilaton palvelu, jossa on seuraaja ja CI:ssä testattu
-konttikuva (4.2), sekä väärinkäytön rajat ja oma RPC-päätepiste, jonka avain
-pysyy salassa (4.3).
+konttikuva (4.2), väärinkäytön rajat ja oma RPC-päätepiste, jonka avain pysyy
+salassa (4.3), sekä tietosuojaseloste ja käyttöehdot englanniksi ja suomeksi
+(4.4). Palvelu toimii Vercelissä ja Neonissa Frankfurtissa, vielä julkistamatta
+(4.5, [deployment.md](deployment.md)).
 
 Vaihe 2 julkaistiin versiona 0.3.0 ([vaiheen 2 yhteenveto](phase-2-summary.fi.md)),
 vaihe 1 versiona 0.2.0 ([vaiheen 1 yhteenveto](phase-1-summary.fi.md)) ja vaihe 0
