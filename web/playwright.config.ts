@@ -5,6 +5,10 @@ import { defineConfig, devices } from "@playwright/test";
 // Build first (npm run build); the contracts must be built too (cd contracts && forge build).
 const port = 8790;
 const chainPort = 8591; // the test wallet sends there (e2e/testWallet.ts)
+// With ORBIT_WATCH_E2E_IMAGE, the service runs from that container image (step 4.2): the
+// stack seeds its database, then the image serves the API and its own build of the app.
+const image = process.env.ORBIT_WATCH_E2E_IMAGE;
+const imageOption = image ? ` --image ${image}` : "";
 
 export default defineConfig({
   testDir: "e2e",
@@ -14,7 +18,7 @@ export default defineConfig({
   use: { baseURL: `http://127.0.0.1:${port}`, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `uv run --locked python tests/local_stack.py --port ${port} --chain-port ${chainPort} --dir ../web/.e2e-stack --replace --web ../web/dist`,
+    command: `uv run --locked python tests/local_stack.py --port ${port} --chain-port ${chainPort} --dir ../web/.e2e-stack --replace --web ../web/dist${imageOption}`,
     cwd: "../core",
     // The stack says "Ready" once its SIMULATED requests are in place; only then do the tests
     // start (a health URL would answer before the seeding is done, and Playwright takes

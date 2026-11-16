@@ -77,12 +77,40 @@ def test_changed_or_unknown_migrations_are_refused(database):
         assert error.value.code == "newer_schema"
 
 
-def test_one_process_at_a_time(database):
-    with Database(database):
-        with pytest.raises(StorageError) as error:
-            Database(database)
-        assert error.value.code == "in_use"
-    Database(database).close()  # free again after closing
+def test_transactions_on_one_schema_take_turns(database):
+    """Every transaction takes the schema's advisory lock, in every process (step 4.2)."""
+    import threading
+
+    order = []
+    with Database(database) as one, Database(database) as two:
+        one.migrate()
+        inside = threading.Event()
+
+        def first():
+            with one.transaction():
+                order.append("first begins")
+                inside.set()
+                threading.Event().wait(0.3)
+                order.append("first ends")
+
+        worker = threading.Thread(target=first)
+        worker.start()
+        inside.wait(5)
+        with two.transaction():
+            order.append("second")
+        worker.join()
+    assert order == ["first begins", "first ends", "second"]
+
+
+def test_a_change_raises_the_state_version(database):
+    with Database(database) as db:
+        db.migrate()
+        before = db.current_version()
+        with db.transaction():
+            db.query("SELECT 1")
+        assert db.current_version() == before  # reading changes nothing
+        db.execute("INSERT INTO files (sha256, size, content) VALUES (?, 1, ?)", ("c" * 64, b"c"))
+        assert db.current_version() == before + 1 == db.version_seen
 
 
 def test_schemas_are_separate_services(make_database):
@@ -303,12 +331,63 @@ def test_a_crash_in_the_middle_of_a_call_rolls_everything_back(database, monkeyp
     service.storage.close()
 
 
-def test_a_second_process_cannot_open_the_same_service(database):
-    service = open_service(database, registry(), context())
-    with pytest.raises(StorageError) as error:
-        open_service(database, registry(), context())
-    assert error.value.code == "in_use"
-    service.storage.close()
+def test_two_services_on_one_database_see_each_other(database):
+    """Two processes share one database: each step runs on one of them, and both end in
+    the same state as the service in memory (step 4.2, P4-06)."""
+    memory = RequestService(LedgerAdapter(), registry(), context())
+    memory.adapter.grant(REQUESTER, 1000, key="budget")
+    for step in steps():
+        step(memory)
+
+    one = open_service(database, registry(), context())
+    two = open_service(database, registry(), context())
+    one.adapter.grant(REQUESTER, 1000, key="budget")
+    for index, step in enumerate(steps()):
+        service = (one, two)[index % 2]
+        service.refresh()  # the steps read the state before they call the service
+        step(service)
+    for service in (one, two):
+        service.refresh()
+        assert snapshot(service) == snapshot(memory)
+        service.storage.close()
+
+
+def test_two_services_never_apply_one_change_twice(database):
+    """Two processes reserve the same request at once: one wins, the other is refused."""
+    import threading
+
+    one = open_service(database, registry(), context())
+    two = open_service(database, registry(), context())
+    one.adapter.grant(REQUESTER, 1000, key="budget")
+    for step in steps()[:3]:  # created, opened, funded
+        step(one)
+    start = threading.Barrier(2)
+    results = {}
+
+    def reserve(name, service, station):
+        start.wait()
+        try:
+            service.reserve("SIM-REQ-0001", station, T0 + timedelta(minutes=5))
+            results[name] = "reserved"
+        except ServiceError as error:
+            results[name] = error.code
+
+    workers = [
+        threading.Thread(target=reserve, args=("one", one, STATION)),
+        threading.Thread(target=reserve, args=("two", two, "station:SIM-OULU")),
+    ]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join()
+    assert sorted(results.values()) == ["forbidden_in_status", "reserved"]
+    for service in (one, two):
+        service.refresh()
+        record = service.records["SIM-REQ-0001"]
+        assert record.status is Status.RESERVED
+        winner = STATION if results["one"] == "reserved" else "station:SIM-OULU"
+        assert record.reserved_by == winner
+        service.storage.close()
 
 
 def test_ci_uses_the_tests_postgres_image(repo_root):

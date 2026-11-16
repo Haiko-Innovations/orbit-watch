@@ -133,6 +133,17 @@ local chain, give `--chain-rpc` and `--escrow` instead.
   public endpoint returns the events of at most 200 blocks per call, and Base
   Sepolia makes 5 blocks a second, so a day is over 2,000 calls. The server
   takes the limit an endpoint names, or halves the range until it is accepted.
+- **Confirmations** (step 4.2): the service applies a block's events once
+  `--confirmations` blocks follow it, 10 on Base Sepolia (about two seconds,
+  at five blocks a second) and none on a local Anvil chain. When a party
+  reports a transaction, the server waits that long before it answers, so the
+  answer shows the change. A transaction of the service's own that is mined but
+  not yet followed counts as on its way, so it is never sent twice.
+- **The follower** (step 4.2) applies the escrow's events, attests results and
+  settles decided requests without anyone calling `tick`: on a schedule, a
+  timer or `serve --follow` ([api.md](api.md#the-follower)). Several servers
+  can follow one escrow from one database: they take turns, so each block is
+  applied once and each request settled once.
 - Points are not used on chain: `admin grant` is refused, and `balance` shows
   the wallet's tokens and what it can withdraw.
 
@@ -186,10 +197,13 @@ with `orbit-watch wallet register --print-message`, sign it (`cast wallet sign
 - **Someone can fund a request's ID first.** The request IDs of open requests
   are visible to the API's users. The service shows this as a conflict, and
   the requester creates the request again under a new ID.
-- **No background worker.** The service follows the chain on every API call
-  and does its own part when a transaction is reported and on `tick`.
-- **Reorganisations are not handled.** The service applies every block it
-  reads. Base Sepolia rarely reorganises, and this is a testnet.
+- **No background worker in phase 2.** The service followed the chain on every
+  API call and did its own part when a transaction was reported and on
+  `tick`. Since step 4.2, the follower does it on its own as well.
+- **Deep reorganisations are not handled.** Since step 4.2 the service applies
+  a block once 10 blocks follow it; a reorganisation deeper than that would
+  leave an applied event that the chain no longer has. Base Sepolia rarely
+  reorganises, and this is a testnet.
 
 ## Tests
 
@@ -204,6 +218,11 @@ On a local Anvil chain, in the `tarkistus` check:
   - someone else funding a request ID is a conflict;
   - the service catches up with the chain after a restart;
   - the server starts only with the escrow's verifier key.
+- [`core/tests/test_follower.py`](../core/tests/test_follower.py) (step 4.2):
+  two services follow one escrow from one database at the same moment; one
+  request is settled after its challenge period and another expires
+  undelivered, each by exactly one transaction, without `tick`. A block is
+  followed only once it is deep enough.
 - [`core/tests/test_cli_chain.py`](../core/tests/test_cli_chain.py): the
   whole chain from the command line against a real HTTP server, with every
   party's own encrypted keystore, and one step signed by "another wallet". It

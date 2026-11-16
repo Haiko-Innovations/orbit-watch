@@ -1,0 +1,18 @@
+# The image is built from these files only (Dockerfile): the Python package and the web
+# application's sources. Nothing else from the working tree reaches the build, so local
+# state, keys and build output never end up in an image.
+*
+!core/pyproject.toml
+!core/uv.lock
+!core/README.md
+!core/LICENSE
+!core/src/
+!web/
+web/node_modules/
+web/dist/
+web/.e2e-stack/
+web/test-results/
+web/playwright-report/
+web/demo/
+**/__pycache__/
+**/*.py[cod]

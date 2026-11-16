@@ -9,10 +9,13 @@ deleted.
 A database is named by a libpq connection string or URL (``postgresql://…``). A
 ``search_path`` in its ``options`` selects a schema; the tests give every test one.
 
-One service process per schema: the service holds a session advisory lock for as long as
-it is open, and a second process gets ``StorageError("in_use")``. The service keeps its
-working state in memory and writes every change through to the database inside one
-transaction per operation. (Step 4.2 makes the service stateless.)
+Any number of service processes can share one schema (step 4.2, decision P4-06). Every
+transaction takes the schema's advisory lock first, so changes happen one at a time. A
+service keeps a copy of its state in memory: every change goes through to the database
+in the same transaction, and a transaction that changes anything adds one to the state's
+version (``service_state``). When a transaction begins, its hooks compare that version with
+the one the process last saw, and the service reloads its copy if another process changed
+the state, or if a transaction of its own was rolled back.
 
 psycopg is imported only when a database is opened, so the command-line tools that keep
 no state need neither psycopg nor a database.
@@ -22,7 +25,7 @@ from __future__ import annotations
 
 import functools
 import re
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from importlib import resources
 from typing import Any
@@ -31,6 +34,7 @@ from orbit_watch.canonical import sha256_bytes
 
 _MIGRATION_RE = re.compile(r"^(\d{4})_([a-z0-9_]+)\.sql$")
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
+_READS = ("SELECT", "WITH", "SHOW")
 
 
 class StorageError(RuntimeError):
@@ -76,19 +80,20 @@ class Database:
             # libpq's message names the host and the user, never the password.
             raise StorageError("cannot_open", f"cannot open the database: {error}") from None
         self._depth = 0
-        schema = self.query("SELECT current_schema() AS s")[0]["s"]
-        if schema is None:
+        self._dirty = False
+        self._state_table = False
+        self._begin_hooks: list[Callable[[Database], None]] = []
+        # The state version this process last saw (None: reload at the next transaction).
+        self.version_seen: int | None = None
+        row = self.query(
+            "SELECT current_schema() AS s, hashtext('orbit-watch/' || current_database() "
+            "|| '/' || current_schema()) AS k"
+        )[0]
+        if row["s"] is None:
             self.close()
             raise StorageError("cannot_open", "the database's search_path names no schema")
-        self.schema = schema
-        # One service per schema, until step 4.2 makes the service stateless.
-        held = self.query(
-            "SELECT pg_try_advisory_lock(hashtext('orbit-watch/' || current_database() "
-            "|| '/' || current_schema())) AS held"
-        )[0]["held"]
-        if not held:
-            self.close()
-            raise StorageError("in_use", f"the schema {schema} is used by another process")
+        self.schema = row["s"]
+        self._lock_key = row["k"]
 
     def close(self) -> None:
         if not self.connection.closed:
@@ -104,9 +109,14 @@ class Database:
     def in_transaction(self) -> bool:
         return self._depth > 0
 
+    def add_begin_hook(self, hook: Callable[[Database], None]) -> None:
+        """Run ``hook`` at the start of every outermost transaction, under the lock."""
+        self._begin_hooks.append(hook)
+
     @contextmanager
     def transaction(self) -> Iterator[None]:
-        """One atomic unit of work. Nested calls join the outer transaction."""
+        """One atomic unit of work, under the schema's advisory lock. Nested calls join the
+        outer transaction."""
         if self._depth:
             self._depth += 1
             try:
@@ -115,13 +125,45 @@ class Database:
                 self._depth -= 1
             return
         self._depth = 1
+        self._dirty = False
         try:
             with self.connection.transaction():
+                self.connection.execute("SELECT pg_advisory_xact_lock(%s)", (self._lock_key,))
+                for hook in self._begin_hooks:
+                    hook(self)
                 yield
+                if self._dirty and self._has_state_table():
+                    row = self.connection.execute(
+                        "UPDATE service_state SET version = version + 1 WHERE id = 1 "
+                        "RETURNING version"
+                    ).fetchone()
+                    self.version_seen = row["version"]
+        except BaseException:
+            if self._dirty:
+                # The process's copy may be ahead of the database: reload it next time.
+                self.version_seen = None
+            raise
         finally:
             self._depth = 0
+            self._dirty = False
+
+    def _has_state_table(self) -> bool:
+        if not self._state_table:
+            self._state_table = bool(
+                self.connection.execute("SELECT to_regclass('service_state') AS t").fetchone()["t"]
+            )
+        return self._state_table
+
+    def current_version(self) -> int:
+        """The state's version in the database."""
+        return self.query("SELECT version FROM service_state WHERE id = 1")[0]["version"]
 
     def execute(self, sql: str, parameters: tuple[Any, ...] = ()) -> Any:
+        if not sql.lstrip().upper().startswith(_READS):
+            if not self._depth:  # a change on its own: in a transaction of its own
+                with self.transaction():
+                    return self.execute(sql, parameters)
+            self._dirty = True
         if parameters:
             return self.connection.execute(_placeholders(sql), parameters)
         return self.connection.execute(sql)

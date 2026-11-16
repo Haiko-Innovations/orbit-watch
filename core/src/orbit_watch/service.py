@@ -231,6 +231,14 @@ class RequestService:
         if reload is not None:
             reload()
 
+    def refresh(self) -> None:
+        """Bring the copy in memory up to date with the database, which another process may
+        have changed (step 4.2). Every call does this by itself; this is for reads outside a
+        call."""
+        if self.storage is not None:
+            with self.storage.db.transaction():
+                pass
+
     # ------------------------------------------------------------------ helpers
 
     def _record(self, request_id: str) -> RequestRecord:
@@ -764,8 +772,8 @@ def open_service(
     """A service whose state, files included, lives in the PostgreSQL ``database`` (a libpq
     connection string or URL) and survives restarts (decision P4-04).
 
-    Opening the same database schema from a second process fails with
-    ``StorageError("in_use")``. With ``chain`` (an ``orbit_watch.chain.link.ChainLink``)
+    Any number of processes can open the same schema; each reloads its copy of the state
+    when another one changed it (step 4.2). With ``chain`` (an ``orbit_watch.chain.link.ChainLink``)
     the service works on that testnet chain (step 2.6).
     """
     from orbit_watch.settlement.stored_ledger import StoredLedgerAdapter
@@ -775,10 +783,23 @@ def open_service(
         service = RequestService(
             StoredLedgerAdapter(storage.db), reviewers, context, storage=storage, **options
         )
-        service._reload()
+        # The copy and the version it matches, read together under the lock.
+        with storage.db.transaction():
+            service._reload()
+            storage.db.version_seen = storage.db.current_version()
     except BaseException:
         storage.close()
         raise
+
+    def refresh(db: Any) -> None:
+        """Another process changed the state, or a transaction of this one was rolled back:
+        reload the copy in memory (decision P4-06)."""
+        version = db.current_version()
+        if version != db.version_seen:
+            service._reload()
+            db.version_seen = version
+
+    storage.db.add_begin_hook(refresh)
     if chain is not None:
         try:
             chain.attach(service)

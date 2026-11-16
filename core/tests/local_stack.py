@@ -10,7 +10,10 @@ One command starts, on this machine only:
 * the request service on that chain, with the API and, given ``--web``, the built web
   application on one port. Its PostgreSQL database is a schema on the server named by
   ``ORBIT_WATCH_TEST_DATABASE_URL``, or else on a PostgreSQL that the stack starts in
-  Docker and removes when it stops (tests/postgres.py);
+  Docker and removes when it stops (tests/postgres.py). With ``--image``, the service
+  runs from that container image instead (step 4.2): this process seeds the database on
+  a port of its own, then hands the database over to the container, which serves the
+  port, read-only and without state of its own;
 * SIMULATED parties (a requester, four stations, the reviewers, an administrator) with
   LOCAL TEST keys and registered wallets, and worthless TestUSD for the requester;
 * six SIMULATED requests: five funded (four open for observers), one opened but not funded;
@@ -40,10 +43,14 @@ import json
 import os
 import shutil
 import signal
+import socket
+import subprocess
 import sys
 import tempfile
 import threading
 import time
+import urllib.request
+import uuid
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
@@ -86,11 +93,27 @@ class StackError(RuntimeError):
     pass
 
 
+def free_port() -> int:
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return probe.getsockname()[1]
+
+
 class LocalStack:
     """The running stack; ``stop()`` ends it."""
 
-    def __init__(self, directory: Path, port: int, web: Path | None, chain_port: int = 0):
+    def __init__(
+        self,
+        directory: Path,
+        port: int,
+        web: Path | None,
+        chain_port: int = 0,
+        image: str | None = None,
+    ):
         self.directory = directory
+        self.port = port
+        self.image = image
+        self.service_container: str | None = None
         self.container: Container | None = None
         server = os.environ.get(SERVER_VARIABLE)
         if not server:
@@ -147,7 +170,9 @@ class LocalStack:
                 party: keys.create_key(self.service.storage.db, party, party.split(":")[0], now)
                 for party in self.parties
             }
-        self.api = f"http://127.0.0.1:{port}"
+        # With an image, this process serves only while it seeds, on a port of its own.
+        own_port = free_port() if self.image else port
+        self.api = f"http://127.0.0.1:{own_port}"
         # Browsers sign in from the stack itself or from Vite's development server.
         self.origins = [
             f"http://{host}:{p}"
@@ -158,7 +183,7 @@ class LocalStack:
             uvicorn.Config(
                 create_app(self.service, web=web, origins=self.origins),
                 host="127.0.0.1",
-                port=port,
+                port=own_port,
                 log_level="warning",
             )
         )
@@ -167,10 +192,73 @@ class LocalStack:
         deadline = time.monotonic() + 15
         while not self.server.started and time.monotonic() < deadline:
             if not self.thread.is_alive():
-                raise StackError(f"the server did not start on port {port}")
+                raise StackError(f"the server did not start on port {own_port}")
             time.sleep(0.05)
         if not self.server.started:
-            raise StackError(f"the server did not start on port {port}")
+            raise StackError(f"the server did not start on port {own_port}")
+
+    def serve_from_image(self) -> None:
+        """Hand the seeded database over to a container of ``image`` (step 4.2), which then
+        serves the stack's port: the in-process server stops, and the container runs with a
+        read-only file system, as an ordinary user, with the verifier's LOCAL TEST keystore
+        mounted read-only. It shares the host's network, where the chain and PostgreSQL
+        listen on 127.0.0.1, and listens there too."""
+        from eth_account import Account
+
+        self.server.should_exit = True
+        self.thread.join(timeout=10)
+        wallets = self.directory / "wallets"
+        keystore = wallets / "system-verifier.json"
+        encrypted = Account.encrypt(
+            self.deployment.accounts[VERIFIER].key, PASSWORD, kdf="pbkdf2", iterations=1000
+        )
+        keystore.write_text(json.dumps(encrypted), encoding="utf-8")
+        keystore.chmod(0o600)
+        name = f"orbit-watch-stack-service-{uuid.uuid4().hex[:10]}"
+        command = [
+            "docker", "run", "--detach", "--name", name,
+            "--network", "host", "--read-only", "--tmpfs", "/tmp",
+            # The host's user, who owns the keystore (readable by its owner only).
+            "--user", f"{os.getuid()}:{os.getgid()}",
+            "--env", f"PORT={self.port}",
+            "--env", f"ORBIT_WATCH_DATABASE_URL={self.database}",
+            "--volume", f"{keystore}:/keys/verifier.json:ro",
+            "--volume", f"{wallets / 'password'}:/keys/password:ro",
+            self.image,
+            "--host", "127.0.0.1",
+            "--chain-rpc", self.rpc,
+            "--escrow", self.deployment.escrow.address,
+            "--safe", self.deployment.safe.address,
+            "--verifier-keystore", "/keys/verifier.json",
+            "--verifier-password-file", "/keys/password",
+        ]  # fmt: skip
+        for origin in self.origins:
+            command += ["--origin", origin]
+        started = subprocess.run(command, capture_output=True, text=True)
+        if started.returncode != 0:
+            raise StackError(f"docker run {self.image} failed: {started.stderr.strip()}")
+        self.service_container = name
+        self.api = f"http://127.0.0.1:{self.port}"
+        deadline = time.monotonic() + 60
+        while True:
+            try:
+                with urllib.request.urlopen(f"{self.api}/v1/health", timeout=2) as reply:
+                    if reply.status == 200:
+                        return
+            except OSError:
+                pass
+            running = subprocess.run(
+                ["docker", "inspect", "--format", "{{.State.Running}}", name],
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            if running != "true" or time.monotonic() > deadline:
+                logs = subprocess.run(["docker", "logs", name], capture_output=True, text=True)
+                raise StackError(
+                    f"the service image did not start on port {self.port}:\n"
+                    f"{logs.stdout}{logs.stderr}"
+                )
+            time.sleep(0.3)
 
     def address(self, party: str) -> str:
         return self.deployment.accounts[party].address
@@ -343,6 +431,7 @@ class LocalStack:
             "api": self.api,
             "web": self.api + "/",
             "origins": self.origins,
+            "served_by": f"container image {self.image}" if self.image else "the stack's process",
             "chain_rpc": self.rpc,
             "chain_id": 31337,
             "escrow": self.deployment.escrow.address,
@@ -393,6 +482,8 @@ class LocalStack:
     def stop(self) -> None:
         self.server.should_exit = True
         self.thread.join(timeout=10)
+        if self.service_container is not None:
+            subprocess.run(["docker", "rm", "--force", self.service_container], capture_output=True)
         self.service.storage.close()
         self.deployment.chain.stop()
         self._remove_database()
@@ -422,6 +513,11 @@ def main(argv: list[str] | None = None) -> int:
         "--dir", type=Path, help="where the stack keeps its state (default: a new temporary one)"
     )
     parser.add_argument(
+        "--image",
+        help="serve the API and the web application from this container image of the "
+        "service (step 4.2; build it with docker build at the repository's root)",
+    )
+    parser.add_argument(
         "--replace",
         action="store_true",
         help="start afresh in --dir if it holds an earlier local stack (its local-stack.json)",
@@ -445,7 +541,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     directory.mkdir(parents=True, exist_ok=True)
 
-    stack = LocalStack(directory, args.port, args.web, args.chain_port)
+    if args.image and not docker_available():
+        print("local stack: --image needs Docker", file=sys.stderr)
+        return 2
+    stack = LocalStack(directory, args.port, args.web, args.chain_port, args.image)
     stopped = threading.Event()
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: stopped.set())
@@ -454,11 +553,15 @@ def main(argv: list[str] | None = None) -> int:
         stack.seed_settled()
         stack.in_review = stack.seed_in_review()
         stack.datasets = stack.write_datasets()
+        if args.image:
+            stack.serve_from_image()
         info = directory / "local-stack.json"
         info.write_text(json.dumps(stack.describe(), indent=2) + "\n", encoding="utf-8")
         print("LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.")
         print(f"API: {stack.api}/v1/   chain: {stack.rpc}   PostgreSQL schema: {stack.schema}")
-        if args.web:
+        if args.image:
+            print(f"Served by the container image {args.image}")
+        elif args.web:
             print(f"Web application: {stack.api}/")
         print(f"Keys, wallets and addresses: {info}")
         # The end-to-end tests read the keys from this line (web/playwright.config.ts).
