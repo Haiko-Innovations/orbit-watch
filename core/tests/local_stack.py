@@ -222,6 +222,8 @@ class LocalStack:
             "--user", f"{os.getuid()}:{os.getgid()}",
             "--env", f"PORT={self.port}",
             "--env", f"ORBIT_WATCH_DATABASE_URL={self.database}",
+            # Every test calls from 127.0.0.1: no limits against abuse (tests/test_limits.py).
+            "--env", "ORBIT_WATCH_LIMITS=off",
             "--volume", f"{keystore}:/keys/verifier.json:ro",
             "--volume", f"{wallets / 'password'}:/keys/password:ro",
             self.image,

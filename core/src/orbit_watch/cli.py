@@ -371,6 +371,13 @@ def cmd_serve(args: argparse.Namespace) -> int:
         if not origin.startswith(("http://", "https://")) or origin.rstrip("/").count("/") > 2:
             _err(f"--origin {origin}: give a web origin such as https://orbit.example")
             return EXIT_USAGE
+    from orbit_watch.api.limits import Limits, LimitsError
+
+    try:
+        limits = Limits.parse(args.limits)
+    except LimitsError as error:
+        _err(f"--limits: {error}")
+        return EXIT_USAGE
     registry, context, notes = _service_inputs(args)
     chain = None
     if args.network:
@@ -423,7 +430,19 @@ def cmd_serve(args: argparse.Namespace) -> int:
     from orbit_watch.api import start_follower
 
     secret = next((os.environ[n] for n in FOLLOW_SECRET_VARIABLES if os.environ.get(n)), None)
-    app = create_app(service, web=args.web, origins=origins, follow_secret=secret)
+    app = create_app(
+        service,
+        web=args.web,
+        origins=origins,
+        follow_secret=secret,
+        limits=limits,
+        client_ip_header=args.client_ip_header,
+    )
+    if limits is None:
+        print("Limits against abuse: off")
+    else:
+        where = f"the {args.client_ip_header} header" if args.client_ip_header else "connections"
+        print(f"Limits against abuse: on (IP addresses from {where})")
     if secret:
         print("A schedule may run the follower: /v1/internal/follow (with its secret)")
     if args.follow:
@@ -455,7 +474,9 @@ def _apply_network(args: argparse.Namespace) -> None:
             "other_escrow", f"--escrow is not the escrow of {args.network} ({record['escrow']})"
         )
     args.escrow = record["escrow"]
-    args.chain_rpc = args.chain_rpc or public_rpc(record["chain_id"])
+    # The dedicated endpoint, if given, with the public one as its fallback (step 4.3).
+    args.fallback_rpc = public_rpc(record["chain_id"])
+    args.chain_rpc = args.chain_rpc or args.fallback_rpc
     if getattr(args, "safe", None) is None:
         args.safe = record.get("safe")
 
@@ -468,9 +489,12 @@ def _chain_link(args: argparse.Namespace):
 
     from orbit_watch.chain.client import OrbitWatchChain
     from orbit_watch.chain.link import ChainLink
+    from orbit_watch.chain.rpc import ServiceRpc, service_endpoints
     from orbit_watch.chain.wallet import load_keystore, read_password
 
-    chain = OrbitWatchChain(Web3(Web3.HTTPProvider(args.chain_rpc)), args.escrow)
+    # The endpoint's URL may hold a provider's key: it is never printed (step 4.3).
+    endpoints = service_endpoints(args.chain_rpc, getattr(args, "fallback_rpc", None))
+    chain = OrbitWatchChain(Web3(ServiceRpc(endpoints)), args.escrow)
     keystore = Path(args.verifier_keystore)
     if keystore.stat().st_mode & (stat.S_IRWXG | stat.S_IRWXO):
         _err(f"warning: {keystore} can be read by other users; chmod 600 it")
@@ -776,6 +800,22 @@ def build_parser() -> argparse.ArgumentParser:
         "schedule can call /v1/internal/follow with $ORBIT_WATCH_FOLLOW_SECRET instead)",
     )
     serve.add_argument("--port", type=int, default=8000, help="port (default 8000)")
+    serve.add_argument(
+        "--limits",
+        default=os.environ.get("ORBIT_WATCH_LIMITS"),
+        metavar="SETTING",
+        help="limits against abuse (default: $ORBIT_WATCH_LIMITS, or else the defaults): off, "
+        'or a JSON object that changes some, e.g. \'{"quality": {"ip": [60, 3600]}}\' '
+        "(docs/api.md)",
+    )
+    serve.add_argument(
+        "--client-ip-header",
+        default=os.environ.get("ORBIT_WATCH_CLIENT_IP_HEADER") or None,
+        metavar="HEADER",
+        help="behind a proxy you trust, the header it sets to the caller's IP address, e.g. "
+        "x-real-ip on Vercel (default: $ORBIT_WATCH_CLIENT_IP_HEADER, or else the "
+        "connection's address). Never name a header that callers can set themselves",
+    )
     serve.add_argument("--catalog", help="reference orbits (default: built-in SIMULATED)")
     serve.add_argument("--policy", help="target allow-list (default: built-in SIMULATED)")
     serve.add_argument("--reviewers", help="reviewer registry (default: built-in SIMULATED)")
@@ -804,7 +844,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="a deployment this version knows: its escrow and public RPC endpoint "
         "(override the endpoint with --chain-rpc)",
     )
-    chain.add_argument("--chain-rpc", help="the chain's JSON-RPC endpoint")
+    chain.add_argument(
+        "--chain-rpc",
+        default=os.environ.get("ORBIT_WATCH_CHAIN_RPC") or None,
+        help="the chain's JSON-RPC endpoint (default: $ORBIT_WATCH_CHAIN_RPC). A dedicated "
+        "endpoint's URL holds its key: give it in the environment, not here, where other "
+        "users of the machine can see it. With --network, the public endpoint is its "
+        "fallback",
+    )
     chain.add_argument("--escrow", help="the escrow contract's address")
     chain.add_argument(
         "--verifier-keystore", help="encrypted keystore of the verifier key (outside the repo)"

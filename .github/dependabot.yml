@@ -50,6 +50,14 @@ updates:
       timezone: Europe/Helsinki
     cooldown:
       default-days: 14
+    # The image runs the oldest supported Python, as CI's end-to-end tests do, and the
+    # web application's Node line (web/.nvmrc); core/tests/test_image.py checks both.
+    # Those move by hand, with the project's supported versions.
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
     groups:
       images:
         patterns: ["*"]

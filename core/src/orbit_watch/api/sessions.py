@@ -144,6 +144,7 @@ def issue_challenge(
             format_utc(now),
             format_utc(expires),
         ),
+        state=False,
     )
     return message
 
@@ -190,7 +191,9 @@ def redeem(
     if signer != row["address"]:
         raise SessionError("bad_signature", f"the signature is not {row['address']}'s")
     db.execute(
-        "UPDATE signin_challenges SET used_at = ? WHERE nonce = ?", (format_utc(now), row["nonce"])
+        "UPDATE signin_challenges SET used_at = ? WHERE nonce = ?",
+        (format_utc(now), row["nonce"]),
+        state=False,
     )
     return Signed(row["address"], row["sign_up_party"], message, signature)
 
@@ -209,6 +212,7 @@ def create_session(
         "INSERT INTO sessions (token_hash, party, role, address, origin, created_at, expires_at) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
         (token_hash(token), party, role, address, origin, format_utc(now), format_utc(expires)),
+        state=False,
     )
     return token, Session(party, role, address, origin, expires)
 
@@ -234,6 +238,7 @@ def end(db: Database, token: str | None, now: datetime) -> bool:
     cursor = db.execute(
         "UPDATE sessions SET ended_at = ? WHERE token_hash = ? AND ended_at IS NULL",
         (format_utc(now), token_hash(token)),
+        state=False,
     )
     return cursor.rowcount > 0
 

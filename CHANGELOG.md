@@ -31,6 +31,24 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 - `orbit-watch serve --confirmations BLOCKS`: on a chain, events are applied
   once their block is that deep, by default 10 blocks on Base Sepolia (about
   two seconds) and none on a local Anvil chain.
+- Limits against abuse (phase 4, step 4.3; P4-08, D-36). The service counts in
+  its database, per IP address and per party:
+  - sign-in and sign-up attempts;
+  - new requests;
+  - uploads;
+  - quality meter runs;
+  - every call of the public pages.
+
+  A call over a limit gets `429 rate_limited` with `Retry-After`. No IP address
+  is stored, only a keyed hash, deleted when its window ends.
+  `orbit-watch serve` applies the defaults. `--limits` (or
+  `ORBIT_WATCH_LIMITS`) changes them or turns them off. `--client-ip-header`
+  (or `ORBIT_WATCH_CLIENT_IP_HEADER`) names a trusted proxy's header,
+  `x-real-ip` on Vercel.
+- A dedicated RPC endpoint (step 4.3; P4-07, D-36): `ORBIT_WATCH_CHAIN_RPC`,
+  with Base's public endpoint as its fallback when the dedicated one is down or
+  busy. Its URL, which holds the provider's key, never reaches a response, a
+  log or the browser, and tests look for it at debug level.
 
 ### Changed
 
@@ -40,6 +58,8 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   `in_use` refusal is gone, and `orbit-watch keys create` works while a server
   runs. Idempotency keys are checked in the change's own transaction, so a call
   sent to two processes at once is made once.
+- Bodies are at most 4,000,000 bytes, under Vercel's 4.5 MB, instead of 10 MiB
+  (step 4.3). A larger body is refused with `413` before any route reads it.
 
 - The service keeps its state, files included, in PostgreSQL instead of SQLite
   (phase 4, step 4.1; P4-04, D-34). `orbit-watch serve` and

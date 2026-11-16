@@ -45,6 +45,7 @@ def create_key(db: Database, party: str, role: str, now: datetime) -> str:
     db.execute(
         "INSERT INTO api_keys (key_hash, party, role, created_at) VALUES (?, ?, ?, ?)",
         (key_hash(key), party, role, format_utc(now)),
+        state=False,
     )
     return key
 
@@ -60,5 +61,7 @@ def lookup(db: Database, key: str) -> Principal | None:
 
 def revoke_party(db: Database, party: str) -> int:
     """Revoke every key of a party. Returns how many were revoked."""
-    cursor = db.execute("UPDATE api_keys SET revoked = 1 WHERE party = ? AND revoked = 0", (party,))
+    cursor = db.execute(
+        "UPDATE api_keys SET revoked = 1 WHERE party = ? AND revoked = 0", (party,), state=False
+    )
     return cursor.rowcount

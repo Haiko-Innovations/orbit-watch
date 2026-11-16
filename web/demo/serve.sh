@@ -44,8 +44,10 @@ if [ -n "$container" ] || [ ! -s "$dir/admin.key" ]; then
   (umask 077 && uv run --locked orbit-watch keys create \
     --role admin --party admin:orbit-watch-demo > "$dir/admin.key")
 fi
+# Every role of the demo signs in from 127.0.0.1: no limits against abuse (docs/api.md).
 uv run --locked orbit-watch serve --network base-sepolia \
   --verifier-keystore "$secrets/verifier.json" --verifier-password-file "$secrets/password" \
-  --web ../web/dist --host 127.0.0.1 --port "$port" --origin "http://127.0.0.1:$port" &
+  --web ../web/dist --host 127.0.0.1 --port "$port" --origin "http://127.0.0.1:$port" \
+  --limits off &
 child=$!
 wait "$child"

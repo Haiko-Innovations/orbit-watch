@@ -150,8 +150,11 @@ The image runs `orbit-watch serve --host 0.0.0.0 --port $PORT --web /app/web`
 (`PORT` is 8000 unless the platform sets it), and adds the arguments given to
 `docker run`; a later option wins. On Base Sepolia, mount the verifier's
 keystore and its password file read-only and add
-`--network base-sepolia --verifier-keystore … --verifier-password-file …`
-([chain-service.md](chain-service.md)).
+`--network base-sepolia --verifier-keystore … --verifier-password-file …`,
+with the dedicated RPC endpoint in `ORBIT_WATCH_CHAIN_RPC`
+([chain-service.md](chain-service.md#running-the-server-on-a-chain)). Behind a
+proxy, name its client address header (`ORBIT_WATCH_CLIENT_IP_HEADER`) for
+the [limits](#limits-against-abuse).
 
 ## On a testnet chain
 
@@ -218,6 +221,51 @@ Refusals: `forbidden_origin` and `wrong_origin` (403), `unknown_message`,
 (404), `party_taken` and `address_taken` (409), `invalid_party` (422). Only a
 service on a chain has wallets (`not_on_chain` otherwise).
 
+## Limits against abuse
+
+Step 4.3, [P4-08](decisions.md#p4-08-limits-against-abuse) and
+[D-36](decisions.md#d-36-limits-the-body-limit-and-the-dedicated-rpc-endpoint).
+The service counts, in its database, the calls that cost the most, and every
+call of the public pages, per IP address and, with a key or a session, per
+party. So the limits hold without a firewall in front
+([P4-05](decisions.md#p4-05-portable-by-design)); health checks are not
+limited. A call over a limit gets
+`429 rate_limited` with `Retry-After` (seconds) before it does anything. A
+refused call is not counted. Any other call is counted even if it then fails:
+failed sign-ins are what the limit is for.
+
+| Limit | Calls | Per IP address | Per party |
+|---|---|---|---|
+| `sign_in` | `POST /v1/session/challenge`, `POST /v1/session` | 30 per 600 s | |
+| `sign_up` | a challenge that signs up a new party | 10 per 3600 s | |
+| `new_request` | `POST /v1/requests` | 60 per 3600 s | 20 per 3600 s |
+| `upload` | `POST /v1/requests/{id}/deliveries` | 60 per 3600 s | 20 per 3600 s |
+| `quality` | `POST /v1/public/quality` | 30 per 3600 s | |
+| `public` | every `GET /v1/public/…` and `GET /v1/chain`: the pages anyone may read without a key | 600 per 600 s | |
+
+- **Windows are fixed** and start at whole multiples of their length (an hour
+  starts on the hour). Across the end of one window and the start of the next,
+  a caller can make up to twice the limit.
+- **An IP address is never stored.** The service keeps a SHA-256 of it, keyed
+  with a random key of the database, and deletes every count when its window
+  is over. IPv6 addresses count per /64 network, which one host or home usually
+  has to itself.
+- **Which address is the caller's:** the connection's own, or behind a proxy
+  you trust, the header it sets (`--client-ip-header`, or
+  `ORBIT_WATCH_CLIENT_IP_HEADER`; `x-real-ip` on Vercel). Of a list, the last
+  entry counts, the one the nearest proxy added. Never name a header that
+  callers can set themselves.
+- **The limits are settings:** `orbit-watch serve` applies the defaults above.
+  `--limits` (or `ORBIT_WATCH_LIMITS`) takes `off`, or a JSON object that
+  changes some of them: `{"quality": {"ip": [60, 3600]}, "upload": {"party":
+  null}}` (`[calls, seconds]`, or `null` for none). The local stack runs
+  without limits, since every test calls from 127.0.0.1.
+- **Every body is at most 4,000,000 bytes**, under Vercel's 4.5 MB: refused
+  with `413 too_large` by its `Content-Length`, or while it arrives. The quality
+  meter takes at most 2 MiB, and sign-in calls at most 64 KiB.
+- **In front of the service**, Vercel's firewall limits requests per IP
+  address on every path (step 4.5).
+
 ## Errors
 
 Errors are JSON: `{"error": {"code": "…", "message": "…"}}`. The codes are
@@ -229,8 +277,9 @@ stable; the HTTP status follows from the code:
 | 403 | `forbidden_role`, `not_requester`, `not_a_party`, `not_your_task`, `not_yourself`, `not_your_transaction` |
 | 404 | `unknown_request`, `unknown_task`, `no_report`, `unknown_file`, `unknown_transaction`, `not_on_chain` |
 | 409 | `forbidden_in_status`, `already_voted`, `duplicate_request`, `key_reused`; on a chain `no_wallet`, `wallet_already_set`, `address_taken`, `already_on_chain`, `insufficient_balance`, `nothing_to_withdraw`, `points_not_used`, `sign_on_chain` |
-| 413 | `too_large` (bodies over 10 MB) |
+| 413 | `too_large` (bodies over 4,000,000 bytes, [step 4.3](#limits-against-abuse)) |
 | 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers` |
+| 429 | `rate_limited`, with `Retry-After` in seconds ([limits](#limits-against-abuse)) |
 | 503 | `verification_unavailable`, `chain_unavailable` |
 
 ## Command-line client
@@ -295,5 +344,4 @@ curl -s -X POST -H "Authorization: Bearer $STATION_KEY" -H "Idempotency-Key: del
 
 ## Not yet
 
-- TLS, rate limits, key rotation and a public deployment (phase 4, steps 4.3
-  to 4.5).
+- TLS, key rotation and a public deployment (phase 4, step 4.5).

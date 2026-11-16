@@ -158,12 +158,16 @@ class Database:
         """The state's version in the database."""
         return self.query("SELECT version FROM service_state WHERE id = 1")[0]["version"]
 
-    def execute(self, sql: str, parameters: tuple[Any, ...] = ()) -> Any:
+    def execute(self, sql: str, parameters: tuple[Any, ...] = (), *, state: bool = True) -> Any:
+        """Run one statement. A change outside a transaction gets one of its own. With
+        ``state=False`` a change leaves the state's version alone: it touches nothing that a
+        process keeps in memory (keys, sessions, limits), so no other process reloads."""
         if not sql.lstrip().upper().startswith(_READS):
             if not self._depth:  # a change on its own: in a transaction of its own
                 with self.transaction():
-                    return self.execute(sql, parameters)
-            self._dirty = True
+                    return self.execute(sql, parameters, state=state)
+            if state:
+                self._dirty = True
         if parameters:
             return self.connection.execute(_placeholders(sql), parameters)
         return self.connection.execute(sql)
