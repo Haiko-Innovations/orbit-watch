@@ -1,0 +1,14 @@
+# Never uploaded to Vercel (docs/deployment.md): local environments, build output and
+# the contracts' dependencies, which no deployment needs.
+**/.venv*
+**/node_modules
+**/__pycache__
+core/.pytest_cache
+core/.ruff_cache
+web/dist
+web/.e2e-stack
+web/test-results
+web/playwright-report
+contracts/out
+contracts/cache
+contracts/lib
