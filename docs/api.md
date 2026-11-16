@@ -24,9 +24,14 @@ API's own origin ([web.md](web.md)), and `--origin` names the addresses
 browsers use for it, if not the service's own ([signing in](#signing-in-with-a-wallet)). Every response carries a strict content
 security policy ([D-25](decisions.md#d-25-the-web-project)). The service keeps its state, files
 included, in PostgreSQL: `--database`, or `ORBIT_WATCH_DATABASE_URL` or
-`DATABASE_URL` ([storage.md](storage.md)). A running server holds its schema
-exclusively until step 4.2, so create the first admin key before starting it
-and the rest through the API.
+`DATABASE_URL` ([storage.md](storage.md)). Any number of servers can share one
+database (step 4.2): each call checks the state against the database first.
+`orbit-watch keys create` works while a server runs, for the first admin key;
+create the rest through the API.
+
+The service also comes as a container image, built from the `Dockerfile` at
+the repository's root, with the web application and no state of its own; see
+[Running the image](#running-the-image).
 
 ## Keys and roles
 
@@ -60,6 +65,8 @@ refusal.
 | Method and path | Role | Body | Does |
 |---|---|---|---|
 | `GET /v1/health` | none | | version and status |
+| `GET /v1/health/follower` | none | | when the follower last ran: `200` with `"status": "ok"`, or `503` with `"behind"` (longer ago than 30 minutes) or `"never"`; on a chain also the last block followed ([the follower](#the-follower)) |
+| `GET`, `POST /v1/internal/follow` | the follower's secret | | run the follower once: `{changed, sent, followed_at}`, on a chain also `synced_block`; `404` when the service has no follower secret |
 | `GET /v1/requests` | any | | all requests with requester, title, reserving station, observer, status and outcome |
 | `POST /v1/requests` | requester | `{"request": <request document>, "terms": {…}}` | create a request in draft; `terms` may set `delivery_deadline`, `reservation_hours`, `challenge_period_hours`, `review_hours`, `verification_timeout_hours`, `embargo_days` |
 | `GET /v1/requests/{id}` | any | | summary and full lifecycle record |
@@ -96,10 +103,55 @@ refusal.
 | `POST /v1/public/quality?format=json\|iod\|tdm` | none | an observation file of one station, at most 2 MiB | the station quality report ([quality-meter.md](quality-meter.md)); the file is not kept |
 | `GET /v1/public/attestations` | none | | on a chain: the EAS attestations of the requests the service follows (automated results and votes), newest first, with explorer and EAS Scan links on Base Sepolia |
 
-Deadlines move on and finished requests are settled when an admin (or a
-scheduler with an admin key) calls `tick`. Calls on a request already take its
-passed deadlines into account: for example, a delivery after the reservation
-lapsed is refused.
+Deadlines move on and finished requests are settled by [the
+follower](#the-follower), or when an admin calls `tick`. Calls on a request
+already take its passed deadlines into account: for example, a delivery after
+the reservation lapsed is refused.
+
+## The follower
+
+Step 4.2, [P4-06](decisions.md#p4-06-the-service-runs-on-its-own) and
+[D-35](decisions.md#d-35-the-stateless-service-the-follower-and-the-image).
+The follower does the service's own work, so that nobody has to call `tick`:
+it applies passed deadlines and, on a chain, the escrow's new events; it
+attests automated results and settles the requests whose outcome is reached.
+Any number of followers can run against one database: they take turns, so a
+change is made once.
+
+- **A schedule** calls `GET` or `POST /v1/internal/follow` with
+  `Authorization: Bearer <secret>`. The secret comes from
+  `ORBIT_WATCH_FOLLOW_SECRET`, or from `CRON_SECRET`, which Vercel's cron jobs
+  send. Without either, the route answers `404`.
+- **A timer**, such as a systemd timer or cron with `curl`, calls the same
+  route.
+- **`orbit-watch serve --follow SECONDS`** runs it in a thread of the server,
+  for a server of our own. A failed run is logged and the next one tries again.
+
+`GET /v1/health/follower` is for monitoring: it answers `503` when no follower
+has run in the last 30 minutes (twice the planned 15-minute schedule) or ever,
+whichever process ran it.
+
+## Running the image
+
+The `Dockerfile` at the repository's root builds the service with the web
+application, from base images pinned by digest. It runs as an ordinary user and
+needs no writable file system but `/tmp`. Everything it keeps is in the
+database, so any number of containers can share one. CI builds it on every pull
+request and runs the end-to-end tests against it.
+
+```sh
+docker build --tag orbit-watch .
+docker run --read-only --tmpfs /tmp --publish 127.0.0.1:8000:8000 \
+  --env ORBIT_WATCH_DATABASE_URL --env ORBIT_WATCH_FOLLOW_SECRET \
+  orbit-watch --follow 300
+```
+
+The image runs `orbit-watch serve --host 0.0.0.0 --port $PORT --web /app/web`
+(`PORT` is 8000 unless the platform sets it), and adds the arguments given to
+`docker run`; a later option wins. On Base Sepolia, mount the verifier's
+keystore and its password file read-only and add
+`--network base-sepolia --verifier-keystore … --verifier-password-file …`
+([chain-service.md](chain-service.md)).
 
 ## On a testnet chain
 
@@ -243,4 +295,5 @@ curl -s -X POST -H "Authorization: Bearer $STATION_KEY" -H "Idempotency-Key: del
 
 ## Not yet
 
-- TLS, rate limits, key rotation and a public deployment (later, see P-03).
+- TLS, rate limits, key rotation and a public deployment (phase 4, steps 4.3
+  to 4.5).

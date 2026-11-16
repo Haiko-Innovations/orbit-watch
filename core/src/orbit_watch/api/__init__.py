@@ -20,8 +20,9 @@ transaction. Repeating the call with the same key returns that response and
 changes nothing; reusing the key for a different call is refused
 (``key_reused``). Refused calls are not stored, because they change nothing.
 
-One lock serialises all calls: the service holds its working state in memory
-and the database admits one writer.
+One lock serialises all calls, in this process and, through PostgreSQL's
+advisory lock, across every process that shares the database (step 4.2): each
+keeps a copy of the state in memory and reloads it when another one changed it.
 
 **On a testnet chain** (step 2.6) the API never sees a party's key. A change
 to a funded request is answered with ``202 Accepted`` and the unsigned
@@ -44,7 +45,9 @@ their own files and talk only to this API (decision D-25).
 
 from __future__ import annotations
 
+import hmac
 import json
+import logging
 import secrets
 import threading
 from collections.abc import Callable
@@ -198,6 +201,10 @@ def _field(document: dict[str, Any], name: str, kind: type | tuple[type, ...]) -
     return value
 
 
+FOLLOW_MAX_AGE = 1800.0  # seconds: twice the 15-minute schedule (decision P4-06)
+log = logging.getLogger("orbit_watch.api")
+
+
 class Api:
     def __init__(
         self,
@@ -206,6 +213,8 @@ class Api:
         *,
         origins: tuple[str, ...] = (),
         wall_clock: Callable[[], datetime] | None = None,
+        follow_secret: str | None = None,
+        follow_max_age: float = FOLLOW_MAX_AGE,
     ):
         if service.storage is None:
             raise ValueError("the API needs a stored service (open_service)")
@@ -218,6 +227,9 @@ class Api:
         self.origins = tuple(sessions.normalise_origin(o) for o in origins)
         # Sessions live in wall-clock time, whatever the chain's clock says.
         self.wall_clock = wall_clock or (lambda: datetime.now(tz=UTC))
+        # The follower (step 4.2): the schedule's secret, and how old its last run may be.
+        self.follow_secret = follow_secret or None
+        self.follow_max_age = follow_max_age
 
     # ------------------------------------------------------------------ plumbing
 
@@ -296,7 +308,10 @@ class Api:
             self._follow_chain()
             now = self.clock()
             if not mutating:
-                return self._respond(work(principal, request, body, now))
+                # In a transaction too: under the lock, the copy of the state in memory is
+                # checked against the database before anything is read (step 4.2).
+                with self.db.transaction():
+                    return self._respond(work(principal, request, body, now))
             key = request.headers.get("idempotency-key", "").strip()
             if not key or len(key) > 128:
                 raise ApiError(
@@ -313,23 +328,26 @@ class Api:
                     ]
                 )
             )
-            stored = self.db.query(
-                "SELECT request_hash, status_code, response_json FROM idempotency "
-                "WHERE party = ? AND idempotency_key = ?",
-                (principal.party, key),
-            )
-            if stored:
-                if stored[0]["request_hash"] != request_hash:
-                    raise ApiError(
-                        "key_reused", "this Idempotency-Key was already used for a different call"
-                    )
-                return JSONResponse(
-                    json.loads(stored[0]["response_json"]),
-                    status_code=stored[0]["status_code"],
-                    headers={"Idempotent-Replayed": "true"},
-                )
             try:
+                # The key is looked up in the change's own transaction, under the lock: two
+                # processes that get the same call never both make the change.
                 with self.db.transaction():
+                    stored = self.db.query(
+                        "SELECT request_hash, status_code, response_json FROM idempotency "
+                        "WHERE party = ? AND idempotency_key = ?",
+                        (principal.party, key),
+                    )
+                    if stored:
+                        if stored[0]["request_hash"] != request_hash:
+                            raise ApiError(
+                                "key_reused",
+                                "this Idempotency-Key was already used for a different call",
+                            )
+                        return JSONResponse(
+                            json.loads(stored[0]["response_json"]),
+                            status_code=stored[0]["status_code"],
+                            headers={"Idempotent-Replayed": "true"},
+                        )
                     status, payload = work(principal, request, body, now, key)
                     kept = store_response(payload) if store_response else payload
                     self.db.execute(
@@ -378,6 +396,63 @@ class Api:
         return view
 
     # ------------------------------------------------------------------ handlers
+
+    # ------------------------------------------------------------------ the follower (4.2)
+
+    def follow_once(self) -> dict[str, Any]:
+        """The service's own work, without anyone calling ``tick`` (decision P4-06): apply
+        the chain's new events and passed deadlines, attest results and settle what is
+        decided. A schedule, a timer or ``serve --follow`` calls it; any number of processes
+        may, since the database's lock makes them take turns."""
+        with self.lock:
+            self._follow_chain()
+            with self.db.transaction():
+                changed = self.service.tick(self.clock())
+                sent = self.chain.follow_up() if self.chain is not None else []
+                followed = format_utc(self.wall_clock())
+                self.db.execute(
+                    "UPDATE service_state SET followed_at = ? WHERE id = 1", (followed,)
+                )
+        result: dict[str, Any] = {"changed": changed, "sent": sent, "followed_at": followed}
+        if self.chain is not None:
+            result["synced_block"] = self.chain.synced_block()
+            result["notice"] = self.chain.notice
+        return result
+
+    async def internal_follow(self, request: Request) -> Response:
+        """``GET`` or ``POST /v1/internal/follow``, for a schedule: ``Authorization: Bearer``
+        with the follower's secret. Without a secret configured there is no such route."""
+        if self.follow_secret is None:
+            raise ApiError("not_found", "the follower is not enabled on this service")
+        scheme, _, token = request.headers.get("authorization", "").partition(" ")
+        if scheme.lower() != "bearer" or not hmac.compare_digest(
+            token.strip().encode(), self.follow_secret.encode()
+        ):
+            raise ApiError("unauthorized", "the follower's secret is required")
+        return JSONResponse(await run_in_threadpool(self.follow_once))
+
+    def follower_status(self) -> dict[str, Any]:
+        """When the follower of any process last ran, and whether that is recent enough."""
+        with self.lock:
+            row = self.db.query("SELECT followed_at FROM service_state WHERE id = 1")[0]
+            synced = self.chain.synced_block() if self.chain is not None else None
+        followed = row["followed_at"]
+        age = None
+        if followed is not None:
+            age = (self.wall_clock() - parse_utc(followed)).total_seconds()
+        return {
+            "status": "never" if age is None else "ok" if age <= self.follow_max_age else "behind",
+            "followed_at": followed,
+            "age_seconds": None if age is None else round(age),
+            "max_age_seconds": self.follow_max_age,
+            "synced_block": synced,
+        }
+
+    def follower_health(self, request: Request) -> Response:
+        """``GET /v1/health/follower``, for monitoring: 200 while the follower keeps up,
+        503 when its last run is older than ``follow_max_age`` seconds, or it never ran."""
+        document = self.follower_status()
+        return JSONResponse(document, status_code=200 if document["status"] == "ok" else 503)
 
     def health(self, request: Request) -> Response:
         notice = "Phase 1 prototype. All bundled data is SIMULATED."
@@ -521,7 +596,8 @@ class Api:
     def _run_public(self, request: Request, work: Callable[..., Any]) -> Response:
         with self.lock:
             self._follow_chain()
-            return self._respond(work(request, self.clock()))
+            with self.db.transaction():
+                return self._respond(work(request, self.clock()))
 
     # ------------------------------------------------------------------ sessions (step 3.2)
 
@@ -1124,20 +1200,33 @@ def create_app(
     web: str | Path | None = None,
     origins: tuple[str, ...] | list[str] = (),
     wall_clock: Callable[[], datetime] | None = None,
+    follow_secret: str | None = None,
+    follow_max_age: float = FOLLOW_MAX_AGE,
 ) -> Starlette:
     """The ASGI application for a stored service; with ``web``, the directory of the built
     web application, served at ``/`` (step 3.1). Browsers sign in from ``origins`` only
-    (step 3.2)."""
+    (step 3.2). With ``follow_secret``, a schedule can run the follower (step 4.2); the
+    ``Api`` is ``app.state.api``."""
     if clock is None:
         # On a chain the service keeps the chain's time, which its deadlines use.
         clock = service.chain.now if service.chain is not None else lambda: datetime.now(tz=UTC)
-    api = Api(service, clock, origins=tuple(origins), wall_clock=wall_clock)
+    api = Api(
+        service,
+        clock,
+        origins=tuple(origins),
+        wall_clock=wall_clock,
+        follow_secret=follow_secret,
+        follow_max_age=follow_max_age,
+    )
     read, change = (
         lambda f: api.endpoint(f, mutating=False),
         lambda f, **kw: api.endpoint(f, mutating=True, **kw),
     )
     routes = [
         Route("/v1/health", api.health, methods=["GET"]),
+        # The follower (step 4.2): for a schedule, and for monitoring.
+        Route("/v1/internal/follow", api.internal_follow, methods=["GET", "POST"]),
+        Route("/v1/health/follower", api.follower_health, methods=["GET"]),
         Route("/v1/requests", read(api.list_requests), methods=["GET"]),
         Route("/v1/requests", change(api.create_request), methods=["POST"]),
         Route("/v1/requests/{request_id}", read(api.get_request), methods=["GET"]),
@@ -1224,6 +1313,29 @@ def create_app(
         SessionError: _handle_api_error,
         ChainError: _handle_api_error,
     }
-    return Starlette(
+    app = Starlette(
         routes=routes, exception_handlers=handlers, middleware=[Middleware(SecurityHeaders)]
     )
+    app.state.api = api
+    return app
+
+
+def start_follower(
+    app: Starlette, every: float, stop: threading.Event | None = None
+) -> threading.Thread:
+    """Run the follower every ``every`` seconds in a thread of this process
+    (``orbit-watch serve --follow``), for a server of our own (decision P4-05), until
+    ``stop`` is set."""
+    api: Api = app.state.api
+    stop = stop or threading.Event()
+
+    def loop() -> None:
+        while not stop.wait(every):
+            try:
+                api.follow_once()
+            except Exception:  # the node or the database is away: the next run tries again
+                log.exception("the follower failed")
+
+    thread = threading.Thread(target=loop, name="orbit-watch-follower", daemon=True)
+    thread.start()
+    return thread

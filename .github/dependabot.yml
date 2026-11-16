@@ -39,6 +39,20 @@ updates:
       web:
         patterns: ["*"]
         update-types: [minor, patch]
+  # The service image's base images (Dockerfile, step 4.2), pinned by digest. The uv
+  # image is updated by hand, with the uv version that CI installs.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Helsinki
+    cooldown:
+      default-days: 14
+    groups:
+      images:
+        patterns: ["*"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

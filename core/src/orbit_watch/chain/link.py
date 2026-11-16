@@ -28,6 +28,7 @@ from __future__ import annotations
 import contextlib
 import json
 import re
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -41,6 +42,7 @@ from orbit_watch import lifecycle as lc
 from orbit_watch.canonical import sha256_bytes
 from orbit_watch.chain import (
     ANVIL_CHAIN_ID,
+    BASE_SEPOLIA_CHAIN_ID,
     CREDIT_REASONS,
     EXPLORERS,
     STATUSES,
@@ -102,6 +104,13 @@ def _at(seconds: int) -> datetime:
     return datetime.fromtimestamp(seconds, tz=UTC)
 
 
+# How many blocks must follow a block before the service applies its events (step 4.2,
+# decision D-35): a block that a short reorganisation could still drop is not followed
+# yet. Base Sepolia makes five blocks a second, so ten blocks are about two seconds; a
+# local Anvil chain mines a block per transaction and never reorganises.
+CONFIRMATIONS = {BASE_SEPOLIA_CHAIN_ID: 10, ANVIL_CHAIN_ID: 0}
+
+
 class ChainLink:
     """Puts a stored ``RequestService`` on the chain of ``chain`` (see the module text).
 
@@ -109,7 +118,13 @@ class ChainLink:
     directory has no requests yet, so no earlier event can be its own: it follows the chain
     from the current block, or from ``from_block`` if given, and then from where it stopped.
     The service waits up to ``receipt_timeout`` seconds for a transaction before calling it
-    pending. ``safe`` is the Safe that proposes to the registry's timelock, if known.
+    pending. It applies a block's events once ``confirmations`` blocks follow it (by default
+    ``CONFIRMATIONS`` of the chain). ``safe`` is the Safe that proposes to the registry's
+    timelock, if known.
+
+    Any number of processes may follow one escrow from one database (step 4.2): following
+    the chain and the service's own transactions happen in the database's transactions,
+    which take turns, so a block is applied once and a request is settled once.
     """
 
     def __init__(
@@ -120,6 +135,7 @@ class ChainLink:
         from_block: int | None = None,
         receipt_timeout: float = 60.0,
         safe: str | None = None,
+        confirmations: int | None = None,
     ):
         if verifier.address != chain.verifier:
             raise ChainError(
@@ -131,6 +147,11 @@ class ChainLink:
         self.verifier = verifier
         self.from_block = from_block
         self.receipt_timeout = receipt_timeout
+        if confirmations is None:
+            confirmations = CONFIRMATIONS.get(chain.chain_id, 10)
+        if confirmations < 0:
+            raise ValueError("confirmations cannot be negative")
+        self.confirmations = confirmations
         self.notice = notice(chain.chain_id)
         self.governance = Governance(chain, safe)
         self._service: RequestService | None = None
@@ -485,9 +506,24 @@ class ChainLink:
         request_id = self._request_ids().get(key) if key else None
         self._track(tx_hash, self.party_of(sender), action, request_id, now)
         self._refresh(tx_hash, wait=self.receipt_timeout)
+        self._await_confirmations(tx_hash)
         self.sync()
         self.follow_up()
         return self.transaction_view(tx_hash)
+
+    def _await_confirmations(self, tx_hash: str) -> None:
+        """Wait, up to ``receipt_timeout`` seconds, until the block of a mined transaction
+        is followed (``confirmations`` deep), so that its change can be applied now."""
+        if not self.confirmations:
+            return
+        rows = self.db.query("SELECT block FROM transactions WHERE tx_hash = ?", (tx_hash,))
+        if not rows or rows[0]["block"] is None:
+            return  # still pending: the follower applies it later
+        deadline = time.monotonic() + self.receipt_timeout
+        while self.chain.latest_block() < rows[0]["block"] + self.confirmations:
+            if time.monotonic() > deadline:
+                return
+            time.sleep(0.5)
 
     def _track(
         self, tx_hash: str, party: str, action: str, request_id: str | None, now: datetime
@@ -544,11 +580,13 @@ class ChainLink:
         return tx_hash
 
     def _pending(self, request_id: str, action: str) -> bool:
+        """Whether such a transaction is on its way: not mined yet, or mined in a block
+        the service does not follow yet (``confirmations``)."""
         return bool(
             self.db.query(
                 "SELECT 1 FROM transactions WHERE request_id = ? AND action = ? "
-                "AND status = 'pending'",
-                (request_id, action),
+                "AND (status = 'pending' OR (status = 'confirmed' AND block > ?))",
+                (request_id, action, self.synced_block()),
             )
         )
 
@@ -563,12 +601,14 @@ class ChainLink:
 
     def sync(self) -> list[str]:
         """Apply the escrow's new events to the requests they belong to. Returns the IDs of
-        the requests that changed."""
-        latest = self.chain.latest_block()
-        start = self.synced_block() + 1
+        the requests that changed. Only blocks ``confirmations`` deep are followed."""
+        latest = self.chain.latest_block() - self.confirmations
         changed: list[str] = []
         try:
             with self.db.transaction():
+                # Where to start is read under the database's lock: another process may
+                # have followed the chain since.
+                start = self.synced_block() + 1
                 for row in self.db.query(
                     "SELECT tx_hash FROM transactions WHERE status = 'pending'"
                 ):
@@ -788,7 +828,14 @@ class ChainLink:
     def follow_up(self) -> list[str]:
         """Do the service's own part on chain: attest the automated result of every delivery
         whose file it holds, and settle every request whose outcome is reached. Returns the
-        hashes of the transactions it sent."""
+        hashes of the transactions it sent.
+
+        All in one database transaction: another process that follows the same escrow waits,
+        then sees what this one sent, so it never sends the same transaction again."""
+        with self.db.transaction():
+            return self._follow_up()
+
+    def _follow_up(self) -> list[str]:
         self.sync()
         now = self.now()
         sent = []

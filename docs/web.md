@@ -146,6 +146,11 @@ party's API key, address and keystore; the keys are public test keys that
 anyone can recompute from the parties' names, so never use them anywhere but
 a local chain. Stop it with Ctrl+C.
 
+With `--image orbit-watch` (an image built with `docker build --tag orbit-watch
+.` at the repository's root), the stack seeds its database and then hands it
+over to a container of that image, which serves the API and its own build of
+the app on the same port ([api.md](api.md#running-the-image)).
+
 Against a service on Base Sepolia instead:
 
 ```sh
@@ -191,7 +196,7 @@ cd web && npm run dev                            # http://127.0.0.1:5173/, /v1 f
 | `npm run typecheck` | TypeScript 7, strict |
 | `npm test` | unit tests (Vitest) |
 | `npm run build` | the build, in `dist/` |
-| `npm run e2e` | end-to-end tests (Playwright) against the local stack on port 8790, with the accessibility review of every view ([accessibility.md](accessibility.md)); needs `npm run build` and `forge build` first, and once `npx playwright install chromium` |
+| `npm run e2e` | end-to-end tests (Playwright) against the local stack on port 8790, with the accessibility review of every view ([accessibility.md](accessibility.md)); needs `npm run build` and `forge build` first, and once `npx playwright install chromium`. With `ORBIT_WATCH_E2E_IMAGE=<image>`, against the service's container image instead, as CI does |
 | `npm run demo:base-sepolia` | the phase 3 demo on Base Sepolia, for the maintainer (above) |
 
 The end-to-end tests sign in with a test wallet that announces itself to the

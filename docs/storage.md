@@ -5,15 +5,17 @@ Phase 1, step 1.5; PostgreSQL since phase 4, step 4.1. Code:
 [`settlement/stored_ledger.py`](../core/src/orbit_watch/settlement/stored_ledger.py)
 and `open_service` in [`service.py`](../core/src/orbit_watch/service.py).
 Decisions: [P4-04](decisions.md#p4-04-postgresql-wherever-the-service-keeps-state)
-(which replaced P-02's SQLite) and
-[D-34](decisions.md#d-34-postgresql-storage).
+(which replaced P-02's SQLite),
+[D-34](decisions.md#d-34-postgresql-storage) and, for many processes on one
+database, [D-35](decisions.md#d-35-the-stateless-service-the-follower-and-the-image).
 
 A service opened with `open_service(database, reviewers, context)` keeps its
 whole state, files included, in one PostgreSQL database and survives restarts.
 `database` is a libpq URL or connection string, such as
 `postgresql://user@host/dbname`. A `search_path` in its `options` selects a
 schema, so several services can share one database, one schema each; the tests
-give every test a schema of its own.
+give every test a schema of its own. Any number of processes can run one
+service on one schema (step 4.2, see [Consistency](#consistency)).
 
 `orbit-watch serve` and `orbit-watch keys create` take the database from
 `--database`, or else from `ORBIT_WATCH_DATABASE_URL` or `DATABASE_URL`. A URL
@@ -52,6 +54,7 @@ numbered plain-SQL migrations:
 | `chain_settings`, `wallets`, `transactions`, `chain_events`, `chain_texts`, `chain_uploads`, `chain_conflicts` | on a testnet chain only (migration 0003, step 2.6): the chain followed, each party's wallet, watched transactions, the escrow events applied, reasons by SHA-256, uploaded files and conflicts ([chain-service.md](chain-service.md)) |
 | `station_profiles` | each station's profile (migration 0005, step 3.5); only the station and administrators read it ([D-30](decisions.md#d-30-the-observers-view)) |
 | `governance_operations`, `chain_attestations` | on a testnet chain only (migration 0006, step 3.7): the operations of the timelock that owns the reviewer registry, from its events, and the EAS attestations behind the escrow's results and votes, read once ([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)) |
+| `service_state` | one row (migration 0007, step 4.2): the state's version, which every change raises, and when the follower last ran ([D-35](decisions.md#d-35-the-stateless-service-the-follower-and-the-image)) |
 | `signin_challenges`, `sessions` | signing in with a wallet (migration 0004, step 3.2): the sign-in messages the service wrote, each usable once, and browser sessions by the SHA-256 of their cookie; `wallets.signed_message` keeps the message a party signed when it signed up in the browser ([D-27](decisions.md#d-27-signing-in-with-a-wallet)) |
 
 ## Files
@@ -72,11 +75,22 @@ back call leaves no file behind.
   database. Business refusals (`ServiceError`) have no side effects; for
   example, a challenge that comes too late is refused and the request is settled
   by the next `tick`.
-- **One process per schema, for now.** The service keeps its working state in
-  memory, so it holds a session advisory lock on its schema for as long as it
-  is open. A second process gets `StorageError("in_use")`. Step 4.2 makes the
-  service stateless, with a transaction-scoped lock per change instead
-  ([P4-06](decisions.md#p4-06-the-service-runs-on-its-own)).
+- **Many processes per schema, one transaction at a time** (step 4.2,
+  [P4-06](decisions.md#p4-06-the-service-runs-on-its-own)). Every transaction
+  first takes the schema's transaction-scoped advisory lock
+  (`pg_advisory_xact_lock`, keyed by the database and the schema), so
+  transactions on one schema take turns, across processes too; the lock ends
+  with the transaction and works behind a connection pooler. A change made
+  outside a transaction gets one of its own.
+- **A copy in memory, checked on every transaction.** A process keeps a copy of
+  the working state in memory for speed. A transaction that changes anything
+  raises the state's version in `service_state`. When a transaction begins,
+  under the lock, the process compares that version with the one it last saw
+  and reloads its copy if another process changed the state, or if one of its
+  own transactions was rolled back. So every call works on the current state,
+  and a change that another process already made is refused, never made twice:
+  of two stations that reserve one request at the same moment, one gets it and
+  the other is told that it is reserved.
 - **Rebuilt on start.** The service rebuilds its working state from the
   database, and the points ledger rebuilds its balances from the journal; an
   unbalanced or out-of-order journal is refused (`broken_journal`).
@@ -88,6 +102,9 @@ back call leaves no file behind.
   ledger and gives the same journal.
 - A full request history run with a restart after every step ends in exactly
   the same state as the same history in memory.
+- Two services on one database, taking the steps of a history in turns, end in
+  the same state as the service in memory; two that reserve one request at the
+  same moment reserve it once; transactions on one schema take turns.
 - A refused call and a crash in the middle of a call leave the stored state
   unchanged.
 

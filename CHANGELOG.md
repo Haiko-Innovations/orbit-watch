@@ -16,8 +16,30 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   PostgreSQL wherever the service keeps state, a stateless and portable
   service, and nothing that closes the way to a network the community runs.
   The long-term direction for that network is in `docs/decentralisation.md`.
+- The service runs on its own (phase 4, step 4.2; P4-05, P4-06, D-35). A
+  follower applies passed deadlines and the escrow's events, attests results
+  and settles decided requests without anyone calling `tick`. It runs from a
+  schedule (`GET` or `POST /v1/internal/follow` with the secret in
+  `ORBIT_WATCH_FOLLOW_SECRET` or `CRON_SECRET`), from a timer, or in the server
+  (`orbit-watch serve --follow SECONDS`). `GET /v1/health/follower` tells
+  monitoring whether it keeps up.
+- A container image of the service with the web application (`Dockerfile` at
+  the root): base images pinned by digest, an ordinary user, no writable file
+  system but `/tmp`, listening on `$PORT`. CI builds it and runs the end-to-end
+  tests against it (`local_stack.py --image`, `ORBIT_WATCH_E2E_IMAGE`), and
+  Dependabot proposes updates to its base images.
+- `orbit-watch serve --confirmations BLOCKS`: on a chain, events are applied
+  once their block is that deep, by default 10 blocks on Base Sepolia (about
+  two seconds) and none on a local Anvil chain.
 
 ### Changed
+
+- Any number of service processes can share one database (step 4.2, D-35):
+  transactions on a schema take turns under a transaction-scoped advisory lock,
+  and a process reloads its copy of the state when another one changed it. The
+  `in_use` refusal is gone, and `orbit-watch keys create` works while a server
+  runs. Idempotency keys are checked in the change's own transaction, so a call
+  sent to two processes at once is made once.
 
 - The service keeps its state, files included, in PostgreSQL instead of SQLite
   (phase 4, step 4.1; P4-04, D-34). `orbit-watch serve` and

@@ -1477,7 +1477,8 @@ Accepted · 2026-11-14 (with the pull request that implements step 4.1,
     psycopg's `%s`.
 - **One process per schema until step 4.2.** The service still keeps its state
   in memory, so it holds a session advisory lock on its schema and a second
-  process gets `in_use`, as with SQLite's exclusive mode.
+  process gets `in_use`, as with SQLite's exclusive mode. Replaced by
+  [D-35](#d-35-the-stateless-service-the-follower-and-the-image).
 - **Tests:**
   - every test gets schemas of its own, named also as the connections'
     application name, so that dropping a schema ends any connection a test left
@@ -1493,3 +1494,74 @@ Sources: [psycopg on PyPI](https://pypi.org/project/psycopg/) (3.3.6 of
 [Neon's version policy](https://neon.com/docs/postgresql/postgres-version-policy)
 ("Neon currently supports Postgres 14, 15, 16, 17, and 18"), and the
 [official PostgreSQL image](https://hub.docker.com/_/postgres) (tag 18.6).
+
+### D-35 The stateless service, the follower and the image
+
+Accepted · 2026-11-16 (with the pull request that implements step 4.2,
+[P4-05](#p4-05-portable-by-design) and
+[P4-06](#p4-06-the-service-runs-on-its-own)):
+
+- **Transactions take turns.** Every transaction first takes the schema's
+  transaction-scoped advisory lock (`pg_advisory_xact_lock`, keyed by the
+  database and the schema). Changes on one schema happen one at a time, in
+  every process. The lock ends with its transaction, so it works behind a
+  connection pooler. A change outside a transaction gets one of its own.
+- **A checked copy in memory, not a read per call.** P4-06 says that each call
+  reads what it needs from the database. The service keeps its working state in
+  memory instead, as before, and checks it at the start of every transaction:
+  a transaction that changes anything raises the state's version
+  (`service_state`, migration 0007), and a process whose copy is older reloads
+  it, under the lock, before it reads anything. The effect is the same: every
+  call works on the current state and nothing is made twice. It kept the
+  service's code as it was. The cost is a full reload after another process
+  changes something, and on every cold start. That is small on a testnet. If
+  the state grows, reading per request from the database comes in its place.
+- **Idempotency is checked under the lock**, in the change's own transaction,
+  so two processes that get the same call make it once.
+- **The follower** (`follow_once`) applies passed deadlines and, on a chain,
+  the escrow's new events. It attests results and settles decided requests, all
+  in one transaction, and records when it ran (`service_state.followed_at`).
+  - `GET` or `POST /v1/internal/follow` runs it for a schedule, with
+    `Authorization: Bearer` and the secret from `ORBIT_WATCH_FOLLOW_SECRET`, or
+    from `CRON_SECRET`, which Vercel's cron jobs send. Vercel's cron jobs make
+    `GET` requests. Without a secret, the route does not exist (`404`). The
+    secret is compared in constant time.
+  - `orbit-watch serve --follow SECONDS` runs it in a thread, for a server of
+    our own; a failed run is logged and the next one tries again.
+  - `GET /v1/health/follower` answers `503` when no follower has run for 30
+    minutes (twice the planned 15-minute schedule) or ever.
+- **Confirmations.** The service applies a block's events once 10 blocks
+  follow it on Base Sepolia, which makes five blocks a second (measured on
+  2026-11-16 from Base's public endpoint: 0.2 seconds per block over 1,000
+  blocks), so about two seconds. A local Anvil chain needs none.
+  `--confirmations` sets another depth. A party's reported transaction is
+  answered once it is that deep, so the answer shows the change. The service's
+  own transaction, mined but not yet followed, counts as on its way and is not
+  sent again. Base's `safe` and `finalized` blocks wait for Ethereum: on
+  2026-11-16 they were about 2 and 20 minutes behind the newest block, too slow
+  for the views. A reorganisation deeper than 10 blocks is not handled (a
+  testnet).
+- **The image** is built from the `Dockerfile` at the root in three stages:
+  - the web application with Node 26.12.1 (`npm ci --ignore-scripts`);
+  - the package and its locked dependencies with uv 0.11.16 into a virtual
+    environment, non-editable, with the `api` and `evm` extras;
+  - Python 3.12.15 slim with only that environment and the built app.
+
+  Base images are pinned by digest, and Dependabot proposes updates after 14
+  days. The service runs as user 10001 and needs no writable file system but
+  `/tmp`. It listens on `$PORT` (8000 by default). The build context is an
+  allowlist (`.dockerignore`), so local state and keys never reach it.
+- **CI tests the image end to end.** CI builds the image and runs the same
+  Playwright tests against it. The local stack seeds the database with its
+  own process, then hands it to a container of the image (`--image`), which
+  runs read-only, as an ordinary user, with the verifier's LOCAL TEST keystore
+  mounted read-only.
+
+Sources: [Vercel cron jobs](https://vercel.com/docs/cron-jobs) ("Vercel makes
+an HTTP GET request") and
+[managing them](https://vercel.com/docs/cron-jobs/manage-cron-jobs)
+(`CRON_SECRET` "will be automatically sent as an `Authorization` header", with
+the `Bearer` prefix), uv's
+[Docker guide](https://docs.astral.sh/uv/guides/integration/docker/)
+(`--no-editable`, `UV_COMPILE_BYTECODE`, intermediate layers), and the
+[PostgreSQL manual on advisory locks](https://www.postgresql.org/docs/18/explicit-locking.html#ADVISORY-LOCKS).

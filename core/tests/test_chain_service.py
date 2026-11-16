@@ -621,6 +621,7 @@ def test_the_server_starts_on_a_chain_only_with_the_escrows_verifier(
             verifier_keystore=str(keystore),
             verifier_password_file=str(password),
             from_block=0,
+            confirmations=None,
         )
         return _chain_link(args)
 

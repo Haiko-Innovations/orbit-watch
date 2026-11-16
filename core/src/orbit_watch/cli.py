@@ -420,10 +420,17 @@ def cmd_serve(args: argparse.Namespace) -> int:
             _err(f"warning: cannot read the chain yet: {error}")
         else:
             print(f"Followed the chain to block {chain.synced_block()}")
+    from orbit_watch.api import start_follower
+
+    secret = next((os.environ[n] for n in FOLLOW_SECRET_VARIABLES if os.environ.get(n)), None)
+    app = create_app(service, web=args.web, origins=origins, follow_secret=secret)
+    if secret:
+        print("A schedule may run the follower: /v1/internal/follow (with its secret)")
+    if args.follow:
+        start_follower(app, args.follow)
+        print(f"The follower runs every {args.follow:g} seconds")
     try:
-        uvicorn.run(
-            create_app(service, web=args.web, origins=origins), host=args.host, port=args.port
-        )
+        uvicorn.run(app, host=args.host, port=args.port)
     finally:
         service.storage.close()
     return EXIT_OK
@@ -477,10 +484,13 @@ def _chain_link(args: argparse.Namespace):
         load_keystore(keystore, password),
         from_block=args.from_block,
         safe=getattr(args, "safe", None),
+        confirmations=args.confirmations,
     )
 
 
 DATABASE_VARIABLES = ("ORBIT_WATCH_DATABASE_URL", "DATABASE_URL")
+# The follower's secret for a schedule (step 4.2): Vercel's cron jobs send CRON_SECRET.
+FOLLOW_SECRET_VARIABLES = ("ORBIT_WATCH_FOLLOW_SECRET", "CRON_SECRET")
 DATABASE_HELP = (
     "the service's PostgreSQL database, as a libpq URL or connection string (default: "
     "$ORBIT_WATCH_DATABASE_URL or $DATABASE_URL; a password on the command line ends up in "
@@ -756,6 +766,15 @@ def build_parser() -> argparse.ArgumentParser:
         help=DATABASE_HELP,
     )
     serve.add_argument("--host", default="127.0.0.1", help="address to listen on")
+    serve.add_argument(
+        "--follow",
+        type=float,
+        default=0,
+        metavar="SECONDS",
+        help="run the follower in this process every SECONDS: apply the chain's events and "
+        "passed deadlines, attest and settle without anyone calling tick (default: off; a "
+        "schedule can call /v1/internal/follow with $ORBIT_WATCH_FOLLOW_SECRET instead)",
+    )
     serve.add_argument("--port", type=int, default=8000, help="port (default 8000)")
     serve.add_argument("--catalog", help="reference orbits (default: built-in SIMULATED)")
     serve.add_argument("--policy", help="target allow-list (default: built-in SIMULATED)")
@@ -801,6 +820,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="a new service directory follows the chain from this block (default: the "
         "current block, since no earlier event can belong to its requests)",
+    )
+    chain.add_argument(
+        "--confirmations",
+        type=int,
+        default=None,
+        metavar="BLOCKS",
+        help="apply a block's events once this many blocks follow it (default: 10 on Base "
+        "Sepolia, about two seconds; 0 on a local Anvil chain)",
     )
     chain.add_argument(
         "--safe",
