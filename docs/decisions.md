@@ -1565,3 +1565,70 @@ the `Bearer` prefix), uv's
 [Docker guide](https://docs.astral.sh/uv/guides/integration/docker/)
 (`--no-editable`, `UV_COMPILE_BYTECODE`, intermediate layers), and the
 [PostgreSQL manual on advisory locks](https://www.postgresql.org/docs/18/explicit-locking.html#ADVISORY-LOCKS).
+
+### D-36 Limits, the body limit and the dedicated RPC endpoint
+
+Accepted · 2026-11-16 (with the pull request that implements step 4.3,
+[P4-07](#p4-07-a-dedicated-rpc-endpoint-for-the-service) and
+[P4-08](#p4-08-limits-against-abuse)):
+
+- **Counts in the database, in fixed windows** (`rate_limits`, migration 0008).
+  Any number of processes count alike, without anything but PostgreSQL
+  ([P4-05](#p4-05-portable-by-design)). The limits and their defaults are in
+  [api.md](api.md#limits-against-abuse). A test keeps that table equal to the
+  code. Fixed windows let a caller make up to twice a limit across the end of a
+  window. That is enough against scripts and simpler to explain than a sliding
+  window.
+- **The public pages are limited too.** Besides the calls that P4-08 lists, every
+  page anyone may read without a key (`GET /v1/public/…`, `GET /v1/chain`) counts
+  against one generous limit per IP address: 600 per 10 minutes. So the limits
+  hold without a firewall in front ([P4-05](#p4-05-portable-by-design)). Health
+  checks are not limited, so monitoring keeps working.
+- **Counted first, in a transaction of their own.** A call is counted before it
+  does anything, after its key or session is known. So a call that then fails
+  still counts, and failed sign-ins are what the limit is for. A refused call is
+  not counted, and the limits of one call (a sign-up is also a sign-in) are
+  checked together.
+- **No IP address is stored.** A count keeps a SHA-256 of the address, keyed
+  with a random key that the migration makes once per database. Every count is
+  deleted when its window is over, at most an hour later. With the key in the
+  same database, the hash is pseudonymous, not anonymous; the privacy notice
+  (step 4.4) lists it. IPv6 addresses count per /64.
+- **The caller's address** is the connection's, unless a trusted proxy's header
+  is named. On Vercel that header is `x-real-ip`: Vercel's documentation says it
+  "is identical to the `x-forwarded-for` header", "the public IP address of the
+  client", and that Vercel overwrites `X-Forwarded-For` "to prevent IP
+  spoofing". Of a list, the last entry counts.
+- **Counts, keys, sessions and the follower's time change no state.** They are
+  written with `state=False`, so they do not raise the state's version
+  ([D-35](#d-35-the-stateless-service-the-follower-and-the-image)), and other
+  processes do not reload for them.
+- **Bodies are at most 4,000,000 bytes**, under Vercel's 4.5 MB. A middleware
+  refuses a larger body by its `Content-Length`, or while it arrives, before any
+  route reads it.
+- **Vercel's firewall** gets one rate-limiting rule in step 4.5, when the
+  project exists: every path, 300 requests per 60 seconds per IP address,
+  answered with 429. On Pro, rules use a fixed window of 10 seconds to 10
+  minutes, counted per IP address or JA4 digest, with 40 rules per project.
+  Rules are made in the dashboard.
+- **The dedicated RPC endpoint** comes from `ORBIT_WATCH_CHAIN_RPC`, and with
+  `--network` the public endpoint is its fallback. The fallback is tried after
+  a connection error, a timeout, HTTP 429 or a 5xx. Any other HTTP error is the
+  answer, with its status and redacted body, so that a log query over too many
+  blocks is still made smaller.
+- **The RPC key stays secret.** The service's provider (`chain/rpc.py`) sends
+  requests itself, so web3's own debug lines, which name the URL, are never
+  written. Errors name an endpoint by its role and the cause by its type and
+  status, and are not chained to the exception that holds the URL. A filter on
+  urllib3's loggers replaces the URL's path, query and password with
+  `[RPC endpoint]`. The tests run a request's whole course through a stand-in
+  endpoint with a made-up key, at debug level. They look for the key in every
+  response and every log line, and fail without the filter.
+- **Which provider** is chosen in step 4.5, with an account in Haiko
+  Innovations' name; the key goes into a production secret only.
+
+Sources: [Vercel request headers](https://vercel.com/docs/headers/request-headers)
+and [Vercel WAF rate limiting](https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting)
+("available on all plans"; Pro: "40 per project", window "Minimum: 10s,
+Maximum: 10mins", "Fixed window").
+

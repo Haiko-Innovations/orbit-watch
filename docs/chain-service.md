@@ -108,14 +108,35 @@ reviewer gets no tasks, but can still vote straight on chain.
 ## Running the server on a chain
 
 ```sh
-ORBIT_WATCH_DATABASE_URL=postgresql://… orbit-watch serve --network base-sepolia \
+export ORBIT_WATCH_DATABASE_URL=postgresql://…
+export ORBIT_WATCH_CHAIN_RPC=https://…   # a dedicated endpoint; its URL holds a key
+orbit-watch serve --network base-sepolia \
   --verifier-keystore ~/secrets/orbit-watch/verifier.json
 ```
 
 `--network base-sepolia` takes the escrow and Base's public RPC endpoint from
-the deployment record in the package ([base-sepolia.md](base-sepolia.md));
-`--chain-rpc` overrides the endpoint. For another escrow, for example on a
-local chain, give `--chain-rpc` and `--escrow` instead.
+the deployment record in the package ([base-sepolia.md](base-sepolia.md)).
+For another escrow, for example on a local chain, give `--chain-rpc` and
+`--escrow` instead.
+
+**A dedicated RPC endpoint** (step 4.3,
+[P4-07](decisions.md#p4-07-a-dedicated-rpc-endpoint-for-the-service)). Base's
+public endpoints are rate limited and "not suitable for production apps", so
+the public service reads the chain through a provider's endpoint, from
+`ORBIT_WATCH_CHAIN_RPC` (or `--chain-rpc`). With `--network`, the public
+endpoint is its fallback: it is used when the dedicated one does not connect,
+times out, or answers with HTTP 429 or 5xx. The dedicated endpoint's URL holds
+the provider's key, so it is a secret:
+- give it in the environment, not on the command line, where other users of
+  the machine can see it;
+- it never reaches a response, a log or the browser. Errors name an endpoint by
+  its role only ("the dedicated endpoint: HTTP 503"), never by its URL, and a
+  filter on urllib3's logger replaces the URL's path in its debug lines with
+  `[RPC endpoint]`. Tests run a whole request through a stand-in endpoint with
+  a made-up key, at debug level, and look for the key in every response and log
+  line ([`core/tests/test_rpc.py`](../core/tests/test_rpc.py)).
+
+Wallets in the browser use their own endpoints, as before.
 
 - The verifier keystore is an encrypted JSON keystore, for example one made
   with `cast wallet import`. Keep it outside the repository and readable only

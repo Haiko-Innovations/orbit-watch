@@ -67,6 +67,7 @@ from starlette.staticfiles import StaticFiles
 from orbit_watch import __version__
 from orbit_watch import lifecycle as lc
 from orbit_watch.api import keys, sessions
+from orbit_watch.api.limits import Limits, RateLimited, client_ip
 from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.chain import WALLET_PREFIX, ChainError
@@ -76,7 +77,8 @@ from orbit_watch.service import RequestService, ServiceError
 from orbit_watch.settlement import SettlementError
 from orbit_watch.timeutil import format_utc, parse_utc
 
-MAX_BODY_BYTES = 10 * 1024 * 1024
+# Every body, whatever the route: under Vercel's 4.5 MB for a function (decision P4-08).
+MAX_BODY_BYTES = 4_000_000
 # The public quality meter scores one observation file at a time, outside the service lock.
 MAX_QUALITY_BYTES = 2 * 1024 * 1024
 MAX_SIMULATED_PASSES = 6
@@ -155,6 +157,7 @@ STATUS = {
     "unknown_profile": 404,
     "unknown_target": 404,
     "too_large": 413,
+    "rate_limited": 429,
     "verification_unavailable": 503,
     "chain_unavailable": 503,
 }
@@ -174,7 +177,20 @@ def _error_response(code: str, message: str) -> JSONResponse:
 
 async def _handle_api_error(request: Request, exc: Exception) -> Response:
     code = getattr(exc, "code", "invalid")
-    return _error_response(code, str(exc))
+    response = _error_response(code, str(exc))
+    retry_after = getattr(exc, "retry_after", None)
+    if retry_after is not None:
+        response.headers["Retry-After"] = str(retry_after)
+    return response
+
+
+def _signs_up(body: bytes) -> bool:
+    """Whether a sign-in challenge asks to sign up a new party."""
+    try:
+        document = json.loads(body.decode("utf-8")) if body else {}
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    return isinstance(document, dict) and document.get("sign_up") is not None
 
 
 def _json(body: bytes) -> dict[str, Any]:
@@ -215,6 +231,8 @@ class Api:
         wall_clock: Callable[[], datetime] | None = None,
         follow_secret: str | None = None,
         follow_max_age: float = FOLLOW_MAX_AGE,
+        limits: Limits | None = None,
+        client_ip_header: str | None = None,
     ):
         if service.storage is None:
             raise ValueError("the API needs a stored service (open_service)")
@@ -230,6 +248,9 @@ class Api:
         # The follower (step 4.2): the schedule's secret, and how old its last run may be.
         self.follow_secret = follow_secret or None
         self.follow_max_age = follow_max_age
+        # Limits against abuse (step 4.3): None applies none.
+        self.limits = limits
+        self.client_ip_header = client_ip_header.lower() if client_ip_header else None
 
     # ------------------------------------------------------------------ plumbing
 
@@ -284,16 +305,43 @@ class Api:
         *,
         mutating: bool,
         store_response: Callable[[Any], Any] | None = None,
+        limit: str | None = None,
     ):
-        """Wrap a handler: authenticate, serialise, run in one transaction, idempotency."""
+        """Wrap a handler: authenticate, count against ``limit``, serialise, run in one
+        transaction, idempotency. Bodies are at most ``MAX_BODY_BYTES`` (``BodyLimit``)."""
 
         async def handler(request: Request) -> Response:
             body = await request.body()
-            if len(body) > MAX_BODY_BYTES:
-                raise ApiError("too_large", f"the body is larger than {MAX_BODY_BYTES} bytes")
-            return await run_in_threadpool(self._run, request, body, work, mutating, store_response)
+            return await run_in_threadpool(
+                self._run, request, body, work, mutating, store_response, limit
+            )
 
         return handler
+
+    def caller_ip(self, request: Request) -> str | None:
+        """The caller's IP address: the trusted proxy's header, or the connection's."""
+        header = request.headers.get(self.client_ip_header) if self.client_ip_header else None
+        return client_ip(header, request.client.host if request.client else None)
+
+    def _limit_alone(self, name: str, request: Request) -> None:
+        """``_limit`` for a call that does not hold the lock otherwise."""
+        with self.lock:
+            self._limit(request, None, name)
+
+    def _limit(self, request: Request, party: str | None, *names: str) -> None:
+        """Count one call against each of the limits ``names``, in a transaction of its
+        own, so that it counts even if the call then fails; or refuse it, counting nothing
+        (step 4.3). Under ``self.lock``."""
+        if self.limits is None:
+            return
+        with self.db.transaction():
+            self.limits.hit(
+                self.db,
+                *names,
+                ip=self.caller_ip(request),
+                party=party,
+                now=self.wall_clock().timestamp(),
+            )
 
     def _run(
         self,
@@ -302,9 +350,12 @@ class Api:
         work: Callable[..., Any],
         mutating: bool,
         store_response: Callable[[Any], Any] | None,
+        limit: str | None = None,
     ) -> Response:
         with self.lock:
             principal = self._principal(request, mutating)
+            if limit is not None:
+                self._limit(request, principal.party, limit)
             self._follow_chain()
             now = self.clock()
             if not mutating:
@@ -410,8 +461,11 @@ class Api:
                 changed = self.service.tick(self.clock())
                 sent = self.chain.follow_up() if self.chain is not None else []
                 followed = format_utc(self.wall_clock())
+                # Not part of the state a process keeps in memory: no reload elsewhere.
                 self.db.execute(
-                    "UPDATE service_state SET followed_at = ? WHERE id = 1", (followed,)
+                    "UPDATE service_state SET followed_at = ? WHERE id = 1",
+                    (followed,),
+                    state=False,
                 )
         result: dict[str, Any] = {"changed": changed, "sent": sent, "followed_at": followed}
         if self.chain is not None:
@@ -595,26 +649,35 @@ class Api:
 
     def _run_public(self, request: Request, work: Callable[..., Any]) -> Response:
         with self.lock:
+            self._limit(request, None, "public")  # anyone may call these (step 4.3)
             self._follow_chain()
             with self.db.transaction():
                 return self._respond(work(request, self.clock()))
 
     # ------------------------------------------------------------------ sessions (step 3.2)
 
-    def session_route(self, work: Callable[..., Any]):
-        """Sign-in calls: no key, no idempotency record, one transaction, wall-clock time."""
+    def session_route(self, work: Callable[..., Any], *, limited: bool = False):
+        """Sign-in calls: no key, no idempotency record, one transaction, wall-clock time.
+        ``limited`` calls count against the sign-in limit, and sign-ups against the sign-up
+        limit too (step 4.3)."""
 
         async def handler(request: Request) -> Response:
             body = await request.body()
             if len(body) > 64 * 1024:
                 raise ApiError("too_large", "the body is larger than 64 KiB")
-            return await run_in_threadpool(self._run_session, request, body, work)
+            return await run_in_threadpool(self._run_session, request, body, work, limited)
 
         return handler
 
-    def _run_session(self, request: Request, body: bytes, work: Callable[..., Any]) -> Response:
-        with self.lock, self.db.transaction():
-            return self._respond(work(request, body, self.wall_clock()))
+    def _run_session(
+        self, request: Request, body: bytes, work: Callable[..., Any], limited: bool = False
+    ) -> Response:
+        with self.lock:
+            if limited:
+                names = ("sign_in", "sign_up") if _signs_up(body) else ("sign_in",)
+                self._limit(request, None, *names)
+            with self.db.transaction():
+                return self._respond(work(request, body, self.wall_clock()))
 
     def session_challenge(self, request, body, now):
         chain = self._require_chain()  # wallets belong to the chain
@@ -1090,6 +1153,7 @@ class Api:
     async def public_quality(self, request: Request) -> Response:
         """The station quality meter: an observation file in, its quality report out. The
         file is not kept, and scoring does not hold the service lock."""
+        await run_in_threadpool(self._limit_alone, "quality", request)
         # Read in pieces and stop at the limit: anyone may call this.
         chunks, size = [], 0
         async for chunk in request.stream():
@@ -1193,6 +1257,61 @@ class SecurityHeaders:
         await self.app(scope, receive, send_with_headers)
 
 
+class BodyLimit:
+    """Refuses a body over ``MAX_BODY_BYTES`` with ``413`` before any route reads it: by
+    its ``Content-Length``, or while it arrives (pure ASGI middleware, step 4.3)."""
+
+    def __init__(self, app: Any, max_bytes: int | None = None):
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        limit = self.max_bytes if self.max_bytes is not None else MAX_BODY_BYTES
+        headers = dict(scope.get("headers", []))
+        length = headers.get(b"content-length")
+        too_large = _error_response("too_large", f"the body is larger than {limit} bytes")
+        if length is not None:
+            try:
+                declared = int(length)
+            except ValueError:
+                declared = limit + 1
+            if declared > limit:
+                await too_large(scope, receive, send)
+                return
+        # Read the body here, up to the limit, and hand it on whole.
+        chunks, size, more = [], 0, True
+        while more:
+            message = await receive()
+            if message["type"] != "http.request":
+                await self.app(scope, _replay([], message, receive), send)
+                return
+            chunk = message.get("body", b"")
+            size += len(chunk)
+            if size > limit:
+                await too_large(scope, receive, send)
+                return
+            chunks.append(chunk)
+            more = message.get("more_body", False)
+        await self.app(scope, _replay(chunks, None, receive), send)
+
+
+def _replay(chunks: list[bytes], last: Any, receive: Any) -> Any:
+    """A ``receive`` that gives the body read so far in one message, then goes on."""
+    pending = [{"type": "http.request", "body": b"".join(chunks), "more_body": False}]
+    if last is not None:
+        pending = [last]
+
+    async def replay() -> Any:
+        if pending:
+            return pending.pop(0)
+        return await receive()
+
+    return replay
+
+
 def create_app(
     service: RequestService,
     *,
@@ -1202,6 +1321,8 @@ def create_app(
     wall_clock: Callable[[], datetime] | None = None,
     follow_secret: str | None = None,
     follow_max_age: float = FOLLOW_MAX_AGE,
+    limits: Limits | None = None,
+    client_ip_header: str | None = None,
 ) -> Starlette:
     """The ASGI application for a stored service; with ``web``, the directory of the built
     web application, served at ``/`` (step 3.1). Browsers sign in from ``origins`` only
@@ -1217,6 +1338,8 @@ def create_app(
         wall_clock=wall_clock,
         follow_secret=follow_secret,
         follow_max_age=follow_max_age,
+        limits=limits,
+        client_ip_header=client_ip_header,
     )
     read, change = (
         lambda f: api.endpoint(f, mutating=False),
@@ -1228,7 +1351,7 @@ def create_app(
         Route("/v1/internal/follow", api.internal_follow, methods=["GET", "POST"]),
         Route("/v1/health/follower", api.follower_health, methods=["GET"]),
         Route("/v1/requests", read(api.list_requests), methods=["GET"]),
-        Route("/v1/requests", change(api.create_request), methods=["POST"]),
+        Route("/v1/requests", change(api.create_request, limit="new_request"), methods=["POST"]),
         Route("/v1/requests/{request_id}", read(api.get_request), methods=["GET"]),
         Route(
             "/v1/requests/{request_id}/open",
@@ -1246,7 +1369,11 @@ def create_app(
             methods=["POST"],
         ),
         Route("/v1/requests/{request_id}/reserve", change(api.reserve), methods=["POST"]),
-        Route("/v1/requests/{request_id}/deliveries", change(api.deliver), methods=["POST"]),
+        Route(
+            "/v1/requests/{request_id}/deliveries",
+            change(api.deliver, limit="upload"),
+            methods=["POST"],
+        ),
         Route("/v1/requests/{request_id}/challenge", change(api.challenge), methods=["POST"]),
         Route("/v1/requests/{request_id}/report", read(api.get_report), methods=["GET"]),
         Route("/v1/files/{sha256}", read(api.get_file), methods=["GET"]),
@@ -1275,9 +1402,13 @@ def create_app(
         # On a testnet chain (step 2.6).
         Route("/v1/chain", api.public(api.chain_info), methods=["GET"]),
         # Signing in with a wallet (step 3.2).
-        Route("/v1/session/challenge", api.session_route(api.session_challenge), methods=["POST"]),
+        Route(
+            "/v1/session/challenge",
+            api.session_route(api.session_challenge, limited=True),
+            methods=["POST"],
+        ),
         Route("/v1/session", api.session_route(api.get_session), methods=["GET"]),
-        Route("/v1/session", api.session_route(api.sign_in), methods=["POST"]),
+        Route("/v1/session", api.session_route(api.sign_in, limited=True), methods=["POST"]),
         Route("/v1/session", api.session_route(api.sign_out), methods=["DELETE"]),
         Route("/v1/wallet", read(api.get_wallet), methods=["GET"]),
         Route("/v1/wallet", change(api.register_wallet), methods=["POST"]),
@@ -1312,9 +1443,12 @@ def create_app(
         SettlementError: _handle_api_error,
         SessionError: _handle_api_error,
         ChainError: _handle_api_error,
+        RateLimited: _handle_api_error,
     }
     app = Starlette(
-        routes=routes, exception_handlers=handlers, middleware=[Middleware(SecurityHeaders)]
+        routes=routes,
+        exception_handlers=handlers,
+        middleware=[Middleware(SecurityHeaders), Middleware(BodyLimit)],
     )
     app.state.api = api
     return app

@@ -129,17 +129,18 @@ jobs:
       # every party signing its own transactions (step 2.6), the deployment script run
       # with forge script (step 2.7), the phase 2 demo (step 2.8), signing in with a
       # wallet (step 3.2), the administrator view with the reviewer registry's Safe and
-      # timelock (step 3.7) and two services following one escrow from one database
-      # (step 4.2). Needs the build above. Never touches a public network and holds no keys
+      # timelock (step 3.7), two services following one escrow from one database
+      # (step 4.2) and the dedicated RPC endpoint whose key never shows (step 4.3). Needs
+      # the build above. Never touches a public network and holds no keys
       # but local test keys (P2-08).
-      - name: Settlement adapter, service, command line, deployment, demo, sign-in, administration and follower on a local chain (Anvil)
+      - name: Settlement adapter, service, command line, deployment, demo, sign-in, administration, follower and RPC endpoint on a local chain (Anvil)
         env:
           ORBIT_WATCH_EVM_TESTS: "1"
         run: >-
           uv run --locked --python 3.12 pytest tests/test_evm_adapter.py tests/test_chain.py
           tests/test_chain_service.py tests/test_cli_chain.py tests/test_deploy_script.py
           tests/test_phase2_demo.py tests/test_sessions.py tests/test_admin.py
-          tests/test_follower.py
+          tests/test_follower.py tests/test_rpc.py
 
       # The web application (phase 3). Node from the Active LTS line (decision P3-02);
       # `npm ci` installs exactly the lock file, and no package runs an install script.
