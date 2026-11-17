@@ -119,6 +119,11 @@ export function App() {
         {strings.skip}
       </button>
       <TestnetBanner notice={chain?.notice ?? null} />
+      {service.state === "ready" && service.value.health.read_only ? (
+        <div className="read-only-banner" role="status" data-testid="read-only">
+          {strings.readOnly}
+        </div>
+      ) : null}
       <header className="site-header">
         <a className="brand" href={paths.network}>
           <Logo />

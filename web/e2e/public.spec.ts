@@ -127,3 +127,28 @@ test("the quality meter scores an observation file without signing in", async ({
   await page.getByRole("button", { name: "Measure" }).click();
   await expect(page.getByRole("alert")).toContainText("cannot read the observations");
 });
+
+test("in read-only mode every page says so (step 4.6)", async ({ page }) => {
+  await page.route("**/v1/health", async (route) => {
+    const health = await (await route.fetch()).json();
+    await route.fulfill({ json: { ...health, read_only: true } });
+  });
+  await page.goto("/");
+  const banner = page.getByTestId("read-only");
+  await expect(banner).toHaveText(/read-only for maintenance/);
+  await expect(banner).toHaveAttribute("role", "status");
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    const audit = await new AxeBuilder({ page })
+      .include('[data-testid="read-only"]')
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(audit.violations, `${colorScheme} colours`).toEqual([]);
+  }
+});
+
+test("without read-only mode there is no such notice", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "Network" })).toBeVisible();
+  await expect(page.getByTestId("read-only")).toHaveCount(0);
+});

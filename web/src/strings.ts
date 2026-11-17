@@ -7,6 +7,8 @@ export const strings = {
   testnetOnly: "Testnet only, no real value",
   simulatedNote: "All stations, observations, requests and reviewers here are SIMULATED.",
   simulated: "SIMULATED",
+  readOnly:
+    "The service is read-only for maintenance: you can look around and sign in, but nothing can be changed right now.",
   nav: {
     label: "Main",
     network: "Network",

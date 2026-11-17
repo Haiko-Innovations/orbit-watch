@@ -36,7 +36,9 @@ numbered plain-SQL migrations:
 - `migrate()` applies missing migrations in one transaction and records each
   one with the SHA-256 of its SQL. A migration that was changed after it was
   applied, or a database with migrations this version does not know, is
-  refused (`migration_changed`, `newer_schema`).
+  refused (`migration_changed`, `newer_schema`). `migrate(up_to=N)` stops at
+  version N: a restore loads a backup into its own version's schema first, then
+  migrates the rest ([operations.md](operations.md#restoring), step 4.6).
 - The SQL is standard PostgreSQL with nothing specific to one provider
   ([P4-05](decisions.md#p4-05-portable-by-design)). Numbers that can grow
   (blocks, amounts, sizes) are `BIGINT`. The code writes `?` placeholders, which

@@ -1,0 +1,67 @@
+name: Backup
+
+# A daily backup of the public service's database (phase 4, step 4.6; decision D-39). The
+# service encrypts it with age to the maintainer's public key before it leaves, so this job
+# only ever holds ciphertext, and it keeps nothing else. GitHub keeps it for 14 days. A
+# failed run notifies the maintainer. Restoring it: docs/operations.md.
+
+on:
+  schedule:
+    # Every day at 02:23 UTC, away from the start of the hour, when GitHub is busiest.
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+# Least privilege: the job reads nothing from the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The token is a secret of the environment "backup", which only main may use.
+    environment: backup
+    env:
+      SERVICE: https://orbit-watch-tan.vercel.app
+      # Every backup leaves Neon over the network, and Neon's Free plan moves 5 GB a month
+      # (D-39): a warning well before that.
+      WARN_BYTES: "50000000"
+    steps:
+      - name: Take the backup
+        id: take
+        env:
+          TOKEN: ${{ secrets.ORBIT_WATCH_BACKUP_TOKEN }}
+        run: |
+          set -euo pipefail
+          name="orbit-watch-$(date -u +%Y%m%dT%H%M%SZ).tar.gz.age"
+          mkdir backup
+          curl --fail-with-body --silent --show-error --max-time 600 \
+            --retry 2 --retry-delay 30 --retry-all-errors \
+            --header "Authorization: Bearer ${TOKEN}" \
+            --output "backup/${name}" "${SERVICE}/v1/internal/backup"
+          # Only an age file is kept.
+          if [ "$(head -c 21 "backup/${name}")" != "age-encryption.org/v1" ]; then
+            rm -f "backup/${name}"
+            echo "::error::the answer is not an age file, so nothing is kept"
+            exit 1
+          fi
+          size="$(stat --format=%s "backup/${name}")"
+          echo "${name}: ${size} bytes, encrypted" | tee -a "${GITHUB_STEP_SUMMARY}"
+          if [ "${size}" -gt "${WARN_BYTES}" ]; then
+            echo "::warning::the backup is ${size} bytes: see Neon's monthly transfer in docs/operations.md"
+          fi
+          echo "name=${name}" >> "${GITHUB_OUTPUT}"
+
+      # Actions are pinned to commit SHAs (supply-chain protection). Dependabot updates them.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.take.outputs.name }}
+          path: backup/
+          retention-days: 14
+          if-no-files-found: error
+          # Already compressed, then encrypted.
+          compression-level: 0

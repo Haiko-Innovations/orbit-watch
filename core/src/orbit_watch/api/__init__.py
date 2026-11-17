@@ -37,6 +37,11 @@ real value").
 attestation browser (``GET /v1/public/attestations``) lists the EAS attestations of the
 requests the service follows, with EAS Scan links on Base Sepolia.
 
+**Operations** (step 4.6): in **read-only mode** (``serve --read-only``) every change is
+refused with ``503 read_only``, the follower waits, and reading, the public pages and
+signing in still work. With a backup token, a schedule takes an encrypted **backup** of the
+database (``GET /v1/internal/backup``, ``orbit_watch.backup``).
+
 **The web application** (step 3.1): given the directory of its build, the API
 serves it at ``/`` on its own origin, so the browser talks to one server only.
 Every response carries a strict content security policy: the pages load only
@@ -60,11 +65,11 @@ from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware import Middleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from orbit_watch import __version__
+from orbit_watch import __version__, backup
 from orbit_watch import lifecycle as lc
 from orbit_watch.api import keys, privacy, sessions
 from orbit_watch.api.limits import Limits, RateLimited, client_ip
@@ -160,7 +165,12 @@ STATUS = {
     "rate_limited": 429,
     "verification_unavailable": 503,
     "chain_unavailable": 503,
+    "read_only": 503,
 }
+READ_ONLY_MESSAGE = (
+    "the service is read-only for maintenance: nothing can be changed right now, but "
+    "everything can be read"
+)
 
 
 class ApiError(Exception):
@@ -234,6 +244,9 @@ class Api:
         limits: Limits | None = None,
         client_ip_header: str | None = None,
         station_decimals: int | None = None,
+        read_only: bool = False,
+        backup_token: str | None = None,
+        backup_recipient: str | None = None,
     ):
         if service.storage is None:
             raise ValueError("the API needs a stored service (open_service)")
@@ -254,6 +267,15 @@ class Api:
         self.client_ip_header = client_ip_header.lower() if client_ip_header else None
         # Station coordinates to this many decimals (step 4.4): None keeps them as given.
         self.station_decimals = station_decimals
+        # Operations (step 4.6): read-only mode, and backups for a schedule with the token,
+        # encrypted to the age public key.
+        self.read_only = read_only
+        if backup_token and not backup_recipient:
+            raise ValueError("backups need the age public key they are encrypted to")
+        if backup_recipient:
+            backup.recipient(backup_recipient)  # checked now, not at the first backup
+        self.backup_token = backup_token or None
+        self.backup_recipient = backup_recipient or None
 
     # ------------------------------------------------------------------ plumbing
 
@@ -355,6 +377,8 @@ class Api:
         store_response: Callable[[Any], Any] | None,
         limit: str | None = None,
     ) -> Response:
+        if mutating and self.read_only:
+            raise ApiError("read_only", READ_ONLY_MESSAGE)
         with self.lock:
             principal = self._principal(request, mutating)
             if limit is not None:
@@ -434,8 +458,9 @@ class Api:
             return JSONResponse(payload, status_code=status)
 
     def _follow_chain(self) -> None:
-        """Apply the escrow's new events before anything else: the chain decides."""
-        if self.chain is None:
+        """Apply the escrow's new events before anything else: the chain decides. Not in
+        read-only mode, which changes nothing: reads show the chain as last followed."""
+        if self.chain is None or self.read_only:
             return
         try:
             self.chain.sync()
@@ -507,7 +532,44 @@ class Api:
             token.strip().encode(), self.follow_secret.encode()
         ):
             raise ApiError("unauthorized", "the follower's secret is required")
+        if self.read_only:
+            raise ApiError("read_only", f"{READ_ONLY_MESSAGE}; the follower waits")
         return JSONResponse(await run_in_threadpool(self.follow_once))
+
+    def take_backup(self) -> bytes:
+        """A backup of the database, encrypted to the backup's public key (step 4.6). In
+        one transaction, under the lock that every change takes."""
+        if self.backup_recipient is None:
+            raise ApiError("not_found", "backups are not enabled on this service")
+        with self.lock, self.db.transaction():
+            archive = backup.take(self.db, self.wall_clock())
+        encrypted = backup.encrypt(archive, self.backup_recipient)
+        log.info("backup taken: %d bytes encrypted", len(encrypted))
+        return encrypted
+
+    async def internal_backup(self, request: Request) -> Response:
+        """``GET /v1/internal/backup``, for a schedule: ``Authorization: Bearer`` with the
+        backup token. The answer is the encrypted archive, streamed, so that it may be larger
+        than a function's response limit. Without a token configured there is no such
+        route."""
+        if self.backup_token is None:
+            raise ApiError("not_found", "backups are not enabled on this service")
+        scheme, _, token = request.headers.get("authorization", "").partition(" ")
+        if scheme.lower() != "bearer" or not hmac.compare_digest(
+            token.strip().encode(), self.backup_token.encode()
+        ):
+            raise ApiError("unauthorized", "the backup token is required")
+        data = await run_in_threadpool(self.take_backup)
+        stamp = self.wall_clock().strftime("%Y%m%dT%H%M%SZ")
+        chunk = 1024 * 1024
+        return StreamingResponse(
+            (data[i : i + chunk] for i in range(0, len(data), chunk)),
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": f'attachment; filename="orbit-watch-{stamp}.tar.gz.age"',
+                "Cache-Control": "no-store",
+            },
+        )
 
     def follower_status(self) -> dict[str, Any]:
         """When the follower of any process last ran, and whether that is recent enough."""
@@ -538,7 +600,14 @@ class Api:
             notice = (
                 f"Phase 2 prototype on a chain: {self.chain.notice}. All bundled data is SIMULATED."
             )
-        return JSONResponse({"status": "ok", "version": __version__, "notice": notice})
+        return JSONResponse(
+            {
+                "status": "ok",
+                "version": __version__,
+                "notice": notice,
+                "read_only": self.read_only,
+            }
+        )
 
     def create_request(self, principal, request, body, now, key):
         self._require(principal, "requester")
@@ -1382,12 +1451,17 @@ def create_app(
     limits: Limits | None = None,
     client_ip_header: str | None = None,
     station_decimals: int | None = None,
+    read_only: bool = False,
+    backup_token: str | None = None,
+    backup_recipient: str | None = None,
 ) -> Starlette:
     """The ASGI application for a stored service; with ``web``, the directory of the built
     web application, served at ``/`` (step 3.1). Browsers sign in from ``origins`` only
     (step 3.2). With ``follow_secret``, a schedule can run the follower (step 4.2); the
     ``Api`` is ``app.state.api``. ``limits`` (step 4.3) and ``station_decimals`` (step 4.4)
-    apply none by default; ``orbit-watch serve`` applies both."""
+    apply none by default; ``orbit-watch serve`` applies both. ``read_only`` refuses every
+    change, and with ``backup_token`` a schedule takes backups encrypted to
+    ``backup_recipient`` (step 4.6)."""
     if clock is None:
         # On a chain the service keeps the chain's time, which its deadlines use.
         clock = service.chain.now if service.chain is not None else lambda: datetime.now(tz=UTC)
@@ -1401,6 +1475,9 @@ def create_app(
         limits=limits,
         client_ip_header=client_ip_header,
         station_decimals=station_decimals,
+        read_only=read_only,
+        backup_token=backup_token,
+        backup_recipient=backup_recipient,
     )
     read, change = (
         lambda f: api.endpoint(f, mutating=False),
@@ -1411,6 +1488,8 @@ def create_app(
         # The follower (step 4.2): for a schedule, and for monitoring.
         Route("/v1/internal/follow", api.internal_follow, methods=["GET", "POST"]),
         Route("/v1/health/follower", api.follower_health, methods=["GET"]),
+        # Backups, for a schedule (step 4.6).
+        Route("/v1/internal/backup", api.internal_backup, methods=["GET"]),
         Route("/v1/requests", read(api.list_requests), methods=["GET"]),
         Route("/v1/requests", change(api.create_request, limit="new_request"), methods=["POST"]),
         Route("/v1/requests/{request_id}", read(api.get_request), methods=["GET"]),
@@ -1532,6 +1611,8 @@ def start_follower(
 
     def loop() -> None:
         while not stop.wait(every):
+            if api.read_only:  # the follower waits (step 4.6)
+                continue
             try:
                 api.follow_once()
             except Exception:  # the node or the database is away: the next run tries again

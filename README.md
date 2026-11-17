@@ -94,6 +94,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | The contracts on **Base Sepolia**: addresses, faucets, who holds which key, deploying | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
 | Web application (phase 3): public pages with an attestation browser and the station quality meter, signing in with a wallet, withdrawals, and views for requesters, observers, reviewers and administrators, served by the service; a local stack for development; the phase 3 demo on Base Sepolia | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
+| The public testnet service (phase 4) on Vercel and Neon, not announced yet: deploying and rolling back, encrypted daily backups, an uptime check, read-only mode and runbooks | `orbit-watch backup create`, `orbit-watch backup restore`, `orbit-watch serve --read-only` | [deployment.md](docs/deployment.md), [operations.md](docs/operations.md) |
 
 The Python code is in [`core/`](core), the Solidity contracts in [`contracts/`](contracts) and the web application in [`web/`](web). Simulated examples are in
 [`examples/`](examples).

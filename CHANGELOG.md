@@ -59,6 +59,17 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   each IP address. `docs/deployment.md` describes the settings, the database,
   deploying by merging to `main`, and rolling back with Vercel's instant
   rollback.
+- Backups, monitoring and read-only mode (phase 4, step 4.6; D-39;
+  `docs/operations.md`). The service takes a consistent backup of its database,
+  encrypted with age to the maintainer's public key (`GET /v1/internal/backup`
+  with `ORBIT_WATCH_BACKUP_TOKEN` and `ORBIT_WATCH_BACKUP_RECIPIENT`), and the
+  `Backup` workflow keeps it for 14 days. `orbit-watch backup create` and
+  `orbit-watch backup restore` take and restore one; a restore applies newer
+  migrations after the backup's. The `Uptime` workflow checks the service every
+  hour, and a failed run notifies the maintainer. `serve --read-only` (or
+  `ORBIT_WATCH_READ_ONLY=1`) refuses every change with `503 read_only` and lets
+  the follower wait; the web application says so on every page. Runbooks for
+  failures, restores and leaked keys and passwords. pyrage joins the `api` extra.
 - `orbit_watch.asgi`: the service as an ASGI application set up by the
   environment, for any ASGI server (`uvicorn orbit_watch.asgi:app`); without a
   database it answers `503 not_configured`. The verifier key may come from

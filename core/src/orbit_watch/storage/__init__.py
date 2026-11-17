@@ -276,8 +276,9 @@ class Database:
     def _has_migrations_table(self) -> bool:
         return "schema_migrations" in self.tables()
 
-    def migrate(self) -> list[int]:
-        """Apply the migrations that are missing. Returns the versions applied."""
+    def migrate(self, up_to: int | None = None) -> list[int]:
+        """Apply the migrations that are missing, up to version ``up_to`` (default: all;
+        a restore stops at its backup's version, step 4.6). Returns the versions applied."""
         applied = []
         with self.transaction():
             self.execute(
@@ -286,6 +287,8 @@ class Database:
             )
             done = {row["version"]: row for row in self.query("SELECT * FROM schema_migrations")}
             for version, name, sql in available_migrations():
+                if up_to is not None and version > up_to:
+                    break
                 digest = sha256_bytes(sql.encode("utf-8"))
                 if version in done:
                     if done[version]["sha256"] != digest:

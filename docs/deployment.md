@@ -56,6 +56,9 @@ service does not answer ([P4-12](decisions.md#p4-12-releases-and-deployment)).
 | `ORBIT_WATCH_CLIENT_IP_HEADER` | Config | `x-real-ip`, for the [limits](api.md#limits-against-abuse) |
 | `CRON_SECRET` | Secret | random, 64 hex characters: the follower's token |
 | `ORBIT_WATCH_VERIFIER_KEY` | Secret | the escrow's verifier key, `0x…` ([D-24](decisions.md#d-24-the-base-sepolia-deployment)) |
+| `ORBIT_WATCH_BACKUP_TOKEN` | Secret | random, 64 hex characters: the backup workflow's token, also in the GitHub environment `backup` ([operations.md](operations.md#backups)) |
+| `ORBIT_WATCH_BACKUP_RECIPIENT` | Config | the age public key that backups are encrypted to |
+| `ORBIT_WATCH_READ_ONLY` | Config | set to `1` only during an incident ([read-only mode](operations.md#read-only-mode)) |
 | `ORBIT_WATCH_CHAIN_RPC` | Secret | a dedicated RPC endpoint, once one is chosen; until then Base's public endpoint ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)) |
 
 The limits and the station coordinates' precision take `serve`'s defaults.
@@ -89,7 +92,8 @@ The connection comes back by itself when Neon has scaled to zero, and the
 service uses no server-side prepared statements, which a pooler in transaction
 mode does not keep.
 
-Neon's Free plan restores up to six hours back. Daily backups come in step 4.6.
+Neon's Free plan restores up to six hours back. Daily encrypted backups,
+monitoring and read-only mode are in [operations.md](operations.md).
 
 ## Deploying and rolling back
 

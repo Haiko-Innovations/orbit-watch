@@ -56,7 +56,7 @@ Legal bases (GDPR article 6(1)): **b**, the contract, that is the terms of use;
 | API keys, for the command line: SHA-256 and party | `api_keys` | administrators | until revoked | an administrator | b |
 | IP addresses in the service's own logs | nowhere: `orbit-watch serve` writes no access log unless `--access-log` is given | | | | |
 | The hosting provider's request logs, which may hold IP addresses | Vercel | the maintainers | at most 30 days: Vercel's runtime logs with Observability Plus ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)) | Vercel | f |
-| Backups of the database | encrypted `pg_dump`, in GitHub Actions (step 4.6) | the maintainer's private key only | 14 days ([P4-13](decisions.md#p4-13-operations)) | expiry | f |
+| Backups of the database, without sessions, sign-in challenges, limit counts and copies of answers | encrypted with age by the service, kept as GitHub Actions artifacts ([D-39](decisions.md#d-39-backups-monitoring-and-read-only-mode)) | the maintainer's private key only | 14 days | expiry | f |
 | Email to us | the maintainers' mailbox | the maintainers | while it is handled | the maintainers | b, f |
 | Wallet address, transactions, attestations and votes naming request IDs, file and reason SHA-256s | Base Sepolia, EAS | public | permanently | cannot be deleted | |
 
@@ -73,7 +73,8 @@ the public service runs on the chain and keeps no points.
   AWS Frankfurt (`aws-eu-central-1`, Vercel's `fra1`), on the Free plan; a Neon
   project's region cannot be changed later. Databricks names Neon, LLC in its
   Data Privacy Framework certification.
-- **GitHub, Inc.**, the encrypted backups (step 4.6), which it cannot read.
+- **GitHub, Inc.**, the encrypted backups ([D-39](decisions.md#d-39-backups-monitoring-and-read-only-mode)),
+  which it cannot read.
 - **The RPC provider** answers the service's reads of the chain: Base's public
   endpoint until a dedicated one is chosen
   ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)). The service sends

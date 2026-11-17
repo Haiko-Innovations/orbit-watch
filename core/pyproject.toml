@@ -30,6 +30,8 @@ dependencies = [
 # binary package brings libpq.
 api = [
     "psycopg[binary]>=3.3",
+    # Backups leave the service encrypted with age (step 4.6, decision D-39). MIT.
+    "pyrage>=1.4",
     "starlette>=1.10",
     "uvicorn>=0.54",
 ]
