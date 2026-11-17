@@ -1901,3 +1901,38 @@ of 1 to 90 days), [Neon's plans](https://neon.com/docs/introduction/plans),
 [Vercel's streaming functions](https://vercel.com/docs/functions/streaming-functions)
 and [limits](https://vercel.com/docs/functions/limitations) ("The response body
 limit doesn't apply to streamed responses").
+
+### D-40 The review before the launch
+
+Accepted · 2026-11-17 (with the pull request of the review, step 4.7,
+[P4-14](#p4-14-a-review-before-the-launch)). The review is
+[security-review.md](security-review.md):
+
+- **Every level 1 requirement of OWASP ASVS 5.0.0**, 65 of them, not a short list
+  chosen by hand: the full level is barely longer, and it leaves nothing to
+  choose. ASVS 5.0 has no level 1 requirement on logging, which P4-14 names, so
+  logging is reviewed beside it.
+- **The session cookie is `__Host-ow_session` over HTTPS.** ASVS 3.3.1 asks for the
+  prefix, which makes browsers keep the cookie only when it is `Secure`, set by
+  this host and for the whole site. Plain http on a developer's machine cannot
+  carry it, so there the cookie keeps its old name, and a session signed in over
+  HTTPS counts only under the prefixed one. The privacy notice names the new
+  cookie.
+- **A sign-in ends the browser's earlier session** (ASVS 7.2.4).
+- **The reasons people write are for the request's parties.** `GET
+  /v1/requests/{id}` stays open to every signed-in party, who may follow any
+  request, but it hides the challenge's and the votes' reasons from others until
+  the request is published, as the data inventory always said.
+- **Time frames for vulnerabilities** are in `SECURITY.md`: 2 days for anything
+  exploitable in the public service or critical, 7 for high, 30 for medium, and
+  the next update for low.
+- **GitHub's secret scanning, push protection and Dependabot security updates**
+  were turned on on 2026-11-17. They cost nothing in a public repository, and
+  `dependabot.yml` already counted on security updates.
+- **Accepted as they are:** the internal routes act on `GET`, because Vercel's
+  cron jobs send `GET` and both need a token in a header; API keys are long-lived,
+  for command-line tools; there is no command to disable an account, and an
+  administrator who deletes one ends its sessions first.
+
+Source: [OWASP ASVS 5.0.0](https://github.com/OWASP/ASVS/tree/v5.0.0_release/5.0/en),
+released 2025-05-30, read on 2026-11-17.

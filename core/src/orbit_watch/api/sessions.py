@@ -28,7 +28,12 @@ from orbit_watch.canonical import sha256_bytes
 from orbit_watch.storage import Database
 from orbit_watch.timeutil import format_utc, parse_utc
 
+# The session cookie. Over HTTPS its name has the __Host- prefix, so browsers keep it only
+# when it is Secure, set by this host itself and for the whole site (step 4.7, ASVS 3.3.1).
+# Plain http, on the developer's own machine, cannot carry the prefix.
 COOKIE = "ow_session"
+SECURE_COOKIE = "__Host-ow_session"
+COOKIES = (SECURE_COOKIE, COOKIE)
 CHALLENGE_LIFETIME = timedelta(minutes=5)
 SESSION_LIFETIME = timedelta(hours=12)
 NONCE_ALPHABET = string.ascii_letters + string.digits
@@ -196,6 +201,11 @@ def redeem(
         state=False,
     )
     return Signed(row["address"], row["sign_up_party"], message, signature)
+
+
+def cookie_name(origin: str) -> str:
+    """The cookie's name for a session signed in on ``origin``."""
+    return SECURE_COOKIE if origin.startswith("https://") else COOKIE
 
 
 def token_hash(token: str) -> str:

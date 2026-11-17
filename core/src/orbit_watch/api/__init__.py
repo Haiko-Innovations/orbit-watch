@@ -291,7 +291,7 @@ class Api:
                     "unauthorized", "a valid API key is required (Authorization: Bearer)"
                 )
             return principal
-        session = sessions.lookup(self.db, request.cookies.get(sessions.COOKIE), self.wall_clock())
+        _token, session = self._session(request, self.wall_clock())
         if session is None:
             raise ApiError(
                 "unauthorized",
@@ -300,6 +300,32 @@ class Api:
         if mutating and self._origin(request) != session.origin:
             raise ApiError("wrong_origin", f"this session belongs to {session.origin}")
         return keys.Principal(session.party, session.role)
+
+    def _session(
+        self, request: Request, now: datetime
+    ) -> tuple[str | None, sessions.Session | None]:
+        """The browser's session and its cookie's value. A session signed in over HTTPS
+        counts only under its own cookie's name, so a cookie without the prefix, which
+        another site could have planted, cannot carry it (step 4.7)."""
+        for name in sessions.COOKIES:
+            token = request.cookies.get(name)
+            if not token:
+                continue
+            session = sessions.lookup(self.db, token, now)
+            if session is not None and sessions.cookie_name(session.origin) == name:
+                return token, session
+        return None, None
+
+    @staticmethod
+    def _forget_cookies(response: Response) -> None:
+        for name in sessions.COOKIES:
+            response.delete_cookie(
+                name,
+                path="/",
+                secure=name == sessions.SECURE_COOKIE,
+                httponly=True,
+                samesite="strict",
+            )
 
     def _origin(self, request: Request) -> str:
         """The page's origin, which browsers send with every change: one of this service's."""
@@ -719,7 +745,15 @@ class Api:
         request_id = request.path_params["request_id"]
         if request_id not in self.service.records:
             raise ApiError("unknown_request", f"no request {request_id!r}")
-        return self._record_view(request_id)
+        view = self._record_view(request_id)
+        if not self.service.can_read_request_data(request_id, principal.party, principal.role, now):
+            # The reasons people wrote are for the request's parties and the administrators
+            # until it is published (personal-data.md; step 4.7, ASVS 8.2.2).
+            record = view["record"]
+            record["challenge_reason"] = None
+            record["vote_reasons"] = []
+            view["reasons_hidden"] = True
+        return view
 
     def get_report(self, principal, request, body, now):
         request_id = request.path_params["request_id"]
@@ -844,12 +878,15 @@ class Api:
         role = party.split(":", 1)[0]
         if role not in keys.ROLES:
             raise ApiError("forbidden_role", f"{party} cannot sign in")
+        # A new sign-in ends the session this browser had (step 4.7, ASVS 7.2.4).
+        previous, _ = self._session(request, now)
+        sessions.end(self.db, previous, now)
         token, session = sessions.create_session(
             self.db, party=party, role=role, address=signed.address, origin=origin, now=now
         )
         response = JSONResponse({"session": session.view(), "notice": chain.notice})
         response.set_cookie(
-            sessions.COOKIE,
+            sessions.cookie_name(origin),
             token,
             max_age=int(sessions.SESSION_LIFETIME.total_seconds()),
             path="/",
@@ -861,25 +898,26 @@ class Api:
 
     def get_session(self, request, body, now):
         """Who is signed in: the session, or null (not an error: a page asks on every load)."""
-        session = sessions.lookup(self.db, request.cookies.get(sessions.COOKIE), now)
+        _token, session = self._session(request, now)
         return {"session": None if session is None else session.view()}
 
     def sign_out(self, request, body, now):
         self._origin(request)
-        sessions.end(self.db, request.cookies.get(sessions.COOKIE), now)
+        token, _session = self._session(request, now)
+        sessions.end(self.db, token, now)
         response = JSONResponse({"signed_out": True})
-        response.delete_cookie(sessions.COOKIE, path="/", httponly=True, samesite="strict")
+        self._forget_cookies(response)
         return response
 
     def end_sessions(self, request, body, now):
         """End every session of the signed-in party, in every browser (step 4.4)."""
         self._origin(request)
-        session = sessions.lookup(self.db, request.cookies.get(sessions.COOKIE), now)
+        _token, session = self._session(request, now)
         if session is None:
             raise ApiError("unauthorized", "sign in to end your sessions")
         ended = sessions.end_all(self.db, session.party)
         response = JSONResponse({"party": session.party, "ended": ended})
-        response.delete_cookie(sessions.COOKIE, path="/", httponly=True, samesite="strict")
+        self._forget_cookies(response)
         return response
 
     def public_requests(self, request, now):
