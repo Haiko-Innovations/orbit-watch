@@ -1385,6 +1385,9 @@ Accepted · 2026-11-14:
 - **CI builds the container image** (P4-05); it is published with the
   release.
 
+Since step 4.5 production follows `main`, and a rollback is Vercel's instant
+rollback ([D-38](#d-38-the-service-on-vercel-and-neon)).
+
 ### P4-13 Operations
 
 Accepted · 2026-11-14:
@@ -1444,8 +1447,9 @@ Accepted · 2026-11-14. Phase 4 is done when:
    password. No secret is in the repository, a preview, the image or the
    browser, tested. The runbooks for a leaked key and a leaked password are
    written.
-8. A release is deployed by moving the production branch, and a rollback has
-   been done.
+8. A release is deployed by merging to `main`, and a rollback has been done
+   ([D-38](#d-38-the-service-on-vercel-and-neon); first written as moving a
+   production branch).
 9. Encrypted backups run every day outside Vercel and Neon, a restore drill
    has passed, and monitoring has alerted the maintainer once.
 10. The review before the launch is done, each finding fixed or recorded;
@@ -1781,11 +1785,21 @@ Accepted · 2026-11-16 (with the pull request that implements step 4.5,
   default for the team, Observability Plus, which keeps runtime logs for 30 days.
   This replaces the 14 days of P4-09, and the privacy notice and
   [personal-data.md](personal-data.md) say 30.
-- **The production branch** is `production`. Vercel's REST API does not set it
-  (`PATCH /v9/projects` refuses `link`), so the maintainer sets it in the
-  dashboard. The project's first deployment from the command line, made before
-  the Git connection, became its production deployment; it had no settings and
-  answered `503`.
+- **Production follows `main`.** The maintainer chose on 2026-11-17 to deploy
+  every merge to `main`, instead of P4-12's `production` branch moved to a
+  release tag. The maintainer reviews and merges one pull request at a time, so
+  a second step for each release would add work and no safety, and the service
+  is not announced yet. `main` is Vercel's default, which the REST API could
+  not have changed anyway (`PATCH /v9/projects` refuses `link`).
+- **A rollback is Vercel's instant rollback.** It points the production domains
+  at an earlier production deployment, with that deployment's build, its
+  settings as they were then and its cron jobs, without building anything.
+  Merges to `main` still build but do not go live until a deployment is
+  promoted again (`vercel promote`). So a rollback also stops a broken `main`
+  from going live while a fix is merged.
+- **The first deployment.** The project's first deployment from the command
+  line, made before the Git connection, became its production deployment; it
+  had no settings and answered `503`.
 - **The firewall rule** of D-36 is set with `vercel firewall`; publishing it
   needs a person's approval.
 - **The RPC endpoint.** Until a dedicated provider is chosen, the service
@@ -1800,4 +1814,6 @@ and its [configuration](https://vercel.com/docs/services/config-reference),
 [regions](https://vercel.com/docs/functions/configuring-functions/region),
 [production branch](https://vercel.com/docs/git#production-branch),
 [Config and Secret variables](https://vercel.com/docs/environment-variables/sensitive-environment-variables),
-[runtime logs](https://vercel.com/docs/logs/runtime).
+[runtime logs](https://vercel.com/docs/logs/runtime). On 2026-11-17:
+[instant rollback](https://vercel.com/docs/instant-rollback) and
+[promoting a deployment](https://vercel.com/docs/deployments/promoting-a-deployment).

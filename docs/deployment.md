@@ -93,28 +93,34 @@ Neon's Free plan restores up to six hours back. Daily backups come in step 4.6.
 
 ## Deploying and rolling back
 
-Vercel's production branch is **`production`**, set under the project's
-Settings → Environments → Production → Branch Tracking (Vercel's API cannot set
-it). Every other branch and every pull request gets a preview without settings.
+Vercel's production branch is **`main`**
+([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)). Every other branch
+and every pull request gets a preview without settings.
 
-- **Deploy** a release: move `production` to its tag.
-
-  ```sh
-  git push origin v0.5.0^{commit}:refs/heads/production
-  ```
-
-- **Roll back:** move it back to the previous release.
+- **Deploy:** merge a pull request to `main`. Vercel builds it and makes it
+  current. A release tag (`v0.5.0`) names a commit that has been deployed.
+- **Roll back** with Vercel's
+  [instant rollback](https://vercel.com/docs/instant-rollback): the dashboard's
+  Instant Rollback on an earlier production deployment, or
 
   ```sh
-  git push --force-with-lease origin v0.4.9^{commit}:refs/heads/production
+  vercel rollback <deployment-url>
   ```
 
-  Vercel builds the old commit again and makes it current. A rollback across a
-  migration does not work, since the older version refuses a newer schema
-  (`newer_schema`); fix forwards instead, or restore the database (step 4.6).
-- Vercel's instant rollback in the dashboard is the fast way out of a broken
-  deployment; move `production` back afterwards, so that the branch says what
-  runs.
+  It points the production domains at that deployment again, with its build,
+  its settings as they were then and its cron jobs, without building anything.
+  So a rollback after a secret was changed brings the old secret back.
+- **After a rollback,** merges to `main` still build, but Vercel does not make
+  them current. Fix forwards, usually by reverting the change in a pull
+  request, then make the fixed deployment current again:
+
+  ```sh
+  vercel promote <deployment-url>
+  ```
+
+- A rollback across a migration does not work, since the older version refuses
+  a newer schema (`newer_schema`); fix forwards instead, or restore the
+  database (step 4.6).
 
 No deployment credential is in GitHub: Vercel's GitHub app builds the
 deployments.

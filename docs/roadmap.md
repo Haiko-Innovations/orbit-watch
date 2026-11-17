@@ -180,8 +180,8 @@ approved on 2026-11-14. In short:
 - **limits** without third-party CAPTCHAs, and a **privacy notice and terms**;
 - the **database protected** by roles and secrets, and **only the verifier
   key** among the secrets;
-- releases deployed by moving a **production branch**, **daily encrypted
-  backups**, and **monitoring**;
+- releases deployed from **`main`** with Vercel's **instant rollback**,
+  **daily encrypted backups**, and **monitoring**;
 - **nothing that closes the way to a network run by the community**
   ([decentralisation.md](decentralisation.md)).
 
@@ -191,7 +191,7 @@ approved on 2026-11-14. In short:
 | ✅ **4.2 A stateless service that runs on its own** ([#69](https://github.com/Haiko-Innovations/orbit-watch/issues/69)) | No state outside the database: a transaction per call and an advisory lock for changes; a follower as an authenticated call (schedule, timer or `serve --follow`) that applies events, attests, settles and applies deadlines, up to a confirmation depth; a health endpoint; the container image built and tested in CI. | Two instances never apply one change twice; a request settles and another expires without `tick`; the image passes the end-to-end tests; tested. |
 | ✅ **4.3 Limits and a dedicated RPC endpoint** ([#70](https://github.com/Haiko-Innovations/orbit-watch/issues/70)) | Limits per IP address and per party in the database, Vercel's firewall in front; bodies at most 4 MB; the chain read through a dedicated RPC endpoint whose key is a secret. | Every public and sign-in endpoint's limits tested; the RPC key never in a response, log or the browser, tested. |
 | ✅ **4.4 Privacy notice and terms** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | Both in English and Finnish, linked from every page; station coordinates to about a kilometre; deleting a station profile and ending sessions; log retention; the session cookie checked against the law, with its source. | The pages work without signing in; deletion and coordinate precision tested; the data inventory documented. |
-| **4.5 Vercel and Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | The Vercel project and the Neon database in Haiko Innovations' accounts, at Vercel's own address, the two database roles, secrets only in production, previews without them, the production branch. | The service answers over HTTPS, not yet announced; a deployment and a rollback done by moving the production branch. |
+| **4.5 Vercel and Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | The Vercel project and the Neon database in Haiko Innovations' accounts, at Vercel's own address, the two database roles, secrets only in production, previews without them, production from `main` ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)). | The service answers over HTTPS, not yet announced; a deployment by merging to `main`, and a rollback with Vercel's instant rollback. |
 | **4.6 Backups, monitoring and runbooks** ([#73](https://github.com/Haiko-Innovations/orbit-watch/issues/73)) | A daily encrypted `pg_dump` by GitHub Actions kept 14 days; an uptime check with alerts; a check of Neon's hours; a read-only mode; runbooks. | A restore drill passed; an alert reached the maintainer; the runbooks documented. |
 | **4.7 Keys and the review before the launch** ([#74](https://github.com/Haiko-Innovations/orbit-watch/issues/74)) | The verifier key to the production secret and off the maintainer's machine; the Safe's signers as decided; a security checklist, a screen reader test by a person, a real wallet extension. | The review done; each finding fixed or recorded. |
 | **4.8 Launch and phase 4 summary** ([#75](https://github.com/Haiko-Innovations/orbit-watch/issues/75)) | The service opens, with a short announcement for the maintainer to post; the phase 4 summary. | The phase 4 completion criteria below are met; release 0.5.0. |
@@ -215,8 +215,7 @@ approved on 2026-11-14. In short:
    password. No secret is in the repository, a preview, the image or the
    browser, tested. The runbooks for a leaked key and a leaked password are
    written.
-8. A release is deployed by moving the production branch, and a rollback has
-   been done.
+8. A release is deployed by merging to `main`, and a rollback has been done.
 9. Encrypted backups run every day outside Vercel and Neon, a restore drill
    has passed, and monitoring has alerted the maintainer once.
 10. The review before the launch is done, each finding fixed or recorded;

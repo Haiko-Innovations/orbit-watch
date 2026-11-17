@@ -57,7 +57,8 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   4.5; D-38): `vercel.json` deploys the web application and the API together,
   a cron job runs the follower every 15 minutes, and a firewall rule limits
   each IP address. `docs/deployment.md` describes the settings, the database,
-  and deploying and rolling back by moving the `production` branch.
+  deploying by merging to `main`, and rolling back with Vercel's instant
+  rollback.
 - `orbit_watch.asgi`: the service as an ASGI application set up by the
   environment, for any ASGI server (`uvicorn orbit_watch.asgi:app`); without a
   database it answers `503 not_configured`. The verifier key may come from
