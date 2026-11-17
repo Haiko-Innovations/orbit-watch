@@ -5,11 +5,9 @@ Phase 4, step 4.4 ([P4-09](decisions.md#p4-09-personal-data-a-privacy-notice-and
 the personal data that the public testnet service keeps: every table, file, log
 and cookie, who sees it, how long it is kept and what deletes it. It is written
 for the people who run and review the service. The people who use it read the
-[privacy notice](legal/privacy-notice.md) ([suomeksi](legal/privacy-notice.fi.md)),
-which says the same in plain words, and the
-[terms of use](legal/terms-of-use.md) ([suomeksi](legal/terms-of-use.fi.md)).
-The web application shows both at `#/privacy` and `#/terms`, with `/fi` for
-Finnish, and links to them from every page.
+[privacy notice](legal/privacy-notice.md), which says the same in plain words,
+and the [terms of use](legal/terms-of-use.md). The web application shows both at
+`#/privacy` and `#/terms`, and links to them from every page.
 
 The controller is Haiko Innovations Oy (info@haikoinnovations.com, subject
 "Orbit Watch privacy"). A change to what the service keeps changes this file, the
@@ -107,9 +105,8 @@ Answers are due within a month (GDPR article 12(3)).
   command line's defaults.
 - `core/tests/test_limits.py`: no IP address is stored (step 4.3).
 - `core/tests/test_api.py`: `orbit-watch serve` writes no access log by default.
-- `web/src/legal/markdown.test.ts`: the notice and the terms read in both
-  languages, with the same sections and lists, and link only to the service's
-  pages, HTTPS and email.
+- `web/src/legal/markdown.test.ts`: the notice and the terms read, and link only
+  to the service's pages, HTTPS and email.
 - `web/e2e/legal.spec.ts`, `a11y.spec.ts`, `sign-in.spec.ts`,
   `observer.spec.ts`: the pages without signing in and without the service, the
   links on every page, signing out everywhere, the precision and deleting a

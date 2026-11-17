@@ -55,18 +55,16 @@ const titles: Record<Route["page"], string> = {
   "not-found": strings.notFound.title,
 };
 
-/** A page's title; the privacy notice and the terms in their own language. */
+/** A page's title; the privacy notice and the terms have their own. */
 function pageTitle(route: Route): string {
   return route.page === "privacy" || route.page === "terms"
-    ? legalTitle(route.page, route.lang)
+    ? legalTitle(route.page)
     : titles[route.page];
 }
 
 /** What makes a page another page, for the title and the focus. */
 function pageKey(route: Route): string {
-  return route.page === "privacy" || route.page === "terms"
-    ? `${route.page}/${route.lang}`
-    : route.page;
+  return route.page;
 }
 
 function NavLink({
@@ -188,7 +186,7 @@ export function App() {
           <NotFoundPage />
         ) : route.page === "privacy" || route.page === "terms" ? (
           // Without the service and without signing in (decision P4-09).
-          <LegalPage document={route.page} lang={route.lang} />
+          <LegalPage document={route.page} />
         ) : (
           <Loaded resource={service} reload={reload}>
             {({ health, chain }) => {
@@ -269,12 +267,6 @@ export function App() {
         <nav aria-label={strings.footer.legal} className="legal-links">
           <a href={paths.privacy}>{strings.footer.privacy}</a>
           <a href={paths.terms}>{strings.footer.terms}</a>
-          <a href={paths.legal("privacy", "fi")} lang="fi" hrefLang="fi">
-            {strings.footer.privacyFi}
-          </a>
-          <a href={paths.legal("terms", "fi")} lang="fi" hrefLang="fi">
-            {strings.footer.termsFi}
-          </a>
         </nav>
       </footer>
     </>

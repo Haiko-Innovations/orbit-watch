@@ -1,7 +1,5 @@
 # Phase 1 summary
 
-**English** · [Suomi](phase-1-summary.fi.md)
-
 Phase 1 (requests, optimistic verification and API) is complete as
 **version 0.2.0**. This is the end-of-phase summary the [plan](plan.md#8-deliverables)
 asks for.

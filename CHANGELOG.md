@@ -90,6 +90,15 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Changed
 
+- English only (D-41): the Finnish translations are removed, from the README
+  and the contributing guide, the plan, the roadmap and the phase summaries to
+  the privacy notice and the terms of use; the web application's `#/privacy/fi`
+  and `#/terms/fi` are gone, and its footer links to the two English pages.
+- The README and the package describe Orbit Watch as the service it is:
+  ordering satellite observations, verifying every delivery independently and
+  paying only for results that hold up, rather than "a protocol and reference
+  implementation".
+
 - Any number of service processes can share one database (step 4.2, D-35):
   transactions on a schema take turns under a transaction-scoped advisory lock,
   and a process reloads its copy of the state when another one changed it. The

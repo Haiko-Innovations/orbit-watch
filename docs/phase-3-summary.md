@@ -1,7 +1,5 @@
 # Phase 3 summary
 
-**English** · [Suomi](phase-3-summary.fi.md)
-
 Phase 3, the web application, is complete as **version 0.4.0**. This is the
 end-of-phase summary that the [plan](plan.md#8-deliverables) asks for.
 

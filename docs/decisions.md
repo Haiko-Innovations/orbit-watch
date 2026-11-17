@@ -71,6 +71,8 @@ Accepted · 2026-11-11. Code, documentation, commits, issues and pull requests
 are in English. README, CONTRIBUTING, the plan and the roadmap have Finnish
 translations; if versions differ, English applies.
 
+Replaced on 2026-11-17 by [D-41](#d-41-english-only): English only.
+
 ### D-10 One pull request at a time on main
 
 Accepted · 2026-11-11. Stacked pull requests conflicted after squash merges
@@ -1311,7 +1313,8 @@ notice says so.
 
 A privacy notice and terms of use, in English and Finnish, are linked from
 every page. The terms say: testnet only, no value, SIMULATED data, no
-warranty, civilian objects only.
+warranty, civilian objects only. Since [D-41](#d-41-english-only), in English
+only.
 
 The only cookie is the `HttpOnly` sign-in session. Whether it needs consent is
 checked in step 4.4 against section 205 of the Act on Electronic
@@ -1656,7 +1659,8 @@ is [personal-data.md](personal-data.md):
   on GitHub and in the application. A unit test reads all four, and checks that
   each Finnish file has the English one's sections and lists. The pages are at
   `#/privacy` and `#/terms` (`/fi` for Finnish), need neither the service nor
-  signing in, and every page's footer links to all four. The sign-up form names
+  signing in, and every page's footer links to all four. Since
+  [D-41](#d-41-english-only), only the English files and pages remain. The sign-up form names
   the terms and the notice before its button. Haiko Innovations Oy, the
   controller, reviews both before the service is announced (step 4.8).
 - **The session cookie needs no consent.** Section 205 of the Act on Electronic
@@ -1936,3 +1940,22 @@ Accepted · 2026-11-17 (with the pull request of the review, step 4.7,
 
 Source: [OWASP ASVS 5.0.0](https://github.com/OWASP/ASVS/tree/v5.0.0_release/5.0/en),
 released 2025-05-30, read on 2026-11-17.
+
+### D-41 English only
+
+Accepted · 2026-11-17, by the maintainer. Orbit Watch is in English only: the
+code, the documentation, the web application, the privacy notice and the terms of
+use. The Finnish translations are removed: the README, the contributing guide, the
+plan, the roadmap, the phase summaries, the privacy notice and the terms of use,
+and the web application's pages at `#/privacy/fi` and `#/terms/fi`, which are now
+not found. This replaces [D-09](#d-09-english-first-finnish-translations-of-key-documents),
+and the Finnish versions of [P4-09](#p4-09-personal-data-a-privacy-notice-and-terms-of-use) and
+[D-37](#d-37-personal-data-in-the-service).
+
+- One language is one version of every text to keep right. The translations
+  lagged behind, and the English version applied whenever they differed.
+- The service is for an international community of satellite operators and
+  observers, whose common language is English.
+- The legal texts still name Finnish law, the Finnish data protection authority
+  and the Finnish company behind the service: those are facts, not translations.
+  The history of the Finnish texts stays in the repository.

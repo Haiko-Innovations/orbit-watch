@@ -56,7 +56,7 @@ refactoring and CI-only changes need no entry.
      `core/src/orbit_watch/__init__.py`, then run `uv lock` in `core/`;
    - regenerate the demo output: `cd core && uv run orbit-watch demo --out ../examples/simulated`
      (reports contain the version, and CI compares them byte for byte);
-   - update the status in [roadmap.md](roadmap.md) and [roadmap.fi.md](roadmap.fi.md).
+   - update the status in [roadmap.md](roadmap.md).
 2. A maintainer merges it after the `tarkistus` check passes.
 3. **Tag and GitHub release** on the merge commit:
 

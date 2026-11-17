@@ -1,5 +1,5 @@
 // Every text of the interface, in one place, so that a translation can follow
-// (decision P3-09). English is the primary language (D-09).
+// (decision P3-09). The interface is in English (D-09, D-41).
 
 export const strings = {
   appName: "Orbit Watch",
@@ -630,11 +630,5 @@ export const strings = {
     legal: "Privacy and terms",
     privacy: "Privacy notice",
     terms: "Terms of use",
-    privacyFi: "Tietosuojaseloste",
-    termsFi: "Käyttöehdot",
-  },
-  legal: {
-    inFinnish: "Suomeksi",
-    inEnglish: "In English",
   },
 } as const;

@@ -1,7 +1,5 @@
 # Contributing to Orbit Watch
 
-**English** · [Suomi](CONTRIBUTING.fi.md)
-
 Thank you for your interest! Orbit Watch is an open protocol and reference
 implementation for requesting, delivering, independently verifying and
 settling satellite observations. It is a community project: amateur
@@ -89,11 +87,9 @@ pytest
 
 ## Language
 
-English is the primary language for code, comments, documentation, commit
-messages, issues and pull requests. Some key documents also have a Finnish
-translation (`*.fi.md`). If you change a document that has a translation,
-update the translation too, or say in the PR that you could not and a
-maintainer will do it. If the versions differ, the English version applies.
+Everything is in English: code, comments, documentation, the web application,
+commit messages, issues and pull requests
+([D-41](docs/decisions.md#d-41-english-only)).
 
 ## Licence
 
