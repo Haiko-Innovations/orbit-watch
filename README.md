@@ -1,24 +1,24 @@
-# Orbit Watch (working name)
+# Orbit Watch
 
-**English** · [Suomi](README.fi.md)
-
-**An open protocol and reference implementation for requesting, delivering,
-independently verifying and settling satellite observations.**
+**Order satellite observations, have every delivery verified independently, and
+pay only for results that hold up.**
 
 After a launch, dozens of small satellites are deployed at once, and CubeSat
-teams often do not know which public orbit record is theirs. Orbit Watch lets a
-team post a request ("identify and track object X in window Y"). Amateur
-stations observe, and the delivery is verified automatically and reproducibly
-against public orbit data. Observers get value from day one: a quality meter
-that tells them how accurate their station is.
+teams often do not know which public orbit record is theirs. On Orbit Watch a
+team posts a request ("identify and track object X in window Y"). Stations
+observe, and every delivery is verified automatically and reproducibly against
+public orbit data. Any party can challenge a result before the payment settles,
+and independent reviewers decide. Observers get value from day one: a quality
+meter that tells them how accurate their station is.
 
-> **Status: phase 3 is done (version 0.4.0).** Requests, optimistic
-> verification, an HTTP API, a command-line client and a web application run
-> locally, either with a points ledger and no blockchain, or with settlement on
-> the Base Sepolia **testnet**: an escrow contract, EAS attestations and every
-> party signing with its own wallet, in the browser too, with testnet USDC of
-> **no value** ([base-sepolia.md](docs/base-sepolia.md)). No mainnet, no real
-> money, no public service. Requests target civilian objects only.
+> **Status: phase 4, the public testnet service, is under way.** Requests,
+> optimistic verification, an HTTP API, a command-line client and a web
+> application, with settlement on the Base Sepolia **testnet**: an escrow
+> contract, EAS attestations and every party signing with its own wallet, with
+> testnet USDC of **no value** ([base-sepolia.md](docs/base-sepolia.md)). The
+> service runs on Vercel and Neon, and opens with version 0.5.0
+> ([deployment.md](docs/deployment.md)). No mainnet, no real money. Requests
+> target civilian objects only.
 > **Simulated data is always labelled as simulated**, and automated
 > verification is a prototype, not production-ready scientific validation.
 > See the [roadmap](docs/roadmap.md), the

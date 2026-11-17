@@ -1,9 +1,10 @@
-"""Orbit Watch: open protocol and reference implementation for requesting,
-verifying and settling satellite observations (working name).
+"""Orbit Watch: request, deliver, independently verify and settle satellite
+observations.
 
-Phase 0 contains the observation format, converters, the station simulator,
-the verification engine and the station quality meter. Nothing here moves
-money, and nothing here is production-ready scientific validation.
+The package holds the observation formats and converters, the station simulator,
+the verification engine, the station quality meter, the service with its HTTP API,
+and the command line. It runs on a testnet only: nothing here moves real money, and
+automated verification is not production-ready scientific validation.
 """
 
 __version__ = "0.5.0.dev0"

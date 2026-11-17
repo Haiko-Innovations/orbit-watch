@@ -1,7 +1,5 @@
 # Phase 2 summary
 
-**English** · [Suomi](phase-2-summary.fi.md)
-
 Phase 2 (monetary settlement on a testnet) is complete as **version 0.3.0**.
 This is the end-of-phase summary the [plan](plan.md#8-deliverables) asks for.
 

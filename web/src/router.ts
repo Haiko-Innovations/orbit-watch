@@ -22,10 +22,7 @@ export type Route =
     }
   | { page: "request"; id: string }
   | { page: "task"; id: string }
-  | { page: "privacy" | "terms"; lang: Language };
-
-/** The languages of the privacy notice and the terms of use (decision P4-09). */
-export type Language = "en" | "fi";
+  | { page: "privacy" | "terms" };
 
 export const paths = {
   network: "#/",
@@ -42,8 +39,6 @@ export const paths = {
   quality: "#/quality",
   privacy: "#/privacy",
   terms: "#/terms",
-  legal: (page: "privacy" | "terms", lang: Language) =>
-    lang === "en" ? `#/${page}` : `#/${page}/${lang}`,
   task: (id: string) => `#/tasks/${encodeURIComponent(id)}`,
   request: (id: string) => `#/requests/${encodeURIComponent(id)}`,
 } as const;
@@ -79,13 +74,9 @@ export function parseHash(hash: string): Route {
     case "/quality":
       return { page: "quality" };
     case "/privacy":
-      return { page: "privacy", lang: "en" };
-    case "/privacy/fi":
-      return { page: "privacy", lang: "fi" };
+      return { page: "privacy" };
     case "/terms":
-      return { page: "terms", lang: "en" };
-    case "/terms/fi":
-      return { page: "terms", lang: "fi" };
+      return { page: "terms" };
     default: {
       const decoded = decodeURIComponent(path);
       const request = REQUEST_ID.exec(decoded);

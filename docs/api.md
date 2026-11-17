@@ -315,7 +315,7 @@ failed sign-ins are what the limit is for.
 Phase 4, step 4.4 ([D-37](decisions.md#d-37-personal-data-in-the-service)). The
 inventory of every table and log is [personal-data.md](personal-data.md), and
 the web application shows the [privacy notice](legal/privacy-notice.md) and the
-[terms of use](legal/terms-of-use.md), in English and Finnish.
+[terms of use](legal/terms-of-use.md).
 
 - **Station coordinates to about a kilometre.** `orbit-watch serve` rounds a
   station profile's latitude and longitude to two decimals of a degree, and

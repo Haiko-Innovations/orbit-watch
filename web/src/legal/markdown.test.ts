@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import privacyFi from "../../../docs/legal/privacy-notice.fi.md?raw";
-import privacyEn from "../../../docs/legal/privacy-notice.md?raw";
-import termsFi from "../../../docs/legal/terms-of-use.fi.md?raw";
-import termsEn from "../../../docs/legal/terms-of-use.md?raw";
+import privacy from "../../../docs/legal/privacy-notice.md?raw";
+import terms from "../../../docs/legal/terms-of-use.md?raw";
 import { type Block, inline, MarkdownError, parseMarkdown, title } from "./markdown";
 
 describe("parseMarkdown", () => {
@@ -78,56 +76,32 @@ describe("parseMarkdown", () => {
   });
 });
 
-const documents = {
-  "privacy notice": [privacyEn, privacyFi],
-  "terms of use": [termsEn, termsFi],
-} as const;
+const documents = { "privacy notice": privacy, "terms of use": terms } as const;
 
-/** The outline of a document: its blocks' kinds, heading levels and list lengths. */
-function outline(blocks: Block[]): string[] {
-  return blocks.map((block) =>
-    block.kind === "heading"
-      ? `h${block.level}`
-      : block.kind === "list"
-        ? `${block.ordered ? "ol" : "ul"}×${block.items.length}`
-        : "p",
-  );
-}
-
-describe.each(Object.entries(documents))("the %s", (_, [english, finnish]) => {
-  it("reads in English and in Finnish, one title each", () => {
-    for (const source of [english, finnish]) {
-      const blocks = parseMarkdown(source);
-      expect(blocks.filter((b) => b.kind === "heading" && b.level === 1)).toHaveLength(1);
-      expect(blocks[0]?.kind).toBe("heading");
-    }
-  });
-
-  it("has the same sections and lists in both languages", () => {
-    expect(outline(parseMarkdown(finnish))).toEqual(outline(parseMarkdown(english)));
+describe.each(Object.entries(documents))("the %s", (_, source) => {
+  it("reads, with one title", () => {
+    const blocks = parseMarkdown(source);
+    expect(blocks.filter((b) => b.kind === "heading" && b.level === 1)).toHaveLength(1);
+    expect(blocks[0]?.kind).toBe("heading");
   });
 
   it("links only to the service's own pages, https and email", () => {
-    for (const source of [english, finnish]) {
-      const hrefs = parseMarkdown(source).flatMap((block) =>
-        (block.kind === "list" ? block.items.flat() : block.kind === "heading" ? [] : block.content)
-          .filter((part) => part.kind === "link")
-          .map((part) => (part.kind === "link" ? part.href : "")),
-      );
-      expect(hrefs.length).toBeGreaterThan(0);
-      for (const href of hrefs) expect(href).toMatch(/^(https:\/\/|mailto:|#\/(privacy|terms))/);
-    }
+    const hrefs = parseMarkdown(source).flatMap((block) =>
+      (block.kind === "list" ? block.items.flat() : block.kind === "heading" ? [] : block.content)
+        .filter((part) => part.kind === "link")
+        .map((part) => (part.kind === "link" ? part.href : "")),
+    );
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) expect(href).toMatch(/^(https:\/\/|mailto:|#\/(privacy|terms))/);
   });
 });
 
 describe("the privacy notice", () => {
   it("names the controller, the cookie, the law and the precision", () => {
-    expect(privacyEn).toContain("Haiko Innovations Oy");
-    expect(privacyEn).toContain("`__Host-ow_session`");
-    expect(privacyFi).toContain("`__Host-ow_session`");
-    expect(privacyEn).toContain("section 205 of the Finnish Act on Electronic Communications");
-    expect(privacyFi).toContain("(917/2014) 205 §");
-    expect(privacyEn).toContain("two decimals of a degree");
-    expect(privacyEn).toContain("its logs are kept for at most 30 days");
+    expect(privacy).toContain("Haiko Innovations Oy");
+    expect(privacy).toContain("`__Host-ow_session`");
+    expect(privacy).toContain("section 205 of the Finnish Act on Electronic Communications");
+    expect(privacy).toContain("two decimals of a degree");
+    expect(privacy).toContain("its logs are kept for at most 30 days");
   });
 });

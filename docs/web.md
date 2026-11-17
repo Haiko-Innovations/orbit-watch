@@ -53,11 +53,10 @@ failed result.
 | Station quality meter | `#/quality` | public: an observation file in, its quality report out; the file is not kept ([quality-meter.md](quality-meter.md)) |
 | Administration | `#/admin` | administrators only: every request with its status, delivery and payments; errors, transactions and the event log; `tick`; the reviewer registry, the timelock's operations and the data for the Safe; the simulator and the demo datasets |
 
-| Privacy notice | `#/privacy`, `#/privacy/fi` | public: what the service keeps about people, why and for how long, in English and Finnish ([`docs/legal`](legal), [personal-data.md](personal-data.md)) |
-| Terms of use | `#/terms`, `#/terms/fi` | public: testnet only, SIMULATED data, what may be done, the CC BY 4.0 publication, no warranty |
+| Privacy notice | `#/privacy` | public: what the service keeps about people, why and for how long ([`docs/legal`](legal), [personal-data.md](personal-data.md)) |
+| Terms of use | `#/terms` | public: testnet only, SIMULATED data, what may be done, the CC BY 4.0 publication, no warranty |
 
-Every page's footer links to the privacy notice and the terms in both
-languages. Those pages are the Markdown files in `docs/legal`, read by a small
+Every page's footer links to the privacy notice and the terms. Those pages are the Markdown files in `docs/legal`, read by a small
 reader of the part of Markdown they use (`web/src/legal/markdown.ts`), and need
 neither the service nor signing in. The public pages need no sign-in. The administrator view uses the API only,
 and the API checks every call's role, so the view can do nothing the API

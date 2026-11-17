@@ -1,9 +1,5 @@
 # Orbit Watch – Starting Plan
 
-**English** · [Suomi](plan.fi.md)
-
-> English is the primary language of this project. If the English and Finnish versions differ, the English version applies.
-
 I want to build an open source project with the working name **Orbit Watch**: an open protocol and reference implementation for requesting, delivering, independently verifying and settling satellite observations.
 
 Make sensible technical assumptions on your own and state them. Check the current official documentation (libraries, testnets, contract addresses) before using any of them. Do not write addresses or versions from memory.

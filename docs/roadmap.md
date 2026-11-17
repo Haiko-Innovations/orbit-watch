@@ -1,7 +1,5 @@
 # Roadmap and status
 
-**English** · [Suomi](roadmap.fi.md)
-
 This page says where Orbit Watch is now and what comes next. The full starting
 plan is in [plan.md](plan.md); decisions and their reasons are in
 [decisions.md](decisions.md); released changes are in the
@@ -27,9 +25,9 @@ application online on Base Sepolia, still SIMULATED. Its decisions P4-01 to
 P4-16 were approved on 2026-11-14 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)). Done so far: the service's storage on
 PostgreSQL (4.1), a stateless service with a follower and a container image
 tested in CI (4.2), limits against abuse with a dedicated RPC endpoint whose
-key stays secret (4.3), and a privacy notice and terms of use in English and
-Finnish (4.4), and the service on Vercel and Neon in Frankfurt, not announced
-yet (4.5, [deployment.md](deployment.md)). Backups, monitoring and read-only
+key stays secret (4.3), a privacy notice and terms of use (4.4), and the
+service on Vercel and Neon in Frankfurt, not announced yet (4.5,
+[deployment.md](deployment.md)). Backups, monitoring and read-only
 mode are in [operations.md](operations.md) (4.6).
 
 Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
@@ -191,7 +189,7 @@ approved on 2026-11-14. In short:
 | ✅ **4.1 PostgreSQL** ([#68](https://github.com/Haiko-Innovations/orbit-watch/issues/68)) | The service's storage on PostgreSQL, files included, replacing SQLite; the local stack starts PostgreSQL in a container; tests that need a database run in CI always and locally when PostgreSQL is there. | Every test passes on PostgreSQL in CI; the local stack starts in one command; the open core's command-line tools need no database. |
 | ✅ **4.2 A stateless service that runs on its own** ([#69](https://github.com/Haiko-Innovations/orbit-watch/issues/69)) | No state outside the database: a transaction per call and an advisory lock for changes; a follower as an authenticated call (schedule, timer or `serve --follow`) that applies events, attests, settles and applies deadlines, up to a confirmation depth; a health endpoint; the container image built and tested in CI. | Two instances never apply one change twice; a request settles and another expires without `tick`; the image passes the end-to-end tests; tested. |
 | ✅ **4.3 Limits and a dedicated RPC endpoint** ([#70](https://github.com/Haiko-Innovations/orbit-watch/issues/70)) | Limits per IP address and per party in the database, Vercel's firewall in front; bodies at most 4 MB; the chain read through a dedicated RPC endpoint whose key is a secret. | Every public and sign-in endpoint's limits tested; the RPC key never in a response, log or the browser, tested. |
-| ✅ **4.4 Privacy notice and terms** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | Both in English and Finnish, linked from every page; station coordinates to about a kilometre; deleting a station profile and ending sessions; log retention; the session cookie checked against the law, with its source. | The pages work without signing in; deletion and coordinate precision tested; the data inventory documented. |
+| ✅ **4.4 Privacy notice and terms** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | Both linked from every page; station coordinates to about a kilometre; deleting a station profile and ending sessions; log retention; the session cookie checked against the law, with its source. | The pages work without signing in; deletion and coordinate precision tested; the data inventory documented. |
 | ✅ **4.5 Vercel and Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | The Vercel project and the Neon database in Haiko Innovations' accounts, at Vercel's own address, the two database roles, secrets only in production, previews without them, production from `main` ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)). | The service answers over HTTPS, not yet announced; a deployment by merging to `main`, and a rollback with Vercel's instant rollback. |
 | ✅ **4.6 Backups, monitoring and runbooks** ([#73](https://github.com/Haiko-Innovations/orbit-watch/issues/73)) | A daily encrypted `pg_dump` by GitHub Actions kept 14 days; an uptime check with alerts; a check of Neon's hours; a read-only mode; runbooks. | A restore drill passed; an alert reached the maintainer; the runbooks documented. |
 | **4.7 Keys and the review before the launch** ([#74](https://github.com/Haiko-Innovations/orbit-watch/issues/74)) | The verifier key to the production secret and off the maintainer's machine; the Safe's signers as decided; a security checklist, a screen reader test by a person, a real wallet extension. | The review done; each finding fixed or recorded. |
