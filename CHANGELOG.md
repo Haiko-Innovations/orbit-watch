@@ -120,6 +120,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Fixed
 
+- `orbit-watch serve --read-only` no longer follows the chain once at start,
+  which wrote to the database; found in the first restore drill (phase 4,
+  step 4.6).
+
 - The phase 1 demo told another story after every release: its reviewer rounds
   are drawn from each delivery's SHA-256, and its observation files named the
   software's version. They now name the simulator without a version, so every

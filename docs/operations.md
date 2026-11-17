@@ -211,3 +211,10 @@ encrypted backups.
 
 | Date | Backup | Result |
 |---|---|---|
+| 2026-11-17 | The first run of `Backup`, by hand ([run 44034809713](https://github.com/Haiko-Innovations/orbit-watch/actions/runs/44034809713)): 1,823 bytes, schema version 9 | Passed. Restored into a new local database: 21 tables, 4 rows, the service having no requests yet. The service on it, read-only, answered `/v1/health`, `/v1/public/requests`, `/v1/public/attestations` and `/v1/public/open-requests` exactly as production did, and `/v1/chain` too but for the block followed; a change was refused with `503 read_only`. Found: `serve` followed the chain once at start even in read-only mode, which writes; fixed in the same pull request as this entry. |
+
+### Alert checks
+
+| Date | Check | Result |
+|---|---|---|
+| 2026-11-17 | `Uptime` with `fail=true` ([run 44034861468](https://github.com/Haiko-Innovations/orbit-watch/actions/runs/44034861468)) failed on purpose; a normal run ([44034865633](https://github.com/Haiko-Innovations/orbit-watch/actions/runs/44034865633)) passed | Pending: the maintainer confirms that the notification arrived. |

@@ -523,7 +523,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
         print(line)
     print(f"Listening on http://{args.host}:{args.port}/v1/")
     chain = service.chain
-    if chain is not None:
+    if chain is not None and app.state.api.read_only:
+        # Following the chain writes, and read-only mode writes nothing (step 4.6).
+        print(f"Read-only: the chain as last followed, block {chain.synced_block()}")
+    elif chain is not None:
         # Catch up before answering, so the first request does not wait for it.
         try:
             chain.sync()

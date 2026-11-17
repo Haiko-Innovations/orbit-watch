@@ -7,6 +7,7 @@ exactly what the first one held. Everything is SIMULATED.
 
 import json
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 from starlette.testclient import TestClient
@@ -361,3 +362,28 @@ def test_the_service_takes_a_backup_as_its_database_role(world, make_database, k
     with Database(target) as db:
         backup.restore(db, backup.decrypt(reply.content, private_key))
     assert contents(target) == contents(world["database"])
+
+
+def test_serve_in_read_only_mode_does_not_follow_the_chain_at_start(monkeypatch, capsys):
+    """Found in the first restore drill (2026-11-17): ``serve`` caught up with the chain
+    before answering, which writes, also in read-only mode."""
+    import uvicorn
+
+    from orbit_watch import cli
+
+    synced = []
+
+    class Chain:
+        def sync(self):
+            synced.append(True)
+
+        def synced_block(self):
+            return 59883274
+
+    service = SimpleNamespace(chain=Chain(), storage=SimpleNamespace(close=lambda: None))
+    app = SimpleNamespace(state=SimpleNamespace(api=SimpleNamespace(read_only=True)))
+    monkeypatch.setattr(cli, "serve_app", lambda args: (app, service, []))
+    monkeypatch.setattr(uvicorn, "run", lambda app, **options: None)
+    assert main(["serve", "--read-only"]) == 0
+    assert "Read-only: the chain as last followed, block 59883274" in capsys.readouterr().out
+    assert not synced
