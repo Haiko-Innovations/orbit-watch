@@ -2,7 +2,8 @@ name: Uptime
 
 # A check of the public service from outside, every hour (phase 4, step 4.6; decision
 # D-39): the API, the follower, which falls behind when the schedule or the database
-# stops, and the web application. A failed run notifies the maintainer.
+# stops, and the web application. A failed run opens an issue assigned to the maintainer
+# (the repository variable ALERT_ASSIGNEE), and the next run that passes closes it.
 
 on:
   schedule:
@@ -16,9 +17,10 @@ on:
         type: boolean
         default: false
 
-# Least privilege: the job reads nothing from the repository.
+# Least privilege: the job reads nothing from the repository, and writes only its alert.
 permissions:
   contents: read
+  issues: write
 
 jobs:
   uptime:
@@ -45,3 +47,34 @@ jobs:
           check "${SERVICE}/v1/health/follower"
           check --output /dev/null "${SERVICE}/"
           echo "Answered at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "${GITHUB_STEP_SUMMARY}"
+
+      # The alert (D-39): an issue assigned to the maintainer, which reaches them like
+      # everything else they follow on GitHub. One open issue at a time; the next run that
+      # passes closes it.
+      - name: Alert the maintainer
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ASSIGNEE: ${{ vars.ALERT_ASSIGNEE }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -n "$(gh issue list --label "alert: uptime" --state open --json number --jq '.[].number')" ]; then
+            echo "An alert is already open."
+            exit 0
+          fi
+          gh issue create --label "alert: uptime" --assignee "${ASSIGNEE}" --title "Alert: the public service does not answer" \
+            --body "${RUN} failed. What to do: docs/operations.md#the-uptime-check-failed. The next run that passes closes this issue."
+
+      - name: Close the alert
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          for number in $(gh issue list --label "alert: uptime" --state open --json number --jq '.[].number'); do
+            gh issue close "${number}" --comment "Passed again: ${RUN}"
+          done

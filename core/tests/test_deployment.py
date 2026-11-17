@@ -294,13 +294,17 @@ def test_the_static_pages_get_the_apis_security_headers(repo_root):
 
 def test_the_operations_workflows_keep_to_the_rules(repo_root):
     """Backups and the uptime check (step 4.6, D-39): least privilege, actions pinned to
-    commits, the backup token only in its environment, and only age files kept."""
+    commits, the backup token only in its environment, only age files kept, and a failed
+    run opens an issue for the maintainer that the next passing run closes."""
     import re
 
     folder = repo_root / ".github" / "workflows"
     for name in ("backup.yml", "uptime.yml"):
         text = (folder / name).read_text(encoding="utf-8")
-        assert "permissions:\n  contents: read\n" in text, name
+        assert "permissions:\n  contents: read\n  issues: write\n" in text, name
+        assert "Alert the maintainer\n        if: failure()" in text, name
+        assert "Close the alert\n        if: success()" in text, name
+        assert '--assignee "${ASSIGNEE}"' in text and "${{ vars.ALERT_ASSIGNEE }}" in text
         for used in re.findall(r"uses: (\S+)", text):
             assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", used), used
         assert "https://orbit-watch-tan.vercel.app" in text
