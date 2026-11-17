@@ -27,6 +27,7 @@ export class WalletError extends Error {
     | "wrong_account"
     | "wrong_chain"
     | "wrong_message"
+    | "not_allowed"
     | "reverted"
     | "failed";
 
@@ -45,6 +46,17 @@ export function isUserRejection(error: unknown): boolean {
   return (error as { code?: unknown } | null)?.code === 4001;
 }
 
+/** Whether the wallet refused because the site may not use the account there (EIP-1193 4100). */
+export function isUnauthorized(error: unknown): boolean {
+  if (error instanceof BaseError) {
+    return error.walk((e) => (e as { code?: unknown }).code === 4100) !== null;
+  }
+  return (error as { code?: unknown } | null)?.code === 4100;
+}
+
+export const NOT_ALLOWED =
+  "Your wallet did not let this site use your account on this network. In your wallet, disconnect this site, then try again.";
+
 function client(provider: EIP1193Provider) {
   return createWalletClient({ transport: custom(provider) });
 }
@@ -55,6 +67,7 @@ async function guarded<T>(work: () => Promise<T>, failed: string): Promise<T> {
   } catch (error) {
     if (error instanceof WalletError) throw error;
     if (isUserRejection(error)) throw new WalletError("declined", "You declined in your wallet.");
+    if (isUnauthorized(error)) throw new WalletError("not_allowed", NOT_ALLOWED);
     const detail = error instanceof BaseError ? error.shortMessage : String(error);
     throw new WalletError("failed", `${failed}: ${detail}`);
   }
@@ -92,6 +105,44 @@ export async function switchToChain(provider: EIP1193Provider, chainId: number):
   }
 }
 
+/**
+ * Runs ``work``, which signs or sends with ``address`` on ``chainId``. If the wallet answers
+ * that the site may not use the account there (4100), the site connects again and ``work``
+ * runs once more.
+ *
+ * MetaMask since 13.55.0 permits a network that a site adds with no accounts on it, so it
+ * refuses to sign or send there until the site connects again
+ * (https://github.com/MetaMask/metamask-extension/issues/47773). Disconnecting the site
+ * and connecting it again is the remedy given there; this does it for the user.
+ */
+export async function withAccount<T>(
+  provider: EIP1193Provider,
+  address: Address,
+  chainId: number,
+  work: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await work();
+  } catch (error) {
+    if (!isUnauthorized(error)) throw error;
+  }
+  try {
+    await provider.request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] });
+  } catch (error) {
+    if (isUserRejection(error)) throw error;
+    // A wallet without this method: connecting again may still be enough.
+  }
+  const accounts = await client(provider).requestAddresses();
+  if (!accounts.some((account) => account.toLowerCase() === address.toLowerCase())) {
+    throw new WalletError(
+      "wrong_account",
+      `Your wallet connected again without the account ${address}. Choose it in your wallet and try again.`,
+    );
+  }
+  await switchToChain(provider, chainId);
+  return await work();
+}
+
 /** Signs a sign-in message after checking that it is for this page and this account. */
 export async function signSignIn(
   provider: EIP1193Provider,
@@ -115,7 +166,10 @@ export async function signSignIn(
     );
   }
   return guarded(
-    () => client(provider).signMessage({ account: address, message }),
+    () =>
+      withAccount(provider, address, parsed.chainId ?? 0, () =>
+        client(provider).signMessage({ account: address, message }),
+      ),
     "The wallet did not sign",
   );
 }

@@ -1,6 +1,14 @@
 import type { EIP1193Provider } from "viem";
 import { describe, expect, it } from "vitest";
-import { connect, isUserRejection, signSignIn, switchToChain, WalletError } from "./wallet";
+import {
+  connect,
+  isUnauthorized,
+  isUserRejection,
+  NOT_ALLOWED,
+  signSignIn,
+  switchToChain,
+  WalletError,
+} from "./wallet";
 
 const ADDRESS = "0x4803e651A89F3160Ab9b82Db7a8f9Ed25269AC62";
 const SIGNATURE = `0x${"ab".repeat(65)}`;
@@ -120,5 +128,87 @@ describe("signSignIn", () => {
       });
     }
     expect(asked).toEqual([]);
+  });
+});
+
+/** MetaMask since 13.55.0 (issue #47773): a network the site added has no accounts permitted,
+ * so signing there fails with 4100 until the site connects again. */
+function walletWithoutAccountOnNetwork({
+  revoke = true,
+  fixedBy = "reconnect",
+  accounts = [ADDRESS],
+}: {
+  revoke?: boolean;
+  fixedBy?: "reconnect" | "nothing";
+  accounts?: string[];
+} = {}) {
+  let revoked = false;
+  let allowed = false;
+  const unauthorized = () =>
+    Object.assign(new Error("The requested account and/or method has not been authorized."), {
+      code: 4100,
+    });
+  return fakeWallet({
+    personal_sign: () => {
+      if (!allowed) throw unauthorized();
+      return SIGNATURE;
+    },
+    ...(revoke
+      ? {
+          wallet_revokePermissions: () => {
+            revoked = true;
+            return null;
+          },
+        }
+      : {}),
+    eth_requestAccounts: () => {
+      if (revoked && fixedBy === "reconnect") allowed = true;
+      return accounts;
+    },
+    eth_chainId: () => "0x7a69",
+  });
+}
+
+describe("isUnauthorized", () => {
+  it("knows EIP-1193's 4100", () => {
+    expect(isUnauthorized({ code: 4100 })).toBe(true);
+    expect(isUnauthorized({ code: 4001 })).toBe(false);
+    expect(isUnauthorized(null)).toBe(false);
+  });
+});
+
+describe("signing where the wallet has not allowed the account", () => {
+  const signed = message("http://127.0.0.1:8787");
+
+  it("connects the site again, then signs", async () => {
+    const { provider, asked } = walletWithoutAccountOnNetwork();
+    expect(await signSignIn(provider, ADDRESS, signed, page, now)).toBe(SIGNATURE);
+    expect(asked).toEqual([
+      "personal_sign",
+      "wallet_revokePermissions",
+      "eth_requestAccounts",
+      "eth_chainId",
+      "personal_sign",
+    ]);
+  });
+
+  it("says what to do when connecting again does not help", async () => {
+    const { provider, asked } = walletWithoutAccountOnNetwork({
+      revoke: false,
+      fixedBy: "nothing",
+    });
+    const refused = signSignIn(provider, ADDRESS, signed, page, now);
+    await expect(refused).rejects.toBeInstanceOf(WalletError);
+    await expect(refused).rejects.toMatchObject({ code: "not_allowed", message: NOT_ALLOWED });
+    expect(asked.filter((method) => method === "personal_sign")).toHaveLength(2); // once more only
+  });
+
+  it("signs nothing if the wallet comes back without the account", async () => {
+    const other = "0x0000000000000000000000000000000000000001";
+    const { provider, asked } = walletWithoutAccountOnNetwork({ accounts: [other] });
+    await expect(signSignIn(provider, ADDRESS, signed, page, now)).rejects.toMatchObject({
+      code: "wrong_account",
+    });
+    expect(asked.filter((method) => method === "personal_sign")).toHaveLength(1);
   });
 });

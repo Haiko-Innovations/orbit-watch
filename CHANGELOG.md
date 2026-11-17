@@ -130,6 +130,12 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Fixed
 
+- Signing in and sending with MetaMask 13.55.0 or newer on a network the site
+  had just added. MetaMask permitted the network but no account on it, so it
+  refused every signature and transaction there with error 4100 and showed no
+  prompt (metamask-extension#47773). The page now disconnects the site, connects
+  it again and tries once more, and otherwise tells the user what to do
+  (`docs/web.md`). The run with a real wallet in step 4.7 found it.
 - The review before the launch (phase 4, step 4.7; D-40;
   `docs/security-review.md`), against every OWASP ASVS 5.0.0 level 1
   requirement:
