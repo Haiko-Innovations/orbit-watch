@@ -235,6 +235,35 @@ another escrow, the server settles funded requests on the escrow contract: see
 | `POST /v1/transactions` | any | `{"tx_hash": "0x…"}` | report a transaction you sent; the service waits for it, applies it and does its own part; returns the transaction and the request |
 | `GET /v1/transactions?request=ID` | any (admin: all) | | your transactions: `pending`, `confirmed` or `failed`, with explorer links |
 
+### Transactions someone else sent for your wallet
+
+A smart account sends its transactions through a relayer, which pays the
+fee. Examples are MetaMask's EIP-7702 smart account and ERC-4337 wallets.
+The transaction's `from` is then the relayer, and its `to` is the relayer's
+contract or the wallet itself, not Orbit Watch's contracts.
+
+The service accepts such a transaction once it is mined, if what the escrow
+or the token recorded names your wallet as the one who acted. Each of these
+fields is the contract call's `msg.sender`, or for a vote, the attester:
+
+| Event | Field | Action |
+|---|---|---|
+| escrow `Funded` | `requester` | `fund` |
+| escrow `Reserved` | `station` | `reserve` |
+| escrow `Delivered` | `station` | `deliver` |
+| escrow `Challenged` | `challenger` | `challenge` |
+| escrow `Voted` | `reviewer` | `attest_vote` |
+| escrow `Withdrawn` | `party` | `withdraw` |
+| escrow `Cancelled` | the request's `requester` | `cancel` |
+| token `Approval` of the escrow | `owner` | `approve` |
+
+Anything else is `not_your_transaction`, as is a failed transaction, which
+changes nothing for anyone. A transaction that carries the actions of several
+parties, such as an ERC-4337 bundle, is listed under the party that reports it
+first. The service applies the escrow's events for every party either way. If the transaction is still pending after the
+service has waited, the answer is `transaction_pending`; report it again once
+it is mined.
+
 ## Signing in with a wallet
 
 Phase 3, step 3.2 ([D-27](decisions.md#d-27-signing-in-with-a-wallet)). A
@@ -345,7 +374,7 @@ stable; the HTTP status follows from the code:
 | 401 | `unauthorized` |
 | 403 | `forbidden_role`, `not_requester`, `not_a_party`, `not_your_task`, `not_yourself`, `not_your_transaction` |
 | 404 | `unknown_request`, `unknown_task`, `no_report`, `unknown_file`, `unknown_transaction`, `not_on_chain` |
-| 409 | `forbidden_in_status`, `already_voted`, `duplicate_request`, `key_reused`; on a chain `no_wallet`, `wallet_already_set`, `address_taken`, `already_on_chain`, `insufficient_balance`, `nothing_to_withdraw`, `points_not_used`, `sign_on_chain` |
+| 409 | `forbidden_in_status`, `already_voted`, `duplicate_request`, `key_reused`; on a chain `no_wallet`, `wallet_already_set`, `address_taken`, `already_on_chain`, `insufficient_balance`, `nothing_to_withdraw`, `points_not_used`, `sign_on_chain`, `transaction_pending` |
 | 413 | `too_large` (bodies over 4,000,000 bytes, [step 4.3](#limits-against-abuse)) |
 | 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers`, `too_precise` ([personal data](#personal-data)) |
 | 429 | `rate_limited`, with `Retry-After` in seconds ([limits](#limits-against-abuse)) |

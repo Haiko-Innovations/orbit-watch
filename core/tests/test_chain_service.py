@@ -375,6 +375,68 @@ def test_unauthorised_parties_cannot_approve_work_or_take_money(api, world):
     assert world.chain.deposit(RID) == DEPOSIT
 
 
+# A smart account, such as MetaMask's EIP-7702 account (found in step 4.7): the wallet's code
+# delegates to an executor, and a relayer pays the fee and calls the wallet, which calls the
+# escrow as itself. This executor is LOCAL TEST code with no access control: it calls the
+# address in the first 32 bytes of its call data with the rest, and reverts if that fails.
+EXECUTOR = "0x00000000000000000000000000000000000e7ec0"
+EXECUTOR_CODE = "0x602036038060206000376000600082600060006000355af16025573d600060003e3d6000fd5b00"
+
+
+def relayed(world, party, transaction):
+    """Send a prepared transaction as a smart account's relayer would: from another
+    account, to the party's wallet, whose delegated code makes the call."""
+    wallet = world.address(party)
+    world.local.rpc("anvil_setCode", [EXECUTOR, EXECUTOR_CODE])
+    world.local.rpc("anvil_setCode", [wallet, "0xef0100" + EXECUTOR[2:]])
+    relayer = Wallet(world.w3, test_account("a smart account's relayer"), timeout=30)
+    world.local.give_gas_money(relayer.address)
+    data = "0x" + transaction["to"][2:].lower().rjust(64, "0") + transaction["data"][2:]
+    return relayer.send(
+        {
+            "chainId": transaction["chainId"],
+            "from": relayer.address,
+            "to": wallet,
+            "data": data,
+            "value": 0,
+        }
+    )
+
+
+def test_a_smart_accounts_relayer_may_send_for_the_wallet(api, world):
+    for party in (REQUESTER, STATION, *REVIEWERS):
+        api.register(party)
+    created = api.post("/v1/requests", api.key(REQUESTER), {"request": json.loads(REQUEST)})
+    assert created.status_code == 201, created.text
+    api.act(REQUESTER, f"/v1/requests/{RID}/open")
+    prepared = api.post(f"/v1/requests/{RID}/fund", api.key(REQUESTER), SPLIT)
+    assert prepared.status_code == 202, prepared.text
+    approve, fund = (
+        relayed(world, REQUESTER, item["transaction"]) for item in prepared.json()["sign"]
+    )
+    assert world.w3.eth.get_transaction(fund)["from"] != world.address(REQUESTER)
+
+    # What the requester's wallet did is not the station's to report, nor the relayer's.
+    for party in (STATION, STRANGER):
+        refused = api.report(party, fund, expect=403)["error"]
+        assert refused["code"] == "not_your_transaction"
+    shown = [api.report(REQUESTER, tx)["transaction"] for tx in (approve, fund)]
+    assert [(t["party"], t["action"], t["status"]) for t in shown] == [
+        (REQUESTER, "approve", "confirmed"),
+        (REQUESTER, "fund", "confirmed"),
+    ]
+    assert shown[1]["request_id"] == RID
+    assert api.view()["summary"]["status"] == "funded"
+    assert world.chain.deposit(RID) == DEPOSIT
+
+    # A station's smart account reserves the same way.
+    prepared = api.post(f"/v1/requests/{RID}/reserve", api.key(STATION))
+    assert prepared.status_code == 202, prepared.text
+    (reserve,) = (relayed(world, STATION, item["transaction"]) for item in prepared.json()["sign"])
+    assert api.report(STATION, reserve)["transaction"]["action"] == "reserve"
+    assert api.view()["summary"]["status"] == "reserved"
+
+
 def test_a_party_without_a_wallet_or_with_someone_elses_is_refused(api, world):
     key = api.key(REQUESTER)
     assert api.post("/v1/requests", key, {"request": json.loads(REQUEST)}).status_code == 201

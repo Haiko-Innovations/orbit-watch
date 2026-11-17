@@ -494,22 +494,46 @@ class ChainLink:
                 "unknown_transaction", f"the chain does not know transaction {tx_hash}"
             )
         sender = to_checksum_address(transaction["from"])
-        if not admin and sender != self.wallet(party):
-            raise ServiceError(
-                "not_your_transaction", f"{tx_hash} was sent by {sender}, not by your wallet"
-            )
+        wallet = self.wallet(party)
+        actor = sender
         action, key = self.chain.describe(transaction)
+        if not admin and (sender != wallet or action == "other"):
+            # Sent by someone else for the wallet, or through the wallet's own code: a smart
+            # account (EIP-7702, ERC-4337) whose relayer pays the fee. What the escrow and
+            # the token recorded tells whose wallet acted.
+            found = self._acted(tx_hash, wallet) if wallet else None
+            if found is None and sender != wallet:
+                raise ServiceError(
+                    "not_your_transaction",
+                    f"{tx_hash} was sent by {sender}, and records nothing your wallet did",
+                )
+            action, key = found or ("other", None)
+            actor = wallet
         if action == "other":
             raise ServiceError(
                 "not_orbit_watch", f"{tx_hash} is not a call to the escrow, EAS or the token"
             )
         request_id = self._request_ids().get(key) if key else None
-        self._track(tx_hash, self.party_of(sender), action, request_id, now)
+        self._track(tx_hash, self.party_of(actor), action, request_id, now)
         self._refresh(tx_hash, wait=self.receipt_timeout)
         self._await_confirmations(tx_hash)
         self.sync()
         self.follow_up()
         return self.transaction_view(tx_hash)
+
+    def _acted(self, tx_hash: str, wallet: str) -> tuple[str, str | None] | None:
+        """What ``wallet`` did in a transaction someone else sent, once it is mined."""
+        try:
+            sent = self.chain.wait(tx_hash, timeout=self.receipt_timeout)
+        except ChainError as error:
+            if error.code == "pending":
+                raise ServiceError(
+                    "transaction_pending",
+                    f"{tx_hash} is not mined yet, so it does not show whose wallet acted; "
+                    "report it again once it is",
+                ) from None
+            return None  # failed: it changed nothing, for anyone
+        return self.chain.acted_by(sent.receipt, wallet)
 
     def _await_confirmations(self, tx_hash: str) -> None:
         """Wait, up to ``receipt_timeout`` seconds, until the block of a mined transaction

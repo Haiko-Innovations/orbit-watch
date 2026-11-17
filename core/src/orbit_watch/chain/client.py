@@ -87,6 +87,18 @@ class Event:
     source: str = "escrow"
 
 
+# The escrow's events that name who acted, as the action ``describe`` gives the call and the
+# field holding the caller (``msg.sender``, or the attester for a vote).
+ACTORS = {
+    "Funded": ("fund", "requester"),
+    "Reserved": ("reserve", "station"),
+    "Delivered": ("deliver", "station"),
+    "Challenged": ("challenge", "challenger"),
+    "Voted": ("attest_vote", "reviewer"),
+    "Withdrawn": ("withdraw", "party"),
+}
+
+
 class OrbitWatchChain:
     """The escrow at ``escrow_address`` and the EAS contract, token and reviewer registry it
     names; and the registry's owner, when that is a timelock (``timelock``, else None)."""
@@ -146,12 +158,15 @@ class OrbitWatchChain:
 
     def request(self, request_id: str) -> dict[str, Any]:
         """The stored request (``getRequest``) as a dict with the Solidity field names."""
+        return self._stored(request_key(request_id))
+
+    def _stored(self, key: bytes) -> dict[str, Any]:
         outputs = next(
             item
             for item in self.escrow.abi
             if item.get("type") == "function" and item["name"] == "getRequest"
         )["outputs"][0]["components"]
-        values = self.escrow.functions.getRequest(request_key(request_id)).call()
+        values = self.escrow.functions.getRequest(key).call()
         return {field["name"]: value for field, value in zip(outputs, values, strict=True)}
 
     def deposit(self, request_id: str) -> int:
@@ -368,6 +383,40 @@ class OrbitWatchChain:
             return kind, request_key(request_id).hex()
         key = args.get("requestId")
         return name, key.hex() if isinstance(key, bytes) else None
+
+    def acted_by(self, receipt: Any, wallet: str) -> tuple[str, str | None] | None:
+        """What ``wallet`` did in a mined transaction, read from what the escrow and the token
+        recorded: (action, request key hex) as ``describe`` names them, or None.
+
+        Every actor read here is the ``msg.sender`` of the contract call, so this holds even
+        when someone else sent the transaction: a smart account's relayer (EIP-7702,
+        ERC-4337) pays the fee and calls the wallet, which calls the escrow. An escrow action
+        comes before an approval of the escrow, which a batch may carry as well."""
+        wallet = to_checksum_address(wallet)
+        approval = self.token.events.Approval()
+        approved = False
+        for log in receipt["logs"]:
+            address = to_checksum_address(log["address"])
+            topic = log["topics"][0].to_0x_hex() if log["topics"] else None
+            if address == self.token.address and topic == approval.topic:
+                args = approval.process_log(log)["args"]
+                approved |= args["owner"] == wallet and args["spender"] == self.escrow.address
+                continue
+            known = self._events.get((address, topic))
+            if address != self.escrow.address or known is None:
+                continue
+            decoded = known[1].process_log(log)
+            args = dict(decoded["args"])
+            key = bytes(args["requestId"]) if "requestId" in args else None
+            if decoded["event"] == "Cancelled" and key is not None:
+                # Only the requester can cancel (the escrow's NotRequester).
+                if to_checksum_address(self._stored(key)["requester"]) == wallet:
+                    return "cancel", key.hex()
+            elif decoded["event"] in ACTORS:
+                action, field = ACTORS[decoded["event"]]
+                if to_checksum_address(args[field]) == wallet:
+                    return action, key.hex() if key is not None else None
+        return ("approve", None) if approved else None
 
     # ------------------------------------------------------------------ the parties' calls
 
