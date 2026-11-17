@@ -16,7 +16,8 @@ Every day at 02:23 UTC the workflow
 backup in one transaction, encrypts it with [age](https://age-encryption.org/v1)
 to the maintainer's public key, and streams it out, so plain data never leaves
 Vercel and Neon. The job keeps the file only if it is an age file, as a GitHub
-Actions artifact, for 14 days. A failed run notifies the maintainer.
+Actions artifact, for 14 days. A failed run alerts the maintainer
+([alerts](#monitoring)).
 
 - **What is in it:** every table of the service, except what lives for hours at
   most and should not come back after a restore: sessions, sign-in challenges,
@@ -100,16 +101,22 @@ The tests restore a backup taken through the API on every pull request
 
 The workflow [`Uptime`](../.github/workflows/uptime.yml) checks the service from
 outside at 17 minutes past every hour: `GET /v1/health`,
-`GET /v1/health/follower` and the web application. A failed run notifies the
-maintainer: GitHub notifies the person who created a scheduled workflow, or who
-last changed its schedule, when a run fails, as long as their notification
-settings for Actions are on.
+`GET /v1/health/follower` and the web application.
 
+- **The alert is an issue.** A failed run of `Uptime` or `Backup` opens an issue
+  labelled `alert: uptime` or `alert: backup` and assigns it to the maintainer
+  named in the repository variable `ALERT_ASSIGNEE`, so it reaches them like
+  everything else they follow on GitHub. While it is open, later failures add
+  nothing; the next run that passes closes it with a link, which tells the
+  maintainer that the service is back. GitHub's own notifications of failed runs
+  depend on each person's settings, and did not arrive in the first alert check.
 - **Checking that an alert arrives:** `gh workflow run uptime.yml -f fail=true`
-  fails on purpose, and notifies whoever ran it.
+  fails on purpose and opens the issue; `gh workflow run uptime.yml` then closes
+  it.
 - **When it is late:** GitHub may start a scheduled run late, at busy times. In a
   public repository it turns scheduled workflows off after 60 days without
-  activity; turning them back on makes the person who does it the one notified.
+  activity, and then no alert comes either: the monthly look at Neon's usage
+  (below) is also the time to see that `Uptime` still runs.
 - **Neon's hours:** the Free plan gives 100 compute hours a month per project, and
   stops the database for the rest of the month when they are used up. It sends no
   email first, and its usage API is not on the Free plan. The follower runs every
@@ -211,3 +218,12 @@ encrypted backups.
 
 | Date | Backup | Result |
 |---|---|---|
+| 2026-11-17 | The first run of `Backup`, by hand ([run 44034809713](https://github.com/Haiko-Innovations/orbit-watch/actions/runs/44034809713)): 1,823 bytes, schema version 9 | Passed. Restored into a new local database: 21 tables, 4 rows, the service having no requests yet. The service on it, read-only, answered `/v1/health`, `/v1/public/requests`, `/v1/public/attestations` and `/v1/public/open-requests` exactly as production did, and `/v1/chain` too but for the block followed; a change was refused with `503 read_only`. Found: `serve` followed the chain once at start even in read-only mode, which writes; fixed in the same pull request as this entry. |
+
+### Alert checks
+
+| Date | Check | Result |
+|---|---|---|
+| 2026-11-17 | `Uptime` with `fail=true` ([run 44034861468](https://github.com/Haiko-Innovations/orbit-watch/actions/runs/44034861468)) failed on purpose; a normal run ([44034865633](https://github.com/Haiko-Innovations/orbit-watch/actions/runs/44034865633)) passed | Failed: no notification arrived. The maintainer's GitHub notifications for Actions were off. |
+| 2026-11-17 | The same ([run 44038038733](https://github.com/Haiko-Innovations/orbit-watch/actions/runs/44038038733)), with Actions notifications on for GitHub Mobile, failed workflows only | Failed: still no notification. Alerts became issues assigned to the maintainer instead. |
+| 2026-11-17 | `Uptime` with `fail=true` after the change ([run 44039304792](https://github.com/Haiko-Innovations/orbit-watch/actions/runs/44039304792)), which opened [#89](https://github.com/Haiko-Innovations/orbit-watch/issues/89); a passing run before it had closed the earlier [#88](https://github.com/Haiko-Innovations/orbit-watch/issues/88) | Passed: both reached the maintainer by email (the maintainer added email to the notification settings during the check). |

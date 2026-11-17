@@ -66,7 +66,8 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   `Backup` workflow keeps it for 14 days. `orbit-watch backup create` and
   `orbit-watch backup restore` take and restore one; a restore applies newer
   migrations after the backup's. The `Uptime` workflow checks the service every
-  hour, and a failed run notifies the maintainer. `serve --read-only` (or
+  hour. A failed run of either workflow opens an issue assigned to the
+  maintainer (`ALERT_ASSIGNEE`), and the next passing run closes it. `serve --read-only` (or
   `ORBIT_WATCH_READ_ONLY=1`) refuses every change with `503 read_only` and lets
   the follower wait; the web application says so on every page. Runbooks for
   failures, restores and leaked keys and passwords. pyrage joins the `api` extra.
@@ -119,6 +120,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   SQLite service directories are not migrated.
 
 ### Fixed
+
+- `orbit-watch serve --read-only` no longer follows the chain once at start,
+  which wrote to the database; found in the first restore drill (phase 4,
+  step 4.6).
 
 - The phase 1 demo told another story after every release: its reviewer rounds
   are drawn from each delivery's SHA-256, and its observation files named the

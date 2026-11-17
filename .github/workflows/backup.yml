@@ -3,7 +3,8 @@ name: Backup
 # A daily backup of the public service's database (phase 4, step 4.6; decision D-39). The
 # service encrypts it with age to the maintainer's public key before it leaves, so this job
 # only ever holds ciphertext, and it keeps nothing else. GitHub keeps it for 14 days. A
-# failed run notifies the maintainer. Restoring it: docs/operations.md.
+# failed run opens an issue assigned to the maintainer, and the next run that passes closes
+# it. Restoring a backup: docs/operations.md.
 
 on:
   schedule:
@@ -11,9 +12,10 @@ on:
     - cron: "23 2 * * *"
   workflow_dispatch:
 
-# Least privilege: the job reads nothing from the repository.
+# Least privilege: the job reads nothing from the repository, and writes only its alert.
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: backup
@@ -65,3 +67,34 @@ jobs:
           if-no-files-found: error
           # Already compressed, then encrypted.
           compression-level: 0
+
+      # The alert (D-39): an issue assigned to the maintainer, which reaches them like
+      # everything else they follow on GitHub. One open issue at a time; the next run that
+      # passes closes it.
+      - name: Alert the maintainer
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ASSIGNEE: ${{ vars.ALERT_ASSIGNEE }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -n "$(gh issue list --label "alert: backup" --state open --json number --jq '.[].number')" ]; then
+            echo "An alert is already open."
+            exit 0
+          fi
+          gh issue create --label "alert: backup" --assignee "${ASSIGNEE}" --title "Alert: the daily backup failed" \
+            --body "${RUN} failed. What to do: docs/operations.md#backups. The next run that passes closes this issue."
+
+      - name: Close the alert
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          for number in $(gh issue list --label "alert: backup" --state open --json number --jq '.[].number'); do
+            gh issue close "${number}" --comment "Passed again: ${RUN}"
+          done

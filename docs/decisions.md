@@ -1861,12 +1861,19 @@ in [operations.md](operations.md):
   which is a Config variable. The private key goes offline with the verifier key in
   step 4.7 ([P4-11](#p4-11-keys)).
 - **Monitoring from GitHub Actions.** The `Uptime` workflow checks the API, the
-  follower and the web application every hour. A failed run is the alert: GitHub
-  notifies the person who created the scheduled workflow, or who last changed its
-  schedule, and whoever runs it by hand. No other account is needed. GitHub may run
-  a schedule late at busy times, and turns schedules off after 60 days without
-  activity in a public repository; both are acceptable for an unannounced testnet
-  service.
+  follower and the web application every hour. No other account is needed. GitHub
+  may run a schedule late at busy times, and turns schedules off after 60 days
+  without activity in a public repository; both are acceptable for an unannounced
+  testnet service.
+- **An alert is an issue.** A failed run of `Uptime` or `Backup` opens an issue
+  assigned to the maintainer (the repository variable `ALERT_ASSIGNEE`), labelled
+  `alert: uptime` or `alert: backup`, unless one is already open, and the next
+  passing run closes it; so the workflows may write issues and nothing else. At
+  first a failed run was the alert, through GitHub's own notifications of failed
+  runs, which go to whoever created the scheduled workflow or ran it by hand. In the
+  first alert check on 2026-11-17 none arrived, with the maintainer's Actions
+  notifications off and then on for GitHub Mobile. An assigned issue reaches the
+  maintainer like everything else they follow.
 - **Neon's hours.** The Free plan has 100 compute hours a month per project, sends
   no email before they run out, and has no usage API. So the check is indirect: a
   database stopped for the month makes the follower fall behind, which the uptime
