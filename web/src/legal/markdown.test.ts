@@ -127,6 +127,6 @@ describe("the privacy notice", () => {
     expect(privacyEn).toContain("section 205 of the Finnish Act on Electronic Communications");
     expect(privacyFi).toContain("(917/2014) 205 §");
     expect(privacyEn).toContain("two decimals of a degree");
-    expect(privacyEn).toContain("at most 14 days");
+    expect(privacyEn).toContain("its logs are kept for at most 30 days");
   });
 });

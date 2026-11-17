@@ -767,6 +767,7 @@ def open_service(
     context: VerificationContext,
     *,
     chain: Any = None,
+    database_role: str | None = None,
     **options: Any,
 ) -> RequestService:
     """A service whose state, files included, lives in the PostgreSQL ``database`` (a libpq
@@ -774,11 +775,13 @@ def open_service(
 
     Any number of processes can open the same schema; each reloads its copy of the state
     when another one changed it (step 4.2). With ``chain`` (an ``orbit_watch.chain.link.ChainLink``)
-    the service works on that testnet chain (step 2.6).
+    the service works on that testnet chain (step 2.6). With ``database_role``, the
+    database's own user runs the migrations, and every transaction runs as that role, which
+    may only read and write the service's tables (step 4.5, decision P4-10).
     """
     from orbit_watch.settlement.stored_ledger import StoredLedgerAdapter
 
-    storage = Storage(database)
+    storage = Storage(database, role=database_role)
     try:
         service = RequestService(
             StoredLedgerAdapter(storage.db), reviewers, context, storage=storage, **options

@@ -59,6 +59,14 @@ numbered plain-SQL migrations:
 | `api_keys`, `idempotency` | API keys by their SHA-256 (migration 0002, step 1.6), and a copy of each change's answer by party and `Idempotency-Key`, kept for 24 hours (its path and expiry: migration 0009, step 4.4) |
 | `rate_limits` | the limits' counts per fixed window (migration 0008, step 4.3): a party, or an IP address as a keyed SHA-256 only, deleted when the window has passed ([D-36](decisions.md#d-36-limits-the-body-limit-and-the-dedicated-rpc-endpoint)) |
 
+With `database_role` (`ORBIT_WATCH_DATABASE_ROLE`, step 4.5), the database's
+own user runs the migrations, then makes sure the role exists without a login
+and may only read and write the schema's tables and sequences; every
+transaction begins with `SET LOCAL ROLE`. A lost connection is opened again
+before a transaction or a read on its own, never in the middle of a transaction,
+and no server-side prepared statements are used, so a pooler in transaction mode
+works ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)).
+
 What these tables keep about people, who sees it and for how long is in
 [personal-data.md](personal-data.md) (step 4.4). `api/privacy.py`'s `sweep`
 deletes what is no longer needed; the follower and every sign-in run it.

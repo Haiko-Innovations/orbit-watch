@@ -27,3 +27,7 @@ contracts/broadcast/*/31337/
 
 # Local test deployments (core/tests/test_deploy_script.py)
 contracts/deployments/anvil*
+
+# Vercel's link to the project and anything it may pull (docs/deployment.md)
+.vercel
+.env*

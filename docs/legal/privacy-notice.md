@@ -18,7 +18,7 @@ The service keeps as little as it can. There are no analytics, no trackers, no a
 - **What you do in the service.** Your requests and their titles, the observation files you deliver, the verification reports, and the reasons you give when you challenge a result or review a delivery. An observation file names your station's place, to the same two decimals; the service refuses files that are more precise. The parties of a request and the administrators see these. When a request is settled and its embargo of at most 30 days has passed, its request, observations and report are published for anyone under the CC BY 4.0 licence.
 - **Your transactions.** The hashes and status of the transactions you report to the service. The transactions themselves are on the blockchain.
 - **Copies of answers.** When you change something, the service keeps a copy of its answer for 24 hours, so that if your browser asks again, the change is not made twice.
-- **IP addresses.** The service does not store your IP address. To keep anyone from overloading it, it counts calls per address, and for that it keeps only a keyed hash of the address. Each count is deleted when its time window ends, within an hour. The service writes no IP address to its own logs. Our hosting provider handles your IP address to deliver the pages and to protect the service from attacks, and its logs are kept for at most 14 days.
+- **IP addresses.** The service does not store your IP address. To keep anyone from overloading it, it counts calls per address, and for that it keeps only a keyed hash of the address. Each count is deleted when its time window ends, within an hour. The service writes no IP address to its own logs. Our hosting provider handles your IP address to deliver the pages and to protect the service from attacks, and its logs are kept for at most 30 days.
 - **Email.** If you write to us, we keep your message for as long as it takes to handle it.
 
 The service does not collect anything else about you. You need a wallet and a name to have an account; everything else you give is up to you. Please do not put personal data in titles, names or reasons: they are shown to others and may be published.
@@ -41,8 +41,8 @@ The service sets one cookie, `ow_session`, and only when you sign in. It keeps y
 
 ## Who else handles your data
 
-- **Vercel Inc.** hosts the service and the web application in the United States. It processes your IP address and requests on our behalf.
-- **Neon**, part of Databricks, Inc., hosts the service's database in an EU region on our behalf.
+- **Vercel Inc.**, a United States company, hosts the service and the web application on our behalf. The service runs in Frankfurt, and Vercel's network delivers the pages from the site nearest to you. It processes your IP address and requests.
+- **Neon**, part of Databricks, Inc., hosts the service's database in Frankfurt on our behalf.
 - **GitHub, Inc.** keeps the daily backups of the database. They are encrypted before they leave, so GitHub cannot read them.
 - **The blockchain.** Base Sepolia, and the attestation service on it, are public: anyone can read what is there. The service reads the blockchain through a provider of blockchain access, to which it sends nothing about you that is not already public on the chain.
 
@@ -54,7 +54,7 @@ Vercel and Databricks are certified under the EU–U.S. Data Privacy Framework, 
 - Sessions: until you sign out, at most 12 hours.
 - Counts per IP address: until their window ends, at most an hour.
 - Copies of answers: 24 hours.
-- The hosting provider's logs: at most 14 days.
+- The hosting provider's logs: at most 30 days.
 - Your station's profile: until you delete it.
 - Your account, requests, deliveries, reports and reasons: as long as the testnet service runs, since they are the record of the network. When the service closes, its database is deleted.
 - Backups: each daily, encrypted backup is kept for 14 days, so something deleted from the service is gone from the backups 14 days later.

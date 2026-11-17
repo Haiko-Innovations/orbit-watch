@@ -1318,7 +1318,8 @@ checked in step 4.4 against section 205 of the Act on Electronic
 Communications Services (917/2014) and Traficom's guidance. The result is
 recorded with its source. On 2026-11-14 the text could not be read from
 Finlex, so it is not stated here. It was read in step 4.4: see
-[D-37](#d-37-personal-data-in-the-service).
+[D-37](#d-37-personal-data-in-the-service). Logs are kept for 30 days since
+step 4.5 ([D-38](#d-38-the-service-on-vercel-and-neon)).
 
 ### P4-10 The database's protection
 
@@ -1384,6 +1385,9 @@ Accepted · 2026-11-14:
 - **CI builds the container image** (P4-05); it is published with the
   release.
 
+Since step 4.5 production follows `main`, and a rollback is Vercel's instant
+rollback ([D-38](#d-38-the-service-on-vercel-and-neon)).
+
 ### P4-13 Operations
 
 Accepted · 2026-11-14:
@@ -1443,8 +1447,9 @@ Accepted · 2026-11-14. Phase 4 is done when:
    password. No secret is in the repository, a preview, the image or the
    browser, tested. The runbooks for a leaked key and a leaked password are
    written.
-8. A release is deployed by moving the production branch, and a rollback has
-   been done.
+8. A release is deployed by merging to `main`, and a rollback has been done
+   ([D-38](#d-38-the-service-on-vercel-and-neon); first written as moving a
+   production branch).
 9. Encrypted backups run every day outside Vercel and Neon, a restore drill
    has passed, and monitoring has alerted the maintainer once.
 10. The review before the launch is done, each finding fixed or recorded;
@@ -1720,3 +1725,95 @@ is [personal-data.md](personal-data.md):
   [Databricks privacy notice](https://www.databricks.com/legal/privacynotice)
   (the Data Privacy Framework covers "Databricks, Inc., Neon, LLC"). Read on
   2026-11-16.
+
+### D-38 The service on Vercel and Neon
+
+Accepted · 2026-11-16 (with the pull request that implements step 4.5,
+[P4-02](#p4-02-hosting-on-vercel-and-neon) to
+[P4-12](#p4-12-releases-and-deployment)). How it is run is in
+[deployment.md](deployment.md):
+
+- **Where.** The maintainer chose on 2026-11-16: Haiko Innovations' Vercel Pro
+  team, and Neon's Free plan to begin with, both in Europe. The function runs
+  in Frankfurt (`fra1`); the Neon project is in AWS Frankfurt (`fra1` in the
+  Marketplace, `aws-eu-central-1`). The address is
+  `orbit-watch-tan.vercel.app`, since `orbit-watch.vercel.app` was taken
+  ([P4-03](#p4-03-vercels-own-address-first)).
+- **Vercel Services, in beta.** One project, two services: the web
+  application, which Vercel's network serves, and the API as a Python function
+  at `/v1/`. They are built, deployed and rolled back together, on one origin
+  (D-25). Services are "in Beta on all plans"; the only Vercel-specific files are
+  `vercel.json` and `core/asgi.py`, so leaving them costs nothing
+  ([P4-05](#p4-05-portable-by-design)).
+- **One application for every host.** `orbit_watch.asgi` sets the service up
+  from `serve`'s settings in the environment, through the same `serve_app` as
+  `orbit-watch serve`. `ORBIT_WATCH_NETWORK` and `ORBIT_WATCH_ORIGINS` give what
+  `serve` takes as options, and the verifier key can come from
+  `$ORBIT_WATCH_VERIFIER_KEY` instead of a keystore file, which a function does
+  not have. Vercel's Python build installs only the base dependencies, so the
+  API service installs the extras itself (`uv sync --locked --no-dev
+  --no-editable --extra api --extra evm`).
+- **Without a database, `503 not_configured`.** A preview has no settings and
+  no database ([P4-12](#p4-12-releases-and-deployment)); a service that cannot
+  start answers the same and logs why, never a secret.
+- **The database's two roles, with one password.** P4-10 asked for a role that
+  only reads and writes the service's tables, and another that runs the
+  migrations. The Neon integration gives the database's owner as
+  `DATABASE_URL`. A second login role would need its password composed into a
+  second connection string by hand, on someone's machine. So the owner runs the
+  migrations, and the role `orbit_watch_app` has no login: the owner switches to
+  it with `SET LOCAL ROLE` at the start of every transaction, which holds behind
+  the pooler too. A mistake in the service cannot drop or alter a table. A
+  leaked password is still the owner's; the runbook in step 4.6 says how to
+  change it.
+- **TLS checked against known roots.** `ORBIT_WATCH_DATABASE_SSLMODE=verify-full`
+  sets libpq's mode, with `certifi`'s root certificates, since the function's
+  system paths may not match the bundled OpenSSL's. libpq is 18.
+- **A long-lived process, a database that sleeps.** Neon's Free plan suspends
+  the database after five minutes, which closes connections, and Vercel keeps a
+  function's instance for many calls. The storage layer opens a lost connection
+  again before a transaction or a read on its own, never in the middle of one,
+  and uses no server-side prepared statements, which the pooler in
+  transaction mode does not keep. The first call after a sleep took 8.4 s on
+  2026-11-16 (the database waking, and the first migrations); later calls take
+  well under a second.
+- **Neon's variables are Config, not Secret.** The integration writes its
+  variables to the production environment only, as Config, readable by the
+  team's members. Haiko's team has one member. Replacing them with Secret copies
+  would cut them off from the integration's password changes.
+- **Logs for 30 days.** The maintainer chose on 2026-11-16 to keep Vercel's
+  default for the team, Observability Plus, which keeps runtime logs for 30 days.
+  This replaces the 14 days of P4-09, and the privacy notice and
+  [personal-data.md](personal-data.md) say 30.
+- **Production follows `main`.** The maintainer chose on 2026-11-17 to deploy
+  every merge to `main`, instead of P4-12's `production` branch moved to a
+  release tag. The maintainer reviews and merges one pull request at a time, so
+  a second step for each release would add work and no safety, and the service
+  is not announced yet. `main` is Vercel's default, which the REST API could
+  not have changed anyway (`PATCH /v9/projects` refuses `link`).
+- **A rollback is Vercel's instant rollback.** It points the production domains
+  at an earlier production deployment, with that deployment's build, its
+  settings as they were then and its cron jobs, without building anything.
+  Merges to `main` still build but do not go live until a deployment is
+  promoted again (`vercel promote`). So a rollback also stops a broken `main`
+  from going live while a fix is merged.
+- **The first deployment.** The project's first deployment from the command
+  line, made before the Git connection, became its production deployment; it
+  had no settings and answered `503`.
+- **The firewall rule** of D-36 is set with `vercel firewall`; publishing it
+  needs a person's approval.
+- **The RPC endpoint.** Until a dedicated provider is chosen, the service
+  reads Base Sepolia through its public endpoint, which is enough while the
+  service is not announced. A dedicated endpoint needs an account in Haiko
+  Innovations' name, and is set as `ORBIT_WATCH_CHAIN_RPC` before the launch.
+
+Sources, read on 2026-11-16: [Vercel Services](https://vercel.com/docs/services)
+and its [configuration](https://vercel.com/docs/services/config-reference),
+[Python runtime](https://vercel.com/docs/functions/runtimes/python),
+[cron jobs](https://vercel.com/docs/cron-jobs),
+[regions](https://vercel.com/docs/functions/configuring-functions/region),
+[production branch](https://vercel.com/docs/git#production-branch),
+[Config and Secret variables](https://vercel.com/docs/environment-variables/sensitive-environment-variables),
+[runtime logs](https://vercel.com/docs/logs/runtime). On 2026-11-17:
+[instant rollback](https://vercel.com/docs/instant-rollback) and
+[promoting a deployment](https://vercel.com/docs/deployments/promoting-a-deployment).

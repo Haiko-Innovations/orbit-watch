@@ -354,86 +354,94 @@ def _service_inputs(args: argparse.Namespace):
     return ReviewerRegistry.parse(reviewers), context, notes
 
 
-def cmd_serve(args: argparse.Namespace) -> int:
-    try:
-        import uvicorn
+class ServeError(Exception):
+    """A setting the service cannot start with (``serve_app``)."""
 
+
+VERIFIER_KEY_VARIABLE = "ORBIT_WATCH_VERIFIER_KEY"
+
+
+def serve_app(args: argparse.Namespace, *, environ=None):
+    """The service's ASGI application from ``orbit-watch serve``'s options: what ``serve``
+    runs, and what ``orbit_watch.asgi`` gives any ASGI server (step 4.5). Returns the
+    application, the service and the lines to tell the operator. Raises ``ServeError``."""
+    environ = os.environ if environ is None else environ
+    try:
         from orbit_watch.api import create_app
     except ImportError:
-        _err('the API needs the optional "api" dependencies: pip install "orbit-watch[api]"')
-        return EXIT_USAGE
+        raise ServeError(
+            'the API needs the optional "api" dependencies: pip install "orbit-watch[api]"'
+        ) from None
+    from orbit_watch.api.limits import Limits, LimitsError
     from orbit_watch.service import open_service
 
     if args.web and not (Path(args.web) / "index.html").is_file():
-        _err(f"{args.web} has no index.html: build the web application (cd web && npm run build)")
-        return EXIT_USAGE
+        raise ServeError(
+            f"{args.web} has no index.html: build the web application (cd web && npm run build)"
+        )
     for origin in args.origin or ():
         if not origin.startswith(("http://", "https://")) or origin.rstrip("/").count("/") > 2:
-            _err(f"--origin {origin}: give a web origin such as https://orbit.example")
-            return EXIT_USAGE
-    from orbit_watch.api.limits import Limits, LimitsError
-
+            raise ServeError(f"--origin {origin}: give a web origin such as https://orbit.example")
     try:
         limits = Limits.parse(args.limits)
     except LimitsError as error:
-        _err(f"--limits: {error}")
-        return EXIT_USAGE
+        raise ServeError(f"--limits: {error}") from None
     station_decimals = _station_decimals(args.station_decimals)
     if station_decimals == -1:
-        _err("--station-decimals: give a whole number from 0 to 8, or off")
-        return EXIT_USAGE
+        raise ServeError("--station-decimals: give a whole number from 0 to 8, or off")
     registry, context, notes = _service_inputs(args)
+    verifier_key = environ.get(VERIFIER_KEY_VARIABLE) or None
     chain = None
     if args.network:
-        if not args.verifier_keystore:
-            _err(f"on {args.network}, give --verifier-keystore")
-            return EXIT_USAGE
+        if not (args.verifier_keystore or verifier_key):
+            raise ServeError(
+                f"on {args.network}, give --verifier-keystore, or the key in "
+                f"${VERIFIER_KEY_VARIABLE}"
+            )
         _apply_network(args)
     if args.chain_rpc or args.escrow or args.verifier_keystore:
-        if not (args.chain_rpc and args.escrow and args.verifier_keystore):
-            _err(
+        if not (args.chain_rpc and args.escrow and (args.verifier_keystore or verifier_key)):
+            raise ServeError(
                 "on a chain, give --chain-rpc, --escrow and --verifier-keystore together, or "
                 "--network and --verifier-keystore"
             )
-            return EXIT_USAGE
         try:
-            chain = _chain_link(args)
+            chain = _chain_link(args, verifier_key)
         except ImportError:
-            _err('the chain needs the optional "evm" dependencies: pip install "orbit-watch[evm]"')
-            return EXIT_USAGE
-    database = _database(args)
+            raise ServeError(
+                'the chain needs the optional "evm" dependencies: pip install "orbit-watch[evm]"'
+            ) from None
+    database = _database(args, environ)
     if database is None:
-        return EXIT_USAGE
-    service = open_service(database, registry, context, chain=chain)
-    for note in notes:
-        print(f"note: {note}")
-    origins = args.origin or _default_origins(args.host, args.port)
-    print(
-        f"Orbit Watch API {__version__} for {_database_name(service)} "
-        f"on http://{args.host}:{args.port}/v1/"
+        raise ServeError(
+            "give the service's PostgreSQL database: --database, or "
+            f"{' or '.join('$' + name for name in DATABASE_VARIABLES)}"
+        )
+    role = environ.get(DATABASE_ROLE_VARIABLE) or None
+    service = open_service(
+        _with_sslmode(database, environ.get(DATABASE_SSLMODE_VARIABLE)),
+        registry,
+        context,
+        chain=chain,
+        database_role=role,
     )
+    lines = [f"note: {note}" for note in notes]
+    origins = args.origin or _default_origins(args.host, args.port)
+    lines.append(f"Orbit Watch API {__version__} for {_database_name(service)}")
+    if role:
+        lines.append(f"Changes run as the database role {role}")
     if args.web:
-        print(f"Web application on http://{args.host}:{args.port}/")
-    if chain is not None:
-        print(f"Wallets sign in from: {', '.join(origins)}")
+        lines.append(f"Web application on http://{args.host}:{args.port}/")
     if chain is None:
-        print("Phase 1 prototype: local use only, no TLS. All bundled data is SIMULATED.")
+        lines.append("Phase 1 prototype: local use only, no TLS. All bundled data is SIMULATED.")
     else:
-        print("Phase 2 prototype: local use only, no TLS. All bundled data is SIMULATED.")
-        print(
+        lines.append("Testnet only, no real value. All bundled data is SIMULATED.")
+        lines.append(f"Wallets sign in from: {', '.join(origins)}")
+        lines.append(
             f"On chain {chain.chain.chain_id} ({chain.notice}): escrow "
             f"{chain.chain.escrow.address}, verifier {chain.verifier.address}"
         )
-        # Catch up before answering, so the first request does not wait for it.
-        try:
-            chain.sync()
-        except Exception as error:  # the node is down; each request tries again
-            _err(f"warning: cannot read the chain yet: {error}")
-        else:
-            print(f"Followed the chain to block {chain.synced_block()}")
-    from orbit_watch.api import start_follower
-
-    secret = next((os.environ[n] for n in FOLLOW_SECRET_VARIABLES if os.environ.get(n)), None)
+    secret = next((environ[n] for n in FOLLOW_SECRET_VARIABLES if environ.get(n)), None)
     app = create_app(
         service,
         web=args.web,
@@ -444,16 +452,44 @@ def cmd_serve(args: argparse.Namespace) -> int:
         station_decimals=station_decimals,
     )
     if limits is None:
-        print("Limits against abuse: off")
+        lines.append("Limits against abuse: off")
     else:
         where = f"the {args.client_ip_header} header" if args.client_ip_header else "connections"
-        print(f"Limits against abuse: on (IP addresses from {where})")
+        lines.append(f"Limits against abuse: on (IP addresses from {where})")
     if station_decimals is None:
-        print("Station coordinates: kept as given")
+        lines.append("Station coordinates: kept as given")
     else:
-        print(f"Station coordinates: kept to {station_decimals} decimals of a degree")
+        lines.append(f"Station coordinates: kept to {station_decimals} decimals of a degree")
     if secret:
-        print("A schedule may run the follower: /v1/internal/follow (with its secret)")
+        lines.append("A schedule may run the follower: /v1/internal/follow (with its secret)")
+    return app, service, lines
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    try:
+        import uvicorn
+    except ImportError:
+        _err('the API needs the optional "api" dependencies: pip install "orbit-watch[api]"')
+        return EXIT_USAGE
+    try:
+        app, service, lines = serve_app(args)
+    except ServeError as error:
+        _err(str(error))
+        return EXIT_USAGE
+    for line in lines:
+        print(line)
+    print(f"Listening on http://{args.host}:{args.port}/v1/")
+    chain = service.chain
+    if chain is not None:
+        # Catch up before answering, so the first request does not wait for it.
+        try:
+            chain.sync()
+        except Exception as error:  # the node is down; each request tries again
+            _err(f"warning: cannot read the chain yet: {error}")
+        else:
+            print(f"Followed the chain to block {chain.synced_block()}")
+    from orbit_watch.api import start_follower
+
     if args.follow:
         start_follower(app, args.follow)
         print(f"The follower runs every {args.follow:g} seconds")
@@ -500,8 +536,9 @@ def _apply_network(args: argparse.Namespace) -> None:
         args.safe = record.get("safe")
 
 
-def _chain_link(args: argparse.Namespace):
-    """The service's link to a testnet chain, with the verifier key (step 2.6)."""
+def _chain_link(args: argparse.Namespace, verifier_key: str | None = None):
+    """The service's link to a testnet chain, with the verifier key (step 2.6): from its
+    keystore, or else as ``verifier_key`` (``$ORBIT_WATCH_VERIFIER_KEY``, step 4.5)."""
     import stat
 
     from web3 import Web3
@@ -514,17 +551,26 @@ def _chain_link(args: argparse.Namespace):
     # The endpoint's URL may hold a provider's key: it is never printed (step 4.3).
     endpoints = service_endpoints(args.chain_rpc, getattr(args, "fallback_rpc", None))
     chain = OrbitWatchChain(Web3(ServiceRpc(endpoints)), args.escrow)
-    keystore = Path(args.verifier_keystore)
-    if keystore.stat().st_mode & (stat.S_IRWXG | stat.S_IRWXO):
-        _err(f"warning: {keystore} can be read by other users; chmod 600 it")
-    password = read_password(
-        args.verifier_password_file,
-        "verifier keystore password: ",
-        env="ORBIT_WATCH_VERIFIER_PASSWORD_FILE",
-    )
+    if args.verifier_keystore:
+        keystore = Path(args.verifier_keystore)
+        if keystore.stat().st_mode & (stat.S_IRWXG | stat.S_IRWXO):
+            _err(f"warning: {keystore} can be read by other users; chmod 600 it")
+        password = read_password(
+            args.verifier_password_file,
+            "verifier keystore password: ",
+            env="ORBIT_WATCH_VERIFIER_PASSWORD_FILE",
+        )
+        verifier = load_keystore(keystore, password)
+    else:
+        from eth_account import Account
+
+        try:
+            verifier = Account.from_key(verifier_key)
+        except Exception:  # never say more: the message would hold the key
+            raise ServeError(f"${VERIFIER_KEY_VARIABLE} is not a private key") from None
     return ChainLink(
         chain,
-        load_keystore(keystore, password),
+        verifier,
         from_block=args.from_block,
         safe=getattr(args, "safe", None),
         confirmations=args.confirmations,
@@ -532,6 +578,9 @@ def _chain_link(args: argparse.Namespace):
 
 
 DATABASE_VARIABLES = ("ORBIT_WATCH_DATABASE_URL", "DATABASE_URL")
+# The role that the service's changes run as, and the TLS mode to connect with (step 4.5).
+DATABASE_ROLE_VARIABLE = "ORBIT_WATCH_DATABASE_ROLE"
+DATABASE_SSLMODE_VARIABLE = "ORBIT_WATCH_DATABASE_SSLMODE"
 # The follower's secret for a schedule (step 4.2): Vercel's cron jobs send CRON_SECRET.
 FOLLOW_SECRET_VARIABLES = ("ORBIT_WATCH_FOLLOW_SECRET", "CRON_SECRET")
 DATABASE_HELP = (
@@ -541,11 +590,12 @@ DATABASE_HELP = (
 )
 
 
-def _database(args: argparse.Namespace) -> str | None:
+def _database(args: argparse.Namespace, environ=None) -> str | None:
     """The service's PostgreSQL database: --database, or the first of
     ``DATABASE_VARIABLES`` that is set (decision P4-04)."""
+    environ = os.environ if environ is None else environ
     found = args.database or next(
-        (os.environ[name] for name in DATABASE_VARIABLES if os.environ.get(name)), None
+        (environ[name] for name in DATABASE_VARIABLES if environ.get(name)), None
     )
     if not found:
         _err(
@@ -553,6 +603,25 @@ def _database(args: argparse.Namespace) -> str | None:
             f"{' or '.join('$' + name for name in DATABASE_VARIABLES)}"
         )
     return found
+
+
+def _with_sslmode(database: str, sslmode: str | None) -> str:
+    """The connection string with libpq's ``sslmode`` set (``verify-full`` on the public
+    service, P4-10), and the root certificates that ``verify-full`` checks against."""
+    if not sslmode:
+        return database
+    from psycopg.conninfo import conninfo_to_dict, make_conninfo
+
+    params = conninfo_to_dict(database)
+    params["sslmode"] = sslmode
+    if sslmode == "verify-full" and not params.get("sslrootcert"):
+        try:
+            import certifi  # comes with the evm extra (requests)
+
+            params["sslrootcert"] = certifi.where()
+        except ImportError:
+            params["sslrootcert"] = "system"
+    return make_conninfo(**params)
 
 
 def _database_name(service) -> str:
@@ -847,7 +916,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--access-log",
         action="store_true",
         help="log every request with the caller's IP address (off by default: the service "
-        "writes no IP address to its logs; keep such a log for at most 14 days)",
+        "writes no IP address to its logs; keep such a log for at most 30 days)",
     )
     serve.add_argument("--catalog", help="reference orbits (default: built-in SIMULATED)")
     serve.add_argument("--policy", help="target allow-list (default: built-in SIMULATED)")

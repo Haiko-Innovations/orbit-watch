@@ -28,8 +28,10 @@ paikallisesti ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
 verkkosovellus verkossa Base Sepoliassa, yhä SIMULOITUNA. Sen päätökset
 P4-01–P4-16 hyväksyttiin 14.11.2026 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)). Valmiina: palvelun tallennus
 PostgreSQLiin (4.1), tilaton palvelu, jossa on seuraaja ja CI:ssä testattu
-konttikuva (4.2), sekä väärinkäytön rajat ja oma RPC-päätepiste, jonka avain
-pysyy salassa (4.3).
+konttikuva (4.2), väärinkäytön rajat ja oma RPC-päätepiste, jonka avain pysyy
+salassa (4.3), sekä tietosuojaseloste ja käyttöehdot englanniksi ja suomeksi
+(4.4). Palvelu toimii Vercelissä ja Neonissa Frankfurtissa, vielä julkistamatta
+(4.5, [deployment.md](deployment.md)).
 
 Vaihe 2 julkaistiin versiona 0.3.0 ([vaiheen 2 yhteenveto](phase-2-summary.fi.md)),
 vaihe 1 versiona 0.2.0 ([vaiheen 1 yhteenveto](phase-1-summary.fi.md)) ja vaihe 0
@@ -185,8 +187,8 @@ issuessa [#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67), ja n
   käyttöehdot**;
 - **tietokanta suojattuna** rooleilla ja salaisuuksilla, ja salaisuuksista
   **vain tarkistusavain** palvelulla;
-- julkaisut otetaan käyttöön siirtämällä **production-haaraa**,
-  **päivittäiset salatut varmuuskopiot** ja **valvonta**;
+- julkaisut otetaan käyttöön **mainista** ja perutaan Vercelin **Instant
+  Rollbackilla**, **päivittäiset salatut varmuuskopiot** ja **valvonta**;
 - **ei mitään, mikä sulkisi tien yhteisön ylläpitämään verkkoon**
   ([decentralisation.md](decentralisation.md), englanniksi).
 
@@ -196,7 +198,7 @@ issuessa [#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67), ja n
 | ✅ **4.2 Tilaton palvelu, joka toimii itse** ([#69](https://github.com/Haiko-Innovations/orbit-watch/issues/69)) | Ei tilaa kannan ulkopuolella: transaktio jokaiselle kutsulle ja advisory lock muutoksille; seuranta todennettuna kutsuna (ajastus, ajastin tai `serve --follow`), joka soveltaa tapahtumat, attestoi, tilittää ja soveltaa määräajat vahvistussyvyyteen asti; terveystarkistus; konttikuva rakennetaan ja testataan CI:ssä. | Kaksi instanssia ei koskaan tee samaa muutosta kahdesti; tilaus tilitetään ja toinen vanhenee ilman `tick`iä; kuva läpäisee päästä päähän -testit; testattu. |
 | ✅ **4.3 Rajat ja oma RPC-päätepiste** ([#70](https://github.com/Haiko-Innovations/orbit-watch/issues/70)) | Rajat IP-osoitetta ja osapuolta kohden kannassa, Vercelin palomuuri edessä; pyynnöt enintään 4 Mt; ketju luetaan omasta RPC-päätepisteestä, jonka avain on salaisuus. | Jokaisen julkisen ja kirjautumisen päätepisteen rajat testattu; RPC-avain ei koskaan vastauksessa, lokissa tai selaimessa, testattu. |
 | ✅ **4.4 Tietosuojaseloste ja käyttöehdot** ([#71](https://github.com/Haiko-Innovations/orbit-watch/issues/71)) | Molemmat englanniksi ja suomeksi, linkki jokaiselta sivulta; aseman koordinaatit noin kilometrin tarkkuudella; asemaprofiilin poisto ja istuntojen lopetus; lokien säilytys; istuntoevästeen asema lain mukaan lähteineen. | Sivut toimivat kirjautumatta; poisto ja koordinaattien tarkkuus testattu; tietoluettelo dokumentoitu. |
-| **4.5 Vercel ja Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | Vercel-projekti ja Neon-kanta Haiko Innovationsin tileillä, Vercelin omassa osoitteessa, kannan kaksi roolia, salaisuudet vain tuotannossa, esikatselut ilman niitä, production-haara. | Palvelu vastaa HTTPS:llä, vielä julkistamatta; käyttöönotto ja paluu edelliseen tehty production-haaraa siirtämällä. |
+| **4.5 Vercel ja Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | Vercel-projekti ja Neon-kanta Haiko Innovationsin tileillä, Vercelin omassa osoitteessa, kannan kaksi roolia, salaisuudet vain tuotannossa, esikatselut ilman niitä, tuotanto mainista ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)). | Palvelu vastaa HTTPS:llä, vielä julkistamatta; käyttöönotto mergeämällä mainiin ja paluu edelliseen Vercelin Instant Rollbackilla. |
 | **4.6 Varmuuskopiot, valvonta ja ohjeet** ([#73](https://github.com/Haiko-Innovations/orbit-watch/issues/73)) | Päivittäinen salattu `pg_dump` GitHub Actionsilla, säilytys 14 päivää; saatavuusvalvonta hälytyksineen; Neonin tuntien seuranta; vain luku -tila; toimintaohjeet. | Palautusharjoitus läpäisty; hälytys tavoitti ylläpitäjän; ohjeet dokumentoitu. |
 | **4.7 Avaimet ja katselmointi ennen julkistusta** ([#74](https://github.com/Haiko-Innovations/orbit-watch/issues/74)) | Tarkistusavain tuotannon salaisuudeksi ja pois ylläpitäjän koneelta; Safen allekirjoittajat päätöksen mukaan; tietoturvatarkistuslista, ihmisen tekemä ruudunlukijatesti, oikea lompakkolaajennus. | Katselmointi tehty; jokainen löydös korjattu tai kirjattu. |
 | **4.8 Julkistus ja vaiheen 4 yhteenveto** ([#75](https://github.com/Haiko-Innovations/orbit-watch/issues/75)) | Palvelu avataan, ylläpitäjälle lyhyt julkistusteksti; vaiheen 4 yhteenveto. | Alla olevat vaiheen 4 valmiskriteerit täyttyvät; julkaistaan 0.5.0. |
@@ -221,8 +223,8 @@ issuessa [#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67), ja n
 7. Vain tuotantoympäristöllä on tarkistusavain ja kannan salasana.
    Salaisuuksia ei ole repossa, esikatselussa, kuvassa eikä selaimessa,
    testattu. Ohjeet vuotaneelle avaimelle ja salasanalle on kirjoitettu.
-8. Julkaisu otetaan käyttöön siirtämällä production-haaraa, ja paluu
-   edelliseen on tehty.
+8. Julkaisu otetaan käyttöön mergeämällä mainiin, ja paluu edelliseen on
+   tehty.
 9. Salatut varmuuskopiot tehdään joka päivä Vercelin ja Neonin ulkopuolelle,
    palautusharjoitus on läpäisty, ja valvonta on hälyttänyt ylläpitäjälle
    kerran.

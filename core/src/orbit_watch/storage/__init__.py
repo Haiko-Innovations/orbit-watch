@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import functools
 import re
+import sys
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from importlib import resources
@@ -34,6 +35,7 @@ from orbit_watch.canonical import sha256_bytes
 
 _MIGRATION_RE = re.compile(r"^(\d{4})_([a-z0-9_]+)\.sql$")
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
+_ROLE_RE = re.compile(r"[a-z_][a-z0-9_]{0,62}")
 _READS = ("SELECT", "WITH", "SHOW")
 
 
@@ -69,19 +71,13 @@ class Database:
     """A PostgreSQL database (or one schema in it) for one Orbit Watch service."""
 
     def __init__(self, conninfo: str):
-        import psycopg
-        from psycopg.rows import dict_row
-
-        try:
-            # The connection may be used from a server's worker threads; callers
-            # serialise access (the API holds one lock around every call).
-            self.connection = psycopg.connect(conninfo, autocommit=True, row_factory=dict_row)
-        except psycopg.Error as error:
-            # libpq's message names the host and the user, never the password.
-            raise StorageError("cannot_open", f"cannot open the database: {error}") from None
+        self._conninfo = conninfo
+        self.connection = self._connect()
         self._depth = 0
         self._dirty = False
         self._state_table = False
+        # The role every transaction runs as (``use_role``): None runs as the user itself.
+        self.role: str | None = None
         self._begin_hooks: list[Callable[[Database], None]] = []
         # The state version this process last saw (None: reload at the next transaction).
         self.version_seen: int | None = None
@@ -94,6 +90,35 @@ class Database:
             raise StorageError("cannot_open", "the database's search_path names no schema")
         self.schema = row["s"]
         self._lock_key = row["k"]
+
+    def _connect(self) -> Any:
+        import psycopg
+        from psycopg.rows import dict_row
+
+        try:
+            # The connection may be used from a server's worker threads; callers
+            # serialise access (the API holds one lock around every call). No server-side
+            # prepared statements, so that a pooler in transaction mode works (step 4.5).
+            return psycopg.connect(
+                self._conninfo, autocommit=True, row_factory=dict_row, prepare_threshold=None
+            )
+        except psycopg.Error as error:
+            # libpq's message names the host and the user, never the password.
+            raise StorageError("cannot_open", f"cannot open the database: {error}") from None
+
+    def _reconnect_if_lost(self, error: BaseException) -> bool:
+        """After ``error`` outside a transaction: if the connection is gone, open a new one
+        and say so. A server that scales to zero, or a restart, closes connections; a
+        long-lived process then carries on (step 4.5)."""
+        import psycopg
+
+        if self._depth or not isinstance(error, psycopg.OperationalError):
+            return False
+        if not (self.connection.closed or getattr(self.connection, "broken", False)):
+            return False
+        self.close()
+        self.connection = self._connect()
+        return True
 
     def close(self) -> None:
         if not self.connection.closed:
@@ -124,11 +149,16 @@ class Database:
             finally:
                 self._depth -= 1
             return
+        try:
+            begun = self._begin()
+        except BaseException as error:
+            if not self._reconnect_if_lost(error):
+                raise
+            begun = self._begin()
         self._depth = 1
         self._dirty = False
         try:
-            with self.connection.transaction():
-                self.connection.execute("SELECT pg_advisory_xact_lock(%s)", (self._lock_key,))
+            with begun:
                 for hook in self._begin_hooks:
                     hook(self)
                 yield
@@ -147,12 +177,58 @@ class Database:
             self._depth = 0
             self._dirty = False
 
+    def _begin(self) -> Any:
+        """Begin the outermost transaction: its role and the schema's lock. Returns a
+        context manager that commits it, or rolls it back on an error."""
+        transaction = self.connection.transaction()
+        transaction.__enter__()
+        try:
+            if self.role is not None:
+                from psycopg import sql
+
+                # For this transaction only, so that it holds behind a pooler too.
+                self.connection.execute(
+                    sql.SQL("SET LOCAL ROLE {}").format(sql.Identifier(self.role))
+                )
+            self.connection.execute("SELECT pg_advisory_xact_lock(%s)", (self._lock_key,))
+        except BaseException:
+            transaction.__exit__(*sys.exc_info())
+            raise
+        return _Entered(transaction)
+
     def _has_state_table(self) -> bool:
         if not self._state_table:
             self._state_table = bool(
                 self.connection.execute("SELECT to_regclass('service_state') AS t").fetchone()["t"]
             )
         return self._state_table
+
+    def use_role(self, role: str) -> None:
+        """Make sure that ``role`` exists and may read and write this schema's tables, and
+        nothing else, then run every transaction as it (step 4.5, decision P4-10). The
+        connection's own user, which ran the migrations, must be allowed to create roles;
+        it becomes a member of ``role`` so that it may switch to it. Run after ``migrate``,
+        so that new tables are granted too."""
+        from psycopg import sql
+
+        if not _ROLE_RE.fullmatch(role):
+            raise StorageError("bad_role", f"not a role name: {role!r}")
+        name, schema = sql.Identifier(role), sql.Identifier(self.schema)
+        with self.connection.transaction():
+            self.connection.execute("SELECT pg_advisory_xact_lock(%s)", (self._lock_key,))
+            exists = self.connection.execute(
+                "SELECT 1 FROM pg_roles WHERE rolname = %s", (role,)
+            ).fetchone()
+            if not exists:
+                self.connection.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(name))
+            for statement in (
+                "GRANT {role} TO CURRENT_USER",
+                "GRANT USAGE ON SCHEMA {schema} TO {role}",
+                "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA {schema} TO {role}",
+                "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO {role}",
+            ):
+                self.connection.execute(sql.SQL(statement).format(role=name, schema=schema))
+        self.role = role
 
     def current_version(self) -> int:
         """The state's version in the database."""
@@ -168,6 +244,14 @@ class Database:
                     return self.execute(sql, parameters, state=state)
             if state:
                 self._dirty = True
+        try:
+            return self._run(sql, parameters)
+        except BaseException as error:
+            if not self._reconnect_if_lost(error):
+                raise
+            return self._run(sql, parameters)
+
+    def _run(self, sql: str, parameters: tuple[Any, ...]) -> Any:
         if parameters:
             return self.connection.execute(_placeholders(sql), parameters)
         return self.connection.execute(sql)
@@ -226,6 +310,19 @@ class Database:
         return applied
 
 
+class _Entered:
+    """A transaction already begun: leaving it commits it, or rolls it back on an error."""
+
+    def __init__(self, transaction: Any):
+        self._transaction = transaction
+
+    def __enter__(self) -> None:
+        return None
+
+    def __exit__(self, *exc: Any) -> Any:
+        return self._transaction.__exit__(*exc)
+
+
 def _statements(sql: str) -> list[str]:
     """Split a migration into statements (no semicolons inside statements)."""
     lines = [line for line in sql.splitlines() if not line.strip().startswith("--")]
@@ -270,10 +367,12 @@ class FileStore:
 class Storage:
     """A service's database, files included."""
 
-    def __init__(self, conninfo: str):
+    def __init__(self, conninfo: str, role: str | None = None):
         self.db = Database(conninfo)
         try:
             self.db.migrate()
+            if role is not None:
+                self.db.use_role(role)
         except BaseException:
             self.db.close()
             raise
