@@ -110,6 +110,23 @@ test("a new wallet signs up as an observer station", async ({ page }) => {
   await expect(page.locator("dl.details").first()).toContainText("station:SIM-TEST-STATION");
 });
 
+test("a wallet that has not allowed the account on the network connects again, then signs", async ({
+  page,
+}) => {
+  // MetaMask since 13.55.0: https://github.com/MetaMask/metamask-extension/issues/47773
+  await installTestWallet(page, generatePrivateKey(), { noAccountOnNetwork: true });
+  await chooseTestWallet(page);
+  await page.getByLabel("an observer: I run a station").check();
+  await page.getByLabel("Name").fill("SIM-RECONNECTED");
+  await page.getByRole("button", { name: "Sign up and sign in" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
+  const asked = await page.evaluate(
+    () => (window as unknown as { orbitWatchTestWalletAsked: string[] }).orbitWatchTestWalletAsked,
+  );
+  expect(asked.filter((method) => method === "personal_sign")).toHaveLength(2);
+  expect(asked).toContain("wallet_revokePermissions");
+});
+
 test("a name that is taken is refused, and nothing is signed", async ({ page }) => {
   await installTestWallet(page, generatePrivateKey());
   await chooseTestWallet(page);

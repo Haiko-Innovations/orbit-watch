@@ -32,6 +32,9 @@ interface Options {
   declineSend?: boolean;
   /** Refuse to switch networks. */
   refuseSwitch?: boolean;
+  /** Refuse to sign or send with 4100 until the site connects again, as MetaMask does since
+   * 13.55.0 on a network the site added (https://github.com/MetaMask/metamask-extension/issues/47773). */
+  noAccountOnNetwork?: boolean;
   name?: string;
   /** The chain and its node (default: the local stack's chain). */
   network?: { chain: Chain; rpc: string };
@@ -100,8 +103,12 @@ export async function installTestWallet(
     },
   );
   await page.addInitScript(
-    ({ address, name, refuseSwitch, home }) => {
+    ({ address, name, refuseSwitch, noAccountOnNetwork, home }) => {
       let chainId = home;
+      let allowed = !noAccountOnNetwork;
+      let revoked = false;
+      const asked: string[] = [];
+      (window as unknown as Record<string, unknown>).orbitWatchTestWalletAsked = asked;
       const fail = (code: number, message: string, data?: unknown) =>
         Object.assign(new Error(message), { code, data });
       const bridge = window as unknown as Record<string, (...args: unknown[]) => Promise<unknown>>;
@@ -119,10 +126,18 @@ export async function installTestWallet(
       };
       const provider = {
         async request({ method, params }: { method: string; params?: unknown[] }) {
+          asked.push(method);
+          const unauthorized = () =>
+            fail(4100, "The requested account and/or method has not been authorized by the user.");
           switch (method) {
             case "eth_requestAccounts":
+              if (revoked) allowed = true;
+              return [address];
             case "eth_accounts":
               return [address];
+            case "wallet_revokePermissions":
+              revoked = true;
+              return null;
             case "eth_chainId":
               return `0x${chainId.toString(16)}`;
             case "wallet_switchEthereumChain":
@@ -134,9 +149,11 @@ export async function installTestWallet(
               );
               return null;
             case "personal_sign":
+              if (!allowed) throw unauthorized();
               return call("orbitWatchTestSign", params?.[0]);
             case "eth_sendTransaction":
               if (chainId !== home) throw fail(4901, "The wallet is on another network.");
+              if (!allowed) throw unauthorized();
               return call("orbitWatchTestSend", params?.[0]);
             default:
               return call("orbitWatchTestRead", method, params ?? []);
@@ -164,6 +181,7 @@ export async function installTestWallet(
       address: account.address,
       name: options.name ?? "Test wallet (LOCAL keys)",
       refuseSwitch: options.refuseSwitch ?? false,
+      noAccountOnNetwork: options.noAccountOnNetwork ?? false,
       home: chain.id,
     },
   );

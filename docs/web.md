@@ -116,6 +116,29 @@ The service prepares it; the page then:
 
 A declined prompt, a wallet on another network, a wallet with another account
 and a transaction the chain refuses are each explained, and nothing is sent.
+
+### A wallet that refuses an account it has connected
+
+Since version 13.55.0, MetaMask has a bug. When a site adds a network that
+the wallet does not know yet, MetaMask permits the network to the site but no
+account on it. It then refuses every signature and transaction there with
+EIP-1193 error 4100 ("has not been authorized by the user"), and shows no
+prompt ([metamask-extension#47773](https://github.com/MetaMask/metamask-extension/issues/47773)).
+The run with a real wallet in step 4.7 found it on Base Sepolia.
+
+When a signature or a transaction is refused with 4100, the page fixes it the
+way the issue describes, by disconnecting the site and connecting it again:
+
+1. It asks the wallet to revoke the site's account permission
+   (`wallet_revokePermissions`).
+2. It connects again, which shows the wallet's prompt.
+3. It checks that the account is the same, and switches back to the service's
+   network.
+4. It tries once more.
+
+If the wallet still refuses, the page tells the user to disconnect the site in
+the wallet and try again. The end-to-end test wallet behaves like this when
+it is installed with `noAccountOnNetwork`.
 Withdrawals come first (Your account); requests, deliveries and votes follow
 in steps 3.4 to 3.6.
 

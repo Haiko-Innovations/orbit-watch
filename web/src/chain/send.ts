@@ -9,7 +9,15 @@ import {
 } from "viem";
 import { postJson } from "../api";
 import { strings } from "../strings";
-import { CHAINS, isUserRejection, switchToChain, WalletError } from "../wallet/wallet";
+import {
+  CHAINS,
+  isUnauthorized,
+  isUserRejection,
+  NOT_ALLOWED,
+  switchToChain,
+  WalletError,
+  withAccount,
+} from "../wallet/wallet";
 import { escrowAbi } from "./abis";
 import type { Described } from "./describe";
 
@@ -94,15 +102,19 @@ export async function sendWithWallet(
   await switchToChain(provider, chain.id);
   const wallet = createWalletClient({ account, chain, transport: custom(provider) });
   try {
-    return await wallet.sendTransaction({
-      account,
-      chain,
-      to: described.to,
-      data: described.transaction.data,
-      value: 0n,
-    });
+    return await withAccount(provider, account, chain.id, () =>
+      wallet.sendTransaction({
+        account,
+        chain,
+        to: described.to,
+        data: described.transaction.data,
+        value: 0n,
+      }),
+    );
   } catch (error) {
+    if (error instanceof WalletError) throw error;
     if (isUserRejection(error)) throw new WalletError("declined", t.declined);
+    if (isUnauthorized(error)) throw new WalletError("not_allowed", NOT_ALLOWED);
     if (lacksGas(error)) throw new WalletError("failed", t.noGas);
     const reverted = explainRevert(error);
     if (reverted !== null) throw new WalletError("reverted", reverted);
