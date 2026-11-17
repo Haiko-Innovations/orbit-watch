@@ -119,6 +119,8 @@ export interface Health {
   status: string;
   version: string;
   notice: string;
+  /** In read-only mode every change is refused (step 4.6). */
+  read_only?: boolean;
 }
 
 export interface Token {

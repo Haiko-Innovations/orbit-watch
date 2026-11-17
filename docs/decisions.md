@@ -1402,6 +1402,10 @@ Accepted · 2026-11-14:
   Runbooks cover deployment, rollback, restore, a leaked key and a leaked
   database password.
 
+Since step 4.6 the service takes the backup itself and GitHub Actions keeps it,
+encrypted; the uptime check also runs in GitHub Actions
+([D-39](#d-39-backups-monitoring-and-read-only-mode)).
+
 ### P4-14 A review before the launch
 
 Accepted · 2026-11-14. Before the service is announced:
@@ -1817,3 +1821,76 @@ and its [configuration](https://vercel.com/docs/services/config-reference),
 [runtime logs](https://vercel.com/docs/logs/runtime). On 2026-11-17:
 [instant rollback](https://vercel.com/docs/instant-rollback) and
 [promoting a deployment](https://vercel.com/docs/deployments/promoting-a-deployment).
+
+### D-39 Backups, monitoring and read-only mode
+
+Accepted · 2026-11-17 (with the pull request that implements step 4.6,
+[P4-13](#p4-13-operations)). The maintainer asked on 2026-11-16 for light
+backups, since Neon's Free plan restores only six hours back. How they are run is
+in [operations.md](operations.md):
+
+- **The service takes the backup, GitHub keeps it.** P4-13 planned a `pg_dump` by
+  GitHub Actions, which would need the database's owner password in GitHub. The
+  service instead takes the backup itself, in one transaction under the lock that
+  every change takes, encrypts it with age to the maintainer's public key, and
+  streams it to the `Backup` workflow, which calls `GET /v1/internal/backup` with a
+  token every day. GitHub holds only that token, which can fetch nothing but
+  ciphertext, and only `main` can use it (the environment `backup`). Plain data
+  never leaves Vercel and Neon, the same code restores what it took, and a server
+  of our own takes the same backup with `orbit-watch backup create`
+  ([P4-05](#p4-05-portable-by-design)). The workflow keeps only an age file, as an
+  artifact, for 14 days.
+- **The format** is age (v1, X25519), then gzip and tar: a manifest with the
+  schema's version and each table's columns, rows and SHA-256, and each table in
+  PostgreSQL's `COPY` text format, so `age` and `tar` open it without Orbit Watch.
+  pyrage 1.4.0 (MIT, the Rust age library's Python binding) encrypts and decrypts;
+  it is in the `api` extra.
+- **Left out of backups:** sessions, sign-in challenges, limit counts, the copies of
+  answers kept for idempotency, and the migrations' record. They live for hours at
+  most ([D-37](#d-37-personal-data-in-the-service)), and a restore runs the
+  migrations itself.
+- **A restore** goes into an empty database: the migrations up to the backup's
+  version, the rows, a check of every table against the manifest, then the newer
+  migrations. A backup from a newer version is refused. The tests restore a backup
+  taken through the API on every pull request; a drill with a real backup runs
+  before the launch and after every schema migration, and is logged in
+  operations.md.
+- **The backup key.** Claude made the age key pair on 2026-11-17 on the
+  maintainer's machine, into `~/secrets/orbit-watch` beside the testnet keys
+  ([D-24](#d-24-the-base-sepolia-deployment)), and printed only the public key,
+  which is a Config variable. The private key goes offline with the verifier key in
+  step 4.7 ([P4-11](#p4-11-keys)).
+- **Monitoring from GitHub Actions.** The `Uptime` workflow checks the API, the
+  follower and the web application every hour. A failed run is the alert: GitHub
+  notifies the person who created the scheduled workflow, or who last changed its
+  schedule, and whoever runs it by hand. No other account is needed. GitHub may run
+  a schedule late at busy times, and turns schedules off after 60 days without
+  activity in a public repository; both are acceptable for an unannounced testnet
+  service.
+- **Neon's hours.** The Free plan has 100 compute hours a month per project, sends
+  no email before they run out, and has no usage API. So the check is indirect: a
+  database stopped for the month makes the follower fall behind, which the uptime
+  check reports, and the maintainer looks at the usage in Vercel once a month. The
+  uptime check runs at 17 minutes past the hour, just after the follower's run at
+  :15, while the database is still awake, so it adds no hours of its own. Each
+  backup crosses the network, which the Free plan limits to 5 GB a month: the
+  workflow warns over 50 MB.
+- **Read-only mode** is a setting, `ORBIT_WATCH_READ_ONLY`, applied by a redeploy:
+  every change is refused with `503 read_only`, the follower waits, and reads no
+  longer follow the chain, since following it writes. Reading, the public pages,
+  signing in and backups still work, and the web application says so on every page.
+  A setting in the database would apply at once, but it would not help when the
+  database is what is wrong, and a redeploy takes under a minute.
+
+Sources, read on 2026-11-17: [pyrage](https://pypi.org/project/pyrage/) 1.4.0,
+[age v1](https://age-encryption.org/v1),
+[GitHub notifications for workflow runs](https://docs.github.com/en/actions/concepts/workflows-and-actions/notifications-for-workflow-runs),
+[the schedule event](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule),
+[environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments),
+[upload-artifact](https://github.com/actions/upload-artifact) v7.0.2 (retention
+of 1 to 90 days), [Neon's plans](https://neon.com/docs/introduction/plans),
+[monitoring Neon's usage](https://neon.com/docs/introduction/monitor-usage),
+[Vercel-managed Neon](https://neon.com/docs/guides/vercel-managed-integration),
+[Vercel's streaming functions](https://vercel.com/docs/functions/streaming-functions)
+and [limits](https://vercel.com/docs/functions/limitations) ("The response body
+limit doesn't apply to streamed responses").

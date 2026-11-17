@@ -9,12 +9,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from orbit_watch import SIMULATION_NOTICE, __version__
+from orbit_watch.backup import BackupError
 from orbit_watch.canonical import dumps_pretty, write_text
 from orbit_watch.chain import ChainError
 from orbit_watch.client import ClientError
 from orbit_watch.formats import FORMATS, FormatError, Sites, load_observation_sets, owjson
 from orbit_watch.formats import iod as iod_format
 from orbit_watch.formats import tdm as tdm_format
+from orbit_watch.storage import StorageError
 
 EXIT_OK = 0
 EXIT_FAILED = 1  # the command ran, but the result is negative (e.g. verification failed)
@@ -359,6 +361,20 @@ class ServeError(Exception):
 
 
 VERIFIER_KEY_VARIABLE = "ORBIT_WATCH_VERIFIER_KEY"
+# Operations (step 4.6): read-only mode, and backups for a schedule with their token.
+READ_ONLY_VARIABLE = "ORBIT_WATCH_READ_ONLY"
+BACKUP_TOKEN_VARIABLE = "ORBIT_WATCH_BACKUP_TOKEN"
+BACKUP_RECIPIENT_VARIABLE = "ORBIT_WATCH_BACKUP_RECIPIENT"
+BACKUP_IDENTITY_VARIABLE = "ORBIT_WATCH_BACKUP_IDENTITY_FILE"
+_TRUE, _FALSE = ("1", "true", "yes", "on"), ("", "0", "false", "no", "off")
+
+
+def _read_only(args: argparse.Namespace, environ) -> bool:
+    """``--read-only``, or ``$ORBIT_WATCH_READ_ONLY`` set to 1, true, yes or on."""
+    setting = (environ.get(READ_ONLY_VARIABLE) or "").strip().lower()
+    if setting not in _TRUE + _FALSE:
+        raise ServeError(f"${READ_ONLY_VARIABLE}: give 1 or 0 (true or false), not {setting!r}")
+    return bool(getattr(args, "read_only", False)) or setting in _TRUE
 
 
 def serve_app(args: argparse.Namespace, *, environ=None):
@@ -389,6 +405,23 @@ def serve_app(args: argparse.Namespace, *, environ=None):
     station_decimals = _station_decimals(args.station_decimals)
     if station_decimals == -1:
         raise ServeError("--station-decimals: give a whole number from 0 to 8, or off")
+    read_only = _read_only(args, environ)
+    backup_token = environ.get(BACKUP_TOKEN_VARIABLE) or None
+    backup_recipient = (
+        getattr(args, "backup_recipient", None) or environ.get(BACKUP_RECIPIENT_VARIABLE) or None
+    )
+    if backup_token and not backup_recipient:
+        raise ServeError(
+            f"${BACKUP_TOKEN_VARIABLE} needs the age public key that backups are encrypted to: "
+            f"--backup-recipient or ${BACKUP_RECIPIENT_VARIABLE}"
+        )
+    if backup_recipient:
+        from orbit_watch import backup
+
+        try:
+            backup.recipient(backup_recipient)
+        except backup.BackupError as error:
+            raise ServeError(f"--backup-recipient: {error}") from None
     registry, context, notes = _service_inputs(args)
     verifier_key = environ.get(VERIFIER_KEY_VARIABLE) or None
     chain = None
@@ -450,6 +483,9 @@ def serve_app(args: argparse.Namespace, *, environ=None):
         limits=limits,
         client_ip_header=args.client_ip_header,
         station_decimals=station_decimals,
+        read_only=read_only,
+        backup_token=backup_token,
+        backup_recipient=backup_recipient,
     )
     if limits is None:
         lines.append("Limits against abuse: off")
@@ -462,6 +498,13 @@ def serve_app(args: argparse.Namespace, *, environ=None):
         lines.append(f"Station coordinates: kept to {station_decimals} decimals of a degree")
     if secret:
         lines.append("A schedule may run the follower: /v1/internal/follow (with its secret)")
+    if backup_token:
+        lines.append(
+            "A schedule may take backups: /v1/internal/backup (with its token), encrypted to "
+            f"{backup_recipient.strip()}"
+        )
+    if read_only:
+        lines.append("READ-ONLY: every change is refused and the follower waits")
     return app, service, lines
 
 
@@ -651,6 +694,67 @@ def cmd_keys_create(args: argparse.Namespace) -> int:
     print(key)
     article = "an" if args.role == "admin" else "a"
     _err(f"created {article} {args.role} key for {args.party}; it is shown only this once")
+    return EXIT_OK
+
+
+def cmd_backup_create(args: argparse.Namespace) -> int:
+    """Take an encrypted backup of a service's database into a file (step 4.6): for a
+    server of our own (decision P4-05); the public service's schedule calls the API."""
+    from orbit_watch import backup
+    from orbit_watch.storage import Database
+
+    recipient = args.recipient or os.environ.get(BACKUP_RECIPIENT_VARIABLE)
+    if not recipient:
+        _err(f"give the age public key to encrypt to: --recipient or ${BACKUP_RECIPIENT_VARIABLE}")
+        return EXIT_USAGE
+    database = _database(args)
+    if database is None:
+        return EXIT_USAGE
+    output = Path(args.output)
+    if output.exists():
+        _err(f"{output} exists: a backup never overwrites a file")
+        return EXIT_USAGE
+    with Database(database) as db:
+        if not db.schema_version():
+            _err(f"schema {db.schema} has no Orbit Watch tables")
+            return EXIT_USAGE
+        with db.transaction():
+            archive = backup.take(db, datetime.now(tz=UTC))
+    encrypted = backup.encrypt(archive, recipient)
+    output.write_bytes(encrypted)
+    print(f"{output}: {len(encrypted)} bytes, encrypted to {recipient.strip()}")
+    return EXIT_OK
+
+
+def cmd_backup_restore(args: argparse.Namespace) -> int:
+    """Restore a backup into an empty database (step 4.6)."""
+    from orbit_watch import backup
+    from orbit_watch.storage import Database
+
+    data = Path(args.file).read_bytes()
+    if backup.is_encrypted(data):
+        identity_file = args.identity or os.environ.get(BACKUP_IDENTITY_VARIABLE)
+        if not identity_file:
+            _err(
+                "the backup is encrypted: give the age private key's file with --identity or "
+                f"${BACKUP_IDENTITY_VARIABLE}"
+            )
+            return EXIT_USAGE
+        data = backup.decrypt(data, Path(identity_file).read_text(encoding="utf-8"))
+    database = _database(args)
+    if database is None:
+        return EXIT_USAGE
+    with Database(database) as db:
+        result = backup.restore(db, data)
+        name = f"schema {db.schema} of the database {db.connection.info.dbname}"
+    rows = sum(entry["rows"] for entry in result["tables"])
+    print(
+        f"Restored the backup of {result['taken_at']} (Orbit Watch {result['service_version']}, "
+        f"schema version {result['schema_version']}) into {name}: {len(result['tables'])} "
+        f"tables, {rows} rows; schema version now {result['restored_schema_version']}"
+    )
+    for entry in result["tables"]:
+        print(f"  {entry['name']}: {entry['rows']}")
     return EXIT_OK
 
 
@@ -913,6 +1017,20 @@ def build_parser() -> argparse.ArgumentParser:
         "else 2, about a kilometre; off keeps them as given). Docs: personal-data.md",
     )
     serve.add_argument(
+        "--read-only",
+        action="store_true",
+        help="refuse every change and let the follower wait, for maintenance; reading, the "
+        "public pages and signing in still work (or $ORBIT_WATCH_READ_ONLY=1). Docs: "
+        "operations.md",
+    )
+    serve.add_argument(
+        "--backup-recipient",
+        metavar="AGE_PUBLIC_KEY",
+        help="the age public key (age1…) that backups are encrypted to (default: "
+        "$ORBIT_WATCH_BACKUP_RECIPIENT). With $ORBIT_WATCH_BACKUP_TOKEN, a schedule may take "
+        "backups at /v1/internal/backup. Docs: operations.md",
+    )
+    serve.add_argument(
         "--access-log",
         action="store_true",
         help="log every request with the caller's IP address (off by default: the service "
@@ -1003,6 +1121,38 @@ def build_parser() -> argparse.ArgumentParser:
     )
     create.add_argument("--party", required=True, help="party, e.g. station:SIM-ESPOO")
     create.set_defaults(handler=cmd_keys_create)
+
+    backup_parser = commands.add_parser(
+        "backup",
+        help="take or restore an encrypted backup of a service's database",
+        description="Backups of a service's database, encrypted with age to the maintainer's "
+        "public key (step 4.6, docs/operations.md). Needs the optional api dependencies.",
+    )
+    backup_commands = backup_parser.add_subparsers(dest="backup_command", metavar="command")
+    backup_commands.required = True
+    take = backup_commands.add_parser(
+        "create", help="take a backup into a new file, encrypted to an age public key"
+    )
+    take.add_argument("--database", help=DATABASE_HELP)
+    take.add_argument(
+        "--recipient",
+        metavar="AGE_PUBLIC_KEY",
+        help="the age public key, age1… (default: $ORBIT_WATCH_BACKUP_RECIPIENT)",
+    )
+    take.add_argument("--output", required=True, help="the new file (….tar.gz.age)")
+    take.set_defaults(handler=cmd_backup_create)
+    restore = backup_commands.add_parser("restore", help="restore a backup into an empty database")
+    restore.add_argument("file", help="the backup (….tar.gz.age, or a decrypted ….tar.gz)")
+    restore.add_argument(
+        "--identity",
+        metavar="FILE",
+        help="the age private key's file, as age-keygen writes it (default: "
+        "$ORBIT_WATCH_BACKUP_IDENTITY_FILE)",
+    )
+    restore.add_argument(
+        "--database", help=DATABASE_HELP + "; it must be empty: a new database or schema"
+    )
+    restore.set_defaults(handler=cmd_backup_restore)
     return parser
 
 
@@ -1019,7 +1169,7 @@ def main(argv: list[str] | None = None) -> int:
     except ClientError as exc:
         _err(f"{exc.code}: {exc}")
         return EXIT_FAILED if exc.status else EXIT_USAGE
-    except ChainError as exc:
+    except (ChainError, BackupError, StorageError) as exc:
         _err(f"{exc.code}: {exc}")
         return EXIT_FAILED
     except (OSError, ValueError) as exc:

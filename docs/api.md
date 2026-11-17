@@ -66,9 +66,10 @@ call.
 
 | Method and path | Role | Body | Does |
 |---|---|---|---|
-| `GET /v1/health` | none | | version and status |
+| `GET /v1/health` | none | | version and status; `read_only` is `true` in [read-only mode](#read-only-mode-and-backups) |
 | `GET /v1/health/follower` | none | | when the follower last ran: `200` with `"status": "ok"`, or `503` with `"behind"` (longer ago than 30 minutes) or `"never"`; on a chain also the last block followed ([the follower](#the-follower)) |
 | `GET`, `POST /v1/internal/follow` | the follower's secret | | run the follower once: `{changed, sent, followed_at}`, on a chain also `synced_block`; `404` when the service has no follower secret |
+| `GET /v1/internal/backup` | the backup token | | an encrypted backup of the database, streamed ([backups](#read-only-mode-and-backups)); `404` when the service has no backup token |
 | `GET /v1/requests` | any | | all requests with requester, title, reserving station, observer, status and outcome |
 | `POST /v1/requests` | requester | `{"request": <request document>, "terms": {…}}` | create a request in draft; `terms` may set `delivery_deadline`, `reservation_hours`, `challenge_period_hours`, `review_hours`, `verification_timeout_hours`, `embargo_days` |
 | `GET /v1/requests/{id}` | any | | summary and full lifecycle record |
@@ -133,6 +134,26 @@ change is made once.
 `GET /v1/health/follower` is for monitoring: it answers `503` when no follower
 has run in the last 30 minutes (twice the planned 15-minute schedule) or ever,
 whichever process ran it.
+
+## Read-only mode and backups
+
+Step 4.6, [D-39](decisions.md#d-39-backups-monitoring-and-read-only-mode); how
+they are used is in [operations.md](operations.md).
+
+- **Read-only mode** (`orbit-watch serve --read-only`, or
+  `ORBIT_WATCH_READ_ONLY=1`) refuses every change with `503 read_only`, and the
+  follower waits. Reading, the public pages, the quality meter and signing in
+  still work, and reads show the chain as it was last followed.
+  `GET /v1/health` says `"read_only": true`, and the web application says so on
+  every page.
+- **Backups.** With `ORBIT_WATCH_BACKUP_TOKEN` and the age public key that
+  backups are encrypted to (`--backup-recipient`, or
+  `ORBIT_WATCH_BACKUP_RECIPIENT`), a schedule calls
+  `GET /v1/internal/backup` with `Authorization: Bearer <token>`. The answer is
+  the backup, encrypted before it leaves the service and streamed, so it may be
+  larger than a function's response limit. `orbit-watch backup create` takes
+  the same backup straight from the database, and `orbit-watch backup restore`
+  restores one into an empty database.
 
 ## Running the image
 
@@ -325,7 +346,7 @@ stable; the HTTP status follows from the code:
 | 413 | `too_large` (bodies over 4,000,000 bytes, [step 4.3](#limits-against-abuse)) |
 | 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers`, `too_precise` ([personal data](#personal-data)) |
 | 429 | `rate_limited`, with `Retry-After` in seconds ([limits](#limits-against-abuse)) |
-| 503 | `verification_unavailable`, `chain_unavailable` |
+| 503 | `verification_unavailable`, `chain_unavailable`, `read_only` ([read-only mode](#read-only-mode-and-backups)) |
 
 ## Command-line client
 
@@ -389,4 +410,5 @@ curl -s -X POST -H "Authorization: Bearer $STATION_KEY" -H "Idempotency-Key: del
 
 ## Not yet
 
-- TLS, key rotation and a public deployment (phase 4, step 4.5).
+- Moving the verifier key off the maintainer's machine, and the review before the
+  launch (phase 4, step 4.7).

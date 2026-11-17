@@ -97,6 +97,7 @@ yöltä. Katso [docs/quality-meter.md](docs/quality-meter.md) ja
 | Palvelu, rajapinta ja komentorivi **testiverkossa**: omat lompakot, allekirjoitus omalla avainsäilöllä, transaktiot lohkoselainlinkkeineen | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | Sopimukset **Base Sepoliassa**: osoitteet, faucetit, kuka hallitsee mitäkin avainta, käyttöönotto | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
 | Verkkosovellus (vaihe 3): julkiset sivut attestaatioselaimineen ja aseman laatumittareineen, kirjautuminen lompakolla, nostot sekä tilaajan, havaitsijan, tarkistajan ja ylläpitäjän näkymät, palvelu tarjoaa sen; paikallinen ympäristö kehitykseen; vaiheen 3 demo Base Sepoliassa | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
+| Julkinen testiverkkopalvelu (vaihe 4) Vercelissä ja Neonissa, vielä julkistamatta: käyttöönotto ja paluu edelliseen, salatut päivittäiset varmuuskopiot, saatavuusvalvonta, vain luku -tila ja toimintaohjeet | `orbit-watch backup create`, `orbit-watch backup restore`, `orbit-watch serve --read-only` | [deployment.md](docs/deployment.md), [operations.md](docs/operations.md) |
 
 Python-koodi on hakemistossa [`core/`](core), Solidity-sopimukset hakemistossa [`contracts/`](contracts) ja verkkosovellus hakemistossa [`web/`](web). Simuloidut esimerkit ovat
 hakemistossa [`examples/`](examples).

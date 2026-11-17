@@ -290,3 +290,29 @@ def test_the_static_pages_get_the_apis_security_headers(repo_root):
     assert vercel["regions"] == ["fra1"]
     assert vercel["crons"] == [{"path": "/v1/internal/follow", "schedule": "*/15 * * * *"}]
     assert [r["source"] for r in vercel["rewrites"]] == ["/v1/(.*)", "/(.*)"]
+
+
+def test_the_operations_workflows_keep_to_the_rules(repo_root):
+    """Backups and the uptime check (step 4.6, D-39): least privilege, actions pinned to
+    commits, the backup token only in its environment, and only age files kept."""
+    import re
+
+    folder = repo_root / ".github" / "workflows"
+    for name in ("backup.yml", "uptime.yml"):
+        text = (folder / name).read_text(encoding="utf-8")
+        assert "permissions:\n  contents: read\n" in text, name
+        for used in re.findall(r"uses: (\S+)", text):
+            assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", used), used
+        assert "https://orbit-watch-tan.vercel.app" in text
+        assert "${{ inputs" not in text.split("run: |", 1)[1], "inputs reach scripts as env"
+    backup = (folder / "backup.yml").read_text(encoding="utf-8")
+    assert "environment: backup" in backup
+    assert backup.count("secrets.") == 1 and "${{ secrets.ORBIT_WATCH_BACKUP_TOKEN }}" in backup
+    assert "retention-days: 14" in backup and "if-no-files-found: error" in backup
+    assert backup.index('"age-encryption.org/v1"') < backup.index("upload-artifact")
+    uptime = (folder / "uptime.yml").read_text(encoding="utf-8")
+    assert "secrets." not in uptime
+    for path in ("/v1/health", "/v1/health/follower"):
+        assert f'"${{SERVICE}}{path}"' in uptime
+    # Just after the follower's run every 15 minutes, never at the busy start of the hour.
+    assert '- cron: "17 * * * *"' in uptime

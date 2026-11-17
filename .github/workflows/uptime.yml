@@ -1,0 +1,47 @@
+name: Uptime
+
+# A check of the public service from outside, every hour (phase 4, step 4.6; decision
+# D-39): the API, the follower, which falls behind when the schedule or the database
+# stops, and the web application. A failed run notifies the maintainer.
+
+on:
+  schedule:
+    # At 17 minutes past every hour: just after the follower's run at :15, while the
+    # database is still awake, so the check costs Neon nothing extra (D-39).
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      fail:
+        description: "Fail on purpose, to check that the alert reaches the maintainer"
+        type: boolean
+        default: false
+
+# Least privilege: the job reads nothing from the repository.
+permissions:
+  contents: read
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SERVICE: https://orbit-watch-tan.vercel.app
+    steps:
+      - name: The API, the follower and the web application answer
+        env:
+          FAIL_ON_PURPOSE: ${{ inputs.fail }}
+        run: |
+          set -euo pipefail
+          if [ "${FAIL_ON_PURPOSE}" = "true" ]; then
+            echo "::error::failing on purpose, to check that the alert reaches the maintainer"
+            exit 1
+          fi
+          check() {
+            curl --fail-with-body --silent --show-error --max-time 60 \
+              --retry 2 --retry-delay 20 --retry-all-errors "$@"
+            echo
+          }
+          check "${SERVICE}/v1/health"
+          check "${SERVICE}/v1/health/follower"
+          check --output /dev/null "${SERVICE}/"
+          echo "Answered at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "${GITHUB_STEP_SUMMARY}"
