@@ -152,6 +152,7 @@ STATUS = {
     "wallet_already_set": 409,
     "address_taken": 409,
     "nothing_to_withdraw": 409,
+    "transaction_pending": 409,
     "insufficient_balance": 409,
     "points_not_used": 409,
     "already_reviewer": 409,

@@ -134,6 +134,13 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Fixed
 
+- Transactions that a smart account's relayer sends for the wallet, such as
+  MetaMask's EIP-7702 smart account, were refused as `not_your_transaction`,
+  because their sender is the relayer. Once such a transaction is mined, the
+  service now accepts it if the escrow's or the token's events name the
+  party's wallet as the one who acted (`msg.sender`). While it is still
+  pending, the answer is `transaction_pending` (`docs/api.md`). The run with a
+  real wallet in step 4.7 found it.
 - Signing in and sending with MetaMask 13.55.0 or newer on a network the site
   had just added. MetaMask permitted the network but no account on it, so it
   refused every signature and transaction there with error 4100 and showed no

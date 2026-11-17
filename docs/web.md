@@ -139,6 +139,16 @@ way the issue describes, by disconnecting the site and connecting it again:
 If the wallet still refuses, the page tells the user to disconnect the site in
 the wallet and try again. The end-to-end test wallet behaves like this when
 it is installed with `noAccountOnNetwork`.
+
+### Smart accounts
+
+MetaMask may turn an account into an EIP-7702 smart account and send its
+transactions through a relayer that pays the fee. Then the transaction's
+sender is the relayer, not the wallet. The run in step 4.7 found this too:
+the service refused the requester's approval as `not_your_transaction`. The
+service now accepts such a transaction by what the escrow or the token
+recorded the wallet doing
+([API](api.md#transactions-someone-else-sent-for-your-wallet)).
 Withdrawals come first (Your account); requests, deliveries and votes follow
 in steps 3.4 to 3.6.
 
