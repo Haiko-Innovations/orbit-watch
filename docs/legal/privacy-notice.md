@@ -1,6 +1,6 @@
 # Privacy notice
 
-Orbit Watch public testnet service · version of 16 November 2026
+Orbit Watch public testnet service · version of 17 November 2026
 
 This notice says what personal data the Orbit Watch service keeps, why, for how long and who else handles it. It covers the public testnet service and its web application. Orbit Watch is open source: the code that does all of this is public, and the [data inventory](https://github.com/Haiko-Innovations/orbit-watch/blob/main/docs/personal-data.md) lists every table and log in detail.
 
@@ -37,7 +37,7 @@ Each delivery is first checked automatically, which decides whether it passes. T
 
 ## Cookies
 
-The service sets one cookie, `ow_session`, and only when you sign in. It keeps you signed in for at most 12 hours. Scripts cannot read it, and it is sent only to this site. It is strictly necessary for signing in, which you ask for, so under section 205 of the Finnish Act on Electronic Communications Services (917/2014) it needs no consent. The service stores nothing else in your browser. Your wallet extension is your own software and keeps its own data.
+The service sets one cookie, `__Host-ow_session`, and only when you sign in. It keeps you signed in for at most 12 hours. Scripts cannot read it, and it is sent only to this site. It is strictly necessary for signing in, which you ask for, so under section 205 of the Finnish Act on Electronic Communications Services (917/2014) it needs no consent. The service stores nothing else in your browser. Your wallet extension is your own software and keeps its own data.
 
 ## Who else handles your data
 

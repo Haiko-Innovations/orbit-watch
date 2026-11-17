@@ -121,6 +121,18 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Fixed
 
+- The review before the launch (phase 4, step 4.7; D-40;
+  `docs/security-review.md`), against every OWASP ASVS 5.0.0 level 1
+  requirement:
+  - over HTTPS the session cookie is `__Host-ow_session`, and a session signed
+    in over HTTPS counts only under that name;
+  - a sign-in ends the browser's earlier session;
+  - `GET /v1/requests/{id}` hides the reasons written for a challenge and its
+    votes from parties other than the request's own, until it is published
+    (`"reasons_hidden": true`);
+  - `SECURITY.md` gives time frames for fixing vulnerabilities and the public
+    service's scope.
+
 - `orbit-watch serve --read-only` no longer follows the chain once at start,
   which wrote to the database; found in the first restore drill (phase 4,
   step 4.6).

@@ -1,6 +1,6 @@
 # Tietosuojaseloste
 
-Orbit Watchin julkinen testiverkkopalvelu · versio 16.11.2026
+Orbit Watchin julkinen testiverkkopalvelu · versio 17.11.2026
 
 Tässä selosteessa kerrotaan, mitä henkilötietoja Orbit Watch -palvelu säilyttää, miksi ja kuinka kauan sekä kuka muu niitä käsittelee. Seloste koskee julkista testiverkkopalvelua ja sen verkkosovellusta. Orbit Watch on avointa lähdekoodia: kaikki tämän tekevä koodi on julkista, ja [tietovarannon kuvaus](https://github.com/Haiko-Innovations/orbit-watch/blob/main/docs/personal-data.md) luettelee jokaisen taulun ja lokin tarkemmin (englanniksi).
 
@@ -37,7 +37,7 @@ Jokainen toimitus tarkistetaan ensin automaattisesti, ja tarkistus ratkaisee, hy
 
 ## Evästeet
 
-Palvelu asettaa yhden evästeen, `ow_session`, ja vain kun kirjaudut sisään. Se pitää sinut kirjautuneena enintään 12 tuntia. Skriptit eivät voi lukea sitä, ja se lähetetään vain tälle sivustolle. Eväste on välttämätön kirjautumiselle, jota itse pyydät, joten sähköisen viestinnän palveluista annetun lain (917/2014) 205 §:n mukaan se ei vaadi suostumusta. Palvelu ei tallenna selaimeesi mitään muuta. Lompakkolaajennuksesi on omaa ohjelmistoasi ja säilyttää omat tietonsa.
+Palvelu asettaa yhden evästeen, `__Host-ow_session`, ja vain kun kirjaudut sisään. Se pitää sinut kirjautuneena enintään 12 tuntia. Skriptit eivät voi lukea sitä, ja se lähetetään vain tälle sivustolle. Eväste on välttämätön kirjautumiselle, jota itse pyydät, joten sähköisen viestinnän palveluista annetun lain (917/2014) 205 §:n mukaan se ei vaadi suostumusta. Palvelu ei tallenna selaimeesi mitään muuta. Lompakkolaajennuksesi on omaa ohjelmistoasi ja säilyttää omat tietonsa.
 
 ## Kuka muu käsittelee tietojasi
 

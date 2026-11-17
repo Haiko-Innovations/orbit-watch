@@ -123,7 +123,8 @@ describe.each(Object.entries(documents))("the %s", (_, [english, finnish]) => {
 describe("the privacy notice", () => {
   it("names the controller, the cookie, the law and the precision", () => {
     expect(privacyEn).toContain("Haiko Innovations Oy");
-    expect(privacyEn).toContain("`ow_session`");
+    expect(privacyEn).toContain("`__Host-ow_session`");
+    expect(privacyFi).toContain("`__Host-ow_session`");
     expect(privacyEn).toContain("section 205 of the Finnish Act on Electronic Communications");
     expect(privacyFi).toContain("(917/2014) 205 §");
     expect(privacyEn).toContain("two decimals of a degree");

@@ -272,6 +272,53 @@ def test_signing_out_ends_the_session(world, clock):
     assert stale.get("/v1/session").json() == {"session": None}
 
 
+HTTPS = "https://orbit.example"
+
+
+def test_over_https_the_cookie_carries_the_host_prefix(world, clock):
+    """Step 4.7, ASVS 3.3.1: browsers keep a __Host- cookie only when it is Secure, set by
+    this host and for the whole site, so no other site can plant one."""
+    http = TestClient(create_app(world.service, origins=[HTTPS], wall_clock=clock), base_url=HTTPS)
+    station = register(world, STATION)
+    _, signed = sign_in(http, station, origin=HTTPS)
+    assert signed.status_code == 200, signed.text
+    cookie = signed.headers["set-cookie"]
+    assert cookie.startswith(f"{sess.SECURE_COOKIE}=")
+    for part in ("Secure", "HttpOnly", "SameSite=strict", "Path=/"):
+        assert part in cookie
+    assert "Domain" not in cookie
+    assert http.get("/v1/session").json()["session"]["party"] == STATION
+    token = cookie.split(";")[0].split("=", 1)[1]
+    # The same session under the name without the prefix counts for nothing.
+    planted = TestClient(
+        create_app(world.service, origins=[HTTPS], wall_clock=clock), base_url=HTTPS
+    )
+    planted.cookies.set(sess.COOKIE, token)
+    assert planted.get("/v1/session").json() == {"session": None}
+    out = http.delete("/v1/session", headers={"Origin": HTTPS})
+    forgotten = out.headers.get_list("set-cookie")
+    assert any(c.startswith(f"{sess.SECURE_COOKIE}=") and "Secure" in c for c in forgotten)
+    assert http.get("/v1/session").json() == {"session": None}
+
+
+def test_signing_in_again_ends_the_old_session(world, clock):
+    """Step 4.7, ASVS 7.2.4: a new sign-in replaces the browser's session."""
+    http = client(world, clock)
+    station = register(world, STATION)
+    _, first = sign_in(http, station)
+    old = first.headers["set-cookie"].split(";")[0].split("=", 1)[1]
+    _, second = sign_in(http, station)
+    assert second.status_code == 200, second.text
+    rows = world.service.storage.db.query("SELECT token_hash FROM sessions")
+    assert sess.token_hash(old) not in [r["token_hash"] for r in rows] and len(rows) == 1
+    stale = TestClient(
+        create_app(world.service, origins=[ORIGIN], wall_clock=clock), base_url=ORIGIN
+    )
+    stale.cookies.set(sess.COOKIE, old)
+    assert stale.get("/v1/session").json() == {"session": None}
+    assert http.get("/v1/session").json()["session"]["party"] == STATION
+
+
 def test_sign_in_needs_a_chain(database):
     from helpers import catalog_bytes, packaged, policy_bytes
 

@@ -44,12 +44,12 @@ Legal bases (GDPR article 6(1)): **b**, the contract, that is the terms of use;
 | Message and signature that registered a wallet | `wallets.signature`, `wallets.signed_message` | administrators | while the service runs | with the wallet's row | b, f |
 | Sign-in message: address, origin, nonce, times, the name to sign up | `signin_challenges` | the service only | an hour after it expires (it expires after 5 minutes) | `sweep` | b |
 | Session: SHA-256 of the cookie, party, role, address, origin, times | `sessions` | the party (`GET /v1/session`) | until signed out, at most 12 hours | `DELETE /v1/session`, `DELETE /v1/sessions`, `sweep` | b |
-| Session cookie `ow_session` (`HttpOnly`, `SameSite=Strict`, `Secure` over HTTPS) | the browser | that browser | at most 12 hours | signing out, its expiry | b; no consent needed ([D-37](decisions.md#d-37-personal-data-in-the-service)) |
+| Session cookie `__Host-ow_session` over HTTPS (`Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`); `ow_session` over plain http on a developer's machine | the browser | that browser | at most 12 hours | signing out, its expiry | b; no consent needed ([D-37](decisions.md#d-37-personal-data-in-the-service)) |
 | Station profile: name, place to two decimals, height, SIMULATED instrument | `station_profiles` | the station, administrators | until deleted | `DELETE /v1/stations/{party}/profile` (the station or an administrator) | b |
 | Request documents, with their titles | `files`, `requests` | the parties, administrators; anyone once published | while the service runs | an administrator, on request | b, f |
 | Observation files, naming the station's place to two decimals | `files`, `deliveries`, `chain_uploads` | the parties, administrators; anyone once published | while the service runs | an administrator, on request | b, f |
 | Verification reports | `files`, `deliveries` | as above | while the service runs | as above | b, f |
-| Reasons for challenges and reviews | `chain_texts`, `requests.record_json`; their SHA-256 on the chain | the parties, administrators | while the service runs | an administrator, on request; never the hash on the chain | b, f |
+| Reasons for challenges and reviews | `chain_texts`, `requests.record_json`; their SHA-256 on the chain | the parties, administrators; anyone once published (`GET /v1/requests/{id}` hides them from other parties since step 4.7) | while the service runs | an administrator, on request; never the hash on the chain | b, f |
 | Reported transactions: hash, party, status, error | `transactions` | the party, administrators | while the service runs | an administrator, on request | b |
 | Copies of answers to changes | `idempotency` (with the call's path) | the party, if it retries | 24 hours | `sweep`; a deleted profile takes its copies with it | b |
 | Limit counts: a party, or an IP address as a keyed SHA-256 (IPv6 per /64) | `rate_limits`, keyed with `service_state.limit_key` | the service only | until the window ends, at most an hour | `Limits.hit`, `sweep` | f |
@@ -91,7 +91,8 @@ is theirs, for example by a message signed with the wallet. Then:
   administrator.
 - **Deletion:** a station deletes its profile and ends its sessions itself. An
   administrator deletes the rest unless it is needed to settle a request or to
-  answer a challenge. Nothing on the chain, and no copy of published data that
+  answer a challenge, and ends the party's sessions first
+  (`DELETE FROM sessions WHERE party = …`), so that no browser stays signed in. Nothing on the chain, and no copy of published data that
   others have made, can be deleted; the notice says so.
 
 Answers are due within a month (GDPR article 12(3)).

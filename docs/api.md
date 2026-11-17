@@ -72,7 +72,7 @@ call.
 | `GET /v1/internal/backup` | the backup token | | an encrypted backup of the database, streamed ([backups](#read-only-mode-and-backups)); `404` when the service has no backup token |
 | `GET /v1/requests` | any | | all requests with requester, title, reserving station, observer, status and outcome |
 | `POST /v1/requests` | requester | `{"request": <request document>, "terms": {…}}` | create a request in draft; `terms` may set `delivery_deadline`, `reservation_hours`, `challenge_period_hours`, `review_hours`, `verification_timeout_hours`, `embargo_days` |
-| `GET /v1/requests/{id}` | any | | summary and full lifecycle record |
+| `GET /v1/requests/{id}` | any | | summary and full lifecycle record; the reasons people wrote (`challenge_reason`, `vote_reasons`) only for the request's parties and administrators, or once it is published, and otherwise `"reasons_hidden": true` |
 | `POST /v1/requests/{id}/open` | requester | | publish; freezes the terms |
 | `POST /v1/requests/{id}/fund` | requester | `{"observer": 100, "reviewer": 10, "platform_fee": 0}` | lock the reward split and deposit the points |
 | `POST /v1/requests/{id}/cancel` | requester | | cancel before a reservation |
@@ -248,7 +248,10 @@ browser signs in instead of holding an API key:
    as `requester:<name>` or `station:<name>` with `sign_up`.
 2. The wallet signs the message (`personal_sign`).
 3. `POST /v1/session` with the message and signature sets the cookie
-   `ow_session` (`HttpOnly`, `SameSite=Strict`) for 12 hours. With it, the
+   `__Host-ow_session` over HTTPS, or `ow_session` over plain http
+   (`HttpOnly`, `SameSite=Strict`), for 12 hours, and ends the session the
+   browser had before. A session signed in over HTTPS counts only under the
+   prefixed name ([security-review.md](security-review.md)). With it, the
    rest of the API works as with the party's own key. A change also needs the
    `Origin` it was signed in on.
 
