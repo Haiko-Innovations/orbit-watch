@@ -466,7 +466,7 @@ def serve_app(args: argparse.Namespace, *, environ=None):
     if args.web:
         lines.append(f"Web application on http://{args.host}:{args.port}/")
     if chain is None:
-        lines.append("Phase 1 prototype: local use only, no TLS. All bundled data is SIMULATED.")
+        lines.append("Local use without a chain, no TLS. All bundled data is SIMULATED.")
     else:
         lines.append("Testnet only, no real value. All bundled data is SIMULATED.")
         lines.append(f"Wallets sign in from: {', '.join(origins)}")

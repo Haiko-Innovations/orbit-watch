@@ -110,7 +110,9 @@ def funded_request(world, request_id="SIM-REQ-0001"):
 
 def test_health_needs_no_key_but_everything_else_does(world):
     client = world["client"]
-    assert client.call("GET", "/v1/health").json()["status"] == "ok"
+    health = client.call("GET", "/v1/health").json()
+    assert health["status"] == "ok"
+    assert health["notice"] == "Local use without a chain. All bundled data is SIMULATED."
     response = client.call("GET", "/v1/requests")
     assert response.status_code == 401 and response.json()["error"]["code"] == "unauthorized"
     assert client.call("GET", "/v1/requests", "ow_wrong").status_code == 401

@@ -621,11 +621,10 @@ class Api:
         return JSONResponse(document, status_code=200 if document["status"] == "ok" else 503)
 
     def health(self, request: Request) -> Response:
-        notice = "Phase 1 prototype. All bundled data is SIMULATED."
+        notice = "Local use without a chain. All bundled data is SIMULATED."
         if self.chain is not None:
-            notice = (
-                f"Phase 2 prototype on a chain: {self.chain.notice}. All bundled data is SIMULATED."
-            )
+            label = self.chain.notice
+            notice = f"{label[:1].upper()}{label[1:]}. All bundled data is SIMULATED."
         return JSONResponse(
             {
                 "status": "ok",

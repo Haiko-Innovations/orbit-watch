@@ -1,11 +1,11 @@
-# HTTP API (phase 1 prototype)
+# HTTP API
 
-Phase 1, step 1.6. Code: [`core/src/orbit_watch/api/`](../core/src/orbit_watch/api).
+Since phase 1, step 1.6. Code: [`core/src/orbit_watch/api/`](../core/src/orbit_watch/api).
 
-> **Local use only.** Phase 1 has no public deployment
-> ([P-03](decisions.md#p-03-no-public-deployment-in-phase-1)): the server
-> listens on `127.0.0.1` by default and has no TLS. All bundled data is
-> SIMULATED.
+> **Testnet only, no real value. All bundled data is SIMULATED.** The public
+> service runs this API on Vercel, behind HTTPS
+> ([deployment.md](deployment.md)). Run by hand, `orbit-watch serve` listens on
+> `127.0.0.1` by default and has no TLS of its own.
 
 ## Run it
 
