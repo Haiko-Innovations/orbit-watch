@@ -205,6 +205,8 @@ def test_an_accepted_request_pays_by_token_transfers(api, world):
     # Every transaction is shown with its status; a local chain has no explorer.
     listed = api.get("/v1/transactions", STATION).json()
     assert listed["notice"] == "local Anvil test chain, no real value"
+    health = api.get("/v1/health").json()["notice"]
+    assert health == "Local Anvil test chain, no real value. All bundled data is SIMULATED."
     assert [t["action"] for t in listed["transactions"]] == ["reserve", "deliver", "withdraw"]
     assert all(t["status"] == "confirmed" and t["block"] for t in listed["transactions"])
     assert all(t["explorer"] is None for t in listed["transactions"])

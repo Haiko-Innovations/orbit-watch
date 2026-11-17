@@ -90,6 +90,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Changed
 
+- `GET /v1/health` and `orbit-watch serve` no longer call the service a phase 1 or
+  phase 2 prototype: the notice names the chain, such as "Base Sepolia testnet, no
+  real value", and says that all bundled data is SIMULATED. `docs/api.md` no
+  longer says the API has no public deployment.
 - English only (D-41): the Finnish translations are removed, from the README
   and the contributing guide, the plan, the roadmap and the phase summaries to
   the privacy notice and the terms of use; the web application's `#/privacy/fi`
