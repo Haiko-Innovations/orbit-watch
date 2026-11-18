@@ -180,7 +180,12 @@ ASVS 5.0 has no level 1 requirement on logging; P4-14 asks for it.
 The rest of step 4.7 needs a person or the maintainer's own hands:
 
 - an accessibility test with a screen reader, by a person
-  ([accessibility.md](accessibility.md#not-covered));
-- a run with a real wallet extension;
+  ([accessibility.md](accessibility.md#not-covered)): not done yet;
+- a run with a real wallet extension: done on 2026-11-17 and 18 with MetaMask,
+  one request from funding to settlement. It found three faults, all fixed: an
+  account that MetaMask had not allowed on the network (#93), transactions that
+  a smart account's relayer sends (#94), and simulated orbits treated as too
+  old (#95);
 - the verifier key and the backup key leaving the maintainer's machine, apart from
-  one encrypted offline copy each ([P4-11](decisions.md#p4-11-keys)).
+  one encrypted offline copy each ([P4-11](decisions.md#p4-11-keys)): done on
+  2026-11-17. The copies are in the maintainer's password manager.
