@@ -1980,3 +1980,48 @@ the new pages, and step 4.7 is done without it.
   test has been done, and so will the announcement in step 4.8.
 - This replaces the screen reader part of P4-14, and of the review in phase 4's
   completion criterion 10 ([P4-16](#p4-16-phase-4-completion-criteria)).
+
+### D-43 The dedicated RPC endpoint: Coinbase's CDP Node
+
+Accepted · 2026-11-18, by the maintainer. The public service reads Base Sepolia
+through Coinbase Developer Platform's Node service (CDP Node), as
+[P4-07](#p4-07-a-dedicated-rpc-endpoint-for-the-service) and
+[D-36](#d-36-limits-the-body-limit-and-the-dedicated-rpc-endpoint) planned.
+Base's public endpoint stays the fallback. The endpoint's URL, which holds the
+key, is the production secret `ORBIT_WATCH_CHAIN_RPC`, set from a prompt that
+does not echo.
+
+- **Why CDP Node.** Base Sepolia makes a block every 0.2 seconds, about 432,000
+  a day, and the service reads the escrow's events from every one of them. The
+  number of blocks that one `eth_getLogs` call may span decides how many calls
+  that takes. On the free plans, read on 2026-11-18:
+
+  | Provider | Blocks per call |
+  |---|---|
+  | CDP Node | 1,000 |
+  | Chainstack | 100 |
+  | Alchemy | 10 |
+  | QuickNode | 5 |
+
+  CDP Node's free tier is 10 million billing units a month, at about 50 calls a
+  second. An `eth_getLogs` call costs 100 units, and other calls cost 30. The
+  service needs an estimated 2 to 3 million units a month. Coinbase builds
+  Base, and Base's documentation lists CDP among its node providers.
+- **Cost.** Since January 2026, CDP Node needs a payment method on file. Use
+  beyond the free tier costs $0.50 per million units.
+- **The account is the maintainer's own for now**, not one in Haiko Innovations'
+  name as D-38 planned. Moving it needs no code change: a new key in the
+  company's account, set as the same secret, then a redeploy.
+- **Checked on 2026-11-18.** The redeployed service followed the chain on
+  schedule, within a few seconds of the latest block. None of its log records
+  named the endpoint.
+
+Sources, read on 2026-11-18:
+- CDP Node's [overview](https://docs.cdp.coinbase.com/data/node/overview.md),
+  [pricing](https://docs.cdp.coinbase.com/data/node/pricing.md) and
+  [JSON-RPC limits](https://docs.cdp.coinbase.com/api-reference/json-rpc-api/core.md);
+- [Alchemy](https://support.alchemy.com/articles/1883074130-why-do-i-see-a-free-tier-error-when-calling-eth-getlogs-with-a-large-block-range),
+  [QuickNode](https://support.quicknode.com/hc/en-us/articles/10258449939473-Understanding-the-10-000-Block-Range-Limit-for-querying-Logs-and-Events)
+  and [Chainstack](https://docs.chainstack.com/docs/limits) on their
+  `eth_getLogs` limits;
+- Base's [node providers](https://docs.base.org/base-chain/node-operators/node-providers.md).

@@ -440,7 +440,3 @@ curl -s -X POST -H "Authorization: Bearer $STATION_KEY" -H "Idempotency-Key: del
   "http://127.0.0.1:8000/v1/requests/SIM-REQ-0001/deliveries?format=json"
 ```
 
-## Not yet
-
-- A dedicated RPC endpoint for the public service (phase 4, step 4.8). Until
-  then it reads Base's public endpoint.

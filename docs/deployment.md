@@ -59,7 +59,7 @@ service does not answer ([P4-12](decisions.md#p4-12-releases-and-deployment)).
 | `ORBIT_WATCH_BACKUP_TOKEN` | Secret | random, 64 hex characters: the backup workflow's token, also in the GitHub environment `backup` ([operations.md](operations.md#backups)) |
 | `ORBIT_WATCH_BACKUP_RECIPIENT` | Config | the age public key that backups are encrypted to |
 | `ORBIT_WATCH_READ_ONLY` | Config | set to `1` only during an incident ([read-only mode](operations.md#read-only-mode)) |
-| `ORBIT_WATCH_CHAIN_RPC` | Secret | a dedicated RPC endpoint, once one is chosen; until then Base's public endpoint ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)) |
+| `ORBIT_WATCH_CHAIN_RPC` | Secret | the dedicated RPC endpoint, Coinbase's CDP Node for Base Sepolia, with Base's public endpoint as the fallback ([D-43](decisions.md#d-43-the-dedicated-rpc-endpoint-coinbases-cdp-node)) |
 
 The limits and the station coordinates' precision take `serve`'s defaults.
 Secrets are written from a pipe, so that they appear in no command line,

@@ -73,11 +73,11 @@ the public service runs on the chain and keeps no points.
   Data Privacy Framework certification.
 - **GitHub, Inc.**, the encrypted backups ([D-39](decisions.md#d-39-backups-monitoring-and-read-only-mode)),
   which it cannot read.
-- **The RPC provider** answers the service's reads of the chain: Base's public
-  endpoint until a dedicated one is chosen
-  ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)). The service sends
-  it nothing about anyone that is not already public on the chain. The
-  browser's wallet uses its own provider, which the user chooses.
+- **The RPC provider** answers the service's reads of the chain: Coinbase's
+  CDP Node (Coinbase, Inc.) since 2026-11-18, with Base's public endpoint as
+  the fallback ([D-43](decisions.md#d-43-the-dedicated-rpc-endpoint-coinbases-cdp-node)).
+  The service sends it nothing about anyone that is not already public on the
+  chain. The browser's wallet uses its own provider, which the user chooses.
 
 ## Requests from the people the data is about
 

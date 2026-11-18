@@ -34,7 +34,10 @@ launch (4.7) is done: a security review against OWASP ASVS level 1
 one request run with real wallets from funding to settlement, which found three
 faults, all fixed. The screen reader test follows the web application's
 redesign after 0.5.0 ([D-42](decisions.md#d-42-the-screen-reader-test-after-the-redesign)).
-Next is the launch and release 0.5.0 (4.8).
+Step 4.8 has begun: since 2026-11-18 the service reads the chain through a
+dedicated endpoint, Coinbase's CDP Node
+([D-43](decisions.md#d-43-the-dedicated-rpc-endpoint-coinbases-cdp-node)). Next
+are the announcement, the phase 4 summary and release 0.5.0.
 
 Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
 phase 1 as version 0.2.0 ([phase 1 summary](phase-1-summary.md)) and phase 0

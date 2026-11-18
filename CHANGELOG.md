@@ -90,6 +90,9 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Changed
 
+- The public service reads Base Sepolia through a dedicated RPC endpoint,
+  Coinbase's CDP Node, with Base's public endpoint as the fallback (phase 4,
+  step 4.8; D-43). Its URL is a production secret.
 - `GET /v1/health` and `orbit-watch serve` no longer call the service a phase 1 or
   phase 2 prototype: the notice names the chain, such as "Base Sepolia testnet, no
   real value", and says that all bundled data is SIMULATED. `docs/api.md` no
