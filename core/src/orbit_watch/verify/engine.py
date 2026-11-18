@@ -28,7 +28,7 @@ from orbit_watch.timeutil import format_utc
 REPORT_FORMAT = "orbit-watch/verification-report"
 REPORT_FORMAT_VERSION = "1.0"
 METHOD_NAME = "orbit-watch-automated-verification"
-METHOD_VERSION = "1.0.0"
+METHOD_VERSION = "2.0.0"
 ACCEPTED_OBSERVATION_FORMATS = [
     "orbit-watch/observation-set 1.0",
     "iod",

@@ -10,8 +10,13 @@ answer.
 > and the request terms. It is **not** production-ready scientific validation
 > and does not prove that measurements are physically correct.
 
-Current method: **`orbit-watch-automated-verification` 1.0.0**
+Current method: **`orbit-watch-automated-verification` 2.0.0**
 (code: [`core/src/orbit_watch/verify/engine.py`](../core/src/orbit_watch/verify/engine.py)).
+
+| Version | Release | Change |
+|---|---|---|
+| 2.0.0 | 0.5.0 | No reference age limit for a SIMULATED catalogue: a residual check that 1.0.0 called inconclusive can now pass or fail. |
+| 1.0.0 | 0.1.0 | The first method. |
 
 ## Inputs
 
@@ -73,11 +78,11 @@ lie within their limits. If the reference epoch is more than
 the residuals would mostly measure the age of the orbit. A SIMULATED
 catalogue has no such limit: the simulator computes observations from the
 same elements, so their age does not matter, and the check's reason says so.
-Until step 4.7 the limit applied to it too, and every delivery on the public
+In method 1.0.0 the limit applied to it too, and every delivery on the public
 testnet more than seven days after the bundled catalogue's epoch was
 inconclusive.
 
-Parameters of method 1.0.0:
+Parameters of method 2.0.0, the same as in 1.0.0:
 
 | Parameter | Value | Why |
 |---|---|---|
@@ -96,7 +101,7 @@ arcsecond-level accuracy, because the public reference orbit is not that good.
 The [station quality meter](quality-meter.md) looks at systematic errors in
 more detail.
 
-## Known limitations (method 1.0.0)
+## Known limitations (method 2.0.0)
 
 - Light travel time and annual aberration are not modelled (together up to
   about 20″, far below the residual limits).

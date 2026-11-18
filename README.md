@@ -11,18 +11,19 @@ public orbit data. Any party can challenge a result before the payment settles,
 and independent reviewers decide. Observers get value from day one: a quality
 meter that tells them how accurate their station is.
 
-> **Status: phase 4, the public testnet service, is under way.** Requests,
+> **Status: the public testnet service is open (phase 4, version 0.5.0):
+> <https://orbit-watch-tan.vercel.app>.** Requests,
 > optimistic verification, an HTTP API, a command-line client and a web
 > application, with settlement on the Base Sepolia **testnet**: an escrow
 > contract, EAS attestations and every party signing with its own wallet, with
 > testnet USDC of **no value** ([base-sepolia.md](docs/base-sepolia.md)). The
-> service runs on Vercel and Neon, and opens with version 0.5.0
-> ([deployment.md](docs/deployment.md)). No mainnet, no real money. Requests
+> service runs on Vercel and Neon ([deployment.md](docs/deployment.md)). No
+> mainnet, no real money. Requests
 > target civilian objects only.
 > **Simulated data is always labelled as simulated**, and automated
 > verification is a prototype, not production-ready scientific validation.
 > See the [roadmap](docs/roadmap.md), the
-> [phase 3 summary](docs/phase-3-summary.md) and the [changelog](CHANGELOG.md).
+> [phase 4 summary](docs/phase-4-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)
 
@@ -94,7 +95,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Service, API and command line on the **testnet**: own wallets, signing with your own keystore, transactions with explorer links | `orbit-watch serve --network base-sepolia …`, `orbit-watch wallet register` | [chain-service.md](docs/chain-service.md) |
 | The contracts on **Base Sepolia**: addresses, faucets, who holds which key, deploying | `forge script script/DeployOrbitWatch.s.sol` | [base-sepolia.md](docs/base-sepolia.md) |
 | Web application (phase 3): public pages with an attestation browser and the station quality meter, signing in with a wallet, withdrawals, and views for requesters, observers, reviewers and administrators, served by the service; a local stack for development; the phase 3 demo on Base Sepolia | `orbit-watch serve --web web/dist`, `core/tests/local_stack.py` | [web.md](docs/web.md) |
-| The public testnet service (phase 4) on Vercel and Neon, not announced yet: deploying and rolling back, encrypted daily backups, an uptime check, read-only mode and runbooks | `orbit-watch backup create`, `orbit-watch backup restore`, `orbit-watch serve --read-only` | [deployment.md](docs/deployment.md), [operations.md](docs/operations.md) |
+| The public testnet service (phase 4) on Vercel and Neon, open since 0.5.0: deploying and rolling back, encrypted daily backups, an uptime check, read-only mode and runbooks | `orbit-watch backup create`, `orbit-watch backup restore`, `orbit-watch serve --read-only` | [deployment.md](docs/deployment.md), [operations.md](docs/operations.md) |
 
 The Python code is in [`core/`](core), the Solidity contracts in [`contracts/`](contracts) and the web application in [`web/`](web). Simulated examples are in
 [`examples/`](examples).
@@ -146,9 +147,10 @@ The full starting plan: [docs/plan.md](docs/plan.md).
   an escrow contract and EAS attestations. No mainnet, no token of our own.
 - **Phase 3 (done, 0.4.0):** a web application with role views and wallets in
   the browser.
-- **Phase 4 (planned):** the service and the web application online as a
-  public sandbox on the testnet, still SIMULATED
-  ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)).
+- **Phase 4 (done, 0.5.0):** the service and the web application online as a
+  public sandbox on the testnet, still SIMULATED, at
+  <https://orbit-watch-tan.vercel.app>
+  ([phase 4 summary](docs/phase-4-summary.md)).
 
 ## Open questions
 

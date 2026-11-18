@@ -113,7 +113,7 @@ and hashed; later changes to the defaults never affect an open request.
 | `verification_timeout_hours` | 24 | positive |
 | `embargo_days` | 0 | 0 to 30 |
 | `licence` | CC-BY-4.0 | |
-| `verification_method` | orbit-watch-automated-verification 1.0.0 | |
+| `verification_method` | orbit-watch-automated-verification 2.0.0 | |
 
 ## Not decided yet
 

@@ -9,7 +9,7 @@ Phase 4, step 4.5 ([P4-02](decisions.md#p4-02-hosting-on-vercel-and-neon),
 [D-38](decisions.md#d-38-the-service-on-vercel-and-neon)).
 
 > **Testnet only, no real value.** The public service runs on Base Sepolia with
-> SIMULATED data. It is not announced yet (step 4.8).
+> SIMULATED data. It opened with release 0.5.0.
 
 The public testnet service runs on Haiko Innovations' Vercel Pro team (`eemil`)
 as the project `orbit-watch`, at **https://orbit-watch-tan.vercel.app**, with

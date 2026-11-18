@@ -8,8 +8,17 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-18
+
+Phase 4: the public testnet service. The service and the web application run
+on Vercel and Neon in Frankfurt, on the Base Sepolia testnet only, with
+testnet USDC of no value and SIMULATED data
+([docs/phase-4-summary.md](docs/phase-4-summary.md)).
+
 ### Added
 
+- The phase 4 summary (`docs/phase-4-summary.md`), with the completion
+  criteria and the first request run with real wallets.
 - Phase 4 plan: a public testnet service in eight steps (4.1 to 4.8) with
   completion criteria in `docs/roadmap.md`, and the proposed decisions P4-01 to
   P4-16 in `docs/decisions.md`, approved on 2026-11-14 (#67): Vercel and Neon,
@@ -90,6 +99,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Changed
 
+- The verification method is version 2.0.0, and new requests' terms name it:
+  a SIMULATED catalogue has no reference age limit (see Fixed). A request
+  published earlier keeps the method its terms name in its result
+  attestation, while its report names the method that ran.
 - The public service reads Base Sepolia through a dedicated RPC endpoint,
   Coinbase's CDP Node, with Base's public endpoint as the fallback (phase 4,
   step 4.8; D-43). Its URL is a production secret.
@@ -143,9 +156,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   but every delivery on the public testnet more than seven days after the
   bundled catalogue's epoch (2026-11-01) came out inconclusive and went
   straight to reviewers. The first delivery with a real wallet in step 4.7
-  found it. With real elements the limit stays, so method 1.0.0 keeps its
-  version: only SIMULATED input, marked so in every report, is verified
-  differently (`docs/verification.md`).
+  found it. With real elements the limit stays. A change in pass or fail
+  logic is a new major version of the method, so this is method 2.0.0
+  (`docs/verification.md`); the release 0.5.0 sets it, after #95 had kept
+  1.0.0 by mistake.
 - A request with reviewers is shown as "Reviewers are checking it". It said
   "Challenged" even when nobody had challenged it and an inconclusive result
   had sent it to reviewers; the progress list says which it was.
@@ -519,7 +533,8 @@ is simulated and labelled as such.
 - Apache 2.0 licence, Contributor Covenant 3.0, contributing guide and README in
   English and Finnish, issue templates, roadmap, decision log and release process.
 
-[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.1.0...v0.2.0
