@@ -146,9 +146,15 @@ def test_a_rubber_stamper_shows_low_accuracy_and_a_careful_reviewer_does_not():
         "reviewer:sim-eero": careful,
         "reviewer:sim-fatima": careful,
     }
-    for n in range(10):
+    # A round's reviewers are drawn from the delivery's SHA-256, and the bundled observations
+    # name the software's version, so how many rounds reach one reviewer changes with every
+    # release. Run rounds until the rubber stamper has answered enough calibration tasks.
+    for n in range(40):
         challenged(service, request_id=f"SIM-REQ-{n:04d}")
         answer_everything(service, policies, h(2 + n))
+        calibration = service.reviewer_profile("reviewer:sim-aino", h(3 + n))["calibration"]
+        if calibration["answered"] >= cal.MIN_ANSWERED_FOR_FLAG:
+            break
     now = h(100)
     rubber = service.reviewer_profile("reviewer:sim-aino", now)
     good = service.reviewer_profile("reviewer:sim-chen", now)
