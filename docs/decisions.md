@@ -1420,6 +1420,9 @@ Accepted · 2026-11-14. Before the service is announced:
 
 Each finding is fixed or recorded.
 
+The screen reader test was moved to after the web application's redesign on
+2026-11-18 by [D-42](#d-42-the-screen-reader-test-after-the-redesign).
+
 ### P4-15 Nothing that closes the way to a community network
 
 Accepted · 2026-11-14. In the long run Orbit Watch should depend on no single
@@ -1959,3 +1962,21 @@ and the Finnish versions of [P4-09](#p4-09-personal-data-a-privacy-notice-and-te
 - The legal texts still name Finnish law, the Finnish data protection authority
   and the Finnish company behind the service: those are facts, not translations.
   The history of the Finnish texts stays in the repository.
+
+### D-42 The screen reader test after the redesign
+
+Accepted · 2026-11-18, by the maintainer. The accessibility test with a screen
+reader, done by a person ([P4-14](#p4-14-a-review-before-the-launch)), is not
+done before the launch in step 4.8. The maintainer plans to redesign and restyle
+the whole web application after release 0.5.0. The test is done then, against
+the new pages, and step 4.7 is done without it.
+
+- A test now would hear pages whose layout and styles are about to change, and
+  it would have to be done again.
+- Until then the automated review of every view keeps running in CI: axe in
+  the light and dark themes, the keyboard, focus and reflow
+  ([accessibility.md](accessibility.md)). It cannot tell how the pages sound.
+- [accessibility.md](accessibility.md#not-covered) says that no screen reader
+  test has been done, and so will the announcement in step 4.8.
+- This replaces the screen reader part of P4-14, and of the review in phase 4's
+  completion criterion 10 ([P4-16](#p4-16-phase-4-completion-criteria)).
