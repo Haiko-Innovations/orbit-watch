@@ -442,5 +442,5 @@ curl -s -X POST -H "Authorization: Bearer $STATION_KEY" -H "Idempotency-Key: del
 
 ## Not yet
 
-- Moving the verifier key off the maintainer's machine, and the review before the
-  launch (phase 4, step 4.7).
+- A dedicated RPC endpoint for the public service (phase 4, step 4.8). Until
+  then it reads Base's public endpoint.

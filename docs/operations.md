@@ -32,7 +32,7 @@ Actions artifact, for 14 days. A failed run alerts the maintainer
   | What | Where |
   |---|---|
   | The age public key | Vercel, production, `ORBIT_WATCH_BACKUP_RECIPIENT` (Config) |
-  | The age private key | the maintainer only: `~/secrets/orbit-watch/backup-age-key.txt` on the maintainer's machine, offline in step 4.7 |
+  | The age private key | the maintainer only, offline in a password manager since 2026-11-17 (step 4.7); no machine keeps it |
   | The backup token | Vercel, production, `ORBIT_WATCH_BACKUP_TOKEN` (Secret), and the GitHub environment `backup`, which only `main` may use |
 
 - **Size:** every backup leaves Neon over the network, and Neon's Free plan moves
@@ -54,9 +54,11 @@ newer migrations, so a newer version restores an older backup.
 gh run download --repo Haiko-Innovations/orbit-watch --dir restore/ \
   "$(gh run list --repo Haiko-Innovations/orbit-watch --workflow Backup \
      --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+(umask 077; cat > restore/age-key.txt)   # paste the key from the password manager, then Ctrl-D
 orbit-watch backup restore restore/*/orbit-watch-*.tar.gz.age \
-  --identity ~/secrets/orbit-watch/backup-age-key.txt \
+  --identity restore/age-key.txt \
   --database postgresql://postgres@127.0.0.1:5432/drill
+rm restore/age-key.txt
 ```
 
 ### The restore drill
