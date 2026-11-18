@@ -125,7 +125,7 @@ test("a requester challenges a delivered result, and the escrow picks reviewers"
   await flow.getByRole("button", { name: "Send with your wallet" }).click();
   await expect(flow).toContainText("Done. The chain confirmed every transaction.");
   await flow.getByRole("button", { name: "Close" }).click();
-  await expect(page.locator(".status-line")).toContainText("Challenged; reviewers are checking it");
+  await expect(page.locator(".status-line")).toContainText("Reviewers are checking it");
   await expect(page.getByText(/Reviewers chosen by the escrow: reviewer:sim-/)).toBeVisible();
 });
 

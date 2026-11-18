@@ -272,7 +272,7 @@ export const strings = {
       reserved: "Reserved by an observer",
       delivered: "Delivered, being verified",
       challenge_period: "Verified; the challenge period is running",
-      in_review: "Challenged; reviewers are checking it",
+      in_review: "Reviewers are checking it",
       accepted: "Accepted",
       rejected: "Rejected",
       disputed: "Disputed",

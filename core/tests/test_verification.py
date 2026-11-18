@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 import pytest
-from helpers import catalog_bytes, policy_bytes, request_bytes
+from helpers import catalog_bytes, policy_bytes, real_catalog_bytes, request_bytes
 
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.formats import iod, owjson
@@ -118,21 +118,58 @@ def test_simulated_data_cannot_fulfil_a_real_request(acceptable):
     assert report["verdict"] == "fail"
 
 
-def test_stale_reference_orbit_is_inconclusive():
-    profile = load_profile("sim-cmos-gps")
+LATER = {"start": "2026-11-18T00:00:00Z", "end": "2026-11-19T00:00:00Z"}  # 17 days after epoch
+
+
+def later_observations(observed_id=339001):
+    """SIMULATED observations of 339001 far from the bundled catalogue's epoch."""
     from orbit_watch.catalog import parse_catalog
 
-    later = simulate(
+    observed = simulate(
         parse_catalog(catalog_bytes()),
         339001,
-        profile,
-        parse_utc("2026-11-11T00:00:00Z"),
-        parse_utc("2026-11-12T00:00:00Z"),
+        load_profile("sim-cmos-gps"),
+        parse_utc(LATER["start"]),
+        parse_utc(LATER["end"]),
         seed=1,
+        observed_id=observed_id,
     )
-    data = owjson.write_observation_set(later).encode()
-    report = run(data, start="2026-11-11T00:00:00Z", end="2026-11-12T00:00:00Z")
-    assert results(report)["orbit_residuals"] == "inconclusive"
+    return owjson.write_observation_set(observed).encode()
+
+
+def verify_later(observations, catalog=None):
+    return verify(
+        VerificationInput(
+            request=request_bytes(**LATER),
+            observations=observations,
+            catalog=catalog or catalog_bytes(),
+            policy=policy_bytes(),
+        )
+    )
+
+
+def test_a_simulated_reference_orbit_has_no_age_limit():
+    # The first delivery on the public testnet was inconclusive only because the bundled
+    # SIMULATED orbits were 17.8 days old; the simulator computes from the same elements.
+    report = verify_later(later_observations())
+    residuals = next(c for c in report["checks"] if c["id"] == "orbit_residuals")
+    assert residuals["result"] == "pass"
+    assert "SIMULATED and up to 17." in residuals["reason"]
+    assert report["verdict"] == "pass"
+
+
+def test_a_stale_simulated_orbit_still_catches_another_object():
+    report = verify_later(later_observations(observed_id=339002))
+    residuals = next(c for c in report["checks"] if c["id"] == "orbit_residuals")
+    assert residuals["result"] == "fail"
+    assert residuals["reason"].endswith("does not limit this check.")
+
+
+def test_a_stale_real_reference_orbit_is_inconclusive():
+    report = verify_later(later_observations(), real_catalog_bytes())
+    residuals = next(c for c in report["checks"] if c["id"] == "orbit_residuals")
+    assert residuals["result"] == "inconclusive"
+    assert "only reliable close to their epoch" in residuals["reason"]
     assert report["verdict"] == "inconclusive"
 
 

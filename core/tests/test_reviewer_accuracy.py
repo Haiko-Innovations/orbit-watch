@@ -5,7 +5,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import pytest
-from helpers import request_bytes
+from helpers import real_catalog_bytes, request_bytes
 from test_service import (
     DELIVERY,
     REQUESTER,
@@ -193,6 +193,7 @@ def test_inconclusive_rounds_also_get_calibration_tasks():
     from orbit_watch.timeutil import parse_utc
 
     service, _ = make_service()
+    service.context.catalog = real_catalog_bytes()  # old real elements: inconclusive
     start, end = "2026-11-11T15:00:00Z", "2026-11-12T03:00:00Z"
     observed = simulate(
         service_catalog(),
