@@ -78,7 +78,8 @@ that people meet. Not done:
 - **Screen readers.** No test was made with NVDA, JAWS, VoiceOver or
   TalkBack. The pages use headings, landmarks, labelled forms, live statuses
   for results and alerts for refusals, but how they sound has not been
-  heard.
+  heard. A person tests them after the web application's redesign, planned
+  after release 0.5.0 ([D-42](decisions.md#d-42-the-screen-reader-test-after-the-redesign)).
 - **Other browsers.** Only Chromium was tested; Firefox and Safari were not.
 - **Zoom and text spacing** beyond the 320-pixel reflow check (WCAG 1.4.4,
   1.4.12).
@@ -89,4 +90,6 @@ that people meet. Not done:
 
 These are open for a later phase. A public service would need at least a
 screen reader test and a test with users first
-([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
+([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)). The public
+testnet service opens without them: the screen reader test follows the
+redesign ([D-42](decisions.md#d-42-the-screen-reader-test-after-the-redesign)).

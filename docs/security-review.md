@@ -180,7 +180,9 @@ ASVS 5.0 has no level 1 requirement on logging; P4-14 asks for it.
 The rest of step 4.7 needs a person or the maintainer's own hands:
 
 - an accessibility test with a screen reader, by a person
-  ([accessibility.md](accessibility.md#not-covered)): not done yet;
+  ([accessibility.md](accessibility.md#not-covered)): not done. It follows the
+  web application's redesign, planned after release 0.5.0
+  ([D-42](decisions.md#d-42-the-screen-reader-test-after-the-redesign));
 - a run with a real wallet extension: done on 2026-11-17 and 18 with MetaMask,
   one request from funding to settlement. It found three faults, all fixed: an
   account that MetaMask had not allowed on the network (#93), transactions that
