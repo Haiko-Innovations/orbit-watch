@@ -10,35 +10,23 @@ Every pull request that finishes a roadmap step also updates this page.
 
 ## Status (2026-11-18)
 
-**Phase 3 is done** and released as version 0.4.0: the web application.
-Every party signs in and signs with its own wallet in the browser; requesters,
-observers, reviewers and administrators each have their views; the station
-quality meter and the attestation browser are public pages; and every role's
-end-to-end test and the accessibility review of every view run in CI against
-a local chain. The phase 3 demo ran the whole chain in the browser on Base
-Sepolia with a wallet per role. See the [phase 3 summary](phase-3-summary.md).
-The service still runs locally only
-([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)).
+**Phase 4 is done** and released as version 0.5.0: the public testnet
+service. The service and the web application run at
+<https://orbit-watch-tan.vercel.app> on Vercel and Neon in Frankfurt, on Base
+Sepolia only and still SIMULATED. They have:
+- PostgreSQL wherever the service keeps state;
+- a follower that settles requests on its own;
+- limits against abuse, and a dedicated RPC endpoint;
+- a privacy notice and terms of use;
+- daily encrypted backups, monitoring and runbooks;
+- a review before the launch.
 
-**Phase 4 is planned**: a public testnet service, the service and the web
-application online on Base Sepolia, still SIMULATED. Its decisions P4-01 to
-P4-16 were approved on 2026-11-14 ([#67](https://github.com/Haiko-Innovations/orbit-watch/issues/67)). Done so far: the service's storage on
-PostgreSQL (4.1), a stateless service with a follower and a container image
-tested in CI (4.2), limits against abuse with a dedicated RPC endpoint whose
-key stays secret (4.3), a privacy notice and terms of use (4.4), and the
-service on Vercel and Neon in Frankfurt, not announced yet (4.5,
-[deployment.md](deployment.md)). Backups, monitoring and read-only
-mode are in [operations.md](operations.md) (4.6). The review before the
-launch (4.7) is done: a security review against OWASP ASVS level 1
-([security-review.md](security-review.md)), English only, the keys offline, and
-one request run with real wallets from funding to settlement, which found three
-faults, all fixed. The screen reader test follows the web application's
-redesign after 0.5.0 ([D-42](decisions.md#d-42-the-screen-reader-test-after-the-redesign)).
-Step 4.8 has begun: since 2026-11-18 the service reads the chain through a
-dedicated endpoint, Coinbase's CDP Node
-([D-43](decisions.md#d-43-the-dedicated-rpc-endpoint-coinbases-cdp-node)). Next
-are the announcement, the phase 4 summary and release 0.5.0.
+The first request with real wallets went from funding to settlement and found
+three faults, all fixed. See the [phase 4 summary](phase-4-summary.md). The
+screen reader test follows the web application's redesign
+([D-42](decisions.md#d-42-the-screen-reader-test-after-the-redesign)).
 
+Phase 3 was released as version 0.4.0 ([phase 3 summary](phase-3-summary.md)).
 Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
 phase 1 as version 0.2.0 ([phase 1 summary](phase-1-summary.md)) and phase 0
 as [version 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0);
@@ -202,7 +190,7 @@ approved on 2026-11-14. In short:
 | ✅ **4.5 Vercel and Neon** ([#72](https://github.com/Haiko-Innovations/orbit-watch/issues/72)) | The Vercel project and the Neon database in Haiko Innovations' accounts, at Vercel's own address, the two database roles, secrets only in production, previews without them, production from `main` ([D-38](decisions.md#d-38-the-service-on-vercel-and-neon)). | The service answers over HTTPS, not yet announced; a deployment by merging to `main`, and a rollback with Vercel's instant rollback. |
 | ✅ **4.6 Backups, monitoring and runbooks** ([#73](https://github.com/Haiko-Innovations/orbit-watch/issues/73)) | A daily encrypted `pg_dump` by GitHub Actions kept 14 days; an uptime check with alerts; a check of Neon's hours; a read-only mode; runbooks. | A restore drill passed; an alert reached the maintainer; the runbooks documented. |
 | ✅ **4.7 Keys and the review before the launch** ([#74](https://github.com/Haiko-Innovations/orbit-watch/issues/74)) | The verifier key to the production secret and off the maintainer's machine; the Safe's signers as decided; a security checklist and a real wallet extension. The screen reader test by a person follows the redesign after 0.5.0 ([D-42](decisions.md#d-42-the-screen-reader-test-after-the-redesign)). | The review done; each finding fixed or recorded. |
-| **4.8 Launch and phase 4 summary** ([#75](https://github.com/Haiko-Innovations/orbit-watch/issues/75)) | The service opens, with a short announcement for the maintainer to post; the phase 4 summary. | The phase 4 completion criteria below are met; release 0.5.0. |
+| ✅ **4.8 Launch and phase 4 summary** ([#75](https://github.com/Haiko-Innovations/orbit-watch/issues/75)) | The service opens, with a short announcement for the maintainer to post; the phase 4 summary. | The phase 4 completion criteria below are met; release 0.5.0. |
 
 **Phase 4 completion criteria** ([P4-16](decisions.md#p4-16-phase-4-completion-criteria)):
 

@@ -8,7 +8,7 @@
   "disclaimer": "Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.",
   "method": {
     "name": "orbit-watch-automated-verification",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "parameters": {
       "reference_position_error_km": 5.0,
       "residual_sigma_multiplier": 3.0,
@@ -24,20 +24,20 @@
     ]
   },
   "software": {
-    "orbit-watch": "0.5.0.dev0",
+    "orbit-watch": "0.5.0",
     "skyfield": "1.55",
     "sgp4": "2.27",
     "numpy": "2.5.4"
   },
   "inputs": {
     "request_sha256": "ed503008700f8f6be8bd0c9dfc0c9083c247dd9d74c85406c4e9569483df203a",
-    "observations_sha256": "41844503cc2eaec6bbb489e77184328efafcaabbed46b2801f22d72553f5e67a",
+    "observations_sha256": "bb3f91c69679e18193e4ee0e17d0f17cb858440aa73663253ec82f36bddc6bbf",
     "observations_format": "json",
-    "declared_sha256": "41844503cc2eaec6bbb489e77184328efafcaabbed46b2801f22d72553f5e67a",
+    "declared_sha256": "bb3f91c69679e18193e4ee0e17d0f17cb858440aa73663253ec82f36bddc6bbf",
     "reference_catalog_sha256": "2924282be9c9c79af1c034f43da75502d043a9c04185ba700903abe7b5790d5c",
     "target_policy_sha256": "866f9d582d155fab0810417a7644573501fa282b3bdc93ffc22b15ed96434f95",
     "previous_deliveries_sha256": [
-      "84582b53946c3163c3be3f34f1fbbe90ae67fc887d756f846f2a162f270b3d97"
+      "265db656088d620e2baeeeceff03bc097166ba91010b8426149cdd88be9aa45b"
     ]
   },
   "request": {
@@ -113,11 +113,11 @@
       "id": "duplicates",
       "title": "No duplicates or resubmissions",
       "result": "fail",
-      "reason": "Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 84582b53946c3163...).",
+      "reason": "Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 265db656088d620e...).",
       "details": {
         "internal_duplicates": 0,
         "overlap_with_earlier": {
-          "84582b53946c3163c3be3f34f1fbbe90ae67fc887d756f846f2a162f270b3d97": 16
+          "265db656088d620e2baeeeceff03bc097166ba91010b8426149cdd88be9aa45b": 16
         },
         "identical_earlier_files": 0
       }

@@ -24,7 +24,7 @@ reports outlive the software that made them:
 |---|---|---|
 | Observation set format | `format_version` in the document, schema file name | 1.0 |
 | Request, delivery, target policy, station profile, sites formats | same | 1.0 |
-| Verification method | `METHOD_VERSION` in `verify/engine.py`, in every report | 1.0.0 |
+| Verification method | `METHOD_VERSION` in `verify/engine.py`, in every report | 2.0.0 |
 | Verification report format | `report_format_version` | 1.0 |
 | Station quality meter method and report | `METHOD_VERSION`, `report_format_version` in `quality.py` | 1.0.0, 1.0 |
 

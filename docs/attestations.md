@@ -34,7 +34,7 @@ string requestId,bytes32 deliverySha256,bytes32 reportSha256,string verdict,stri
 | `deliverySha256` | the SHA-256 of the delivered file, as recorded by `deliver` |
 | `reportSha256` | the SHA-256 of the verification report |
 | `verdict` | `pass`, `fail` or `inconclusive` |
-| `method`, `methodVersion` | the verification method, for example `orbit-watch-automated-verification`, `1.0.0` |
+| `method`, `methodVersion` | the verification method, for example `orbit-watch-automated-verification`, `2.0.0` |
 
 `pass` or `fail` starts the challenge period. `inconclusive` starts a reviewer
 round at once.
