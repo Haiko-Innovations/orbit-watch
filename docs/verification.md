@@ -70,7 +70,12 @@ limit = sqrt( (k·σ_angle)² + (k·σ_time·rate)² + θ_ref² )
 The check passes when at least `min_fraction_within_limit` of the observations
 lie within their limits. If the reference epoch is more than
 `max_reference_age_days` from any observation, the check is `inconclusive`:
-the residuals would mostly measure the age of the orbit.
+the residuals would mostly measure the age of the orbit. A SIMULATED
+catalogue has no such limit: the simulator computes observations from the
+same elements, so their age does not matter, and the check's reason says so.
+Until step 4.7 the limit applied to it too, and every delivery on the public
+testnet more than seven days after the bundled catalogue's epoch was
+inconclusive.
 
 Parameters of method 1.0.0:
 
@@ -79,7 +84,7 @@ Parameters of method 1.0.0:
 | `reference_position_error_km` | 5.0 | Public GP elements are good to about a kilometre at epoch and degrade quickly; 5 km tolerates elements a few days old. |
 | `residual_sigma_multiplier` | 3.0 | Three sigma per observation. |
 | `min_fraction_within_limit` | 0.8 | Tolerates a few outliers. |
-| `max_reference_age_days` | 7.0 | Skyfield's documentation says elements are generally accurate for a week or two around epoch. |
+| `max_reference_age_days` | 7.0 | Skyfield's documentation says elements are generally accurate for a week or two around epoch. Not applied to a SIMULATED catalogue. |
 | `duplicate_time_resolution_s` | 0.001 | Same resolution as IOD times. |
 | `duplicate_angle_resolution_arcsec` | 1.0 | Below the precision of amateur optical positions. |
 

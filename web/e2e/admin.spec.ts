@@ -86,7 +86,7 @@ test("the administrator sees requests, payments, errors and events, and runs tic
   await expect(settled).toContainText("Settled");
   await expect(settled).toContainText("station:SIM-ESPOO: 1 TESTUSD (observer_reward)");
   const inReview = requests.getByRole("row").filter({ hasText: "SIM-REQ-3006" });
-  await expect(inReview).toContainText("Challenged; reviewers are checking it");
+  await expect(inReview).toContainText("Reviewers are checking it");
   await expect(page.getByText(/^7 requests: /)).toBeVisible();
   await expect(page.getByText("No conflicts and no failed transactions.")).toBeVisible();
   const log = page.getByRole("table", { name: "Event log" });

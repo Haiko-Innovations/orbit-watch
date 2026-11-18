@@ -20,7 +20,7 @@ from chain_world import (
     VERIFIER,
     ChainWorld,
 )
-from helpers import catalog, request_bytes
+from helpers import catalog, real_catalog_bytes, request_bytes
 from starlette.testclient import TestClient
 
 from orbit_watch.api import create_app, keys
@@ -262,6 +262,7 @@ def test_a_challenge_takes_its_reviewers_from_the_chain(api, world):
 
 
 def test_an_inconclusive_result_without_a_majority_is_a_dispute(api, world):
+    world.service.context.catalog = real_catalog_bytes()  # old real elements: inconclusive
     start, end = "2026-11-11T15:00:00Z", "2026-11-12T03:00:00Z"
     request = request_bytes(start=start, end=end)
     world.travel("2026-11-11T12:00:00Z")

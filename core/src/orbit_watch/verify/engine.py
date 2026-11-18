@@ -493,14 +493,23 @@ def _orbit_residuals(
     epoch = satellite.epoch.utc_datetime()
     ages = [abs((o.time - epoch).total_seconds()) / 86400 for o in obs]
     max_age = max(ages)
+    # Real GP elements degrade away from their epoch. A SIMULATED catalogue's elements are
+    # the truth that simulated observations are computed from, so their age does not matter.
+    note = ""
     if max_age > PARAMETERS["max_reference_age_days"]:
-        return _check(
-            "orbit_residuals",
-            "inconclusive",
-            f"The reference orbit epoch ({epoch.strftime('%Y-%m-%d %H:%M')} UTC) is up to "
-            f"{max_age:.1f} days from the observations. GP elements are only reliable close to "
-            f"their epoch, so the residuals would mostly measure the age of the orbit. Use an "
-            f"element set within {PARAMETERS['max_reference_age_days']:g} days.",
+        if not catalog.simulated:
+            return _check(
+                "orbit_residuals",
+                "inconclusive",
+                f"The reference orbit epoch ({epoch.strftime('%Y-%m-%d %H:%M')} UTC) is up to "
+                f"{max_age:.1f} days from the observations. GP elements are only reliable close "
+                f"to their epoch, so the residuals would mostly measure the age of the orbit. Use "
+                f"an element set within {PARAMETERS['max_reference_age_days']:g} days.",
+            )
+        note = (
+            f" The reference orbit is SIMULATED and up to {max_age:.1f} days from its epoch; "
+            "simulated observations are computed from the same elements, so its age does not "
+            "limit this check."
         )
 
     groups: dict[tuple, list[int]] = {}
@@ -572,7 +581,8 @@ def _orbit_residuals(
             "orbit_residuals",
             "pass",
             f"{share} lie within their limits (needed {needed:.0%}). Median residual "
-            f"{_fmt_angle(median_sep)} against a typical limit of {_fmt_angle(median_limit)}.",
+            f"{_fmt_angle(median_sep)} against a typical limit of {_fmt_angle(median_limit)}."
+            f"{note}",
             details,
         )
     reason = (
@@ -591,7 +601,7 @@ def _orbit_residuals(
             " The positions do not follow the reference orbit of the requested object: it may "
             "be a different object, wrong times or wrong station coordinates."
         )
-    return _check("orbit_residuals", "fail", reason, details)
+    return _check("orbit_residuals", "fail", reason + note, details)
 
 
 def _fmt_angle(arcsec: float) -> str:

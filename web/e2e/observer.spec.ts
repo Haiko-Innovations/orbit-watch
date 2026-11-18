@@ -164,5 +164,5 @@ test("a station delivers its own file, sees why it failed, and challenges", asyn
   await page.getByLabel("Reason").fill("SIMULATED: these are my observations of the target.");
   await page.getByRole("button", { name: "Prepare the challenge" }).click();
   await sendAll(page, "Challenge the result of SIM-REQ-3005");
-  await expect(page.locator(".status-line")).toContainText("Challenged; reviewers are checking it");
+  await expect(page.locator(".status-line")).toContainText("Reviewers are checking it");
 });

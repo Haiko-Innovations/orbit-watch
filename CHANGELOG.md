@@ -134,6 +134,18 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Fixed
 
+- The automated verification no longer applies the reference orbit's age
+  limit (`max_reference_age_days`) to a SIMULATED catalogue. The simulator
+  computes observations from the same elements, so their age does not matter,
+  but every delivery on the public testnet more than seven days after the
+  bundled catalogue's epoch (2026-11-01) came out inconclusive and went
+  straight to reviewers. The first delivery with a real wallet in step 4.7
+  found it. With real elements the limit stays, so method 1.0.0 keeps its
+  version: only SIMULATED input, marked so in every report, is verified
+  differently (`docs/verification.md`).
+- A request with reviewers is shown as "Reviewers are checking it". It said
+  "Challenged" even when nobody had challenged it and an inconclusive result
+  had sent it to reviewers; the progress list says which it was.
 - Transactions that a smart account's relayer sends for the wallet, such as
   MetaMask's EIP-7702 smart account, were refused as `not_your_transaction`,
   because their sender is the relayer. Once such a transaction is mined, the

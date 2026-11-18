@@ -9,7 +9,7 @@ import json
 from datetime import timedelta
 
 import pytest
-from helpers import catalog_bytes, packaged, policy_bytes, request_bytes
+from helpers import catalog_bytes, packaged, policy_bytes, real_catalog_bytes, request_bytes
 
 from orbit_watch import lifecycle as lc
 from orbit_watch.canonical import sha256_bytes
@@ -132,6 +132,7 @@ def test_no_majority_is_a_dispute_settled_by_the_dispute_rule(datasets):
 
 def test_inconclusive_result_goes_straight_to_independent_reviewers():
     service, ledger = make_service()
+    service.context.catalog = real_catalog_bytes()  # old real elements: inconclusive
     start, end = "2026-11-11T15:00:00Z", "2026-11-12T03:00:00Z"
     request = request_bytes(start=start, end=end)
     observed = simulate(

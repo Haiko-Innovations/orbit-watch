@@ -19,6 +19,14 @@ def catalog_bytes() -> bytes:
     return packaged("catalog.json")
 
 
+def real_catalog_bytes() -> bytes:
+    """The bundled orbits as if they were real GP elements, which the reference age limit
+    applies to: observations a week or more after 2026-11-01 come out inconclusive."""
+    document = json.loads(catalog_bytes())
+    document["simulated"] = False
+    return json.dumps(document).encode()
+
+
 def policy_bytes() -> bytes:
     return packaged("target-policy.json")
 
