@@ -1,6 +1,6 @@
 [project]
 name = "orbit-watch"
-version = "0.5.0"
+version = "0.6.0.dev0"
 description = "Request, deliver, independently verify and settle satellite observations: the Orbit Watch service, its verification engine, station simulator, quality meter and command line."
 readme = "README.md"
 license = "Apache-2.0"
