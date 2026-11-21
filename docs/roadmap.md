@@ -24,8 +24,10 @@ method measured, unchanged, on 56 real tracks, with faults put into copies of th
 ([real-data-validation.md](real-data-validation.md),
 [D-46](decisions.md#d-46-the-method-measured-on-real-data)). Step 5.4 is under way, in
 three parts: the service keeps real element sets and verifies against the nearest
-([D-47](decisions.md#d-47-reference-orbits-in-the-service)); fetching them comes next,
-then real objects on the allow-list.
+([D-47](decisions.md#d-47-reference-orbits-in-the-service)); the follower fetches them
+from CelesTrak and SatChecker, and stops and alerts at the first answer that is not 200
+([D-48](decisions.md#d-48-the-follower-fetches-reference-orbits)); real objects on the
+allow-list come next.
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at

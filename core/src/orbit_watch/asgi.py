@@ -16,7 +16,8 @@ application (a host serves that) and without a follower thread (a schedule calls
   a dedicated RPC endpoint.
 * ``ORBIT_WATCH_ORIGINS``: the web origins that browsers sign in from, separated by commas.
 * ``ORBIT_WATCH_FOLLOW_SECRET`` or ``CRON_SECRET``, ``ORBIT_WATCH_LIMITS``,
-  ``ORBIT_WATCH_CLIENT_IP_HEADER`` and ``ORBIT_WATCH_STATION_DECIMALS``, as for ``serve``.
+  ``ORBIT_WATCH_CLIENT_IP_HEADER``, ``ORBIT_WATCH_STATION_DECIMALS`` and
+  ``ORBIT_WATCH_FETCH_ORBITS``, as for ``serve``.
 
 A service that cannot start answers ``503 not_configured`` too, and its log says why; the
 log names no secret.

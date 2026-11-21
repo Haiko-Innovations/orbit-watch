@@ -69,7 +69,7 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from orbit_watch import __version__, backup, orbits
+from orbit_watch import __version__, backup, orbit_follower, orbits
 from orbit_watch import lifecycle as lc
 from orbit_watch.api import keys, privacy, sessions
 from orbit_watch.api.limits import Limits, RateLimited, client_ip
@@ -77,6 +77,7 @@ from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.chain import WALLET_PREFIX, ChainError
 from orbit_watch.documents import TargetPolicy
+from orbit_watch.fetch import FetchError
 from orbit_watch.schema import validate
 from orbit_watch.service import RequestService, ServiceError
 from orbit_watch.settlement import SettlementError
@@ -248,6 +249,7 @@ class Api:
         read_only: bool = False,
         backup_token: str | None = None,
         backup_recipient: str | None = None,
+        orbit_fetcher: orbit_follower.Fetcher | None = None,
     ):
         if service.storage is None:
             raise ValueError("the API needs a stored service (open_service)")
@@ -277,6 +279,8 @@ class Api:
             backup.recipient(backup_recipient)  # checked now, not at the first backup
         self.backup_token = backup_token or None
         self.backup_recipient = backup_recipient or None
+        # Reference orbits (step 5.4): the follower fetches them when this is given.
+        self.orbit_fetcher = orbit_fetcher
 
     # ------------------------------------------------------------------ plumbing
 
@@ -547,7 +551,45 @@ class Api:
         if self.chain is not None:
             result["synced_block"] = self.chain.synced_block()
             result["notice"] = self.chain.notice
+        if self.orbit_fetcher is not None:
+            result["reference_orbits"] = self.fetch_reference_orbits()
         return result
+
+    def fetch_reference_orbits(self) -> list[dict[str, Any]]:
+        """The follower's fetching of reference orbits (step 5.4, decision D-48): a few
+        requests to CelesTrak or SatChecker, one at a time, outside the database's lock. The
+        first answer that is not 200 with element sets stops its source until a person
+        resumes it (``orbit_watch.orbit_follower``)."""
+        fetcher = self.orbit_fetcher
+        if fetcher is None:
+            return []
+        with self.lock, self.db.transaction():
+            wants = orbit_follower.plan(
+                self.db, self.service, self.wall_clock(), fetcher.objects_per_run
+            )
+        done: list[dict[str, Any]] = []
+        for want in wants:
+            with self.lock, self.db.transaction():
+                if not orbit_follower.claim(self.db, want, self.wall_clock()):
+                    continue  # stopped by an earlier answer, or asked for by another process
+            if done:
+                fetcher.sleep(orbit_follower.PAUSE_S)
+            try:
+                records = orbit_follower.fetch(want, fetcher.opener)
+            except FetchError as error:
+                with self.lock, self.db.transaction():
+                    orbit_follower.stop(self.db, want, error, self.wall_clock())
+                log.warning("fetching reference orbits stopped: %s", error)
+                done.append({**want.public(), "stopped": str(error)})
+                continue
+            with self.lock:
+                kept, already = self.service.keep_element_sets(
+                    records, want.source, self.wall_clock()
+                )
+                with self.db.transaction():
+                    orbit_follower.answered(self.db, want, self.wall_clock())
+            done.append({**want.public(), "kept": len(kept), "already_kept": already})
+        return done
 
     async def internal_follow(self, request: Request) -> Response:
         """``GET`` or ``POST /v1/internal/follow``, for a schedule: ``Authorization: Bearer``
@@ -620,6 +662,19 @@ class Api:
         503 when its last run is older than ``follow_max_age`` seconds, or it never ran."""
         document = self.follower_status()
         return JSONResponse(document, status_code=200 if document["status"] == "ok" else 503)
+
+    def reference_orbits_status(self) -> dict[str, Any]:
+        with self.lock:
+            return orbit_follower.status(
+                self.db, self.wall_clock(), enabled=self.orbit_fetcher is not None
+            )
+
+    def reference_orbits_health(self, request: Request) -> Response:
+        """``GET /v1/health/reference-orbits``, for monitoring (step 5.4): 503 while the
+        follower has stopped fetching from a source and waits for a person, 200 otherwise,
+        and when the service does not fetch."""
+        document = self.reference_orbits_status()
+        return JSONResponse(document, status_code=503 if document["status"] == "stopped" else 200)
 
     def health(self, request: Request) -> Response:
         notice = "Local use without a chain. All bundled data is SIMULATED."
@@ -967,6 +1022,28 @@ class Api:
             records, "uploaded", self.wall_clock(), uploaded_by=principal.party
         )
         return 200, {"kept": [s.public() for s in kept], "already_kept": already}
+
+    def admin_resume_orbit_fetching(self, principal, request, body, now, key):
+        """``POST /v1/admin/reference-orbits/resume``: a person has looked at why fetching
+        from a source stopped, and lets the follower go on (step 5.4, D-48). ``ask_again``
+        lists objects to ask for again, such as one that answered 404 and has public data
+        now."""
+        self._require(principal, "admin")
+        document = _json(body)
+        source = _field(document, "source", str)
+        if source not in orbit_follower.SOURCES:
+            raise ApiError(
+                "invalid_body", f"source must be one of {', '.join(orbit_follower.SOURCES)}"
+            )
+        again = document.get("ask_again", [])
+        if not isinstance(again, list) or not all(
+            isinstance(n, int) and not isinstance(n, bool) and n > 0 for n in again
+        ):
+            raise ApiError("invalid_body", "ask_again must be a list of catalogue numbers")
+        orbit_follower.resume(self.db, source, principal.party, self.wall_clock(), tuple(again))
+        return 200, orbit_follower.status(
+            self.db, self.wall_clock(), enabled=self.orbit_fetcher is not None
+        )
 
     # ------------------------------------------------------------------ stations (step 3.5)
 
@@ -1527,6 +1604,7 @@ def create_app(
     read_only: bool = False,
     backup_token: str | None = None,
     backup_recipient: str | None = None,
+    orbit_fetcher: orbit_follower.Fetcher | None = None,
 ) -> Starlette:
     """The ASGI application for a stored service; with ``web``, the directory of the built
     web application, served at ``/`` (step 3.1). Browsers sign in from ``origins`` only
@@ -1534,7 +1612,8 @@ def create_app(
     ``Api`` is ``app.state.api``. ``limits`` (step 4.3) and ``station_decimals`` (step 4.4)
     apply none by default; ``orbit-watch serve`` applies both. ``read_only`` refuses every
     change, and with ``backup_token`` a schedule takes backups encrypted to
-    ``backup_recipient`` (step 4.6)."""
+    ``backup_recipient`` (step 4.6). With ``orbit_fetcher`` the follower fetches reference
+    orbits from CelesTrak and SatChecker (step 5.4)."""
     if clock is None:
         # On a chain the service keeps the chain's time, which its deadlines use.
         clock = service.chain.now if service.chain is not None else lambda: datetime.now(tz=UTC)
@@ -1551,6 +1630,7 @@ def create_app(
         read_only=read_only,
         backup_token=backup_token,
         backup_recipient=backup_recipient,
+        orbit_fetcher=orbit_fetcher,
     )
     read, change = (
         lambda f: api.endpoint(f, mutating=False),
@@ -1561,6 +1641,7 @@ def create_app(
         # The follower (step 4.2): for a schedule, and for monitoring.
         Route("/v1/internal/follow", api.internal_follow, methods=["GET", "POST"]),
         Route("/v1/health/follower", api.follower_health, methods=["GET"]),
+        Route("/v1/health/reference-orbits", api.reference_orbits_health, methods=["GET"]),
         # Backups, for a schedule (step 4.6).
         Route("/v1/internal/backup", api.internal_backup, methods=["GET"]),
         Route("/v1/requests", read(api.list_requests), methods=["GET"]),
@@ -1604,6 +1685,11 @@ def create_app(
         Route("/v1/admin/tick", change(api.tick), methods=["POST"]),
         # Reference orbits (step 5.4): uploaded by hand, and named publicly.
         Route("/v1/admin/element-sets", change(api.admin_upload_element_sets), methods=["POST"]),
+        Route(
+            "/v1/admin/reference-orbits/resume",
+            change(api.admin_resume_orbit_fetching),
+            methods=["POST"],
+        ),
         # The administrator view (step 3.7): reads, and data for others to sign.
         Route("/v1/admin/overview", read(api.admin_overview), methods=["GET"]),
         Route("/v1/admin/governance", read(api.admin_governance), methods=["GET"]),

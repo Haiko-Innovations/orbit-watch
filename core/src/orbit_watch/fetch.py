@@ -5,17 +5,20 @@ GP data is updated once every two hours; download only what you need, once per
 update; ask for ``FORMAT=csv`` ("FORMAT=json is ~3 times the size") and for
 compressed data; automated clients must stop at the first non-200 response and
 report it to a person; after a 500 or a 503 all requests stop for at least 15
-minutes. Repeated downloads of unchanged data get HTTP 403, and too many errors
-put the address in the firewall. Large lists such as ``active`` are limited.
+minutes. A 403 answers abusive behaviour, and errors ignored again and again put
+the address in the firewall. Large lists such as ``active`` are limited (read
+again on 2026-11-21).
 
 This module therefore makes exactly one request per call, never retries, asks
 for CSV with gzip, and refuses to download the same file again within two hours
-unless forced (decisions D-06 and P5-02).
+unless forced (decisions D-06 and P5-02). The service's follower uses it too
+(``orbit_watch.orbit_follower``, decision D-48).
 """
 
 from __future__ import annotations
 
 import gzip
+import http.client
 import io
 import time
 import urllib.error
@@ -35,7 +38,12 @@ MAX_BYTES = 50 * 1024 * 1024
 
 
 class FetchError(RuntimeError):
-    pass
+    """A download that gave no data. ``status`` is the answer's HTTP status, or None when no
+    answer came: the server could not be reached, or the connection broke or timed out."""
+
+    def __init__(self, message: str, status: int | None = None):
+        super().__init__(message)
+        self.status = status
 
 
 def build_url(key: str, value: str) -> str:
@@ -81,6 +89,42 @@ def read_body(response, limit: int) -> bytes:
     return body
 
 
+def download_gp(key: str, value: str, *, opener: Callable = urllib.request.urlopen) -> bytes:
+    """One request for GP data (OMM CSV), never retried; the answer's body if it is 200 with
+    element sets. Raises ``FetchError`` with the HTTP status, or None without an answer."""
+    url = build_url(key, value)
+    request = urllib.request.Request(
+        url, headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"}
+    )
+    try:
+        with opener(request, timeout=30) as response:
+            status = getattr(response, "status", 200)
+            body = read_body(response, MAX_BYTES) if status == 200 else b""
+    except urllib.error.HTTPError as exc:
+        detail = exc.read(300).decode("utf-8", errors="replace").strip()
+        raise FetchError(
+            f"CelesTrak answered HTTP {exc.code} for {url}: {detail} ({advice(exc.code)})",
+            exc.code,
+        ) from None
+    except urllib.error.URLError as exc:
+        raise FetchError(f"could not reach CelesTrak: {exc.reason}") from None
+    except (OSError, http.client.HTTPException) as exc:
+        raise FetchError(f"no answer from CelesTrak: {exc or type(exc).__name__}") from None
+    except FetchError as exc:
+        exc.status = 200
+        raise
+    if status != 200:
+        raise FetchError(f"CelesTrak answered HTTP {status} for {url} ({advice(status)})", status)
+    try:
+        parse_catalog(body)
+    except (CatalogError, ValueError, UnicodeDecodeError):
+        text = body[:200].decode("utf-8", errors="replace").strip()
+        raise FetchError(
+            f"CelesTrak did not return GP data for {key}={value}: {text}", 200
+        ) from None
+    return body
+
+
 def fetch_gp(
     key: str,
     value: str,
@@ -99,27 +143,8 @@ def fetch_gp(
                 f"{output} was downloaded {age / 60:.0f} min ago; CelesTrak updates GP data "
                 "every 2 hours, so it was not downloaded again (use --force to override)"
             )
-    request = urllib.request.Request(
-        url, headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"}
-    )
-    try:
-        with opener(request, timeout=30) as response:
-            status = getattr(response, "status", 200)
-            body = read_body(response, MAX_BYTES) if status == 200 else b""
-    except urllib.error.HTTPError as exc:
-        detail = exc.read(300).decode("utf-8", errors="replace").strip()
-        raise FetchError(
-            f"CelesTrak answered HTTP {exc.code} for {url}: {detail} ({advice(exc.code)})"
-        ) from None
-    except urllib.error.URLError as exc:
-        raise FetchError(f"could not reach CelesTrak: {exc.reason}") from None
-    if status != 200:
-        raise FetchError(f"CelesTrak answered HTTP {status} for {url} ({advice(status)})")
-    try:
-        catalog = parse_catalog(body)
-    except (CatalogError, ValueError, UnicodeDecodeError):
-        text = body[:200].decode("utf-8", errors="replace").strip()
-        raise FetchError(f"CelesTrak did not return GP data for {key}={value}: {text}") from None
+    body = download_gp(key, value, opener=opener)
+    catalog = parse_catalog(body)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_name(output.name + ".part")
     temporary.write_bytes(body)

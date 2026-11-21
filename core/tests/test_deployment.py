@@ -316,7 +316,7 @@ def test_the_operations_workflows_keep_to_the_rules(repo_root):
     assert backup.index('"age-encryption.org/v1"') < backup.index("upload-artifact")
     uptime = (folder / "uptime.yml").read_text(encoding="utf-8")
     assert "secrets." not in uptime
-    for path in ("/v1/health", "/v1/health/follower"):
+    for path in ("/v1/health", "/v1/health/follower", "/v1/health/reference-orbits"):
         assert f'"${{SERVICE}}{path}"' in uptime
     # Just after the follower's run every 15 minutes, never at the busy start of the hour.
     assert '- cron: "17 * * * *"' in uptime

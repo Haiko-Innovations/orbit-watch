@@ -556,15 +556,23 @@ READ_ONLY_VARIABLE = "ORBIT_WATCH_READ_ONLY"
 BACKUP_TOKEN_VARIABLE = "ORBIT_WATCH_BACKUP_TOKEN"
 BACKUP_RECIPIENT_VARIABLE = "ORBIT_WATCH_BACKUP_RECIPIENT"
 BACKUP_IDENTITY_VARIABLE = "ORBIT_WATCH_BACKUP_IDENTITY_FILE"
+# Reference orbits (step 5.4): the follower fetches them from CelesTrak and SatChecker.
+FETCH_ORBITS_VARIABLE = "ORBIT_WATCH_FETCH_ORBITS"
 _TRUE, _FALSE = ("1", "true", "yes", "on"), ("", "0", "false", "no", "off")
+
+
+def _switch(args: argparse.Namespace, environ, option: str, variable: str) -> bool:
+    """A switch that is on with its option, or with its variable set to 1, true, yes or
+    on."""
+    setting = (environ.get(variable) or "").strip().lower()
+    if setting not in _TRUE + _FALSE:
+        raise ServeError(f"${variable}: give 1 or 0 (true or false), not {setting!r}")
+    return bool(getattr(args, option, False)) or setting in _TRUE
 
 
 def _read_only(args: argparse.Namespace, environ) -> bool:
     """``--read-only``, or ``$ORBIT_WATCH_READ_ONLY`` set to 1, true, yes or on."""
-    setting = (environ.get(READ_ONLY_VARIABLE) or "").strip().lower()
-    if setting not in _TRUE + _FALSE:
-        raise ServeError(f"${READ_ONLY_VARIABLE}: give 1 or 0 (true or false), not {setting!r}")
-    return bool(getattr(args, "read_only", False)) or setting in _TRUE
+    return _switch(args, environ, "read_only", READ_ONLY_VARIABLE)
 
 
 def serve_app(args: argparse.Namespace, *, environ=None):
@@ -578,6 +586,7 @@ def serve_app(args: argparse.Namespace, *, environ=None):
         raise ServeError(
             'the API needs the optional "api" dependencies: pip install "orbit-watch[api]"'
         ) from None
+    from orbit_watch import orbit_follower
     from orbit_watch.api.limits import Limits, LimitsError
     from orbit_watch.service import open_service
 
@@ -596,6 +605,7 @@ def serve_app(args: argparse.Namespace, *, environ=None):
     if station_decimals == -1:
         raise ServeError("--station-decimals: give a whole number from 0 to 8, or off")
     read_only = _read_only(args, environ)
+    fetch_orbits = _switch(args, environ, "fetch_orbits", FETCH_ORBITS_VARIABLE)
     backup_token = environ.get(BACKUP_TOKEN_VARIABLE) or None
     backup_recipient = (
         getattr(args, "backup_recipient", None) or environ.get(BACKUP_RECIPIENT_VARIABLE) or None
@@ -676,6 +686,7 @@ def serve_app(args: argparse.Namespace, *, environ=None):
         read_only=read_only,
         backup_token=backup_token,
         backup_recipient=backup_recipient,
+        orbit_fetcher=orbit_follower.Fetcher() if fetch_orbits else None,
     )
     if limits is None:
         lines.append("Limits against abuse: off")
@@ -692,6 +703,11 @@ def serve_app(args: argparse.Namespace, *, environ=None):
         lines.append(
             "A schedule may take backups: /v1/internal/backup (with its token), encrypted to "
             f"{backup_recipient.strip()}"
+        )
+    if fetch_orbits:
+        lines.append(
+            "The follower fetches the reference orbits of open requests for real objects "
+            "from CelesTrak and SatChecker"
         )
     if read_only:
         lines.append("READ-ONLY: every change is refused and the follower waits")
@@ -1313,6 +1329,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="refuse every change and let the follower wait, for maintenance; reading, the "
         "public pages and signing in still work (or $ORBIT_WATCH_READ_ONLY=1). Docs: "
         "operations.md",
+    )
+    serve.add_argument(
+        "--fetch-orbits",
+        action="store_true",
+        help="let the follower fetch the reference orbits of open requests for real objects "
+        "from CelesTrak and SatChecker, politely, stopping at the first answer that is not "
+        "200 (or $ORBIT_WATCH_FETCH_ORBITS=1). Docs: operations.md#reference-orbits",
     )
     serve.add_argument(
         "--backup-recipient",

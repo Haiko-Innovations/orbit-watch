@@ -103,7 +103,7 @@ The tests restore a backup taken through the API on every pull request
 
 The workflow [`Uptime`](../.github/workflows/uptime.yml) checks the service from
 outside at 17 minutes past every hour: `GET /v1/health`,
-`GET /v1/health/follower` and the web application.
+`GET /v1/health/follower`, `GET /v1/health/reference-orbits` and the web application.
 
 - **The alert is an issue.** A failed run of `Uptime` or `Backup` opens an issue
   labelled `alert: uptime` or `alert: backup` and assigns it to the maintainer
@@ -165,6 +165,26 @@ orbit-watch admin upload-orbits iss.csv --api https://orbit-watch-tan.vercel.app
 
 A SIMULATED catalogue, and a set for one of the SIMULATED objects, are refused.
 
+### Fetching
+
+With `ORBIT_WATCH_FETCH_ORBITS=1` (or `serve --fetch-orbits`), the follower also fetches
+the element sets that open requests for real objects need
+([D-48](decisions.md#d-48-the-follower-fetches-reference-orbits)):
+- from CelesTrak, an object's current sets, once per two-hour update, while its request's
+  window has not ended and starts within a day;
+- from SatChecker, the set nearest the middle of a window that has ended, such as a
+  replay's, once.
+
+It asks for at most three objects per run, two seconds apart, and only for objects on the
+allow-list that are not SIMULATED. Its answer lists what it asked for and kept, under
+`reference_orbits`.
+
+**At the first answer that is not 200 with the object's sets, or no answer at all, the
+follower stops asking that source** and waits for a person, as CelesTrak's usage policy
+asks. `GET /v1/health/reference-orbits` then answers `503`, and the hourly uptime check
+opens an alert issue. What to do is in the
+[runbook](#fetching-reference-orbits-stopped).
+
 ## Runbooks
 
 ### The uptime check failed
@@ -178,6 +198,38 @@ A SIMULATED catalogue, and a set for one of the SIMULATED objects, are refused.
    answer may have used up Neon's hours ([monitoring](#monitoring)).
 4. **Only the web application fails:** its build or Vercel's network; a rollback
    brings back the last good one.
+5. **Only `/v1/health/reference-orbits` fails:** the follower has stopped fetching
+   reference orbits ([the next runbook](#fetching-reference-orbits-stopped)).
+
+### Fetching reference orbits stopped
+
+`GET /v1/health/reference-orbits` says which source stopped, when, for which object, with
+the answer's HTTP status and its first words. Deliveries for objects that already have a
+set are still verified; others come out inconclusive until a set is kept.
+
+1. **Read the answer** as CelesTrak's [usage policy](https://celestrak.org/usage-policy.php)
+   reads it:
+   - `404`: the object has no public data. The object is listed under
+     `objects_without_public_data` and is not asked for again. If it should be followed,
+     upload a set by hand.
+   - `500` or `503`: the source is overloaded. The follower waits at least 15 minutes
+     (`not_before`), even once resumed.
+   - `403`: CelesTrak refused the service. Read its message before going on. If it blocks
+     the address that Vercel shares with other users (P5-02), upload sets by hand until it
+     lifts the block.
+   - no status: no answer came. The source may be down, or its firewall may block the
+     address.
+   - `200`: the answer held no element set of the object. Look at the source's page for
+     changes to its format.
+2. **Upload sets by hand** if requests need them meanwhile ([above](#reference-orbits)).
+3. **Resume** once the cause is understood:
+
+   ```sh
+   orbit-watch admin resume-orbits --source celestrak --api https://orbit-watch-tan.vercel.app --key "$(cat admin.key)"
+   ```
+
+   `--ask-again NORAD_ID` asks for an object again, such as one that answered 404 and has
+   public data now. The next run that passes closes the alert issue.
 
 ### A deployment broke something
 

@@ -2727,3 +2727,63 @@ third brings real objects onto the allow-list (P5-08).
 - **Backups.** The daily backups hold the stored sets, encrypted with age like the rest
   of the database (D-39). GitHub keeps only the ciphertext, so this publishes nothing,
   and a restore brings back the sets uploaded by hand.
+
+### D-48 The follower fetches reference orbits
+
+Accepted · 2026-11-21 (with the pull request that implements the second part of step
+5.4). It carries out P5-02 and P5-03 in the service.
+
+- **What is fetched.** After its other work, each run of the follower fetches what open
+  requests need: requests that are open, funded or reserved, for real objects on the
+  allow-list. Nothing is fetched for a SIMULATED object.
+  - **CelesTrak:** an object's current GP data by its catalogue number, CSV with gzip,
+    at most once every two hours. Only while its request's window has not ended and
+    starts within a day: a set fetched earlier would be replaced by newer ones before
+    verification needs it.
+  - **SatChecker:** for a window that has ended, such as a replay's (P5-10, step 5.5),
+    the set nearest the middle of the window. `get-nearest-tle` serves catalogue numbers
+    below 100,000 and `get-nearest-omm` the rest. It is asked for once, and not at all
+    when a kept set lies within a day of the middle. The middle of the window stands for
+    the middle of the observations, which have not been delivered yet.
+  - An object is asked for once, however many requests name it.
+- **A few per run.** At most three requests per run, two seconds apart, the objects
+  asked for least recently first. With the follower every 15 minutes, that keeps 24
+  objects current per two-hour update; the testnet has far fewer. Each request times out
+  after 30 seconds (CelesTrak) or 60 (SatChecker), so a run stays well inside a
+  function's 300 seconds.
+- **Outside the lock.** The requests are made outside the database's lock, so that
+  other calls do not wait. Each is recorded as asked for just before it is made, in a
+  transaction, so that another process does not make it too, and each answer is kept in
+  a transaction of its own.
+- **Stop, and tell a person.** These stop that source; the other source goes on:
+  - the first answer that is not 200;
+  - an answer of 200 without the object's element sets, since the source has changed
+    something;
+  - no answer at all. A timeout or a refused connection may be CelesTrak's firewall
+    blocking the address that Vercel's functions share (P5-02's risk), and a person
+    should know.
+
+  The stop records the time, the object, the HTTP status and up to 500 characters of the
+  reason. After a 500 or a 503, or no answer, the source also waits at least 15 minutes,
+  even once resumed. An object that answered 404 is not asked for again until an
+  administrator asks for it again.
+- **The health endpoint.** `GET /v1/health/reference-orbits` answers `503` while a
+  source is stopped. The hourly uptime check calls it, so a stop opens the alert issue
+  like any other failure (D-39), with no new secret. It shows the stop, but not who
+  resumed it.
+- **Resumed by an administrator.** `POST /v1/admin/reference-orbits/resume`, or
+  `orbit-watch admin resume-orbits`, clears a source's stop, and `ask_again` forgets
+  what the source answered for the objects it names. The administrator is recorded.
+  [operations.md](operations.md#fetching-reference-orbits-stopped) is the runbook.
+- **Off by default.** The follower fetches only with `ORBIT_WATCH_FETCH_ORBITS=1` or
+  `serve --fetch-orbits`, so local runs, CI and the end-to-end tests make no outside
+  call. Production turns it on with step 5.4's third part, when real objects come onto
+  the allow-list; until then there is nothing to fetch.
+- **A replay delivered at once** would find no set yet. Its station waits for a run of
+  the follower, or an administrator uploads the set; step 5.5 decides which.
+
+CelesTrak's [usage policy](https://celestrak.org/usage-policy.php) was read again on
+2026-11-21, still the version of 2026-11-16. It gives no number for its limits, and
+does not say that a repeated download of unchanged data gets a 403, as
+[data-sources.md](data-sources.md) said; that is corrected. A 403 is "usually sent in
+response to abusive behavior".
