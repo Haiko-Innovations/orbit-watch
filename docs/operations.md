@@ -148,6 +148,23 @@ vercel redeploy orbit-watch-tan.vercel.app
 The follower health check falls behind after 30 minutes in read-only mode, so the
 uptime check reminds the maintainer that it is still on.
 
+## Reference orbits
+
+The service verifies deliveries for real objects against the real element sets it keeps
+in its database ([D-47](decisions.md#d-47-reference-orbits-in-the-service)), and picks
+the one nearest the observations. `GET /v1/public/reference-orbits` names them: the
+object, the epoch, the source and the SHA-256, never the elements.
+
+An administrator can upload sets by hand, for example when CelesTrak cannot be reached.
+They are labelled as uploaded, in the reports too:
+
+```sh
+orbit-watch fetch-gp --catnr 25544 -o iss.csv            # one object, one request
+orbit-watch admin upload-orbits iss.csv --api https://orbit-watch-tan.vercel.app --key "$(cat admin.key)"
+```
+
+A SIMULATED catalogue, and a set for one of the SIMULATED objects, are refused.
+
 ## Runbooks
 
 ### The uptime check failed

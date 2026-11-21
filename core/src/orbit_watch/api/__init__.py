@@ -69,7 +69,7 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from orbit_watch import __version__, backup
+from orbit_watch import __version__, backup, orbits
 from orbit_watch import lifecycle as lc
 from orbit_watch.api import keys, privacy, sessions
 from orbit_watch.api.limits import Limits, RateLimited, client_ip
@@ -935,6 +935,39 @@ class Api:
             "description": policy.description,
         }
 
+    def public_reference_orbits(self, request, now):
+        """The real element sets the service keeps, by name: object, epoch, source and
+        SHA-256, never the elements (step 5.4, decision P5-05). ``?norad_id=`` picks one
+        object."""
+        value = request.query_params.get("norad_id")
+        norad_id = None
+        if value is not None:
+            try:
+                norad_id = int(value)
+            except ValueError:
+                raise ApiError("invalid_query", "norad_id must be a catalogue number") from None
+        return {
+            "element_sets": self.service.reference_orbits(norad_id),
+            "note": (
+                "Real element sets that the service verifies deliveries against, named but "
+                "not served: fetch the same set from its source by the object and the epoch."
+            ),
+        }
+
+    def admin_upload_element_sets(self, principal, request, body, now, key):
+        """``POST /v1/admin/element-sets``: real element sets uploaded by hand, for example
+        when CelesTrak cannot be reached (P5-02). The body is an orbit-watch/gp-catalog
+        document, or CelesTrak's OMM JSON or CSV. They are labelled as uploaded."""
+        self._require(principal, "admin")
+        try:
+            records = orbits.read_upload(body)
+        except orbits.OrbitError as error:
+            raise ApiError(error.code, str(error)) from None
+        kept, already = self.service.keep_element_sets(
+            records, "uploaded", self.wall_clock(), uploaded_by=principal.party
+        )
+        return 200, {"kept": [s.public() for s in kept], "already_kept": already}
+
     # ------------------------------------------------------------------ stations (step 3.5)
 
     def station_templates(self, request, now):
@@ -1349,7 +1382,9 @@ class Api:
         if len(stations) > 1:
             raise ApiError("several_stations", f"the file has several stations: {stations}")
         try:
-            report = quality.score_station(loaded.sets, parse_catalog(self.service.context.catalog))
+            objects = sorted({s.target.norad_id for s in loaded.sets})
+            catalog = parse_catalog(self.service.catalog_for(objects))
+            report = quality.score_station(loaded.sets, catalog)
         except ValueError as error:
             raise ApiError("cannot_score", str(error)) from None
         return {
@@ -1567,6 +1602,8 @@ def create_app(
             methods=["POST"],
         ),
         Route("/v1/admin/tick", change(api.tick), methods=["POST"]),
+        # Reference orbits (step 5.4): uploaded by hand, and named publicly.
+        Route("/v1/admin/element-sets", change(api.admin_upload_element_sets), methods=["POST"]),
         # The administrator view (step 3.7): reads, and data for others to sign.
         Route("/v1/admin/overview", read(api.admin_overview), methods=["GET"]),
         Route("/v1/admin/governance", read(api.admin_governance), methods=["GET"]),
@@ -1612,6 +1649,11 @@ def create_app(
         ),
         # Public, no key: the objects requests may target (step 3.4).
         Route("/v1/public/targets", api.public(api.public_targets), methods=["GET"]),
+        Route(
+            "/v1/public/reference-orbits",
+            api.public(api.public_reference_orbits),
+            methods=["GET"],
+        ),
         # Public, no key: requests that invite observers (step 3.1, decision D-26).
         Route("/v1/public/open-requests", api.public(api.public_open_requests), methods=["GET"]),
         Route("/v1/public/requests/{request_id}", api.public(api.public_request), methods=["GET"]),

@@ -22,7 +22,10 @@ credited to their observers, with the quality meter's report for each of 7 stati
 ([D-45](decisions.md#d-45-real-observations-from-score)). Step 5.3 is done: the
 method measured, unchanged, on 56 real tracks, with faults put into copies of them
 ([real-data-validation.md](real-data-validation.md),
-[D-46](decisions.md#d-46-the-method-measured-on-real-data)).
+[D-46](decisions.md#d-46-the-method-measured-on-real-data)). Step 5.4 is under way, in
+three parts: the service keeps real element sets and verifies against the nearest
+([D-47](decisions.md#d-47-reference-orbits-in-the-service)); fetching them comes next,
+then real objects on the allow-list.
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at

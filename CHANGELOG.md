@@ -49,6 +49,12 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   with its reference orbits named in a manifest.
 - Known answers from real tracks for reviewer calibration:
   `validation/real/known-answers.json` and `calibration.build_real_files`.
+- Reference orbits in the service (step 5.4, first part, #107): real element sets are
+  kept in PostgreSQL with their source, fetch time, epoch and SHA-256 (migration 0010),
+  and a delivery for a real object is verified against the nearest stored set, which its
+  report names. `POST /v1/admin/element-sets` and `orbit-watch admin upload-orbits`
+  upload sets by hand, labelled as uploaded; `GET /v1/public/reference-orbits` names the
+  sets without serving them (D-47).
 
 ### Changed
 
