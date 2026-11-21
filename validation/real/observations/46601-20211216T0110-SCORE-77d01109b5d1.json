@@ -1,0 +1,57 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.1",
+  "simulated": false,
+  "station": {
+    "id": "SCORE-77d01109b5d1",
+    "latitude_deg": -30.165278,
+    "longitude_deg": -70.815,
+    "altitude_m": 2215.0,
+    "name": "SCORE observer, DECam"
+  },
+  "target": {
+    "norad_id": 46601,
+    "name": "ATLAS 5 CENTAUR DEB"
+  },
+  "observations": [
+    {
+      "time": "2021-12-16T01:10:37.298Z",
+      "time_uncertainty_s": 25.0,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 21.61950058,
+      "dec_deg": 3.13454379,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 15.051
+    },
+    {
+      "time": "2021-12-16T01:11:27.298Z",
+      "time_uncertainty_s": 25.0,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 21.56829845,
+      "dec_deg": 3.28054064,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 15.051
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.6.0.dev0",
+    "converted_from": "score",
+    "notes": "Real observations published in SCORE under CC-BY-4.0, converted by Orbit Watch. SCORE gives no angle uncertainty for 2 of 2 observations: 60 arcsec is assumed by the converter, not declared by the observer.",
+    "origin": {
+      "name": "SCORE, the IAU CPS Satellite Constellation Observation Repository",
+      "url": "https://score.cps.iau.org",
+      "licence": "CC-BY-4.0",
+      "observers": [
+        "0009-0006-0921-1623"
+      ],
+      "observation_ids": [
+        "48745",
+        "48746"
+      ],
+      "retrieved": "2026-11-21",
+      "assumed_angle_uncertainty_arcsec": 60.0
+    }
+  }
+}

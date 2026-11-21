@@ -28,6 +28,7 @@ reports outlive the software that made them:
 | Verification method | `METHOD_VERSION` in `verify/engine.py`, in every report | 2.1.0 |
 | Verification report format | `report_format_version` | 1.1 |
 | Station quality meter method and report | `METHOD_VERSION`, `report_format_version` in `quality.py` | 1.1.0, 1.0 |
+| Measurement on real data, and its known answers | `RESULTS_FORMAT_VERSION` in `validation.py`, `format_version` in `known-answers.json` | 1.0, 1.0 |
 
 Rules:
 
@@ -57,6 +58,10 @@ refactoring and CI-only changes need no entry.
      `core/src/orbit_watch/__init__.py`, then run `uv lock` in `core/`;
    - regenerate the demo output: `cd core && uv run orbit-watch demo --out ../examples/simulated`
      (reports contain the version, and CI compares them byte for byte);
+   - with the real element sets in the cache, regenerate the real example's quality
+     reports (the commands in [examples/real/README.md](../examples/real/README.md))
+     and the measurement on real data: `cd core && uv run orbit-watch measure-method`
+     ([real-data-validation.md](real-data-validation.md)). Both name the version;
    - update the status in [roadmap.md](roadmap.md).
 2. A maintainer merges it after the `tarkistus` check passes.
 3. **Tag and GitHub release** on the merge commit:
@@ -69,7 +74,8 @@ refactoring and CI-only changes need no entry.
    ```
 
 4. **Development version:** the next pull request sets the version to the next
-   `.dev0` (for example `0.2.0.dev0`) and regenerates the demo output.
+   `.dev0` (for example `0.2.0.dev0`) and regenerates the demo output, the real
+   example's quality reports and the measurement on real data.
 
 The package is not published on PyPI yet, because "Orbit Watch" is a working
 name. Users install from GitHub, a tag pins a release:

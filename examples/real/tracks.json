@@ -116,7 +116,7 @@
       "start": "2026-09-30T01:30:00Z",
       "end": "2026-09-30T03:30:00Z",
       "instrument": "phone (iPhone 12 Mini)",
-      "why": "The observer's place moves by about 7 km during the two-minute track. An observation set holds one station place, so the track would split into single observations."
+      "why": "Six of its 57 observations have places 0.1 to 10 km from the other 51, which share one place. The converter of step 5.2 split the track there, so it was left out. Since step 5.3 the converter leaves such observations out, and the track is in validation/real (decision D-46)."
     }
   ]
 }

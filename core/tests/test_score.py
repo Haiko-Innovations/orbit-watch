@@ -26,6 +26,7 @@ from orbit_watch.score import (
     distance_m,
     fetch_window,
     file_name,
+    place_jumps,
 )
 
 START = datetime(2024, 5, 8, 21, 40, tzinfo=UTC)
@@ -135,10 +136,30 @@ def test_a_phone_that_jitters_is_one_station_and_one_that_moves_is_not():
     near = (LEIDEN[0] + 0.0001, LEIDEN[1], LEIDEN[2])  # about 11 m north
     far = (LEIDEN[0] + 0.01, LEIDEN[1], LEIDEN[2])  # about 1.1 km north
     assert 10 < distance_m(LEIDEN, near) < 12
-    sets, _ = convert([fetched(item(1), item(2, 1.0, near), item(3, 2.0, far))], ASSUMED)
-    assert [len(s.observations) for s in sets] == [2, 1]
+    track = [item(1), item(2, 1.0, near), item(3, 2.0, far), item(4, 3.0, far)]
+    sets, skipped = convert([fetched(*track)], ASSUMED)
+    assert [len(s.observations) for s in sets] == [2, 2] and skipped == {}
     assert sets[0].station.id != sets[1].station.id
     assert "differ by up to 11 m" in sets[0].source["notes"]
+
+
+def test_a_place_that_jumps_for_one_observation_is_left_out():
+    away = (LEIDEN[0] + 0.03, LEIDEN[1], LEIDEN[2])  # about 3.3 km north
+    track = [item(1), item(2, 1.0), item(3, 2.0, away), item(4, 3.0), item(5, 4.0)]
+    sets, skipped = convert([fetched(*track)], ASSUMED)
+    assert len(sets) == 1 and len(sets[0].observations) == 4
+    assert skipped == {"its place lies far from every other observation of its track": 1}
+    notes = sets[0].source["notes"]
+    assert "1 observation(s) of this track are left out" in notes and "3.3 to 3.3 km" in notes
+    assert sets[0].source["origin"]["observation_ids"] == ["1", "2", "4", "5"]
+
+
+def test_a_phone_that_keeps_moving_keeps_every_observation():
+    # Each place 200 m from the one before: nothing shares a place, so nothing jumps.
+    moving = [item(n, float(n), (LEIDEN[0] + 0.0018 * n, LEIDEN[1], LEIDEN[2])) for n in range(5)]
+    assert place_jumps([(START, (0.0, 0.0, 0.0))]) == {}
+    sets, skipped = convert([fetched(*moving)], ASSUMED)
+    assert skipped == {} and sum(len(s.observations) for s in sets) == 5
 
 
 def test_files_fetched_apart_share_a_station():
@@ -248,6 +269,19 @@ def test_an_unexpected_answer_stops():
         )
     with pytest.raises(ValueError):
         fetch_window(58296, START, START)
+
+
+def test_two_tracks_are_never_written_to_one_file(tmp_path, monkeypatch, capsys):
+    from orbit_watch import score
+
+    sets, _ = convert([fetched(item(1), item(2, 1.0))], ASSUMED)
+    monkeypatch.setattr(score, "convert", lambda documents, assumed: ([sets[0], sets[0]], {}))
+    raw = tmp_path / "raw.json"
+    raw.write_text(json.dumps(fetched(item(1))))
+    out = tmp_path / "out"
+    assert main(["convert-score", str(raw), "--out", str(out)]) == 2
+    assert "would be written twice" in capsys.readouterr().err
+    assert list(out.glob("*.json")) == []
 
 
 def test_the_commands(tmp_path, monkeypatch, capsys):

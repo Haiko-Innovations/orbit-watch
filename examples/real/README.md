@@ -45,9 +45,11 @@ station's first place share it, and each file says how far its observations' pla
 differ.
 
 [`tracks.json`](tracks.json) lists the windows that were fetched. It also names the one
-track left out: a phone whose place moved by about 7 km during two minutes. An
-observation set holds one station place, so that track would have split into single
-observations.
+track left out, of 55945. Six of its observations have places 0.1 to 10 km from the
+others, and the converter of step 5.2 split the track there. Since step 5.3 the
+converter leaves such observations out, and the track is in the validation set
+[`validation/real/`](../../validation/real), where step 5.3 measures the method on these
+tracks and 38 more.
 
 ## Reference orbits
 

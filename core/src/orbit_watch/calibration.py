@@ -28,6 +28,7 @@ from datetime import datetime, timedelta
 from importlib import resources
 from typing import Any
 
+from orbit_watch import validation
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.catalog import parse_catalog
 from orbit_watch.formats import owjson
@@ -52,6 +53,12 @@ CHALLENGES = {
         "My timing is GPS-disciplined; please review the residuals.",
     ),
 }
+# Real tracks with a settled answer (phase 5, step 5.3): validation/real/known-answers.json.
+# A round about real observations needs real calibration tasks, since a SIMULATED one would
+# give itself away by its label.
+REAL_KINDS = {"real_sound": "approve", "real_faulty": "reject"}
+CHALLENGES["real_sound"] = CHALLENGES["correct_target"]
+CHALLENGES["real_faulty"] = CHALLENGES["wrong_target"]
 # Profiles need at least this many answered tasks before they show flags.
 MIN_ANSWERED_FOR_FLAG = 5
 LOW_ACCURACY = 0.8
@@ -167,6 +174,42 @@ def build_files(kind: str, source: str) -> tuple[bytes, bytes, bytes, str]:
             observations_format="json",
             catalog=catalog_bytes,
             policy=policy_bytes,
+            declared_sha256=sha256_bytes(observations),
+        )
+    )
+    report_bytes = dumps_pretty(report, sort_keys=False).encode("utf-8")
+    return request_bytes, observations, report_bytes, report["verdict"]
+
+
+def real_kind(entry: dict[str, Any]) -> str:
+    """The calibration kind of a known answer from ``known-answers.json``."""
+    return "real_sound" if entry["expected"] == "approve" else "real_faulty"
+
+
+def build_real_files(
+    entry: dict[str, Any], observations: bytes, catalog: bytes, source: str
+) -> tuple[bytes, bytes, bytes, str]:
+    """Request, observations and automated report for a calibration task made from a real
+    track with a settled answer. The observations are the committed file as published,
+    and ``catalog`` holds the object's element sets; the report is verify()'s."""
+    if sha256_bytes(observations) != entry["sha256"]:
+        raise ValueError(f"{entry['file']} is not the file the known answer names")
+    observation_set = owjson.read_observation_set(observations)
+    seed = _number(f"calibration/{CALIBRATION_VERSION}|{source}")
+    request_bytes = validation.request_for(
+        observation_set.target.norad_id,
+        observation_set.target.name,
+        [o.time for o in observation_set.observations],
+        request_id=f"REQ-{seed % 10**8:08d}",
+        title=f"Track {observation_set.target.name or observation_set.target.norad_id}",
+    )
+    report = verify(
+        VerificationInput(
+            request=request_bytes,
+            observations=observations,
+            observations_format="json",
+            catalog=catalog,
+            policy=validation.policy_for(observation_set.target.norad_id),
             declared_sha256=sha256_bytes(observations),
         )
     )

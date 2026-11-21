@@ -66,12 +66,16 @@ the public service runs on the chain and keeps no points.
 Phase 5, step 5.2 ([P5-06](decisions.md#p5-06-real-observations-from-score),
 [D-45](decisions.md#d-45-real-observations-from-score)). The repository holds real
 observations that observers published themselves in SCORE under CC BY 4.0, in
-[`examples/real/`](../examples/real). Replays through the service (step 5.5) will hold
-the same kind of data.
+[`examples/real/`](../examples/real) and, since step 5.3
+([D-46](decisions.md#d-46-the-method-measured-on-real-data)), in the validation set
+[`validation/real/`](../validation/real). Replays through the service (step 5.5) will
+hold the same kind of data.
 
 | Data | Where | Who sees it | Kept | Deleted by | Basis |
 |---|---|---|---|---|---|
 | Observers' ORCID iDs, the observer's place as published in SCORE, instrument, observation times and positions, SCORE's observation IDs | `examples/real/observations/`, `examples/real/CREDITS.md`, the quality reports in `examples/real/quality/` | public, as in SCORE | as long as the example is in the repository | a maintainer, on request: removed from the next version; the repository's history and others' copies stay | f |
+| The same, for the validation set | `validation/real/observations/`, `validation/real/CREDITS.md` | public, as in SCORE | as long as the set is in the repository | a maintainer, on request, as above | f |
+| Station IDs (a hash of the place, instrument and observers) and file names, with each track's results | `validation/real/results.json`, `validation/real/known-answers.json`, the tables of [real-data-validation.md](real-data-validation.md) | public | as long as the set is in the repository | a maintainer, on request, as above | f |
 
 **GDPR article 14**, for data not obtained from the person, was read on 2026-11-21
 ([text](https://gdpr-info.eu/art-14-gdpr/); EUR-Lex's own page asked for a browser

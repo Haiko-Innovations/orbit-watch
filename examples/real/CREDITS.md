@@ -1,10 +1,11 @@
 # Credits
 
-The observations in this example were made and published by the observers below in
+The observations here were made and published by the observers below in
 [SCORE](https://score.cps.iau.org), the IAU CPS's Satellite Constellation Observation Repository,
 under the [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/)
 licence. Orbit Watch converted them to its own format and changed nothing else: the
-files name SCORE's observation IDs, and any uncertainty the converter assumed.
+files name SCORE's observation IDs, any uncertainty the converter assumed and any
+observation it left out.
 
 | File | Object | Instrument | Observations | Observers (ORCID iD) |
 |---|---|---|---|---|

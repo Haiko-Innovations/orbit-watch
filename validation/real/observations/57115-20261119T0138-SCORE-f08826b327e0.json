@@ -1,0 +1,233 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.1",
+  "simulated": false,
+  "station": {
+    "id": "SCORE-f08826b327e0",
+    "latitude_deg": 32.2238,
+    "longitude_deg": -110.7676,
+    "altitude_m": 834.0,
+    "name": "SCORE observer, Apple iPhone 12 Mini"
+  },
+  "target": {
+    "norad_id": 57115,
+    "name": "STARLINK-6085"
+  },
+  "observations": [
+    {
+      "time": "2026-11-19T01:38:33.003Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 304.0694,
+      "dec_deg": 35.7362,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.24
+    },
+    {
+      "time": "2026-11-19T01:38:34.147Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 304.7101,
+      "dec_deg": 36.3098,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.19
+    },
+    {
+      "time": "2026-11-19T01:38:44.172Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 311.973,
+      "dec_deg": 41.9654,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.67
+    },
+    {
+      "time": "2026-11-19T01:38:45.604Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 313.655,
+      "dec_deg": 43.1392,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.29
+    },
+    {
+      "time": "2026-11-19T01:38:49.181Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 316.2756,
+      "dec_deg": 44.762,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.5
+    },
+    {
+      "time": "2026-11-19T01:38:57.077Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 323.8838,
+      "dec_deg": 48.7757,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.44
+    },
+    {
+      "time": "2026-11-19T01:38:59.081Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 326.0509,
+      "dec_deg": 49.7334,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.58
+    },
+    {
+      "time": "2026-11-19T01:39:02.156Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 329.3315,
+      "dec_deg": 50.9992,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.12
+    },
+    {
+      "time": "2026-11-19T01:39:09.137Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 337.4689,
+      "dec_deg": 53.6143,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.16
+    },
+    {
+      "time": "2026-11-19T01:39:23.198Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 355.1321,
+      "dec_deg": 56.769,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.5
+    },
+    {
+      "time": "2026-11-19T01:39:29.986Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 3.7724,
+      "dec_deg": 57.2892,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.31
+    },
+    {
+      "time": "2026-11-19T01:39:32.121Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 6.1906,
+      "dec_deg": 57.3648,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.7
+    },
+    {
+      "time": "2026-11-19T01:39:34.124Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 8.6442,
+      "dec_deg": 57.3734,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.22
+    },
+    {
+      "time": "2026-11-19T01:39:41.132Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 16.275,
+      "dec_deg": 57.0442,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.84
+    },
+    {
+      "time": "2026-11-19T01:39:49.108Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 24.1811,
+      "dec_deg": 56.2486,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.1
+    },
+    {
+      "time": "2026-11-19T01:39:54.186Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 28.5145,
+      "dec_deg": 55.5797,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.83
+    },
+    {
+      "time": "2026-11-19T01:40:02.227Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 34.629,
+      "dec_deg": 54.2738,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.53
+    },
+    {
+      "time": "2026-11-19T01:40:18.603Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 44.6809,
+      "dec_deg": 51.3627,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 4.65
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.6.0.dev0",
+    "converted_from": "score",
+    "notes": "Real observations published in SCORE under CC-BY-4.0, converted by Orbit Watch. SCORE gives no angle uncertainty for 18 of 18 observations: 60 arcsec is assumed by the converter, not declared by the observer.",
+    "origin": {
+      "name": "SCORE, the IAU CPS Satellite Constellation Observation Repository",
+      "url": "https://score.cps.iau.org",
+      "licence": "CC-BY-4.0",
+      "observers": [
+        "0000-0002-7042-068X"
+      ],
+      "observation_ids": [
+        "49246",
+        "49247",
+        "49248",
+        "49249",
+        "49250",
+        "49251",
+        "49252",
+        "49253",
+        "49254",
+        "49255",
+        "49256",
+        "49257",
+        "49258",
+        "49259",
+        "49260",
+        "49261",
+        "49262",
+        "49263"
+      ],
+      "retrieved": "2026-11-21",
+      "assumed_angle_uncertainty_arcsec": 60.0
+    }
+  }
+}
