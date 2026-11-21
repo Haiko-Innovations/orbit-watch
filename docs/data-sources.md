@@ -1,6 +1,7 @@
 # Data sources, libraries and standards
 
-Checked on 2026-11-11; CelesTrak's usage policy and SatChecker on 2026-11-20.
+Checked on 2026-11-11; SatChecker on 2026-11-20, and CelesTrak's usage policy again on
+2026-11-21.
 Do not copy versions or URLs from here into new code without checking the
 current official source again.
 
@@ -13,8 +14,8 @@ current official source again.
   out on 2026-07-11.
 - [Usage policy](https://celestrak.org/usage-policy.php), updated 2026-11-16:
   - GP data is updated once every two hours. Download only what you need, when
-    you use it, once per update. A repeated download of unchanged data gets
-    HTTP 403.
+    you use it, once per update. A 403 is "usually sent in response to abusive
+    behavior", and may come with a message that says how to lift it.
   - Ask for `FORMAT=csv`: "FORMAT=json is ~3 times the size". Ask for
     compressed data (gzip or brotli).
   - Automated clients "should immediately stop querying when it receives any
@@ -32,6 +33,11 @@ current official source again.
   within two hours unless `--force` is given. An answer that is not 200 stops
   it, with what the policy asks next: for example, wait 15 minutes after a
   503, and do not ask again after a 404. Ask for one object or a small group.
+- The service's follower follows it too
+  ([D-48](decisions.md#d-48-the-follower-fetches-reference-orbits)): one object
+  at a time, only the objects of open requests, at most once per update, at
+  most three requests per run. At the first answer that is not 200, or no
+  answer, it stops asking and the uptime check alerts a person, who resumes it.
 - Historical GP data is available only through a
   [request form](https://celestrak.org/NORAD/archives/request.php) (CAPTCHA,
   delivered by email, 10 requests per day).
@@ -63,6 +69,11 @@ set nearest a time, in one request with no retries, and writes it as an Orbit
 Watch catalogue. A TLE is converted to OMM form with sgp4's exporter, which
 gives the same orbit to a few millimetres. The record's `source` names
 SatChecker's endpoint, its `data_source` and `date_collected`, and the TLE.
+
+The service's follower asks SatChecker the same way for a request whose window has
+ended, such as a replay: the set nearest the middle of the window, once, and only when
+no kept set lies within a day of it. It stops at the first answer that is not 200, as it
+does for CelesTrak ([D-48](decisions.md#d-48-the-follower-fetches-reference-orbits)).
 
 SatChecker asks for this acknowledgement: "This research made use of data
 and/or services provided by the International Astronomical Union Centre for

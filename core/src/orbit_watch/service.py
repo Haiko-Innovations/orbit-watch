@@ -435,7 +435,9 @@ class RequestService:
 
     # ------------------------------------------------------------------ reference orbits
 
-    def _simulated_objects(self) -> set[int]:
+    def simulated_objects(self) -> set[int]:
+        """The objects of the service's own catalogue when it is SIMULATED: they keep their
+        own orbits, and nothing real is fetched or kept for them."""
         base = parse_catalog(self.context.catalog)
         return set(base.sets) if base.simulated else set()
 
@@ -474,7 +476,7 @@ class RequestService:
         """Keep real element sets; returns the new ones and how many were already kept. A
         set of a SIMULATED object is refused: the simulated objects have their own orbits,
         and a real set of one would only confuse the labels (P5-09)."""
-        simulated = self._simulated_objects()
+        simulated = self.simulated_objects()
         fetched_at = format_utc(now)
         new: list[orbits.StoredSet] = []
         already = 0

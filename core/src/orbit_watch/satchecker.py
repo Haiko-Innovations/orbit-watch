@@ -20,6 +20,7 @@ Quiet Sky (IAU CPS) SatHub."
 
 from __future__ import annotations
 
+import http.client
 import json
 import urllib.error
 import urllib.parse
@@ -45,11 +46,8 @@ UNIX_EPOCH_JD = 2440587.5
 
 
 class SatCheckerError(FetchError):
-    """SatChecker answered with something other than one element set; stop asking."""
-
-    def __init__(self, message: str, status: int | None = None):
-        super().__init__(message)
-        self.status = status
+    """SatChecker answered with something other than one element set, or did not answer;
+    stop asking. ``status`` is the answer's HTTP status, or None without an answer."""
 
 
 @dataclass(frozen=True)
@@ -85,14 +83,15 @@ def omm_sha256(elements: dict[str, Any]) -> str:
     return sha256_bytes(dumps_compact(elements).encode("utf-8"))
 
 
-def fetch_nearest(
+def download_nearest(
     norad_id: int,
     when: datetime,
     *,
     kind: str = "tle",
     opener: Callable = urllib.request.urlopen,
-) -> NearestSet:
-    """The element set of ``norad_id`` nearest ``when``: one request, never retried."""
+) -> bytes:
+    """One request for the element set of ``norad_id`` nearest ``when``, never retried; the
+    answer's body if it is 200. Raises ``SatCheckerError`` otherwise."""
     url = nearest_url(kind, norad_id, when)
     request = urllib.request.Request(
         url,
@@ -113,9 +112,29 @@ def fetch_nearest(
         ) from None
     except urllib.error.URLError as exc:
         raise SatCheckerError(f"could not reach SatChecker: {exc.reason}") from None
+    except (OSError, http.client.HTTPException) as exc:
+        raise SatCheckerError(f"no answer from SatChecker: {exc or type(exc).__name__}") from None
+    except FetchError as exc:
+        raise SatCheckerError(str(exc), 200) from None
     if status != 200:
         raise SatCheckerError(f"SatChecker answered HTTP {status} for {url} (not retrying)", status)
-    return parse_answer(body, norad_id, kind, endpoint=f"get-nearest-{kind}")
+    return body
+
+
+def fetch_nearest(
+    norad_id: int,
+    when: datetime,
+    *,
+    kind: str = "tle",
+    opener: Callable = urllib.request.urlopen,
+) -> NearestSet:
+    """The element set of ``norad_id`` nearest ``when``: one request, never retried."""
+    body = download_nearest(norad_id, when, kind=kind, opener=opener)
+    try:
+        return parse_answer(body, norad_id, kind, endpoint=f"get-nearest-{kind}")
+    except SatCheckerError as exc:
+        exc.status = 200
+        raise
 
 
 def parse_answer(body: bytes, norad_id: int, kind: str, *, endpoint: str) -> NearestSet:

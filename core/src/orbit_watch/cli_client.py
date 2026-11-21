@@ -464,6 +464,20 @@ def cmd_admin_upload_orbits(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_admin_resume_orbits(args: argparse.Namespace) -> int:
+    document = {"source": args.source, "ask_again": args.ask_again or []}
+    result = _post(args, "/v1/admin/reference-orbits/resume", document).json()
+    source = result["sources"][args.source]
+    line = f"{args.source}: {source['status']}"
+    if source["not_before"]:
+        line += f", waiting until {source['not_before']} after a busy or missing answer"
+    lines = [line, f"the follower's fetching: {result['status']}"]
+    if args.ask_again:
+        lines.append(f"asked for again: {', '.join(map(str, args.ask_again))}")
+    _print(args, result, "\n".join(lines))
+    return 0
+
+
 def cmd_balance(args: argparse.Namespace) -> int:
     result = _client(args).get(f"/v1/balances/{args.party}")
     if "points" in result:
@@ -733,6 +747,22 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
     )
     upload.add_argument("file", help="the element sets, for example from orbit-watch fetch-gp")
     upload.set_defaults(handler=cmd_admin_upload_orbits)
+    resume = sub.add_parser(
+        "resume-orbits",
+        parents=[common],
+        help="let the follower fetch reference orbits from a source again, once a person has "
+        "looked at why it stopped (docs/operations.md#reference-orbits)",
+    )
+    resume.add_argument("--source", required=True, choices=["celestrak", "satchecker"])
+    resume.add_argument(
+        "--ask-again",
+        type=int,
+        action="append",
+        metavar="NORAD_ID",
+        help="ask for this object again, such as one that answered 404 and has public data "
+        "now (repeatable)",
+    )
+    resume.set_defaults(handler=cmd_admin_resume_orbits)
 
     public = commands.add_parser("public", help="published requests and files (no key needed)")
     sub = public.add_subparsers(dest="public_command", metavar="command")

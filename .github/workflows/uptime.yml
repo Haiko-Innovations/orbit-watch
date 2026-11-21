@@ -2,8 +2,10 @@ name: Uptime
 
 # A check of the public service from outside, every hour (phase 4, step 4.6; decision
 # D-39): the API, the follower, which falls behind when the schedule or the database
-# stops, and the web application. A failed run opens an issue assigned to the maintainer
-# (the repository variable ALERT_ASSIGNEE), and the next run that passes closes it.
+# stops, the fetching of reference orbits, which stops at the first answer from CelesTrak
+# or SatChecker that is not 200 and waits for a person (step 5.4, D-48), and the web
+# application. A failed run opens an issue assigned to the maintainer (the repository
+# variable ALERT_ASSIGNEE), and the next run that passes closes it.
 
 on:
   schedule:
@@ -29,7 +31,7 @@ jobs:
     env:
       SERVICE: https://orbit-watch-tan.vercel.app
     steps:
-      - name: The API, the follower and the web application answer
+      - name: The API, the follower, the reference orbits and the web application answer
         env:
           FAIL_ON_PURPOSE: ${{ inputs.fail }}
         run: |
@@ -45,6 +47,7 @@ jobs:
           }
           check "${SERVICE}/v1/health"
           check "${SERVICE}/v1/health/follower"
+          check "${SERVICE}/v1/health/reference-orbits"
           check --output /dev/null "${SERVICE}/"
           echo "Answered at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "${GITHUB_STEP_SUMMARY}"
 

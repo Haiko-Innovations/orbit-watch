@@ -55,6 +55,14 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   report names. `POST /v1/admin/element-sets` and `orbit-watch admin upload-orbits`
   upload sets by hand, labelled as uploaded; `GET /v1/public/reference-orbits` names the
   sets without serving them (D-47).
+- The follower fetches reference orbits (step 5.4, second part, #107), with
+  `orbit-watch serve --fetch-orbits` or `ORBIT_WATCH_FETCH_ORBITS=1`: CelesTrak's current
+  sets for open requests for real objects, once per update, and SatChecker's set nearest a
+  window that has ended, at most three requests per run (migration 0011). The first
+  answer that is not 200, or no answer, stops that source until an administrator resumes
+  it (`POST /v1/admin/reference-orbits/resume`, `orbit-watch admin resume-orbits`), and
+  `GET /v1/health/reference-orbits` answers `503` meanwhile, which the hourly uptime check
+  reports (D-48).
 
 ### Changed
 
@@ -67,6 +75,8 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 - `orbit-watch fetch-gp` asks CelesTrak for CSV with gzip, as its usage policy
   of 2026-11-16 asks, and after an answer that is not 200 says what the policy
   asks next.
+- `orbit-watch fetch-gp` and `fetch-satchecker` treat a broken or timed-out connection
+  like an unreachable server: they say so and stop, instead of failing with a traceback.
 - CI restores the older cache of real element sets when a manifest changes, so that
   SatChecker is asked only for the sets it lacks, and saves the cache right after
   fetching, before any later step can fail. It runs the tests with one BLAS thread, and

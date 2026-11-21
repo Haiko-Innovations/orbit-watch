@@ -68,6 +68,7 @@ call.
 |---|---|---|---|
 | `GET /v1/health` | none | | version and status; `read_only` is `true` in [read-only mode](#read-only-mode-and-backups) |
 | `GET /v1/health/follower` | none | | when the follower last ran: `200` with `"status": "ok"`, or `503` with `"behind"` (longer ago than 30 minutes) or `"never"`; on a chain also the last block followed ([the follower](#the-follower)) |
+| `GET /v1/health/reference-orbits` | none | | whether the follower fetches reference orbits: `503` with `"status": "stopped"` when it has stopped asking a source and waits for a person, `200` with `"ok"`, or `"off"` when the service does not fetch; per source the time, object, HTTP status and reason of a stop, and the objects without public data ([fetching reference orbits](#fetching-reference-orbits)) |
 | `GET`, `POST /v1/internal/follow` | the follower's secret | | run the follower once: `{changed, sent, followed_at}`, on a chain also `synced_block`; `404` when the service has no follower secret |
 | `GET /v1/internal/backup` | the backup token | | an encrypted backup of the database, streamed ([backups](#read-only-mode-and-backups)); `404` when the service has no backup token |
 | `GET /v1/requests` | any | | all requests with requester, title, reserving station, observer, status and outcome |
@@ -88,6 +89,7 @@ call.
 | `POST /v1/admin/grants` | admin | `{"party": "…", "points": 1000}` | give points (phase 1 budgets) |
 | `POST /v1/admin/keys` | admin | `{"party": "…", "role": "…"}` | create a key; shown once (a replay returns `"key": null`) |
 | `POST /v1/admin/tick` | admin | | apply passed deadlines and settle finished requests |
+| `POST /v1/admin/reference-orbits/resume` | admin | `{"source": "celestrak"}` or `"satchecker"`, optionally `"ask_again": [norad_id, …]` | let the follower ask the source again once a person has looked at why it stopped; a wait after a `500` or a `503` still holds; `ask_again` forgets what the source answered for these objects, a `404` included ([D-48](decisions.md#d-48-the-follower-fetches-reference-orbits)) |
 | `POST /v1/admin/element-sets` | admin | an `orbit-watch/gp-catalog` document, or CelesTrak's OMM JSON or CSV | upload real element sets by hand; kept labelled as uploaded, a SIMULATED catalogue or object refused ([D-47](decisions.md#d-47-reference-orbits-in-the-service)) |
 | `GET /v1/admin/overview` | admin | | every request with status, observer, automated result, votes, outcome and payments; counts by status; on a chain also the chain's state, conflicts, watched transactions and the latest 200 escrow events, newest first ([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)) |
 | `GET /v1/admin/governance` | admin | | on a chain: the reviewer registry and its reviewers, the timelock that owns it, the Safe that proposes, and the timelock's operations with their state and, while not done, the data to execute them |
@@ -136,6 +138,21 @@ change is made once.
 `GET /v1/health/follower` is for monitoring: it answers `503` when no follower
 has run in the last 30 minutes (twice the planned 15-minute schedule) or ever,
 whichever process ran it.
+
+### Fetching reference orbits
+
+Step 5.4, [D-48](decisions.md#d-48-the-follower-fetches-reference-orbits). With
+`orbit-watch serve --fetch-orbits`, or `ORBIT_WATCH_FETCH_ORBITS=1`, each run of the
+follower also fetches the element sets that open requests for real objects need, after
+its other work: CelesTrak's current sets while a request's window has not ended, and
+SatChecker's set nearest the middle of a window that has ended. It makes at most three
+requests per run, two seconds apart, outside the database's lock. Its answer lists them
+under `reference_orbits`, each with the sets kept, or why it stopped.
+
+The first answer that is not 200 with the object's element sets, or no answer, stops that
+source until an administrator resumes it (`POST /v1/admin/reference-orbits/resume`).
+`GET /v1/health/reference-orbits` answers `503` meanwhile, for the uptime check.
+[operations.md](operations.md#fetching-reference-orbits-stopped) says what to do.
 
 ## Read-only mode and backups
 

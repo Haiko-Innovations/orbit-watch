@@ -246,6 +246,40 @@ def test_fetch_gp_stops_and_says_what_the_policy_asks(tmp_path, status, advice):
     assert len(calls) == 1 and not (tmp_path / "gp.csv").exists()
 
 
+@pytest.mark.parametrize(
+    "failure", [TimeoutError("timed out"), ConnectionResetError("reset")], ids=["timeout", "reset"]
+)
+def test_a_broken_connection_is_no_answer(tmp_path, failure):
+    """No status: the follower then stops and waits 15 minutes (D-48)."""
+
+    def opener(request, timeout):
+        raise failure
+
+    with pytest.raises(FetchError, match="no answer from CelesTrak") as caught:
+        fetch_gp("CATNR", "339001", tmp_path / "gp.csv", opener=opener)
+    assert caught.value.status is None
+    with pytest.raises(SatCheckerError, match="no answer from SatChecker") as caught:
+        fetch_nearest(339001, datetime(2026, 11, 1, tzinfo=UTC), opener=opener)
+    assert caught.value.status is None
+
+
+def test_an_answer_that_cannot_be_read_keeps_its_status(tmp_path):
+    def opener(request, timeout):
+        return FakeResponse(b"not gzip", headers={"Content-Encoding": "gzip"})
+
+    with pytest.raises(FetchError, match="could not be read") as caught:
+        fetch_gp("CATNR", "339001", tmp_path / "gp.csv", opener=opener)
+    assert caught.value.status == 200
+    with pytest.raises(SatCheckerError) as caught:
+        fetch_nearest(339001, datetime(2026, 11, 1, tzinfo=UTC), opener=opener)
+    assert caught.value.status == 200
+    with pytest.raises(SatCheckerError, match="not the expected JSON") as caught:
+        fetch_nearest(
+            339001, datetime(2026, 11, 1, tzinfo=UTC), opener=lambda r, timeout: FakeResponse(b"x")
+        )
+    assert caught.value.status == 200
+
+
 # SatChecker -------------------------------------------------------------------------------
 
 

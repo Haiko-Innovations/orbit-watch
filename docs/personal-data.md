@@ -37,7 +37,7 @@ Legal bases (GDPR article 6(1)): **b**, the contract, that is the terms of use;
 
 | Data | Where | Who sees it | Kept | Deleted by | Basis |
 |---|---|---|---|---|---|
-| Party name, such as `station:SIM-HELSINKI` | `wallets`, `api_keys`, and the tables that name parties (`requests`, `deliveries`, `review_tasks`, `transactions`, `element_sets.uploaded_by`, …) | public | while the service runs | an administrator, on request | b |
+| Party name, such as `station:SIM-HELSINKI` | `wallets`, `api_keys`, and the tables that name parties (`requests`, `deliveries`, `review_tasks`, `transactions`, `element_sets.uploaded_by`, `orbit_sources.resumed_by`, …) | public | while the service runs | an administrator, on request | b |
 | Wallet address | `wallets.address`, `sessions`, `signin_challenges`; on the chain | public on the chain | while the service runs | an administrator, on request; never on the chain | b |
 | Message and signature that registered a wallet | `wallets.signature`, `wallets.signed_message` | administrators | while the service runs | with the wallet's row | b, f |
 | Sign-in message: address, origin, nonce, times, the name to sign up | `signin_challenges` | the service only | an hour after it expires (it expires after 5 minutes) | `sweep` | b |
