@@ -8,6 +8,17 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+### Added
+
+- Phase 5 plan: real orbits and real observations on the testnet, in eight
+  steps (5.1 to 5.8) with completion criteria in `docs/roadmap.md`, and the
+  proposed decisions P5-01 to P5-15 in `docs/decisions.md`, approved on
+  2026-11-21 (#103). Reference orbits from CelesTrak and SatChecker, real
+  observations from SCORE under CC BY 4.0, the method measured on real data
+  first, real and simulated data side by side, the observer's own choice of
+  how precisely a station's place is published, and follow-ups at the end for
+  whatever needs the maintainer or someone outside the repository.
+
 ## [0.5.0] - 2026-11-18
 
 Phase 4: the public testnet service. The service and the web application run

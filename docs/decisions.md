@@ -1307,8 +1307,10 @@ The data, kept to the minimum:
 No analytics, no trackers, no third-party content.
 
 A station may be someone's home, so the public service keeps station
-coordinates to two decimals, about a kilometre. A party can delete its station
-profile and end its sessions. What is on the chain cannot be deleted, and the
+coordinates to two decimals, about a kilometre. Since 2026-11-21 the observer
+chooses the exact place or about a kilometre instead
+([P5-11](#p5-11-the-stations-place-the-observer-chooses)). A party can delete
+its station profile and end its sessions. What is on the chain cannot be deleted, and the
 notice says so.
 
 A privacy notice and terms of use, in English and Finnish, are linked from
@@ -2025,3 +2027,443 @@ Sources, read on 2026-11-18:
   and [Chainstack](https://docs.chainstack.com/docs/limits) on their
   `eth_getLogs` limits;
 - Base's [node providers](https://docs.base.org/base-chain/node-operators/node-providers.md).
+
+## Phase 5 decisions
+
+P5-01 to P5-15 were proposed for the
+[roadmap](roadmap.md#phase-5-real-orbits-and-real-observations-on-the-testnet-target-version-060)'s
+phase 5, real orbits and real observations on the testnet, in
+[#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103), and
+approved by the maintainer on 2026-11-21. They follow a discussion with the
+maintainer on 2026-11-20 and 2026-11-21:
+- real data on the testnet, with test money only;
+- real test data from public sources with open terms, instead of asking
+  observers for it;
+- the observer's own choice of how precisely a station's place is published;
+- the method measured on real data before it changes;
+- code without waiting: whatever needs the maintainer or someone outside the
+  repository comes at the end of the phase, as a follow-up (P5-14).
+
+Facts were checked on 2026-11-20; the sources are listed under each decision.
+Versions are chosen, and checked, when they are used.
+
+### P5-01 Real data, test money
+
+Accepted · 2026-11-21. Phase 5 brings real data into Orbit Watch:
+- **real reference orbits** of real civilian objects, beside the simulated
+  ones;
+- **real observations** that observers have published under an open licence,
+  replayed through the service and used to measure the verification method.
+
+Everything else stays as it is:
+- Base Sepolia only: testnet USDC, no mainnet, no real money, no token of our
+  own;
+- the simulated objects, stations and deliveries, labelled SIMULATED.
+
+Not in phase 5:
+- real money;
+- observations of our own;
+- asking observers for data: it all comes from public sources with open terms
+  (P5-06);
+- the community network ([decentralisation.md](decentralisation.md)).
+
+[P4-01](#p4-01-a-public-sandbox-on-the-testnet) left real data for a later
+phase, because it needs decisions of its own: the data source's terms,
+licences, and the personal data of real observers. P5-02 to P5-13 are those
+decisions.
+
+### P5-02 Current reference orbits from CelesTrak, one object at a time
+
+Accepted · 2026-11-21. The service fetches a real object's current reference
+orbit from CelesTrak's GP data, as CelesTrak's usage policy asks:
+- **Only what is needed.** One object by its catalogue number, and only the
+  objects of open requests. Never a large group such as `active`, which
+  CelesTrak now limits.
+- **Once per update.** At most once every two hours per object, since GP data
+  is updated every two hours.
+- **CSV, compressed.** `FORMAT=csv` with gzip, since JSON is about three times
+  the size.
+- **Stop at the first answer that is not 200, and tell a person.** The
+  follower records why it stopped, and fetches nothing more until a person
+  clears it. A health endpoint reports the stop, so the hourly uptime check
+  opens an alert issue as for any other failure
+  ([D-39](#d-39-backups-monitoring-and-read-only-mode)). No new secret is
+  needed. After a 500 or a 503 the follower waits at least 15 minutes. An object without public data answers 404, which counts towards
+  CelesTrak's error limit, so it is not asked for again.
+- **A few objects per follower run**, so that a run stays short.
+
+Each element set is kept in PostgreSQL with:
+- its source;
+- the time it was fetched;
+- its epoch;
+- its SHA-256.
+
+An administrator can also upload an element set by hand, labelled as
+uploaded, for example when CelesTrak cannot be reached.
+
+**A risk.** Vercel's functions share their outgoing addresses with other
+users, and CelesTrak blocks addresses, not users. If the service is blocked
+for someone else's behaviour, it stops, alerts and waits for an upload by
+hand. Step 5.8 records how often this happens.
+
+`orbit-watch fetch-gp` also asks for CSV with gzip. Its other rules stay
+(D-06): one request per call, no retries, no second download within two hours.
+
+Source: [CelesTrak usage policy](https://celestrak.org/usage-policy.php),
+updated 2026-11-16:
+- "please use FORMAT=csv";
+- "M2M (machine-to-machine) software should immediately stop querying when it
+  receives any non-HTTP 200 responses and report the results to a human";
+- after a 500 or a 503, "All requests should stop for at least 15 minutes";
+- "we are starting to enforce some of those limits for larger data sets, like
+  the Active list".
+
+On 2026-11-20 a download of `GROUP=active` stopped at about 1.2 MB, and a query
+for an object without public data answered `404 No GP data found`.
+
+### P5-03 Past reference orbits from SatChecker
+
+Accepted · 2026-11-21. CelesTrak gives only current element sets by URL. Its
+history comes through a request form with a CAPTCHA, by email
+([data-sources.md](data-sources.md)). Real observations are from the past, so
+their reference orbits come from the IAU CPS's SatChecker. It keeps the
+element sets of Space-Track and CelesTrak, and gives the one nearest a given
+time without an account:
+- `get-nearest-tle` for the past, since TLEs "remain the record for historical
+  dates", and `get-nearest-omm` where OMM data exists;
+- a TLE is read only from SatChecker's history, and only for catalogue numbers
+  below 100,000, which a TLE can hold;
+- one request at a time, at least two seconds apart, stopping at the first
+  answer that is not 200;
+- every answer kept with its source, its `date_collected`, its epoch and its
+  SHA-256.
+
+SatChecker serves the command line, the tests and replay requests (P5-10).
+Current requests use CelesTrak (P5-02).
+
+SatChecker's own notes say that "Public Space-Track TLEs for LEO satellites
+are often off by several arcminutes", and that TLEs "are only good for a
+maximum of two weeks". Step 5.3 measures what this means for verification.
+
+Sources: SatChecker 1.9.0's
+[orbital data access](https://satchecker.readthedocs.io/en/latest/tools_data_access.html)
+and [notes](https://satchecker.readthedocs.io/en/latest/notes.html).
+
+### P5-04 The element set nearest the observations
+
+Accepted · 2026-11-21. Method 2.0.0 uses only the newest element set of each
+object ([verification.md](verification.md#known-limitations-method-200)). With
+history, a catalogue holds several sets of one object. The reference for a
+delivery is then the set whose epoch is nearest the middle of its
+observations, among the sets known when it is verified. The 7-day age limit
+stays.
+
+The report names the set by its source, epoch and SHA-256. Anyone can then
+fetch the same set and run the same verification.
+
+This is a new minor version of the method. With one set per object, as in
+every committed example, every verdict and residual stays the same; only the
+method's version and the new field change.
+
+### P5-05 Orbit data stays out of the repository
+
+Accepted · 2026-11-21. Confirms
+[D-06](#d-06-no-real-orbit-data-in-the-repository) for phase 5. The element
+sets come from the US Space Force through Space-Track, whose user agreement
+governs their redistribution, and CelesTrak states no terms. We have not read
+terms that allow us to republish them; reading them is a follow-up
+([#114](https://github.com/Haiko-Innovations/orbit-watch/issues/114)). So:
+- **Committed examples with real observations name their reference orbits**
+  in a manifest: the object, the source, the epoch and the SHA-256.
+- **One command fetches what a manifest names**, by its exact epoch and under
+  P5-03's rules, into a cache outside the repository, and checks every
+  SHA-256.
+- **Tests that need the cache are skipped without it.** CI keeps the cache in
+  GitHub Actions' cache, never in the repository or in an artifact, and fetches
+  only what the cache lacks.
+- **The public service keeps the sets it fetched in its database** and names
+  them in its reports. It does not serve their content.
+
+### P5-06 Real observations from SCORE
+
+Accepted · 2026-11-21. The IAU CPS's Satellite Constellation Observation
+Repository (SCORE) publishes observers' positional and brightness observations
+of satellites under CC BY 4.0. On 2026-11-20 it held 42,669 observations of
+3,344 satellites, from 2019-12-14 to 2026-11-19.
+
+A positional observation holds:
+- its time and the time's uncertainty;
+- right ascension and declination in the ICRF, measured against Gaia DR3
+  stars, with their variances;
+- the observer's place and instrument;
+- the observers' ORCID iDs.
+
+That is everything Orbit Watch's format needs. So real observations no longer
+need to be asked for.
+
+- **Fetched politely.** A command fetches one satellite at a time through
+  SCORE's API:
+  - pages of at most 100 observations;
+  - at most one request a second (the API allows ten);
+  - it stops at the first answer that is not 200, and waits at least 15
+    minutes after a 500 or a 503.
+
+  The full download, which is behind a CAPTCHA, is never used. On 2026-11-20
+  pages of 1,000 observations answered 500 and 503.
+- **Converted** to Orbit Watch's format. Each file names its source, SCORE's
+  observation IDs, the observers' ORCID iDs and the licence.
+- **A selected set is committed** under `examples/real/`, with a credits file
+  (P5-13): some tens of tracks from several instruments, good ones and bad
+  ones.
+- **Phase 0's last criterion is met with this set**
+  ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)). The
+  criterion asked for "one real public IOD example", because IOD was the only
+  public source known then. SCORE's observers have no IOD station numbers, so
+  the set is in Orbit Watch's format.
+- **Personal data.** An ORCID iD and a station's place are personal data, even
+  when the observer published them:
+  - our use, measuring and showing a verification method, rests on legitimate
+    interest;
+  - the privacy notice says where the data comes from;
+  - an observer can ask for their data to be removed from the service and from
+    the repository's next version.
+
+  Step 5.2 checks the duties of GDPR article 14, for data not obtained from
+  the person, and records the result with its source. Anything they ask for
+  outside the code becomes a follow-up (P5-14).
+
+Alternatives, looked at on 2026-11-20:
+- **SeeSat-L's archive.** In September to November 2026 it held 4,494 IOD
+  lines of 295 objects from 8 stations, nearly all of them classified objects
+  (D-05), and states no licence.
+- **The VCM dataset on Zenodo** (CC BY 4.0, 2.9 GB, 2022 and 2023). Its precise
+  orbits need the Space Force's own propagator.
+
+Sources:
+- [SCORE use policy](https://score.cps.iau.org/policy), last updated
+  2024-12-02: "Data will be shared under the Creative Commons Attribution
+  (CC-BY) 4.0 licence"; "If you use data from SCORE, you must follow the CC-BY
+  licences and credit the observers appropriately";
+- [SCORE data format](https://score.cps.iau.org/data-format);
+- [SCORE API](https://score.cps.iau.org/api-access): "rate-limited to 10
+  requests per second";
+- [VCM dataset](https://zenodo.org/records/13892132).
+
+### P5-07 Measure first
+
+Accepted · 2026-11-21. The method's behaviour on real data is measured and
+published before the method changes.
+
+A first look on 2026-11-20 used 13 tracks, about 1,775 observations from SCORE,
+against SatChecker's nearest TLEs:
+- **A video camera** (WATEC 902H2): every observation within the limit. ACS
+  3's median residual was 26″, against a median limit of 762″.
+- **A phone** (iPhone 12 Mini): in five of its six tracks no observation was
+  within the limit. Its tracks showed the same clock error, −1.5 to −1.7 s,
+  which the quality meter is meant to find.
+- **The limit is loose.** Its largest term is the reference orbit's assumed
+  5 km error.
+
+Step 5.3 measures, with method 2.0.0 and only P5-04's choice of set changed:
+- residuals and pass rates per instrument and orbit;
+- how the limit splits into its terms;
+- the effect of the reference orbit's age;
+- false rejections: tracks from good instruments that fail;
+- false acceptances: real tracks with injected faults, such as a time shift,
+  the wrong object, a moved station, or a track made from the reference orbit
+  itself (which no automated check can catch, and the challenge period is
+  for);
+- what rounding a station's place to about a kilometre costs (P5-11).
+
+The results go to `docs/real-data-validation.md`, reproducible with one command
+from the committed set and the cache. Real tracks, good ones and ones with
+injected faults, join the known-answer datasets of reviewer calibration
+(step 1.4). Any change to the method's checks or parameters is proposed
+afterwards, as a decision of its own, with the measurement behind it.
+
+### P5-08 Real objects on the allow-list
+
+Accepted · 2026-11-21. Requests may target only civilian objects (D-05). For
+real objects the allow-list is built as now, with `orbit-watch allowlist
+build`:
+- from CelesTrak's small civilian groups, such as `science`, `education`,
+  `amateur` and `cubesat`, downloaded at most once a day;
+- minus the excluded groups and the name patterns.
+
+Large groups, such as `starlink`, are not downloaded. Instead, an
+administrator can add an object by its catalogue number, after checking its
+owner in the satellite catalogue. The reason is shown publicly, and the name
+patterns still apply. The simulated objects stay on the list.
+
+### P5-09 Real and simulated side by side
+
+Accepted · 2026-11-21. The service carries real and simulated data at once, and
+every item says which it is:
+- **objects**: real, or SIMULATED;
+- **reference orbits**: CelesTrak, SatChecker or uploaded by hand, with the
+  epoch;
+- **observations**: SIMULATED, replayed (P5-10), or delivered by a station.
+
+The SIMULATED label stays on everything simulated, and only there. The testnet
+label stays on every page.
+
+Simulated stations may observe real objects. The whole chain can then be shown
+with real orbits without real observers, and their observations are SIMULATED.
+
+The web application gets only the labels and views that phase 5 needs. Its
+redesign stays separate
+([#97](https://github.com/Haiko-Innovations/orbit-watch/issues/97)).
+
+### P5-10 Replays name their observers
+
+Accepted · 2026-11-21. A replay delivers observations that someone else
+published, through the service, to show and test the whole chain with real
+data:
+- **Only an administrator creates a replay request.** Its window lies in the
+  past, and the request is marked as a replay.
+- **A replay station run by the maintainer delivers it.** It never appears as
+  the observer.
+- **Every page and file of a replay** names the source, the observers' ORCID
+  iDs and the licence.
+- **The testnet reward goes to the replay station's wallet.** Testnet USDC
+  has no value ([P2-02](#p2-02-circles-testnet-usdc-no-token-of-our-own)), and
+  nobody is paid for someone else's work.
+
+A request for real observations of a coming pass is a normal request, open to
+every station.
+
+### P5-11 The station's place: the observer chooses
+
+Accepted · 2026-11-21. Replaces the public service's fixed rounding of
+station coordinates to two decimals
+([P4-09](#p4-09-personal-data-a-privacy-notice-and-terms-of-use)).
+
+Verification needs a precise place. Rounding to two decimals moves a station by
+up to about 0.6 km. For a satellite 500 km away that is up to about 250″, ten
+times the 26″ median residual of a good video camera (P5-07). But a station
+may be someone's home.
+
+- **The observer chooses when the station is created**: "publish the exact
+  place" or "publish the place to about a kilometre". Neither is selected in
+  advance, and the station cannot be saved without a choice. GDPR article
+  25(2) asks that, by default, personal data is not made accessible "without
+  the individual's intervention" to an indefinite number of people. An
+  explicit choice is that intervention; "exact" chosen in advance would not
+  be.
+- **The choice can be changed at any time**, for later deliveries. Files
+  already published keep the place they were delivered with, since their
+  SHA-256 is on the chain. The station's page says so before the observer
+  chooses "exact".
+- **Existing stations stay at about a kilometre** until their owner chooses.
+- **A station is verified with the place it publishes**, so that anyone can
+  repeat the verification. A rounded place is verified as rounded; step 5.3
+  measures what that costs.
+- **The station profile is the place for every format.** IOD and CCSDS TDM
+  deliveries take their station's place from the profile, and a JSON delivery
+  whose place differs from the profile is refused.
+
+Source: [GDPR article 25(2)](https://eur-lex.europa.eu/eli/reg/2016/679/oj):
+"such measures shall ensure that by default personal data are not made
+accessible without the individual's intervention to an indefinite number of
+natural persons".
+
+### P5-12 Visibility
+
+Accepted · 2026-11-21. An optical observer sees a satellite only when the Sun
+lights it and the observer's sky is dark. The simulator learns both
+([#7](https://github.com/Haiko-Innovations/orbit-watch/issues/7)), and the
+service lists a station's visible passes for a request:
+- **The Sun's place from a short formula in the core**, without an ephemeris
+  file. Skyfield's `is_sunlit()` needs a JPL ephemeris, and DE421 alone is
+  17 MB. The US Naval Observatory's formula gives the Sun "to an accuracy of
+  about 1 arcminute within two centuries of 2000", enough for the Earth's
+  shadow and for twilight. Step 5.7 measures it once against a JPL ephemeris
+  and records the result.
+- **A dark sky**: by default the Sun at least 6° below the horizon, the end of
+  civil twilight. This is a setting.
+- **A pass list** for a station and a request's window, in the API and in the
+  observer's view: rise, highest point and set above the request's elevation
+  limit, and the part of the pass that is lit.
+
+Sources: [Skyfield: JPL ephemeris files](https://rhodesmill.org/skyfield/planets.html)
+(de421.bsp, 1900 to 2050, 17 MB), and the US Naval Observatory's
+[approximate solar coordinates](https://aa.usno.navy.mil/faq/sun_approx).
+
+### P5-13 Credits and statements
+
+Accepted · 2026-11-21. The sources ask for credit. They get it in a credits
+file beside the data, in the documentation, and on a public page of the
+service that says where its real data comes from:
+- **SCORE**:
+  - the observers of each file, by ORCID iD (CC BY 4.0);
+  - SCORE's acknowledgement;
+  - the statement that SCORE requires on "any publication, presentation,
+    website or web service that uses SCORE data".
+- **SatChecker**: its acknowledgement.
+- **CelesTrak**: named as the source of current element sets.
+
+SCORE also asks its users to tell it that they use its data. That is for the
+maintainer to decide, at the end of the phase: a follow-up (P5-14,
+[#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113)).
+
+Sources: the [SCORE use policy](https://score.cps.iau.org/policy) and
+[SatChecker's acknowledgements](https://satchecker.readthedocs.io/en/latest/acknowledgements.html).
+
+### P5-14 Follow-ups at the end, not in the way
+
+Accepted · 2026-11-21. Phase 5's steps need nothing from the maintainer but
+reviews and merges, and nothing from anyone outside the repository. Work that
+does becomes a follow-up issue in the phase's milestone, for example:
+- a note to a data source;
+- an account with a service;
+- terms that can be read only after signing in;
+- a change in a third-party service's settings.
+
+A follow-up is done at the end of the phase, or later, and no step waits for
+it. Until it is done, the plan's cautious choice holds. A step that finds such
+work on the way records it as a follow-up and goes on. The follow-ups are not
+completion criteria.
+
+The follow-ups known now:
+- telling SCORE that Orbit Watch uses its data, as its use policy asks, and
+  perhaps starting a collaboration with the IAU CPS ([#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113));
+- reading Space-Track's user agreement, which may need an account, to decide
+  whether real element sets may ever be committed. Until then D-06 and P5-05
+  hold ([#114](https://github.com/Haiko-Innovations/orbit-watch/issues/114)).
+
+The demonstrations on the public service (step 5.8) use the testnet keystores
+of [D-24](#d-24-the-base-sepolia-deployment), so they need no person's own
+wallet.
+
+### P5-15 Phase 5 completion criteria
+
+Accepted · 2026-11-21. Phase 5 is done when:
+
+1. The service verifies deliveries for real objects against real reference
+   orbits: CelesTrak's for current requests and SatChecker's for replays. It
+   uses the element set nearest the observations, and the report names it.
+2. Every fetch from CelesTrak, SatChecker and SCORE follows that source's
+   rules, stops at the first answer that is not 200, and tells a person. This
+   is tested against local stand-ins. No test in CI calls an outside service,
+   except to fill its cache.
+3. A set of real observations from SCORE is committed, credited under CC BY
+   4.0 with the statements the sources ask for. No real element set is in the
+   repository.
+4. The method's behaviour on real data is measured and published (P5-07),
+   reproducible with one command. Real tracks are in the known-answer
+   datasets.
+5. Real objects are on the allow-list under D-05's rules, and an
+   administrator's additions show their reasons.
+6. Every page labels objects, reference orbits and observations by their
+   source. SIMULATED is on all simulated data and on nothing else, and the
+   testnet label is on every page; tested end to end.
+7. Replays name their observers and never appear as them.
+8. The observer chooses how precisely the station's place is published, with
+   nothing chosen in advance. The profile is the place for every format, and a
+   delivery from another place is refused; tested. The privacy notice and the
+   data inventory say so.
+9. The simulator observes only objects the Sun lights under a dark sky, and an
+   observer sees the station's visible passes for a request.
+10. On the public service, a replay of real observations and a request for a
+    real object with simulated observations have both settled on Base Sepolia.
+    Every CI check passes; release 0.6.0.
