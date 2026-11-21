@@ -12,7 +12,11 @@ Every pull request that finishes a roadmap step also updates this page.
 
 **Phase 5 has started**: real orbits and real observations on the testnet.
 Its decisions P5-01 to P5-15 were approved on 2026-11-21
-([#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103)).
+([#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103)). Step 5.1
+is done: catalogues with several element sets per object, verification against
+the set nearest the observations (method 2.1.0), past sets from SatChecker,
+and reference-orbit manifests with a cache outside the repository
+([D-44](decisions.md#d-44-reference-orbits-in-the-core)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at
@@ -263,7 +267,7 @@ approved on 2026-11-21. In short:
 
 | Step | Content | Done when |
 |---|---|---|
-| **5.1 Reference orbits in the core** ([#104](https://github.com/Haiko-Innovations/orbit-watch/issues/104)) | Catalogues with several element sets per object, and the set nearest the observations, named in the report (a new minor method version); `fetch-gp` asks for CSV with gzip; a command fetches past sets from SatChecker; examples name their sets in a manifest, and one command fills a cache outside the repository. | Every committed example's verdicts and residuals are unchanged; the nearest set is chosen and named, tested; the fetchers stop at the first answer that is not 200, tested against local stand-ins; tests that need the cache are skipped without it. |
+| ✅ **5.1 Reference orbits in the core** ([#104](https://github.com/Haiko-Innovations/orbit-watch/issues/104)) | Catalogues with several element sets per object, and the set nearest the observations, named in the report (a new minor method version); `fetch-gp` asks for CSV with gzip; a command fetches past sets from SatChecker; examples name their sets in a manifest, and one command fills a cache outside the repository. | Every committed example's verdicts and residuals are unchanged; the nearest set is chosen and named, tested; the fetchers stop at the first answer that is not 200, tested against local stand-ins; tests that need the cache are skipped without it. |
 | **5.2 Real observations from SCORE** ([#105](https://github.com/Haiko-Innovations/orbit-watch/issues/105)) | A command fetches one satellite's observations from SCORE politely and converts them; a selected set of real tracks in `examples/real/` with a credits file; the quality meter on real data; GDPR article 14 checked and recorded. | The set passes the format checks and the quality meter in CI; every file names its source, observers and licence; phase 0's last criterion is met and [#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8) closed. |
 | **5.3 The method measured on real data** ([#106](https://github.com/Haiko-Innovations/orbit-watch/issues/106)) | Method 2.0.0 run over the committed set and a larger set fetched politely: residuals, pass rates, the limit's terms, the reference orbit's age, injected faults, the cost of rounding a station's place; real tracks in the known-answer datasets. | `docs/real-data-validation.md` gives the numbers, reproducible with one command; the method's checks and parameters are unchanged. |
 | **5.4 Reference orbits and real objects in the service** ([#107](https://github.com/Haiko-Innovations/orbit-watch/issues/107)) | Element sets in PostgreSQL; the follower fetches each open request's object from CelesTrak at most once per update, and SatChecker's sets for replays; it stops at the first answer that is not 200, and a health endpoint reports the stop to the uptime check; uploads by hand; real objects on the allow-list. | A delivery is verified against the nearest stored set, named in its report; an answer that is not 200 stops fetching and fails the health endpoint; tested against a local stand-in, with no outside call in CI. |

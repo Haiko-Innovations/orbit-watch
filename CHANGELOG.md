@@ -18,6 +18,26 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   first, real and simulated data side by side, the observer's own choice of
   how precisely a station's place is published, and follow-ups at the end for
   whatever needs the maintainer or someone outside the repository.
+- Past reference orbits from the IAU CPS's SatChecker: `orbit-watch
+  fetch-satchecker` fetches the element set of one object nearest a time, in one
+  request with no retries, and converts a TLE to OMM form (step 5.1, #104).
+- Reference-orbit manifests (`orbit-watch/reference-orbits` 1.0): examples and
+  tests name their real element sets instead of committing them, and
+  `orbit-watch fetch-orbits` fetches what the local cache lacks, two seconds
+  apart, checking every SHA-256. CI keeps the cache in GitHub Actions' cache
+  only.
+
+### Changed
+
+- Verification method 2.1.0 and report format 1.1: when the catalogue holds
+  several element sets of the object, the residuals use the set nearest the
+  middle of the observations, and the report names it by its SHA-256, the
+  choice and its source, never the set itself. With one set per object every
+  verdict stays the same. The station quality meter (1.1.0) does the same per
+  observation file.
+- `orbit-watch fetch-gp` asks CelesTrak for CSV with gzip, as its usage policy
+  of 2026-11-16 asks, and after an answer that is not 200 says what the policy
+  asks next.
 
 ## [0.5.0] - 2026-11-18
 
