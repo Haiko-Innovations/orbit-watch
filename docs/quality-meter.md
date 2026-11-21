@@ -5,14 +5,19 @@ are, using nothing but public orbit data. It is the part of Orbit Watch that
 is useful to an observer from day one, before any requests exist.
 
 ```sh
-orbit-watch fetch-gp --group cubesat -o cubesat.json      # public reference orbits
-orbit-watch score-station my-night.iod --sites my-site.json --catalog cubesat.json
+orbit-watch fetch-gp --group cubesat -o cubesat.csv      # public reference orbits
+orbit-watch score-station my-night.iod --sites my-site.json --catalog cubesat.csv
 ```
 
 Input: one or more observation files (Orbit Watch JSON, IOD or CCSDS TDM) from
 one station, a sites file with the station coordinates (for IOD and TDM), and
 GP data that covers the observed objects with an epoch within 7 days of the
-observations.
+observations. When the GP data holds several element sets of an object, each
+observation file is compared with the set nearest the middle of its
+observations (meter method 1.1.0,
+[P5-04](decisions.md#p5-04-the-element-set-nearest-the-observations)).
+Real past observations need past element sets: `orbit-watch fetch-satchecker`
+fetches them ([data-sources.md](data-sources.md)).
 
 ## What it reports
 

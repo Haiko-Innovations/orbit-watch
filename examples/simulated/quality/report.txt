@@ -1,4 +1,4 @@
-Orbit Watch station quality meter 1.0.0
+Orbit Watch station quality meter 1.1.0
 Inputs include SIMULATED data.
 Station SIM-TAMPERE (61.4980, 23.7610, 120 m)
 96 observations of 3 object(s) on 3 night(s), 2026-11-01T18:55:08.000Z to 2026-11-03T20:05:29.000Z.

@@ -66,8 +66,8 @@ through the HTTP API (`pip install "orbit-watch[api] @ …"`, then
 ## Check your own station
 
 ```sh
-orbit-watch fetch-gp --group cubesat -o cubesat.json     # public orbits from CelesTrak
-orbit-watch score-station my-night.iod --sites my-site.json --catalog cubesat.json
+orbit-watch fetch-gp --group cubesat -o cubesat.csv      # public orbits from CelesTrak
+orbit-watch score-station my-night.iod --sites my-site.json --catalog cubesat.csv
 ```
 
 The quality meter shows your angle and timing precision, finds clock errors
@@ -83,7 +83,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Station simulator (SGP4, noise, timing errors, dropouts) | `simulate` | [simulator.md](docs/simulator.md) |
 | Deterministic, versioned verification engine | `validate` | [verification.md](docs/verification.md) |
 | Station quality meter | `score-station` | [quality-meter.md](docs/quality-meter.md) |
-| Public orbit data and the civilian allow-list | `fetch-gp`, `allowlist build` | [data-sources.md](docs/data-sources.md) |
+| Public orbit data and the civilian allow-list | `fetch-gp`, `fetch-satchecker`, `fetch-orbits`, `allowlist build` | [data-sources.md](docs/data-sources.md) |
 | Request lifecycle, optimistic verification, reviewer rounds | | [lifecycle.md](docs/lifecycle.md), [optimistic-verification.md](docs/optimistic-verification.md) |
 | Settlement rules and the points ledger | | [settlement.md](docs/settlement.md) |
 | Reviewer accuracy with known-answer tasks | | [reviewer-accuracy.md](docs/reviewer-accuracy.md) |
@@ -107,7 +107,8 @@ The Python code is in [`core/`](core), the Solidity contracts in [`contracts/`](
   `(SIMULATED)`).
 - Simulated files say so themselves (`"simulated": true`, or a marker line in
   IOD and TDM), and a simulated delivery can never satisfy a real request.
-- Real orbit data is never committed; `fetch-gp` downloads it when you need it.
+- Real orbit data is never committed: `fetch-gp` downloads current sets from
+  CelesTrak and `fetch-satchecker` past ones from SatChecker when you need them.
 
 ### Allow-list: civilian objects only
 
@@ -115,9 +116,9 @@ Requests may only target objects on an allow-list. Build one from civilian
 groups of the public catalogue, minus the military group:
 
 ```sh
-orbit-watch fetch-gp --group cubesat -o cubesat.json
-orbit-watch fetch-gp --group military -o military.json
-orbit-watch allowlist build --include cubesat.json --exclude military.json -o allowlist.json
+orbit-watch fetch-gp --group cubesat -o cubesat.csv
+orbit-watch fetch-gp --group military -o military.csv
+orbit-watch allowlist build --include cubesat.csv --exclude military.csv -o allowlist.json
 ```
 
 The builder also drops names that match conservative military and intelligence

@@ -18,7 +18,7 @@ import numpy as np
 
 from orbit_watch import SIMULATION_NOTICE, __version__
 from orbit_watch.canonical import sha256_bytes
-from orbit_watch.catalog import Catalog, CatalogError, parse_catalog
+from orbit_watch.catalog import Catalog, CatalogError, ElementSet, parse_catalog, record_sha256
 from orbit_watch.documents import Request, TargetPolicy
 from orbit_watch.formats import FormatError, Sites, detect_format, load_observation_sets
 from orbit_watch.geometry import residuals
@@ -26,9 +26,9 @@ from orbit_watch.model import Observation, ObservationSet
 from orbit_watch.timeutil import format_utc
 
 REPORT_FORMAT = "orbit-watch/verification-report"
-REPORT_FORMAT_VERSION = "1.0"
+REPORT_FORMAT_VERSION = "1.1"
 METHOD_NAME = "orbit-watch-automated-verification"
-METHOD_VERSION = "2.0.0"
+METHOD_VERSION = "2.1.0"
 ACCEPTED_OBSERVATION_FORMATS = [
     "orbit-watch/observation-set 1.0",
     "iod",
@@ -55,6 +55,9 @@ DISCLAIMER = (
     "public reference orbit and the request terms; it is not production-ready scientific "
     "validation and does not prove that the measurements are physically correct."
 )
+
+# A source's fields that hold the element set itself, which reports leave out.
+WITHHELD_SOURCE_FIELDS = ("tle_line1", "tle_line2")
 
 CHECK_TITLES = {
     "format": "Required fields and format",
@@ -171,6 +174,7 @@ def verify(inp: VerificationInput) -> dict[str, Any]:
         checks["format"] = _check("format", "fail", reason, details)
         _skip_all(checks, "Not evaluated because the file could not be read.")
 
+    reference, reference_error = _reference(request, catalog, observation_set)
     if observation_set is not None:
         obs = observation_set.observations
         checks["format"] = _check(
@@ -187,7 +191,9 @@ def verify(inp: VerificationInput) -> dict[str, Any]:
         checks["declared_uncertainty"] = _declared_uncertainty(request, obs)
         checks["hash_match"] = _hash_match(inp)
         checks["duplicates"] = _duplicates(inp, observation_set)
-        checks["orbit_residuals"] = _orbit_residuals(request, catalog, observation_set)
+        checks["orbit_residuals"] = _orbit_residuals(
+            request, catalog, reference, reference_error, observation_set
+        )
 
     ordered = [checks[c] for c in CHECK_ORDER]
     failed = [c for c in ordered if c["result"] == "fail"]
@@ -247,16 +253,65 @@ def verify(inp: VerificationInput) -> dict[str, Any]:
         "max_time_uncertainty_s": request.max_time_uncertainty_s,
     }
     if request.norad_id in catalog:
-        record = catalog.record(request.norad_id)
-        report["reference_orbit"] = {
-            "norad_id": request.norad_id,
-            "object_name": str(record.get("OBJECT_NAME")),
-            "epoch": str(record.get("EPOCH")),
-            "element_set_no": str(record.get("ELEMENT_SET_NO")),
-            "propagator": "SGP4 (sgp4 library via Skyfield)",
-        }
+        report["reference_orbit"] = _reference_orbit(request, catalog, reference, observation_set)
     report["checks"] = ordered
     return report
+
+
+def _middle(obs: list[Observation]):
+    first, last = min(o.time for o in obs), max(o.time for o in obs)
+    return first + (last - first) / 2
+
+
+def _reference(
+    request: Request, catalog: Catalog, observation_set: ObservationSet | None
+) -> tuple[ElementSet | None, str | None]:
+    """The element set the residuals are computed against (decision P5-04): the one whose
+    epoch is nearest the middle of the observations. With one set per object, as in method
+    2.0.0, that is the only set."""
+    if request.norad_id not in catalog or observation_set is None:
+        return None, None
+    if not observation_set.observations:
+        return None, None
+    try:
+        return catalog.nearest(request.norad_id, _middle(observation_set.observations)), None
+    except CatalogError as exc:
+        return None, str(exc)
+
+
+def _reference_orbit(
+    request: Request,
+    catalog: Catalog,
+    reference: ElementSet | None,
+    observation_set: ObservationSet | None,
+) -> dict[str, Any]:
+    """Names the element set: anyone can fetch the same set and repeat the verification."""
+    norad = request.norad_id
+    if reference is not None:
+        record, selection = reference.record, "nearest the middle of the observations"
+    else:
+        record = catalog.record(norad)
+        selection = (
+            "the newest in the catalogue (no observations were read)"
+            if observation_set is None
+            else "the newest in the catalogue"
+        )
+    block: dict[str, Any] = {
+        "norad_id": norad,
+        "object_name": str(record.get("OBJECT_NAME")),
+        "epoch": str(record.get("EPOCH")),
+        "element_set_no": str(record.get("ELEMENT_SET_NO")),
+        "element_set_sha256": record_sha256(record),
+        "selection": selection,
+        "element_sets_in_catalogue": len(catalog.sets[norad]),
+    }
+    source = record.get("source")
+    if isinstance(source, dict):
+        # Where the set came from, but never the set itself: reports are published, and real
+        # element sets are not republished (decisions D-06 and P5-05).
+        block["source"] = {k: v for k, v in source.items() if k not in WITHHELD_SOURCE_FIELDS}
+    block["propagator"] = "SGP4 (sgp4 library via Skyfield)"
+    return block
 
 
 def _simulation_label(request: Request, observation_set: ObservationSet) -> dict[str, Any]:
@@ -476,7 +531,11 @@ def _duplicates(inp: VerificationInput, observation_set: ObservationSet) -> dict
 
 
 def _orbit_residuals(
-    request: Request, catalog: Catalog, observation_set: ObservationSet
+    request: Request,
+    catalog: Catalog,
+    reference: ElementSet | None,
+    reference_error: str | None,
+    observation_set: ObservationSet,
 ) -> dict[str, Any]:
     norad = request.norad_id
     if norad not in catalog:
@@ -486,11 +545,11 @@ def _orbit_residuals(
             f"The reference catalogue has no orbit for object {norad}.",
         )
     obs = observation_set.observations
-    try:
-        satellite = catalog.satellite(norad)
-    except CatalogError as exc:
-        return _check("orbit_residuals", "inconclusive", str(exc))
-    epoch = satellite.epoch.utc_datetime()
+    if reference is None:
+        return _check("orbit_residuals", "inconclusive", reference_error or "No reference orbit.")
+    satellite = reference.satellite
+    epoch = reference.epoch
+    several = len(catalog.sets[norad]) > 1
     ages = [abs((o.time - epoch).total_seconds()) / 86400 for o in obs]
     max_age = max(ages)
     # Real GP elements degrade away from their epoch. A SIMULATED catalogue's elements are
@@ -501,7 +560,8 @@ def _orbit_residuals(
             return _check(
                 "orbit_residuals",
                 "inconclusive",
-                f"The reference orbit epoch ({epoch.strftime('%Y-%m-%d %H:%M')} UTC) is up to "
+                f"The {'nearest ' if several else ''}reference orbit epoch "
+                f"({epoch.strftime('%Y-%m-%d %H:%M')} UTC) is up to "
                 f"{max_age:.1f} days from the observations. GP elements are only reliable close "
                 f"to their epoch, so the residuals would mostly measure the age of the orbit. Use "
                 f"an element set within {PARAMETERS['max_reference_age_days']:g} days.",

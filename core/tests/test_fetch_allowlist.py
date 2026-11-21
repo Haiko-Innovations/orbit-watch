@@ -34,7 +34,7 @@ def opener_returning(body: bytes, calls: list):
 
 def test_url_and_user_agent(tmp_path):
     assert build_url("CATNR", "25544") == (
-        "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=JSON"
+        "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=csv"
     )
     with pytest.raises(ValueError):
         build_url("SPECIAL", "x")
@@ -74,7 +74,7 @@ def test_http_error_is_not_retried(tmp_path):
             io.BytesIO(b"GP data has not updated since your last download"),
         )
 
-    with pytest.raises(FetchError, match=r"HTTP 403.*not retrying"):
+    with pytest.raises(FetchError, match=r"HTTP 403.*read its message"):
         fetch_gp("GROUP", "active", tmp_path / "gp.json", opener=opener)
     assert len(calls) == 1
     assert not (tmp_path / "gp.json").exists()

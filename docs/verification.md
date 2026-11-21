@@ -10,11 +10,12 @@ answer.
 > and the request terms. It is **not** production-ready scientific validation
 > and does not prove that measurements are physically correct.
 
-Current method: **`orbit-watch-automated-verification` 2.0.0**
+Current method: **`orbit-watch-automated-verification` 2.1.0**
 (code: [`core/src/orbit_watch/verify/engine.py`](../core/src/orbit_watch/verify/engine.py)).
 
 | Version | Release | Change |
 |---|---|---|
+| 2.1.0 | 0.6.0 | The element set nearest the observations, when the catalogue holds several sets of the object ([P5-04](decisions.md#p5-04-the-element-set-nearest-the-observations)); the report names it. With one set per object every verdict stays the same. Report format 1.1. |
 | 2.0.0 | 0.5.0 | No reference age limit for a SIMULATED catalogue: a residual check that 1.0.0 called inconclusive can now pass or fail. |
 | 1.0.0 | 0.1.0 | The first method. |
 
@@ -24,7 +25,7 @@ Current method: **`orbit-watch-automated-verification` 2.0.0**
 |---|---|---|
 | Delivery | positional | A delivery manifest (`orbit-watch/delivery`, with the SHA-256 of the observation file) or an observation file (JSON, IOD, TDM). |
 | Request | `--request` | `orbit-watch/request`: target, window, minimum number of observations, maximum declared uncertainties, accepted angle types. |
-| Reference orbits | `--catalog` | GP element sets in OMM form: CelesTrak `FORMAT=JSON` or `FORMAT=CSV`, or the Orbit Watch wrapper used for simulated objects. |
+| Reference orbits | `--catalog` | GP element sets in OMM form: CelesTrak `FORMAT=csv` or `FORMAT=JSON`, or the Orbit Watch wrapper used for simulated objects and for past sets from SatChecker ([data-sources.md](data-sources.md)). It may hold several sets of one object. |
 | Target policy | `--policy` | `orbit-watch/target-policy`: the allow-list. Everything not on it is refused. |
 | Earlier deliveries | `--previous` (repeatable) | For duplicate and resubmission detection. |
 | Sites | `--sites` | Station coordinates, needed for IOD and TDM deliveries. |
@@ -55,7 +56,23 @@ but one could not be decided, and `pass` otherwise.
 
 For each observation the engine predicts where the requested object should be,
 using SGP4 through Skyfield on the reference element set, as seen from the
-station at the observation time. The residual is the angle between the
+station at the observation time.
+
+**The reference element set.** When the catalogue holds several sets of the
+object, the engine takes the set whose epoch is nearest the middle of the
+observations, and on a tie the earlier one (since method 2.1.0,
+[P5-04](decisions.md#p5-04-the-element-set-nearest-the-observations)). The
+report's `reference_orbit` names it:
+
+| Field | Meaning |
+|---|---|
+| `epoch`, `element_set_no` | The set's epoch and element set number. |
+| `element_set_sha256` | SHA-256 of the set's OMM fields as compact canonical JSON (sorted keys, no whitespace), without its `source`. |
+| `selection` | `nearest the middle of the observations`, or `the newest in the catalogue` when no observations could be read. |
+| `element_sets_in_catalogue` | How many sets of the object the catalogue holds. |
+| `source` | Where the set came from, when the catalogue says so: for example SatChecker's endpoint, its `data_source` and `date_collected`, and the SHA-256 of the original set. Never the set itself: reports are published, and real element sets are not ([D-06](decisions.md#d-06-no-real-orbit-data-in-the-repository)). |
+
+Anyone can then fetch the same set and repeat the verification. The residual is the angle between the
 observed and the predicted direction. It is also split into an **along-track**
 component (also given in seconds of time: positive means the object is ahead
 of the prediction) and a **cross-track** component.
@@ -82,7 +99,7 @@ In method 1.0.0 the limit applied to it too, and every delivery on the public
 testnet more than seven days after the bundled catalogue's epoch was
 inconclusive.
 
-Parameters of method 2.0.0, the same as in 1.0.0:
+Parameters of method 2.1.0, the same as in 1.0.0:
 
 | Parameter | Value | Why |
 |---|---|---|
@@ -101,12 +118,14 @@ arcsecond-level accuracy, because the public reference orbit is not that good.
 The [station quality meter](quality-meter.md) looks at systematic errors in
 more detail.
 
-## Known limitations (method 2.0.0)
+## Known limitations (method 2.1.0)
 
 - Light travel time and annual aberration are not modelled (together up to
   about 20″, far below the residual limits).
 - Atmospheric refraction is not modelled for azimuth/elevation data.
-- Only the newest element set per object in the catalogue is used.
+- The reference is one element set, the one nearest the middle of the
+  observations; sets are not combined, and the choice is only among the sets in
+  the catalogue given.
 - One reference orbit source per run; no orbit determination of our own.
 - The allow-list is a plain list of catalogue numbers. `orbit-watch allowlist
   build` builds it from civilian groups of the public catalogue (see the

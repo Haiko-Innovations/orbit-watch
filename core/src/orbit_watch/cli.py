@@ -323,6 +323,82 @@ def cmd_fetch_gp(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+SATCHECKER_CREDIT = (
+    "Source: the IAU CPS's SatChecker (https://satchecker.cps.iau.org), element sets from "
+    'Space-Track and CelesTrak. "This research made use of data and/or services provided by '
+    "the International Astronomical Union Centre for the Protection of the Dark and Quiet Sky "
+    '(IAU CPS) SatHub." Not for redistribution: see docs/data-sources.md.'
+)
+
+
+def cmd_fetch_satchecker(args: argparse.Namespace) -> int:
+    from orbit_watch import orbit_cache
+    from orbit_watch.fetch import FetchError
+    from orbit_watch.ids import parse_catalog_number
+    from orbit_watch.satchecker import fetch_nearest
+    from orbit_watch.timeutil import parse_utc
+
+    try:
+        when = parse_utc(args.near)
+    except ValueError as exc:
+        raise FormatError(f"--near: {exc}") from None
+    norad_id = parse_catalog_number(args.catnr)
+    try:
+        nearest = fetch_nearest(norad_id, when, kind="omm" if args.omm else "tle")
+    except FetchError as exc:
+        _err(str(exc))
+        return EXIT_FAILED
+    document = {
+        "format": "orbit-watch/gp-catalog",
+        "format_version": "1.0",
+        "simulated": False,
+        "description": "A real element set from the IAU CPS's SatChecker. Not for "
+        "redistribution (decision D-06).",
+        "records": [nearest.record],
+    }
+    write_text(args.output, dumps_pretty(document, sort_keys=False))
+    print(f"wrote {args.output}: object {norad_id}, epoch {nearest.epoch}")
+    if args.manifest:
+        cache_dir = Path(args.cache) if args.cache else orbit_cache.default_cache_dir()
+        orbit_cache.store(cache_dir, nearest)
+        path = Path(args.manifest)
+        manifest = (
+            orbit_cache.parse_manifest(path.read_bytes())
+            if path.exists()
+            else orbit_cache.Manifest([], "Real reference orbits, fetched on demand.")
+        )
+        if manifest.add(nearest):
+            orbit_cache.write_manifest(path, manifest)
+            print(f"named it in {path}, and kept SatChecker's answer in {cache_dir}")
+        else:
+            print(f"{path} already names it")
+    print(SATCHECKER_CREDIT)
+    return EXIT_OK
+
+
+def cmd_fetch_orbits(args: argparse.Namespace) -> int:
+    from orbit_watch import orbit_cache
+    from orbit_watch.fetch import FetchError
+
+    try:
+        manifest = orbit_cache.parse_manifest(Path(args.manifest).read_bytes())
+    except orbit_cache.CacheError as exc:
+        raise FormatError(f"{args.manifest}: {exc}") from None
+    cache_dir = Path(args.cache) if args.cache else orbit_cache.default_cache_dir()
+    try:
+        fetched, present = orbit_cache.fill(manifest.entries, cache_dir, log=print)
+    except (FetchError, orbit_cache.CacheError) as exc:
+        _err(f"{exc}. Stopped at the first problem; nothing more was asked for.")
+        return EXIT_FAILED
+    print(f"{fetched} element set(s) fetched, {present} already in {cache_dir}")
+    if args.output:
+        write_text(args.output, orbit_cache.catalog_from_cache(manifest, cache_dir).decode())
+        print(f"wrote {args.output} ({len(manifest.entries)} element set(s))")
+    if fetched:
+        print(SATCHECKER_CREDIT)
+    return EXIT_OK
+
+
 def cmd_allowlist_build(args: argparse.Namespace) -> int:
     from orbit_watch.allowlist import build_policy
 
@@ -917,18 +993,52 @@ def build_parser() -> argparse.ArgumentParser:
     fetch = commands.add_parser(
         "fetch-gp",
         help="download public GP orbit data from CelesTrak (one request, no retries)",
-        description="Download current GP element sets in OMM JSON form from CelesTrak. "
-        "Makes exactly one request, never retries, and does not download the same file "
-        "again within two hours (CelesTrak updates GP data every two hours).",
+        description="Download current GP element sets in OMM CSV form from CelesTrak, "
+        "compressed. Makes exactly one request, never retries, and does not download the same "
+        "file again within two hours (CelesTrak updates GP data every two hours). Ask for one "
+        "object or a small group: CelesTrak limits large lists such as 'active'.",
     )
     fetch.add_argument("--catnr", help="catalogue number")
     fetch.add_argument("--group", help="CelesTrak group, e.g. cubesat, amateur, science")
     fetch.add_argument("--intdes", help="international designator, e.g. 2026-123")
-    fetch.add_argument("-o", "--output", required=True, help="output file (.json)")
+    fetch.add_argument("-o", "--output", required=True, help="output file (.csv)")
     fetch.add_argument(
         "--force", action="store_true", help="download even if the file is younger than two hours"
     )
     fetch.set_defaults(handler=cmd_fetch_gp)
+
+    past = commands.add_parser(
+        "fetch-satchecker",
+        help="download the past element set nearest a time from the IAU CPS's SatChecker",
+        description="Download the element set of one object nearest a given time from the "
+        "IAU CPS's SatChecker (one request, no retries), for observations from the past. "
+        "TLEs are converted to OMM form. With --manifest, the set is also named in a "
+        "reference-orbit manifest and SatChecker's answer kept in the cache.",
+    )
+    past.add_argument("--catnr", required=True, help="catalogue number")
+    past.add_argument(
+        "--near", required=True, help="the time, UTC (YYYY-MM-DDThh:mm:ssZ), e.g. mid-track"
+    )
+    past.add_argument(
+        "--omm", action="store_true", help="ask for an OMM instead of a TLE (newer data only)"
+    )
+    past.add_argument("-o", "--output", required=True, help="output catalogue (.json)")
+    past.add_argument("--manifest", help="name the set in this manifest (created if missing)")
+    past.add_argument("--cache", help="cache directory (default: $ORBIT_WATCH_CACHE or ~/.cache)")
+    past.set_defaults(handler=cmd_fetch_satchecker)
+
+    orbits = commands.add_parser(
+        "fetch-orbits",
+        help="fetch the element sets a reference-orbit manifest names into the local cache",
+        description="Fetch every element set that a reference-orbit manifest names and the "
+        "cache lacks, from the IAU CPS's SatChecker: one request at a time, two seconds apart, "
+        "stopping at the first answer that is not 200 and at any set whose SHA-256 is not the "
+        "manifest's. Real element sets are never committed (decision D-06).",
+    )
+    orbits.add_argument("manifest", help="an orbit-watch/reference-orbits manifest")
+    orbits.add_argument("--cache", help="cache directory (default: $ORBIT_WATCH_CACHE or ~/.cache)")
+    orbits.add_argument("-o", "--output", help="also write the catalogue the manifest names")
+    orbits.set_defaults(handler=cmd_fetch_orbits)
 
     allowlist = commands.add_parser(
         "allowlist",
