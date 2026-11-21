@@ -2028,7 +2028,7 @@ Sources, read on 2026-11-18:
 
 ## Phase 5 decisions
 
-P5-01 to P5-14 are proposed for the
+P5-01 to P5-15 are proposed for the
 [roadmap](roadmap.md#phase-5-real-orbits-and-real-observations-on-the-testnet-target-version-060)'s
 phase 5, real orbits and real observations on the testnet, in
 [#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103).
@@ -2038,7 +2038,9 @@ maintainer on 2026-11-20 and 2026-11-21:
 - real test data from public sources with open terms, instead of asking
   observers for it;
 - the observer's own choice of how precisely a station's place is published;
-- the method measured on real data before it changes.
+- the method measured on real data before it changes;
+- code without waiting: whatever needs the maintainer or someone outside the
+  repository comes at the end of the phase, as a follow-up (P5-14).
 
 Facts were checked on 2026-11-20; the sources are listed under each decision.
 Versions are chosen, and checked, when they are used.
@@ -2080,10 +2082,11 @@ orbit from CelesTrak's GP data, as CelesTrak's usage policy asks:
 - **CSV, compressed.** `FORMAT=csv` with gzip, since JSON is about three times
   the size.
 - **Stop at the first answer that is not 200, and tell a person.** The
-  follower opens an alert issue, as monitoring does
-  ([D-39](#d-39-backups-monitoring-and-read-only-mode)), and fetches nothing
-  more until a person clears it. After a 500 or a 503 it waits at least 15
-  minutes. An object without public data answers 404, which counts towards
+  follower records why it stopped, and fetches nothing more until a person
+  clears it. A health endpoint reports the stop, so the hourly uptime check
+  opens an alert issue as for any other failure
+  ([D-39](#d-39-backups-monitoring-and-read-only-mode)). No new secret is
+  needed. After a 500 or a 503 the follower waits at least 15 minutes. An object without public data answers 404, which counts towards
   CelesTrak's error limit, so it is not asked for again.
 - **A few objects per follower run**, so that a run stays short.
 
@@ -2166,7 +2169,8 @@ Proposed · 2026-11-21. Confirms
 [D-06](#d-06-no-real-orbit-data-in-the-repository) for phase 5. The element
 sets come from the US Space Force through Space-Track, whose user agreement
 governs their redistribution, and CelesTrak states no terms. We have not read
-terms that allow us to republish them. So:
+terms that allow us to republish them; reading them is a follow-up
+([#114](https://github.com/Haiko-Innovations/orbit-watch/issues/114)). So:
 - **Committed examples with real observations name their reference orbits**
   in a manifest: the object, the source, the epoch and the SHA-256.
 - **One command fetches what a manifest names**, by its exact epoch and under
@@ -2223,7 +2227,8 @@ need to be asked for.
     the repository's next version.
 
   Step 5.2 checks the duties of GDPR article 14, for data not obtained from
-  the person, and records the result with its source.
+  the person, and records the result with its source. Anything they ask for
+  outside the code becomes a follow-up (P5-14).
 
 Alternatives, looked at on 2026-11-20:
 - **SeeSat-L's archive.** In September to November 2026 it held 4,494 IOD
@@ -2396,13 +2401,39 @@ service that says where its real data comes from:
 - **CelesTrak**: named as the source of current element sets.
 
 SCORE also asks its users to tell it that they use its data. That is for the
-maintainer to decide (an open point in
-[#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103)).
+maintainer to decide, at the end of the phase: a follow-up (P5-14,
+[#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113)).
 
 Sources: the [SCORE use policy](https://score.cps.iau.org/policy) and
 [SatChecker's acknowledgements](https://satchecker.readthedocs.io/en/latest/acknowledgements.html).
 
-### P5-14 Phase 5 completion criteria
+### P5-14 Follow-ups at the end, not in the way
+
+Proposed · 2026-11-21. Phase 5's steps need nothing from the maintainer but
+reviews and merges, and nothing from anyone outside the repository. Work that
+does becomes a follow-up issue in the phase's milestone, for example:
+- a note to a data source;
+- an account with a service;
+- terms that can be read only after signing in;
+- a change in a third-party service's settings.
+
+A follow-up is done at the end of the phase, or later, and no step waits for
+it. Until it is done, the plan's cautious choice holds. A step that finds such
+work on the way records it as a follow-up and goes on. The follow-ups are not
+completion criteria.
+
+The follow-ups known now:
+- telling SCORE that Orbit Watch uses its data, as its use policy asks, and
+  perhaps starting a collaboration with the IAU CPS ([#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113));
+- reading Space-Track's user agreement, which may need an account, to decide
+  whether real element sets may ever be committed. Until then D-06 and P5-05
+  hold ([#114](https://github.com/Haiko-Innovations/orbit-watch/issues/114)).
+
+The demonstrations on the public service (step 5.8) use the testnet keystores
+of [D-24](#d-24-the-base-sepolia-deployment), so they need no person's own
+wallet.
+
+### P5-15 Phase 5 completion criteria
 
 Proposed · 2026-11-21. Phase 5 is done when:
 
