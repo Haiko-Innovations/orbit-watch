@@ -17,7 +17,9 @@ jobs:
   # The job name is the required status check in the main ruleset.
   tarkistus:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # About 16 minutes with the cache of real element sets; filling it from scratch adds
+    # about 8, since SatChecker is asked two seconds apart.
+    timeout-minutes: 30
     # PostgreSQL for the service's tests and the local stack (decision P4-04): the same image
     # as core/tests/postgres.py (a test keeps them equal), on 127.0.0.1 only, trust
     # authentication, nothing worth protecting. Every test gets a schema of its own.
@@ -77,8 +79,11 @@ jobs:
       # (D-06). SatChecker is asked only for what the cache lacks, two seconds apart, and
       # fetching stops at the first answer that is not 200. If SatChecker cannot be asked,
       # those tests are skipped, and a warning says so. When a manifest changes, the older
-      # cache is restored, so that only the sets it lacks are asked for.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # cache is restored, so that only the sets it lacks are asked for. The cache is saved
+      # right after fetching, so that a later step that fails or runs out of time does not
+      # make the next run ask SatChecker again.
+      - id: orbits
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/orbit-watch
           key: reference-orbits-${{ hashFiles('core/tests/data/reference-orbits.json', 'examples/real/reference-orbits.json', 'validation/real/reference-orbits.json') }}
@@ -91,6 +96,12 @@ jobs:
               || { echo "::warning::SatChecker could not be asked: the tests of real reference orbits are skipped"; break; }
             sleep 2  # SatChecker is asked two seconds apart (P5-03)
           done
+
+      - if: steps.orbits.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/orbit-watch
+          key: ${{ steps.orbits.outputs.cache-primary-key }}
 
       # One BLAS thread: the tests' arrays are small, and with threads the measurement on
       # real data (step 5.3) took 17 times the processor time for the same results.

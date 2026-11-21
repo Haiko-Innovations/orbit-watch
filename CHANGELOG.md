@@ -62,8 +62,9 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   of 2026-11-16 asks, and after an answer that is not 200 says what the policy
   asks next.
 - CI restores the older cache of real element sets when a manifest changes, so that
-  SatChecker is asked only for the sets it lacks, and runs the tests with one BLAS
-  thread.
+  SatChecker is asked only for the sets it lacks, and saves the cache right after
+  fetching, before any later step can fail. It runs the tests with one BLAS thread, and
+  the job may take 30 minutes, for a cache filled from scratch.
 
 ### Fixed
 
