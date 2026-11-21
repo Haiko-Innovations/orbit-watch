@@ -1,0 +1,145 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.1",
+  "simulated": false,
+  "station": {
+    "id": "SCORE-f08826b327e0",
+    "latitude_deg": 32.2238,
+    "longitude_deg": -110.7676,
+    "altitude_m": 834.0,
+    "name": "SCORE observer, Apple iPhone 12 Mini"
+  },
+  "target": {
+    "norad_id": 46265,
+    "name": "SAOCOM 1-B"
+  },
+  "observations": [
+    {
+      "time": "2026-11-19T01:31:47.551Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 354.4756,
+      "dec_deg": 50.8251,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.48
+    },
+    {
+      "time": "2026-11-19T01:31:59.908Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 350.0135,
+      "dec_deg": 44.1114,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": -0.08
+    },
+    {
+      "time": "2026-11-19T01:32:01.798Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 349.2947,
+      "dec_deg": 42.947,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.01
+    },
+    {
+      "time": "2026-11-19T01:32:11.105Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 346.5261,
+      "dec_deg": 37.4305,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.35
+    },
+    {
+      "time": "2026-11-19T01:32:13.338Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 346.0249,
+      "dec_deg": 36.189,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": -0.04
+    },
+    {
+      "time": "2026-11-19T01:32:30.540Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 341.4301,
+      "dec_deg": 24.5108,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.58
+    },
+    {
+      "time": "2026-11-19T01:32:34.351Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 340.7778,
+      "dec_deg": 22.6417,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.04
+    },
+    {
+      "time": "2026-11-19T01:32:52.284Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 337.267,
+      "dec_deg": 11.3341,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.61
+    },
+    {
+      "time": "2026-11-19T01:32:59.224Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 336.0874,
+      "dec_deg": 7.1809,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.45
+    },
+    {
+      "time": "2026-11-19T01:33:08.571Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 334.5581,
+      "dec_deg": 1.6992,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.13
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.6.0.dev0",
+    "converted_from": "score",
+    "notes": "Real observations published in SCORE under CC-BY-4.0, converted by Orbit Watch. SCORE gives no angle uncertainty for 10 of 10 observations: 60 arcsec is assumed by the converter, not declared by the observer.",
+    "origin": {
+      "name": "SCORE, the IAU CPS Satellite Constellation Observation Repository",
+      "url": "https://score.cps.iau.org",
+      "licence": "CC-BY-4.0",
+      "observers": [
+        "0000-0002-7042-068X"
+      ],
+      "observation_ids": [
+        "49229",
+        "49230",
+        "49231",
+        "49232",
+        "49233",
+        "49234",
+        "49235",
+        "49236",
+        "49237",
+        "49238"
+      ],
+      "retrieved": "2026-11-21",
+      "assumed_angle_uncertainty_arcsec": 60.0
+    }
+  }
+}

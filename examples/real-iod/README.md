@@ -1,8 +1,8 @@
 # Real IOD observations with the quality meter
 
-> **Status:** this repository does not yet contain a real observation example.
-> See "Why there is no file here yet" below. The steps work with any real IOD
-> file of a civilian object.
+> **A real example is in [`../real/`](../real):** observations that their observers
+> published in SCORE under CC BY 4.0, in Orbit Watch's format (step 5.2, #8). The
+> steps below work with any real IOD file of a civilian object.
 
 ## Steps
 
@@ -37,17 +37,17 @@
    orbit-watch score-station obs.iod --sites sites.json --catalog gp.csv
    ```
 
-## Why there is no file here yet
+## Why the real example is not in IOD
 
-- Orbit Watch only handles civilian objects. Almost all IOD observations posted
-  to SeeSat-L in October and November 2026 are of classified objects. They have
-  no public orbit, and the project does not handle them.
-- A committed example also needs the matching element set from the time of
-  the observations. CelesTrak provides historical element sets only through a
-  form, and its pages state no redistribution terms.
-- IOD posts include the observer's station coordinates, which often point to a
-  home. Committing them needs the observer's permission.
+Until phase 5 there was no real example, for three reasons:
+- almost all IOD observations posted to SeeSat-L in October and November 2026 are of
+  classified objects, which Orbit Watch does not handle;
+- an example needs the element set from the time of the observations, and CelesTrak
+  gives historical element sets only through a form;
+- IOD posts include the observer's coordinates, and committing them needs the
+  observer's permission.
 
-The plan is to ask an observer for a short IOD set of a civilian object (for
-example a CubeSat), with permission to publish it under CC BY 4.0 together
-with the element set used.
+The IAU CPS's SCORE answers all three: civilian objects, past element sets from its
+SatChecker, and observers who published their observations and places under CC BY 4.0
+themselves. SCORE's observers have no IOD station numbers, so the example is in Orbit
+Watch's format ([P5-06](../../docs/decisions.md#p5-06-real-observations-from-score)).

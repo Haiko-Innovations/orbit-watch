@@ -1,0 +1,122 @@
+{
+  "description": "The SCORE observations in this example: for each, the object and the time window that orbit-watch fetch-score was asked for. Chosen on 2026-11-21 from five instruments, good tracks and bad ones, civilian objects only (decision D-05).",
+  "windows": [
+    {
+      "norad_id": 58296,
+      "start": "2024-05-08T20:30:00Z",
+      "end": "2024-05-08T22:30:00Z",
+      "instrument": "video camera (WATEC 902H2)"
+    },
+    {
+      "norad_id": 58296,
+      "start": "2024-05-20T20:30:00Z",
+      "end": "2024-05-20T22:30:00Z",
+      "instrument": "video camera (WATEC 902H2)"
+    },
+    {
+      "norad_id": 58296,
+      "start": "2024-06-05T20:30:00Z",
+      "end": "2024-06-05T22:30:00Z",
+      "instrument": "video camera (WATEC 902H2)"
+    },
+    {
+      "norad_id": 59588,
+      "start": "2024-09-01T19:30:00Z",
+      "end": "2024-09-01T21:30:00Z",
+      "instrument": "video camera (WATEC 902H2)"
+    },
+    {
+      "norad_id": 45473,
+      "start": "2022-08-29T07:30:00Z",
+      "end": "2022-08-29T09:30:00Z",
+      "instrument": "DECam (Blanco 4 m)"
+    },
+    {
+      "norad_id": 28935,
+      "start": "2024-01-28T00:30:00Z",
+      "end": "2024-01-28T02:30:00Z",
+      "instrument": "DECam (Blanco 4 m)"
+    },
+    {
+      "norad_id": 27426,
+      "start": "2024-01-30T23:30:00Z",
+      "end": "2024-01-31T01:30:00Z",
+      "instrument": "DECam (Blanco 4 m)"
+    },
+    {
+      "norad_id": 27389,
+      "start": "2026-01-17T00:30:00Z",
+      "end": "2026-01-17T02:30:00Z",
+      "instrument": "DECam (Blanco 4 m)"
+    },
+    {
+      "norad_id": 66051,
+      "start": "2026-02-01T00:30:00Z",
+      "end": "2026-02-01T02:30:00Z",
+      "instrument": "eVscope 2.0"
+    },
+    {
+      "norad_id": 67232,
+      "start": "2026-02-04T09:30:00Z",
+      "end": "2026-02-04T11:30:00Z",
+      "instrument": "eVscope 1.0"
+    },
+    {
+      "norad_id": 69591,
+      "start": "2026-09-30T01:30:00Z",
+      "end": "2026-09-30T03:30:00Z",
+      "instrument": "phone (iPhone 12 Mini)"
+    },
+    {
+      "norad_id": 48043,
+      "start": "2026-09-30T01:30:00Z",
+      "end": "2026-09-30T03:30:00Z",
+      "instrument": "phone (iPhone 12 Mini)"
+    },
+    {
+      "norad_id": 18374,
+      "start": "2026-11-16T00:30:00Z",
+      "end": "2026-11-16T02:30:00Z",
+      "instrument": "phone (iPhone 17 Pro)"
+    },
+    {
+      "norad_id": 19169,
+      "start": "2026-11-16T00:30:00Z",
+      "end": "2026-11-16T02:30:00Z",
+      "instrument": "phone (iPhone 17 Pro)"
+    },
+    {
+      "norad_id": 39174,
+      "start": "2026-11-16T00:30:00Z",
+      "end": "2026-11-16T02:30:00Z",
+      "instrument": "phone (iPhone 17 Pro)"
+    },
+    {
+      "norad_id": 14208,
+      "start": "2026-11-19T00:30:00Z",
+      "end": "2026-11-19T02:30:00Z",
+      "instrument": "phone (iPhone 12 Mini)"
+    },
+    {
+      "norad_id": 52621,
+      "start": "2026-11-19T00:30:00Z",
+      "end": "2026-11-19T02:30:00Z",
+      "instrument": "phone (iPhone 12 Mini)"
+    },
+    {
+      "norad_id": 46265,
+      "start": "2026-11-19T00:30:00Z",
+      "end": "2026-11-19T02:30:00Z",
+      "instrument": "phone (iPhone 12 Mini)"
+    }
+  ],
+  "left_out": [
+    {
+      "norad_id": 55945,
+      "start": "2026-09-30T01:30:00Z",
+      "end": "2026-09-30T03:30:00Z",
+      "instrument": "phone (iPhone 12 Mini)",
+      "why": "The observer's place moves by about 7 km during the two-minute track. An observation set holds one station place, so the track would split into single observations."
+    }
+  ]
+}

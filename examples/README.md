@@ -1,7 +1,7 @@
 # Examples
 
-> **Everything in this directory is SIMULATED or illustrative.** None of it is a
-> real observation of a real object. Simulated files say so themselves:
+> **Everything in this directory is SIMULATED or illustrative, except
+> [`real/`](real).** Nothing else is a real observation of a real object. Simulated files say so themselves:
 > `"simulated": true` in JSON, `# orbit-watch: simulated=true` in IOD and
 > `COMMENT orbit-watch simulated=true` in TDM.
 
@@ -21,5 +21,9 @@
   party with its own wallet, with links to every transaction and attestation.
   It is a record of one run on a live chain, so CI does not regenerate it; CI
   runs the same demo on a local chain instead.
-- [`real-iod/`](real-iod): how to run the quality meter on real IOD
-  observations, and why no real example is committed yet.
+- [`real/`](real): **real** observations of 18 tracks from 7 stations, which their
+  observers published in the IAU CPS's SCORE under CC BY 4.0, converted to Orbit
+  Watch's format with credits, and the quality meter's report for each station. The
+  reference orbits are named in a manifest and fetched on demand, never committed.
+- [`real-iod/`](real-iod): how to run the quality meter on your own real IOD
+  observations.

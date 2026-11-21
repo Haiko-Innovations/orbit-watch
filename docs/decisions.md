@@ -2542,3 +2542,85 @@ Sources:
   (version 1.9.0);
 - sgp4 2.27's README, "Export" (`exporter.export_omm`);
 - [actions/cache](https://github.com/actions/cache) v6.1.0 (`path`, `key`).
+
+### D-45 Real observations from SCORE
+
+Accepted · 2026-11-21 (with the pull request that implements step 5.2).
+
+- **Fetching** (`score.py`, `orbit-watch fetch-score`). One object and one window per
+  command, through `GET /api/observations/search`: pages of 100, at least a second apart,
+  at most 200 pages. It stops at the first answer that is not 200, and after a 429 or a
+  5xx it says to wait at least 15 minutes. The fetched file keeps SCORE's items as
+  received, with the query, the date and the licence.
+- **Observation set format 1.1** adds `source.origin`: the source, its URL, the licence
+  (SPDX), the observers' ORCID iDs, the source's ID of each observation (one per
+  observation, checked), the date fetched, and any uncertainty the converter assumed.
+  `converted_from` may be `score`. A set is written as 1.1 only when it has an origin,
+  so every other file stays 1.0 byte for byte; the schema is picked by
+  `format_version`.
+- **Converting** (`orbit-watch convert-score`).
+  - Brightness-only observations, and those without a place or a time, are left out
+    and counted.
+  - A track is one object, instrument and set of observers, with no gap over 15
+    minutes. Observations more than 100 m from the track's first place start a new
+    track.
+  - A station is one instrument and set of observers at one site. Tracks within 100 m
+    of a station's first place share it, across every file converted together. Its ID
+    is `SCORE-` and the start of the SHA-256 of the place, the instrument and the
+    observers. The place is kept as published: verification needs it (P5-06, P5-11).
+  - The angle uncertainty is the square root of the larger of SCORE's two variances,
+    which is conservative however SCORE measures the right ascension's. A variance of 0
+    counts as none.
+  - SCORE gives no angle uncertainty for most positional observations, and 0 for some
+    tracks. `--assume-angle-uncertainty` and `--assume-time-uncertainty` say what to
+    assume. Each file records the value and how many observations it applies to, and
+    says it is the converter's assumption, not the observer's statement. Without them
+    such observations are left out.
+  - `--credits` writes a credits file: every file's observers by ORCID iD, SCORE's
+    acknowledgement and the statement it requires, and SatChecker's acknowledgement
+    (P5-13).
+- **The committed set** (`examples/real/`), fetched on 2026-11-21.
+  - 18 tracks from 7 stations and five kinds of instrument: a video camera, DECam on
+    the Blanco 4 m, two eVscopes and two phones. 2,223 observations, 0.7 MB.
+  - **60″ is assumed** for every angle uncertainty, since SCORE gives none for these.
+    It is one arcminute, a round and cautious value. The reference orbit's term
+    dominates today's limits anyway (P5-07), and step 5.3 measures what the
+    assumption changes.
+  - Only civilian objects (D-05), and a test checks the names against the allow-list's
+    patterns. The track of a phone whose place moved 7 km in two minutes is left out:
+    a set has one station place. `tracks.json` lists the windows and that track.
+  - The 18 reference orbits, from SatChecker and nearest each track, are named in
+    `examples/real/reference-orbits.json`, not committed (P5-05). CI fetches them into
+    its cache.
+  - The quality meter's report for each station is committed. A test regenerates them
+    from the cache and requires them to match, so a release regenerates them as it
+    does the simulated examples.
+- **What the quality meter finds** (method 1.1.0).
+  - **The video camera:** angle precision 9.6″, timing 0.017 s, no clock offset.
+  - **The iPhone 12 Mini:** every object about 1.6 s behind its prediction, in
+    September and in November, which the meter reads as the phone's clock.
+  - **The iPhone 17 Pro:** tens to hundreds of seconds off, wrong times or wrong
+    objects.
+  - **DECam and the eVscopes:** two observations per object, too few for precision.
+- **Phase 0's last criterion** ("one real public IOD example") is met with this set,
+  in Orbit Watch's format, since SCORE's observers have no IOD station numbers (P5-06;
+  #8 closed).
+- **Personal data.** The [privacy notice](legal/privacy-notice.md#observations-that-others-have-published)
+  has a section of its own, and the [data inventory](personal-data.md#observations-that-others-have-published)
+  a table. GDPR article 14 was read, with these results:
+  - articles 14(1) and (2): what a person is told, including the source;
+  - article 14(3): within a month;
+  - article 14(5)(b): where telling each person would be disproportionate, "making the
+    information publicly available".
+
+  We have only ORCID iDs, not contact details. The public notice is the measure taken
+  here. Reaching the observers directly is a follow-up (#113). This is our reading,
+  not legal advice.
+
+Sources:
+- [SCORE use policy](https://score.cps.iau.org/policy),
+  [data format](https://score.cps.iau.org/data-format),
+  [API](https://score.cps.iau.org/api-access), and the OpenAPI description (version
+  2.0.0);
+- [GDPR article 14](https://gdpr-info.eu/art-14-gdpr/). EUR-Lex's page asked for a
+  browser check, which an automated client does not pass.

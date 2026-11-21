@@ -1,6 +1,6 @@
 # Privacy notice
 
-Orbit Watch public testnet service · version of 17 November 2026
+Orbit Watch public testnet service · version of 21 November 2026
 
 This notice says what personal data the Orbit Watch service keeps, why, for how long and who else handles it. It covers the public testnet service and its web application. Orbit Watch is open source: the code that does all of this is public, and the [data inventory](https://github.com/Haiko-Innovations/orbit-watch/blob/main/docs/personal-data.md) lists every table and log in detail.
 
@@ -26,6 +26,18 @@ The service does not collect anything else about you. You need a wallet and a na
 ## On the blockchain
 
 The service runs on Base Sepolia, a public test blockchain. What you do there with your wallet is public and permanent: your wallet address, the transactions you sign, and the attestations and votes that name your requests, files and reasons by their SHA-256 hashes. **No one, including us, can delete or change what is on the blockchain.** Think about this before you use a wallet address that is linked to you elsewhere: you can make a new wallet just for testing.
+
+## Observations that others have published
+
+Orbit Watch's public repository also holds real observations of satellites that observers published themselves in SCORE, the IAU's Satellite Constellation Observation Repository, under the CC BY 4.0 licence. Replays of such observations through the service will hold them too. We did not get these data from the observers themselves, so this section says what the law asks us to tell them (GDPR article 14).
+
+- **What.** For each observation: its time, the position measured, the uncertainties, the instrument, the observer's place as published in SCORE, SCORE's ID of the observation, and the observers' ORCID iDs, which name the people who made it.
+- **From where.** [SCORE](https://score.cps.iau.org), where the observers published them for anyone to use under CC BY 4.0: a publicly accessible source.
+- **Why, and on what basis.** To measure and show how Orbit Watch's verification works on real observations, and to credit the observers as the licence asks. The legal basis is our legitimate interest in a verification method that is tested on real data and open to review (article 6(1)(f)). The place is kept as published, because verification needs the exact place.
+- **Who sees it.** Anyone: the repository is public, as SCORE is.
+- **How long.** As long as the examples are in the repository. If an observer asks, their observations are removed from the next version of the repository and from the service. Copies others have made, and the repository's history, stay.
+
+The observers have the same rights as everyone else, below. They can also ask SCORE about what they published there.
 
 ## Why, and on what basis
 

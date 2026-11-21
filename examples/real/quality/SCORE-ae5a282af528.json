@@ -1,0 +1,61 @@
+{
+  "report_format": "orbit-watch/station-quality-report",
+  "report_format_version": "1.0",
+  "method_version": "1.1.0",
+  "software": {
+    "orbit-watch": "0.6.0.dev0"
+  },
+  "simulated_input": false,
+  "station": {
+    "id": "SCORE-ae5a282af528",
+    "latitude_deg": 30.532,
+    "longitude_deg": -97.747,
+    "altitude_m": 251.0,
+    "name": "SCORE observer, eVscope v2.0"
+  },
+  "summary": "2 observations of 1 object(s) on 1 night(s), 2026-02-01T01:46:53.811Z to 2026-02-01T01:46:53.811Z.",
+  "overall": {
+    "objects": 1,
+    "nights": 1,
+    "observations": 2,
+    "angle_scatter_arcsec": null,
+    "timing_scatter_s": null,
+    "mean_along_track_s": -0.0571,
+    "declared_angle_uncertainty_arcsec": [
+      60.0
+    ],
+    "declared_time_uncertainty_s": [
+      0.1
+    ]
+  },
+  "findings": [
+    "Not enough observations per pass (at least 4) to estimate your angle precision (cross-track scatter within passes).",
+    "Not enough observations per pass (at least 4) to estimate your timing precision (along-track scatter within passes).",
+    "The object appears 0.06 s behind its prediction in these observations. With one object this cannot be told apart from an error of its reference orbit; observe more objects to check your clock."
+  ],
+  "objects": [
+    {
+      "norad_id": 66051,
+      "name": "CZ-6A R/B",
+      "passes": 1,
+      "median_residual_arcsec": 145.353,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": -0.0571
+    }
+  ],
+  "nights": [
+    {
+      "night": "2026-01-31",
+      "objects": 1,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": -0.0571
+    }
+  ],
+  "notices": [
+    "Residuals include the error of the public reference orbit (about a kilometre at epoch, growing with age). Offsets shared by several objects point to the station; offsets of single objects are more likely orbit errors."
+  ]
+}

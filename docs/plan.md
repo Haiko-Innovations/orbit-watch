@@ -69,6 +69,8 @@ This is the community core, and it contains no crypto.
 - `pip install` and one command produce a simulated dataset and a verification report.
 - All six test datasets get the correct result and an understandable explanation.
 - The quality meter works with simulated data and with one real public IOD example.
+  (Met in phase 5 with real public observations from SCORE, in Orbit Watch's format:
+  [examples/real/](../examples/real), [P5-06](decisions.md#p5-06-real-observations-from-score).)
 - The README explains in three minutes what the project is, how to try it and how to contribute. CONTRIBUTING, a code of conduct, issue templates and tasks labelled "good first issue" are included, for example a new check, a new format or a new station profile.
 
 ### Phase 1: requests, optimistic verification and API (Python or TypeScript, lightweight database)

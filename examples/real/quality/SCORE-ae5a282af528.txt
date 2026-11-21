@@ -1,0 +1,20 @@
+Orbit Watch station quality meter 1.1.0
+Station SCORE-ae5a282af528 (30.5320, -97.7470, 251 m)
+2 observations of 1 object(s) on 1 night(s), 2026-02-01T01:46:53.811Z to 2026-02-01T01:46:53.811Z.
+
+Findings
+  - Not enough observations per pass (at least 4) to estimate your angle precision (cross-track scatter within passes).
+  - Not enough observations per pass (at least 4) to estimate your timing precision (along-track scatter within passes).
+  - The object appears 0.06 s behind its prediction in these observations. With one object this cannot be told apart from an error of its reference orbit; observe more objects to check your clock.
+
+Per object
+  object   name                           passes  obs    angle   timing   offset
+  66051    CZ-6A R/B                           1    2       -″       -s  -0.057s
+
+Per night (development over time)
+  night of     objects  obs    angle   timing   offset
+  2026-01-31         1    2       -″       -s  -0.057s
+
+angle = cross-track scatter within passes, timing = along-track scatter within passes,
+offset = mean along-track offset (positive: the object is ahead of its prediction).
+Note: Residuals include the error of the public reference orbit (about a kilometre at epoch, growing with age). Offsets shared by several objects point to the station; offsets of single objects are more likely orbit errors.

@@ -27,6 +27,12 @@ def semantic_problems(document: dict[str, Any]) -> list[str]:
             parse_utc(obs["time"])
         except ValueError as exc:
             problems.append(f"/observations/{index}/time: {exc}")
+    origin = document.get("source", {}).get("origin")
+    if origin is not None and len(origin["observation_ids"]) != len(document["observations"]):
+        problems.append(
+            "/source/origin/observation_ids: one ID per observation is needed "
+            f"({len(origin['observation_ids'])} IDs, {len(document['observations'])} observations)"
+        )
     return problems
 
 

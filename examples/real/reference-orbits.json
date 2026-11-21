@@ -1,0 +1,133 @@
+{
+  "format": "orbit-watch/reference-orbits",
+  "format_version": "1.0",
+  "description": "Real reference orbits, fetched on demand.",
+  "element_sets": [
+    {
+      "norad_id": 14208,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-19T02:47:50.089343",
+      "sha256": "431975f0fe6ea0afa657d8d72147aec8b4248bd147b3df26d9748ecf912ca2fa"
+    },
+    {
+      "norad_id": 18374,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-16T00:07:31.700064",
+      "sha256": "ed2d9fae02309aea72913a8cd270a5d17909318bd33acd788482c78a3da7e5ae"
+    },
+    {
+      "norad_id": 19169,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-15T22:53:41.509824",
+      "sha256": "8b26b34f766bbca38b5b4fb0878c2182cdadb6e6fc815e5d04d28b4ee3f1bb2b"
+    },
+    {
+      "norad_id": 27389,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-17T03:10:52.155839",
+      "sha256": "f993dc849e970052f5a6ef5c0752ebe6229444024ce99fe164bf1e7761853b22"
+    },
+    {
+      "norad_id": 27426,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-01-30T21:28:32.289023",
+      "sha256": "bdbc7e38d60335faa0e9a0098e4dfd11aaa8880c2dc929b105cd9efd3175346e"
+    },
+    {
+      "norad_id": 28935,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-01-27T16:07:48.478368",
+      "sha256": "eacb5346e1b8b2ae8fd4e0649d46f860ef4ec401ce9882032bb3078f3322fd7a"
+    },
+    {
+      "norad_id": 39174,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-16T03:23:24.451008",
+      "sha256": "cea37088f666214e310de27a4f30cae66c5db8bf47fcaf46860ec134a5d668d4"
+    },
+    {
+      "norad_id": 45473,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2022-08-29T14:15:42.964128",
+      "sha256": "d924bc2f714eaf93ca3a3708b32ad502a94843926277a59a9a7315f680e484cc"
+    },
+    {
+      "norad_id": 46265,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-18T23:15:18.582048",
+      "sha256": "abaa2d3d1fb5600b695bad97b8dada1279590a6da05aefdcd287f08ccdf5623e"
+    },
+    {
+      "norad_id": 48043,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T02:03:34.546464",
+      "sha256": "4cdbaf30ef1a2cb0197d306e74e4393a87262c56b9cfd07a08097b5c8959b222"
+    },
+    {
+      "norad_id": 52621,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-19T01:27:42.000191",
+      "sha256": "4414d61335739aef84f55fe154a42bf057224e40f2b857613c0529f520ed207a"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-08T13:35:16.605888",
+      "sha256": "4cb499f0a12dfc19b9fcdc4220cdb46de56d3fdf09e3d0b571a8476c4eb85862"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-21T05:09:27.523295",
+      "sha256": "2355a568213b332d1e68fab8a5961b96183014a79b517200a598f94efd6510d2"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-06-06T11:37:27.907392",
+      "sha256": "c76996d0bb99643d17598a4ce8033692b816e6b89645f6d291905f2815cdc496"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-01T18:26:43.156320",
+      "sha256": "7cc151174ea40fec288648aae7f836fb4280ec6efb9ecb8ed318c18acc5a72f2"
+    },
+    {
+      "norad_id": 66051,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-31T22:20:46.716864",
+      "sha256": "90db15f6abca513669afac1ca12c1141ee075f12c1cf8e11296630b9411ecfcb"
+    },
+    {
+      "norad_id": 67232,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-02-03T23:58:21.459071",
+      "sha256": "0be883b296309cfecb00fd5548a2e118dc246b32a29271607c800ca61616bfcf"
+    },
+    {
+      "norad_id": 69591,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T01:34:28.931232",
+      "sha256": "d5c742fc43230177e6eafd38431a4090f47af831cb9326cefd524d2bd824421a"
+    }
+  ]
+}

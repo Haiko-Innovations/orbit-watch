@@ -84,6 +84,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Deterministic, versioned verification engine | `validate` | [verification.md](docs/verification.md) |
 | Station quality meter | `score-station` | [quality-meter.md](docs/quality-meter.md) |
 | Public orbit data and the civilian allow-list | `fetch-gp`, `fetch-satchecker`, `fetch-orbits`, `allowlist build` | [data-sources.md](docs/data-sources.md) |
+| Real observations that observers published in SCORE (CC BY 4.0) | `fetch-score`, `convert-score` | [data-sources.md](docs/data-sources.md#real-observations-score), [examples/real/](examples/real) |
 | Request lifecycle, optimistic verification, reviewer rounds | | [lifecycle.md](docs/lifecycle.md), [optimistic-verification.md](docs/optimistic-verification.md) |
 | Settlement rules and the points ledger | | [settlement.md](docs/settlement.md) |
 | Reviewer accuracy with known-answer tasks | | [reviewer-accuracy.md](docs/reviewer-accuracy.md) |
@@ -98,13 +99,17 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | The public testnet service (phase 4) on Vercel and Neon, open since 0.5.0: deploying and rolling back, encrypted daily backups, an uptime check, read-only mode and runbooks | `orbit-watch backup create`, `orbit-watch backup restore`, `orbit-watch serve --read-only` | [deployment.md](docs/deployment.md), [operations.md](docs/operations.md) |
 
 The Python code is in [`core/`](core), the Solidity contracts in [`contracts/`](contracts) and the web application in [`web/`](web). Simulated examples are in
-[`examples/`](examples).
+[`examples/`](examples), and real observations from SCORE in
+[`examples/real/`](examples/real).
 
-### What is simulated
+### What is simulated, and what is real
 
-- All stations, observations and test datasets in this repository, and the four
-  objects in the built-in catalogue (numbers 339001–339009, marked
-  `(SIMULATED)`).
+- All stations, observations and test datasets in this repository are SIMULATED,
+  except [`examples/real/`](examples/real), as are the four objects in the built-in
+  catalogue (numbers 339001–339009, marked `(SIMULATED)`).
+- [`examples/real/`](examples/real) holds **real** observations that their observers
+  published in the IAU CPS's [SCORE](https://score.cps.iau.org) under CC BY 4.0, with
+  credits to each observer. `fetch-score` and `convert-score` fetch and convert more.
 - Simulated files say so themselves (`"simulated": true`, or a marker line in
   IOD and TDM), and a simulated delivery can never satisfy a real request.
 - Real orbit data is never committed: `fetch-gp` downloads current sets from
@@ -160,9 +165,6 @@ The full starting plan: [docs/plan.md](docs/plan.md).
 
 - **Name:** "Orbit Watch" is a working name; trademark and domain checks have
   not been done (close ones: "Orbital Watch" and DARPA OrbitOutlook).
-- **A real IOD example:** recent public IOD posts are almost all of classified
-  objects; we would like to ask an observer for a civilian example with
-  permission to publish it (see [examples/real-iod/](examples/real-iod)).
 - **Bonds** for reservations and reviewers against rubber-stamping and collusion.
 - **Full dispute resolution.**
 - **Decentralisation:** in the long run, no dependence on a single person,

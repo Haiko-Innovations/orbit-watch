@@ -1,0 +1,22 @@
+Orbit Watch station quality meter 1.1.0
+Station SCORE-7da85e3920f6 (32.2239, -110.7675, 835.9 m)
+11 observations of 3 object(s) on 1 night(s), 2026-11-16T01:26:56.873Z to 2026-11-16T01:27:25.704Z.
+
+Findings
+  - Your angle precision (cross-track scatter within passes) is 306.4″, larger than the uncertainty you declare (60″). Consider declaring a larger uncertainty.
+  - Your timing precision (along-track scatter within passes) is 4.188 s, larger than the uncertainty you declare (0.1 s). Consider declaring a larger uncertainty.
+  - 3 objects appear on average 114.37 s ahead of their predictions in these observations. A shared offset points to your clock: your timestamps seem to run about 114.37 s behind UTC. Check the time synchronisation (GPS/PPS or NTP) and the exposure timing.
+
+Per object
+  object   name                           passes  obs    angle   timing   offset
+  18374    SL-12 R/B(AUX MOTOR)                1    4   417.4″   4.910s -16.881s
+  19169    SL-12 R/B(AUX MOTOR)                1    4   116.2″   3.311s+305.610s
+  39174    BREEZE-M DEB (TANK)                 1    3       -″       -s +34.378s
+
+Per night (development over time)
+  night of     objects  obs    angle   timing   offset
+  2026-11-15         3   11   306.4″   4.188s+114.368s
+
+angle = cross-track scatter within passes, timing = along-track scatter within passes,
+offset = mean along-track offset (positive: the object is ahead of its prediction).
+Note: Residuals include the error of the public reference orbit (about a kilometre at epoch, growing with age). Offsets shared by several objects point to the station; offsets of single objects are more likely orbit errors.

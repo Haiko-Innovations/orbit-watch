@@ -27,6 +27,20 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   apart, checking every SHA-256. CI keeps the cache in GitHub Actions' cache
   only.
 
+- Real observations from the IAU CPS's SCORE (CC BY 4.0): `orbit-watch fetch-score`
+  fetches one object's observations in a window, politely, and `orbit-watch
+  convert-score` writes each track as an observation set that names SCORE, the
+  observers' ORCID iDs, SCORE's observation IDs and the licence, with a credits file
+  (step 5.2, #105).
+- `examples/real/`: 18 tracks of real observations from 7 stations and five kinds of
+  instrument, with credits, a manifest of their reference orbits and the quality
+  meter's report for each station. Phase 0's last criterion, a real public example, is
+  met (#8).
+- Observation set format 1.1: `source.origin` for observations that someone else
+  published. Every other file stays 1.0.
+- The privacy notice (version of 21 November 2026) and the data inventory say what
+  Orbit Watch keeps of observations that others published in SCORE.
+
 ### Changed
 
 - Verification method 2.1.0 and report format 1.1: when the catalogue holds

@@ -1,0 +1,29 @@
+Orbit Watch station quality meter 1.1.0
+Station SCORE-77d01109b5d1 (-30.1653, -70.8150, 2215 m)
+8 observations of 4 object(s) on 4 night(s), 2022-08-29T08:01:25.198Z to 2026-01-17T01:07:33.732Z.
+
+Findings
+  - Not enough observations per pass (at least 4) to estimate your angle precision (cross-track scatter within passes).
+  - Not enough observations per pass (at least 4) to estimate your timing precision (along-track scatter within passes).
+  - The object appears 17.06 s ahead of its prediction on the latest night. With one object this cannot be told apart from an error of its reference orbit; observe more objects to check your clock.
+  - The mean timing offset changed from +64.19 s (night of 2022-08-28) to -40.26 s (night of 2024-01-27).
+  - The mean timing offset changed from -40.26 s (night of 2024-01-27) to -28.49 s (night of 2024-01-30).
+  - The mean timing offset changed from -28.49 s (night of 2024-01-30) to +17.06 s (night of 2026-01-16).
+
+Per object
+  object   name                           passes  obs    angle   timing   offset
+  27389    TDRS 9                              1    2       -″       -s +17.061s
+  27426    DIRECTV 5 (TEMPO 1)                 1    2       -″       -s -28.485s
+  28935    ECHOSTAR 10                         1    2       -″       -s -40.259s
+  45473    ATLAS 5 CENTAUR DEB                 1    2       -″       -s +64.190s
+
+Per night (development over time)
+  night of     objects  obs    angle   timing   offset
+  2022-08-28         1    2       -″       -s +64.190s
+  2024-01-27         1    2       -″       -s -40.259s
+  2024-01-30         1    2       -″       -s -28.485s
+  2026-01-16         1    2       -″       -s +17.061s
+
+angle = cross-track scatter within passes, timing = along-track scatter within passes,
+offset = mean along-track offset (positive: the object is ahead of its prediction).
+Note: Residuals include the error of the public reference orbit (about a kilometre at epoch, growing with age). Offsets shared by several objects point to the station; offsets of single objects are more likely orbit errors.

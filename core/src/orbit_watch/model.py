@@ -1,8 +1,8 @@
 """In-memory model of observation sets.
 
-The JSON document (schemas/observation-set-1.0.schema.json) is the source of
-truth; these classes are a convenience for converters, the simulator and the
-verification engine.
+The JSON document (schemas/observation-set-1.0.schema.json, and 1.1 for observations
+that someone else published) is the source of truth; these classes are a convenience for
+converters, the simulator and the verification engine.
 """
 
 from __future__ import annotations
@@ -15,6 +15,9 @@ from orbit_watch.timeutil import format_utc, parse_utc
 
 FORMAT_ID = "orbit-watch/observation-set"
 FORMAT_VERSION = "1.0"
+# Format 1.1 adds source.origin (decision P5-06). A set is written as 1.1 only when it has
+# one, so every other file stays byte for byte as it was.
+FORMAT_VERSION_WITH_ORIGIN = "1.1"
 
 ANGLE_DECIMALS = 8  # 1e-8 degrees is about 0.04 milliarcseconds
 
@@ -144,7 +147,9 @@ class ObservationSet:
     def to_document(self) -> dict[str, Any]:
         doc: dict[str, Any] = {
             "format": FORMAT_ID,
-            "format_version": FORMAT_VERSION,
+            "format_version": (
+                FORMAT_VERSION_WITH_ORIGIN if "origin" in self.source else FORMAT_VERSION
+            ),
             "simulated": self.simulated,
             "station": self.station.to_document(),
             "target": self.target.to_document(),

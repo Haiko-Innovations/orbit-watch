@@ -61,6 +61,39 @@ Legal bases (GDPR article 6(1)): **b**, the contract, that is the terms of use;
 The points ledger of phase 1 (`ledger_*`, `attestations`) names parties as well;
 the public service runs on the chain and keeps no points.
 
+## Observations that others have published
+
+Phase 5, step 5.2 ([P5-06](decisions.md#p5-06-real-observations-from-score),
+[D-45](decisions.md#d-45-real-observations-from-score)). The repository holds real
+observations that observers published themselves in SCORE under CC BY 4.0, in
+[`examples/real/`](../examples/real). Replays through the service (step 5.5) will hold
+the same kind of data.
+
+| Data | Where | Who sees it | Kept | Deleted by | Basis |
+|---|---|---|---|---|---|
+| Observers' ORCID iDs, the observer's place as published in SCORE, instrument, observation times and positions, SCORE's observation IDs | `examples/real/observations/`, `examples/real/CREDITS.md`, the quality reports in `examples/real/quality/` | public, as in SCORE | as long as the example is in the repository | a maintainer, on request: removed from the next version; the repository's history and others' copies stay | f |
+
+**GDPR article 14**, for data not obtained from the person, was read on 2026-11-21
+([text](https://gdpr-info.eu/art-14-gdpr/); EUR-Lex's own page asked for a browser
+check, which an automated client does not pass):
+- Article 14(1) and (2) list what the person is told, among it "from which source the
+  personal data originate, and if applicable, whether it came from publicly accessible
+  sources". The [privacy notice](legal/privacy-notice.md#observations-that-others-have-published)
+  says all of it in a section of its own.
+- Article 14(3) asks for this "within a reasonable period after obtaining the personal
+  data, but at the latest within one month".
+- Article 14(5)(b) lifts the duty where telling each person "proves impossible or would
+  involve a disproportionate effort", and then asks for "appropriate measures …
+  including making the information publicly available".
+
+We have only the observers' ORCID iDs, not their contact details. The public notice is
+the measure taken in the repository. Whether to reach the observers directly, for
+example through SCORE's maintainers, is the maintainer's decision as the controller. It
+needs someone outside the repository, so it is a follow-up at the end of the phase
+([P5-14](decisions.md#p5-14-follow-ups-at-the-end-not-in-the-way),
+[#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113)). This is our reading,
+not legal advice.
+
 ## Who else handles it
 
 - **Vercel Inc.**, hosting: a processor under its DPA, which includes the 2021
