@@ -1,0 +1,57 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.1",
+  "simulated": false,
+  "station": {
+    "id": "SCORE-77d01109b5d1",
+    "latitude_deg": -30.165278,
+    "longitude_deg": -70.815,
+    "altitude_m": 2215.0,
+    "name": "SCORE observer, DECam"
+  },
+  "target": {
+    "norad_id": 27389,
+    "name": "TDRS 9"
+  },
+  "observations": [
+    {
+      "time": "2026-01-17T01:06:43.732Z",
+      "time_uncertainty_s": 25.0,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 10.05964562,
+      "dec_deg": -2.40625467,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 12.523
+    },
+    {
+      "time": "2026-01-17T01:07:33.732Z",
+      "time_uncertainty_s": 25.0,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 9.98161142,
+      "dec_deg": -2.42085346,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 12.523
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.6.0.dev0",
+    "converted_from": "score",
+    "notes": "Real observations published in SCORE under CC-BY-4.0, converted by Orbit Watch. SCORE gives no angle uncertainty for 2 of 2 observations: 60 arcsec is assumed by the converter, not declared by the observer.",
+    "origin": {
+      "name": "SCORE, the IAU CPS Satellite Constellation Observation Repository",
+      "url": "https://score.cps.iau.org",
+      "licence": "CC-BY-4.0",
+      "observers": [
+        "0009-0006-0921-1623"
+      ],
+      "observation_ids": [
+        "48759",
+        "48760"
+      ],
+      "retrieved": "2026-11-21",
+      "assumed_angle_uncertainty_arcsec": 60.0
+    }
+  }
+}

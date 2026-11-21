@@ -1,0 +1,71 @@
+{
+  "report_format": "orbit-watch/station-quality-report",
+  "report_format_version": "1.0",
+  "method_version": "1.1.0",
+  "software": {
+    "orbit-watch": "0.6.0.dev0"
+  },
+  "simulated_input": false,
+  "station": {
+    "id": "SCORE-3727e074cd22",
+    "latitude_deg": 32.223797438279625,
+    "longitude_deg": -110.76758204440142,
+    "altitude_m": 835.2840983672068,
+    "name": "SCORE observer, iPhone 12 Mini"
+  },
+  "summary": "44 observations of 2 object(s) on 1 night(s), 2026-09-30T02:10:02.568Z to 2026-09-30T02:14:46.436Z.",
+  "overall": {
+    "objects": 2,
+    "nights": 1,
+    "observations": 44,
+    "angle_scatter_arcsec": 97.311,
+    "timing_scatter_s": 0.2406,
+    "mean_along_track_s": -1.616,
+    "declared_angle_uncertainty_arcsec": [
+      60.0
+    ],
+    "declared_time_uncertainty_s": [
+      0.1
+    ]
+  },
+  "findings": [
+    "Your angle precision (cross-track scatter within passes) is 97.3″, larger than the uncertainty you declare (60″). Consider declaring a larger uncertainty.",
+    "Your timing precision (along-track scatter within passes) is 0.241 s, larger than the uncertainty you declare (0.1 s). Consider declaring a larger uncertainty.",
+    "2 objects appear on average 1.62 s behind their predictions in these observations. A shared offset points to your clock: your timestamps seem to run about 1.62 s ahead of UTC. Check the time synchronisation (GPS/PPS or NTP) and the exposure timing."
+  ],
+  "objects": [
+    {
+      "norad_id": 48043,
+      "name": "ONEWEB-0152",
+      "passes": 1,
+      "median_residual_arcsec": 1532.992,
+      "observations": 3,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": -1.6516
+    },
+    {
+      "norad_id": 69591,
+      "name": "SPACEMOBILE-010",
+      "passes": 1,
+      "median_residual_arcsec": 2369.595,
+      "observations": 41,
+      "angle_scatter_arcsec": 97.311,
+      "timing_scatter_s": 0.2406,
+      "mean_along_track_s": -1.6134
+    }
+  ],
+  "nights": [
+    {
+      "night": "2026-09-29",
+      "objects": 2,
+      "observations": 44,
+      "angle_scatter_arcsec": 97.311,
+      "timing_scatter_s": 0.2406,
+      "mean_along_track_s": -1.616
+    }
+  ],
+  "notices": [
+    "Residuals include the error of the public reference orbit (about a kilometre at epoch, growing with age). Offsets shared by several objects point to the station; offsets of single objects are more likely orbit errors."
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.1",
+  "simulated": false,
+  "station": {
+    "id": "SCORE-3727e074cd22",
+    "latitude_deg": 32.223797438279625,
+    "longitude_deg": -110.76758204440142,
+    "altitude_m": 835.2840983672068,
+    "name": "SCORE observer, iPhone 12 Mini"
+  },
+  "target": {
+    "norad_id": 48043,
+    "name": "ONEWEB-0152"
+  },
+  "observations": [
+    {
+      "time": "2026-09-30T02:14:44.571Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 349.06229825,
+      "dec_deg": 44.15182643,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 3.61
+    },
+    {
+      "time": "2026-09-30T02:14:45.511Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 349.34369272,
+      "dec_deg": 44.75215573,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 3.24
+    },
+    {
+      "time": "2026-09-30T02:14:46.436Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 349.68247218,
+      "dec_deg": 45.37571927,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 3.19
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.6.0.dev0",
+    "converted_from": "score",
+    "notes": "Real observations published in SCORE under CC-BY-4.0, converted by Orbit Watch. SCORE gives no angle uncertainty for 3 of 3 observations: 60 arcsec is assumed by the converter, not declared by the observer. SCORE gives the observer's place for each observation; they differ by up to 3 m from the station's place, the first seen at this site.",
+    "origin": {
+      "name": "SCORE, the IAU CPS Satellite Constellation Observation Repository",
+      "url": "https://score.cps.iau.org",
+      "licence": "CC-BY-4.0",
+      "observers": [
+        "0000-0002-7042-068X"
+      ],
+      "observation_ids": [
+        "47024",
+        "47025",
+        "47026"
+      ],
+      "retrieved": "2026-11-21",
+      "assumed_angle_uncertainty_arcsec": 60.0
+    }
+  }
+}

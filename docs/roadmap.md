@@ -16,7 +16,10 @@ Its decisions P5-01 to P5-15 were approved on 2026-11-21
 is done: catalogues with several element sets per object, verification against
 the set nearest the observations (method 2.1.0), past sets from SatChecker,
 and reference-orbit manifests with a cache outside the repository
-([D-44](decisions.md#d-44-reference-orbits-in-the-core)).
+([D-44](decisions.md#d-44-reference-orbits-in-the-core)). Step 5.2 is done: 18
+tracks of real observations from SCORE in [`examples/real/`](../examples/real),
+credited to their observers, with the quality meter's report for each of 7 stations
+([D-45](decisions.md#d-45-real-observations-from-score)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at
@@ -38,9 +41,9 @@ Phase 3 was released as version 0.4.0 ([phase 3 summary](phase-3-summary.md)).
 Phase 2 was released as version 0.3.0 ([phase 2 summary](phase-2-summary.md)),
 phase 1 as version 0.2.0 ([phase 1 summary](phase-1-summary.md)) and phase 0
 as [version 0.1.0](https://github.com/Haiko-Innovations/orbit-watch/releases/tag/v0.1.0);
-phase 0's one open criterion, a real public IOD example, is still open
-([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)); phase 5 proposes to meet it with
-observations published in SCORE (step 5.2).
+phase 0's last open criterion, a real public example, was met in phase 5's step 5.2
+with observations published in SCORE
+([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
 
 ## Next steps
 
@@ -49,7 +52,7 @@ observations published in SCORE (step 5.2).
 In parallel with phase 1, mostly for the community:
 
 - ✅ Release 0.1.0. Pin the repository on the Haiko Innovations profile.
-- A real IOD example of a civilian object, shared with permission ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)).
+- ✅ A real example of a civilian object ([#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8)): met with SCORE's observations in step 5.2, in Orbit Watch's format.
 - Good first issues: older IOD equinoxes ([#4](https://github.com/Haiko-Innovations/orbit-watch/issues/4)),
   a track-order check ([#5](https://github.com/Haiko-Innovations/orbit-watch/issues/5)),
   a DSLR station profile ([#6](https://github.com/Haiko-Innovations/orbit-watch/issues/6)).
@@ -268,7 +271,7 @@ approved on 2026-11-21. In short:
 | Step | Content | Done when |
 |---|---|---|
 | ✅ **5.1 Reference orbits in the core** ([#104](https://github.com/Haiko-Innovations/orbit-watch/issues/104)) | Catalogues with several element sets per object, and the set nearest the observations, named in the report (a new minor method version); `fetch-gp` asks for CSV with gzip; a command fetches past sets from SatChecker; examples name their sets in a manifest, and one command fills a cache outside the repository. | Every committed example's verdicts and residuals are unchanged; the nearest set is chosen and named, tested; the fetchers stop at the first answer that is not 200, tested against local stand-ins; tests that need the cache are skipped without it. |
-| **5.2 Real observations from SCORE** ([#105](https://github.com/Haiko-Innovations/orbit-watch/issues/105)) | A command fetches one satellite's observations from SCORE politely and converts them; a selected set of real tracks in `examples/real/` with a credits file; the quality meter on real data; GDPR article 14 checked and recorded. | The set passes the format checks and the quality meter in CI; every file names its source, observers and licence; phase 0's last criterion is met and [#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8) closed. |
+| ✅ **5.2 Real observations from SCORE** ([#105](https://github.com/Haiko-Innovations/orbit-watch/issues/105)) | A command fetches one satellite's observations from SCORE politely and converts them; a selected set of real tracks in `examples/real/` with a credits file; the quality meter on real data; GDPR article 14 checked and recorded. | The set passes the format checks and the quality meter in CI; every file names its source, observers and licence; phase 0's last criterion is met and [#8](https://github.com/Haiko-Innovations/orbit-watch/issues/8) closed. |
 | **5.3 The method measured on real data** ([#106](https://github.com/Haiko-Innovations/orbit-watch/issues/106)) | Method 2.0.0 run over the committed set and a larger set fetched politely: residuals, pass rates, the limit's terms, the reference orbit's age, injected faults, the cost of rounding a station's place; real tracks in the known-answer datasets. | `docs/real-data-validation.md` gives the numbers, reproducible with one command; the method's checks and parameters are unchanged. |
 | **5.4 Reference orbits and real objects in the service** ([#107](https://github.com/Haiko-Innovations/orbit-watch/issues/107)) | Element sets in PostgreSQL; the follower fetches each open request's object from CelesTrak at most once per update, and SatChecker's sets for replays; it stops at the first answer that is not 200, and a health endpoint reports the stop to the uptime check; uploads by hand; real objects on the allow-list. | A delivery is verified against the nearest stored set, named in its report; an answer that is not 200 stops fetching and fails the health endpoint; tested against a local stand-in, with no outside call in CI. |
 | **5.5 Real and simulated side by side, and replays** ([#108](https://github.com/Haiko-Innovations/orbit-watch/issues/108)) | Labels by source on objects, reference orbits and observations; simulated stations on real objects; replay requests by an administrator, delivered by a replay station under the observers' names. | In the local stack a request for a real object and a SIMULATED one run side by side, and a replay settles; the labels tested end to end on every page. |

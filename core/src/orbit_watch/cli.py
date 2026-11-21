@@ -399,6 +399,65 @@ def cmd_fetch_orbits(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_fetch_score(args: argparse.Namespace) -> int:
+    import json as json_module
+
+    from orbit_watch import score
+    from orbit_watch.fetch import FetchError
+    from orbit_watch.ids import parse_catalog_number
+    from orbit_watch.timeutil import parse_utc
+
+    try:
+        start, end = parse_utc(args.start), parse_utc(args.end)
+    except ValueError as exc:
+        raise FormatError(f"--start/--end: {exc}") from None
+    norad_id = parse_catalog_number(args.catnr)
+    try:
+        fetched = score.fetch_window(norad_id, start, end)
+    except (FetchError, ValueError) as exc:
+        _err(f"{exc}. Stopped at the first problem; nothing more was asked for.")
+        return EXIT_FAILED
+    write_text(args.output, json_module.dumps(fetched, indent=1, ensure_ascii=False) + "\n")
+    print(f"wrote {args.output}: {fetched['count']} observation(s) of {norad_id} from SCORE")
+    print(f"Source: {score.NAME} ({score.SITE_URL}), {score.LICENCE}: credit the observers.")
+    return EXIT_OK
+
+
+def cmd_convert_score(args: argparse.Namespace) -> int:
+    import json as json_module
+
+    from orbit_watch import score
+
+    assumed = score.Assumed(args.assume_angle_uncertainty, args.assume_time_uncertainty)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    documents = []
+    for path in args.inputs:
+        try:
+            documents.append(json_module.loads(Path(path).read_text(encoding="utf-8")))
+        except ValueError as exc:
+            raise FormatError(f"{path}: {exc}") from None
+    try:
+        sets, skipped = score.convert(documents, assumed)
+    except (ValueError, KeyError) as exc:
+        raise FormatError(f"cannot convert: {exc}") from None
+    for observation_set in sets:
+        target = out / score.file_name(observation_set)
+        write_text(target, owjson.write_observation_set(observation_set))
+        print(f"wrote {target} ({len(observation_set.observations)} observation(s))")
+    for reason, count in sorted(skipped.items()):
+        print(f"left out {count}: {reason}")
+    if args.credits and sets:
+        write_text(args.credits, score.credits_markdown(sets))
+        print(f"wrote {args.credits}")
+    stations = len({s.station.id for s in sets})
+    print(
+        f"{len(sets)} track(s) from {stations} station(s). {score.LICENCE}: credit the "
+        "observers by their ORCID iDs."
+    )
+    return EXIT_OK
+
+
 def cmd_allowlist_build(args: argparse.Namespace) -> int:
     from orbit_watch.allowlist import build_policy
 
@@ -1026,6 +1085,47 @@ def build_parser() -> argparse.ArgumentParser:
     past.add_argument("--manifest", help="name the set in this manifest (created if missing)")
     past.add_argument("--cache", help="cache directory (default: $ORBIT_WATCH_CACHE or ~/.cache)")
     past.set_defaults(handler=cmd_fetch_satchecker)
+
+    score_fetch = commands.add_parser(
+        "fetch-score",
+        help="download real observations of one object from the IAU CPS's SCORE (CC BY 4.0)",
+        description="Download SCORE's observations of one object in a time window, politely: "
+        "pages of at most 100, at least a second apart, stopping at the first answer that is "
+        "not 200. The observations are CC BY 4.0: credit the observers.",
+    )
+    score_fetch.add_argument("--catnr", required=True, help="catalogue number")
+    score_fetch.add_argument("--start", required=True, help="window start, UTC")
+    score_fetch.add_argument("--end", required=True, help="window end, UTC")
+    score_fetch.add_argument("-o", "--output", required=True, help="output file (.json)")
+    score_fetch.set_defaults(handler=cmd_fetch_score)
+
+    score_convert = commands.add_parser(
+        "convert-score",
+        help="convert observations fetched from SCORE into Orbit Watch observation sets",
+        description="Group observations fetched with fetch-score into tracks (one object, one "
+        "station: place, instrument and observers), and write each track as an observation set "
+        "(format 1.1) that names SCORE, the observers, SCORE's observation IDs and the "
+        "licence. SCORE often gives no uncertainty: the --assume options say what to assume, "
+        "and each file records it. Without them such observations are left out.",
+    )
+    score_convert.add_argument("inputs", nargs="+", help="files written by fetch-score")
+    score_convert.add_argument("--out", required=True, help="output directory")
+    score_convert.add_argument(
+        "--assume-angle-uncertainty",
+        type=float,
+        metavar="ARCSEC",
+        help="one-sigma angle uncertainty to assume where SCORE gives none",
+    )
+    score_convert.add_argument(
+        "--assume-time-uncertainty",
+        type=float,
+        metavar="SECONDS",
+        help="time uncertainty to assume where SCORE gives none",
+    )
+    score_convert.add_argument(
+        "--credits", help="also write the credits (observers, statements) to this Markdown file"
+    )
+    score_convert.set_defaults(handler=cmd_convert_score)
 
     orbits = commands.add_parser(
         "fetch-orbits",

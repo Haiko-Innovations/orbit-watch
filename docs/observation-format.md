@@ -8,7 +8,7 @@ two formats that observers already use: **IOD** and a limited subset of
 - Examples: [`examples/formats/`](../examples/formats) (all **simulated**, illustrative values)
 - Converter: `orbit-watch convert INPUT -o OUTPUT [--sites SITES.json]`
 
-## The JSON observation set (format version 1.0)
+## The JSON observation set (format versions 1.0 and 1.1)
 
 One document holds positional (angles-only) optical observations of **one
 target** from **one station**.
@@ -16,12 +16,12 @@ target** from **one station**.
 | Field | Required | Meaning |
 |---|---|---|
 | `format` | yes | Always `"orbit-watch/observation-set"`. |
-| `format_version` | yes | `"1.0"`. A new major version means an incompatible change. |
+| `format_version` | yes | `"1.0"`, or `"1.1"` when `source.origin` is present. A new major version means an incompatible change. |
 | `simulated` | yes | `true` when the observations come from a simulator. Required so that simulated data can never be mistaken for real data. |
 | `station` | yes | `id`, `latitude_deg`, `longitude_deg` (east positive), `altitude_m` (WGS 84 ellipsoid); optional `name`, `iod_station_number`. |
 | `target` | yes | `norad_id` (catalogue number, integer); optional `cospar_id` (`YYYY-NNNA`), `name`. |
 | `observations` | yes | List of observations (below). |
-| `source` | no | Provenance: `software`, `converted_from` (`iod` or `ccsds-tdm`), `original_designator`, `notes`. |
+| `source` | no | Provenance: `software`, `converted_from` (`iod`, `ccsds-tdm`, or `score` since 1.1), `original_designator`, `notes`, and `origin` since 1.1 (below). |
 
 Each observation:
 
@@ -35,6 +35,26 @@ Each observation:
 | `az_deg`, `el_deg` | for `azel` | Azimuth (from north through east) and elevation in degrees. |
 | `angle_uncertainty_arcsec` | yes | One-sigma uncertainty of each angle component, in arcseconds on the sky. |
 | `magnitude` | no | Visual magnitude. |
+
+### Observations that someone else published (version 1.1)
+
+Version 1.1 adds `source.origin`, for observations that someone else made and
+published ([P5-06](decisions.md#p5-06-real-observations-from-score)). A file with
+it says `"format_version": "1.1"`; every other file stays 1.0, byte for byte.
+
+| Field | Required | Meaning |
+|---|---|---|
+| `name` | yes | The source, for example SCORE, the IAU CPS Satellite Constellation Observation Repository. |
+| `url` | no | The source's address (`https://`). |
+| `licence` | yes | An SPDX identifier, for example `CC-BY-4.0`. |
+| `observers` | yes | The observers' ORCID iDs, as the source credits them. |
+| `observation_ids` | yes | The source's ID of each observation, in the order of the observations: one per observation. |
+| `retrieved` | no | The UTC date the observations were fetched. |
+| `assumed_angle_uncertainty_arcsec`, `assumed_time_uncertainty_s` | no | What the converter assumed where the source gives no uncertainty. `notes` says for how many observations. |
+
+`orbit-watch fetch-score` and `convert-score` write such files from SCORE
+([data-sources.md](data-sources.md#real-observations-score)); see
+[`examples/real/`](../examples/real).
 
 ### Assumptions in version 1.0
 

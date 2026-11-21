@@ -80,12 +80,15 @@ jobs:
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/orbit-watch
-          key: reference-orbits-${{ hashFiles('core/tests/data/reference-orbits.json') }}
+          key: reference-orbits-${{ hashFiles('core/tests/data/reference-orbits.json', 'examples/real/reference-orbits.json') }}
 
       - name: Real reference orbits (fetched only when the cache lacks them)
         run: |
-          uv run --locked --python 3.12 orbit-watch fetch-orbits tests/data/reference-orbits.json \
-            || echo "::warning::SatChecker could not be asked: the tests of real reference orbits are skipped"
+          for manifest in tests/data/reference-orbits.json ../examples/real/reference-orbits.json; do
+            uv run --locked --python 3.12 orbit-watch fetch-orbits "$manifest" \
+              || { echo "::warning::SatChecker could not be asked: the tests of real reference orbits are skipped"; break; }
+            sleep 2  # SatChecker is asked two seconds apart (P5-03)
+          done
 
       - name: Tests (Python 3.12)
         run: uv run --locked --python 3.12 pytest

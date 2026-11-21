@@ -1,0 +1,118 @@
+{
+  "report_format": "orbit-watch/station-quality-report",
+  "report_format_version": "1.0",
+  "method_version": "1.1.0",
+  "software": {
+    "orbit-watch": "0.6.0.dev0"
+  },
+  "simulated_input": false,
+  "station": {
+    "id": "SCORE-77d01109b5d1",
+    "latitude_deg": -30.165278,
+    "longitude_deg": -70.815,
+    "altitude_m": 2215.0,
+    "name": "SCORE observer, DECam"
+  },
+  "summary": "8 observations of 4 object(s) on 4 night(s), 2022-08-29T08:01:25.198Z to 2026-01-17T01:07:33.732Z.",
+  "overall": {
+    "objects": 4,
+    "nights": 4,
+    "observations": 8,
+    "angle_scatter_arcsec": null,
+    "timing_scatter_s": null,
+    "mean_along_track_s": 3.1268,
+    "declared_angle_uncertainty_arcsec": [
+      60.0
+    ],
+    "declared_time_uncertainty_s": [
+      25.0
+    ]
+  },
+  "findings": [
+    "Not enough observations per pass (at least 4) to estimate your angle precision (cross-track scatter within passes).",
+    "Not enough observations per pass (at least 4) to estimate your timing precision (along-track scatter within passes).",
+    "The object appears 17.06 s ahead of its prediction on the latest night. With one object this cannot be told apart from an error of its reference orbit; observe more objects to check your clock.",
+    "The mean timing offset changed from +64.19 s (night of 2022-08-28) to -40.26 s (night of 2024-01-27).",
+    "The mean timing offset changed from -40.26 s (night of 2024-01-27) to -28.49 s (night of 2024-01-30).",
+    "The mean timing offset changed from -28.49 s (night of 2024-01-30) to +17.06 s (night of 2026-01-16)."
+  ],
+  "objects": [
+    {
+      "norad_id": 27389,
+      "name": "TDRS 9",
+      "passes": 1,
+      "median_residual_arcsec": 516.935,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": 17.0614
+    },
+    {
+      "norad_id": 27426,
+      "name": "DIRECTV 5 (TEMPO 1)",
+      "passes": 1,
+      "median_residual_arcsec": 1654.634,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": -28.4854
+    },
+    {
+      "norad_id": 28935,
+      "name": "ECHOSTAR 10",
+      "passes": 1,
+      "median_residual_arcsec": 1376.25,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": -40.2589
+    },
+    {
+      "norad_id": 45473,
+      "name": "ATLAS 5 CENTAUR DEB",
+      "passes": 1,
+      "median_residual_arcsec": 892.206,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": 64.19
+    }
+  ],
+  "nights": [
+    {
+      "night": "2022-08-28",
+      "objects": 1,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": 64.19
+    },
+    {
+      "night": "2024-01-27",
+      "objects": 1,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": -40.2589
+    },
+    {
+      "night": "2024-01-30",
+      "objects": 1,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": -28.4854
+    },
+    {
+      "night": "2026-01-16",
+      "objects": 1,
+      "observations": 2,
+      "angle_scatter_arcsec": null,
+      "timing_scatter_s": null,
+      "mean_along_track_s": 17.0614
+    }
+  ],
+  "notices": [
+    "Residuals include the error of the public reference orbit (about a kilometre at epoch, growing with age). Offsets shared by several objects point to the station; offsets of single objects are more likely orbit errors."
+  ]
+}

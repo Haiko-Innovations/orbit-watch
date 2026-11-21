@@ -105,6 +105,52 @@ names, are skipped without the cache. CI keeps the cache in GitHub Actions'
 cache only, never in the repository or in an artifact, and asks SatChecker
 only when the cache lacks a set.
 
+## Real observations: SCORE
+
+The IAU CPS's [SCORE](https://score.cps.iau.org), the Satellite Constellation
+Observation Repository, publishes observers' positional and brightness observations of
+satellites ([P5-06](decisions.md#p5-06-real-observations-from-score)). Read on
+2026-11-20 and 2026-11-21:
+- **Licence.** The [use policy](https://score.cps.iau.org/policy), last updated
+  2024-12-02: "Data will be shared under the Creative Commons Attribution (CC-BY) 4.0
+  licence", and "If you use data from SCORE, you must follow the CC-BY licences and
+  credit the observers appropriately". Any "website or web service that uses SCORE data"
+  must show a statement, which [`examples/real/CREDITS.md`](../examples/real/CREDITS.md)
+  quotes. The policy also asks users to tell SCORE that they use it: a follow-up
+  ([#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113)).
+- **Fields** ([data format](https://score.cps.iau.org/data-format)): the time at the
+  middle of the observation and its uncertainty; right ascension and declination
+  "measured from the observation with respect to Gaia DR3 astrometric catalog stars
+  (ICRF)"; their variances `sigma_2_ra` and `sigma_2_dec` in arcsec²; the observer's
+  place; the instrument; the observers' ORCID iDs; a `potentially_discrepant` flag.
+- **API** ([overview](https://score.cps.iau.org/api-access), OpenAPI at
+  `https://score.cps.iau.org/api/openapi.json`, version 2.0.0): "rate-limited to 10
+  requests per second". `GET /api/observations/search` takes `satellite_number`,
+  `start_date`, `end_date`, `limit` and `offset`, and answers `items` and `count`. The
+  full download is behind a CAPTCHA, and is never used.
+
+`orbit-watch fetch-score --catnr N --start T --end T -o raw.json` asks for one
+object's observations in one window, in pages of 100, at least a second apart. It stops
+at the first answer that is not 200, and after a 429 or a 5xx it says to wait at least
+15 minutes. On 2026-11-20, pages of 1,000 observations a second answered 500 and 503.
+
+`orbit-watch convert-score raw/*.json --out DIR --credits CREDITS.md` writes each track
+as an observation set, format 1.1 ([observation-format.md](observation-format.md)):
+- **A track** is one object, one instrument and one set of observers, with no gap
+  longer than 15 minutes.
+- **A station** is one instrument and set of observers at one site. Places within 100 m
+  of a station's first place share it, since a phone's place jitters by metres.
+  The file says how far its observations' places differ.
+- **The angle uncertainty** is the square root of the larger of SCORE's two variances.
+  When SCORE gives none, which is common, `--assume-angle-uncertainty` says what to
+  assume; each file records it. Without it such observations are left out, and the
+  command counts them.
+- `source.origin` names SCORE, the observers, SCORE's observation IDs, the licence and
+  the date fetched.
+
+SCORE also gives SatChecker's predicted position for each observation. Orbit Watch does
+not use it: it computes its own from the element set the manifest names.
+
 ## Observation formats
 
 - IOD: [satobs.org/position/IODformat.html](http://www.satobs.org/position/IODformat.html)
