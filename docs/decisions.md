@@ -2692,3 +2692,38 @@ in [real-data-validation.md](real-data-validation.md).
 - **Questions for the observers**, added to the follow-up about telling SCORE
   ([#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113)): how the phones'
   times are recorded, and what DECam's two observations of a track are.
+
+### D-47 Reference orbits in the service
+
+Accepted · 2026-11-21 (with the pull request that implements the first part of step
+5.4). Step 5.4 comes in three pull requests: this one keeps element sets and verifies
+against them; the next fetches them from CelesTrak and SatChecker (P5-02, P5-03); the
+third brings real objects onto the allow-list (P5-08).
+
+- **Kept in PostgreSQL** (migration 0010, table `element_sets`). Each set is kept with:
+  - its source: `celestrak`, `satchecker` or `uploaded`;
+  - the time it was fetched or uploaded;
+  - its epoch;
+  - the SHA-256 of its OMM fields, as reports name it;
+  - for an upload, the administrator who made it;
+  - the record itself. Its `source` field keeps what the fetcher recorded, and adds the
+    service's name for the source, `kept_from` and `fetched_at`.
+
+  The same set kept twice is kept once.
+- **Verification uses the stored sets.** For a request's object the service builds a
+  catalogue of every stored set of that object, and verification picks the one nearest
+  the middle of the observations (P5-04). The report names it, its source included,
+  never its TLE lines. An object without stored sets is verified against the service's
+  own catalogue, as before. The SIMULATED objects keep their own orbits, and a set for
+  one of them is refused, so that a real set never meets a SIMULATED label (P5-09). The
+  quality meter uses the stored sets too.
+- **Uploaded by hand.** `POST /v1/admin/element-sets` takes an `orbit-watch/gp-catalog`
+  document, or CelesTrak's OMM JSON or CSV. The sets are labelled as uploaded; a
+  SIMULATED catalogue is refused. The command line has `orbit-watch admin
+  upload-orbits`, and [operations.md](operations.md#reference-orbits) says how.
+- **Named, not served** (P5-05). `GET /v1/public/reference-orbits` lists the object, the
+  epoch, the source, the time fetched and the SHA-256 of each set, never its elements.
+  Anyone can fetch the same set from the same source and repeat a verification.
+- **Backups.** The daily backups hold the stored sets, encrypted with age like the rest
+  of the database (D-39). GitHub keeps only the ciphertext, so this publishes nothing,
+  and a restore brings back the sets uploaded by hand.

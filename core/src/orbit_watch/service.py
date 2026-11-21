@@ -39,8 +39,11 @@ from typing import Any
 
 from orbit_watch import calibration as cal
 from orbit_watch import lifecycle as lc
+from orbit_watch import orbits
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
-from orbit_watch.formats import Sites
+from orbit_watch.catalog import parse_catalog
+from orbit_watch.documents import Request
+from orbit_watch.formats import FormatError, Sites
 from orbit_watch.lifecycle import RequestRecord, Status, TransitionError
 from orbit_watch.reviewers import ReviewerError, ReviewerRegistry
 from orbit_watch.settlement import SettlementAdapter, SettlementError, settlement_plan
@@ -118,6 +121,8 @@ class RequestService:
     task_salt: str = "orbit-watch-tasks"
     real_tasks: dict[str, tuple[str, str]] = field(default_factory=dict)  # id -> request, reviewer
     calibration_tasks: dict[str, cal.CalibrationTask] = field(default_factory=dict)
+    # Real element sets the service verifies against, by object (step 5.4, D-47).
+    element_sets: dict[int, list[orbits.StoredSet]] = field(default_factory=dict)
     storage: Storage | None = None
     # The testnet chain (step 2.6): an orbit_watch.chain.link.ChainLink, or None.
     chain: Any = None
@@ -227,6 +232,10 @@ class RequestService:
             else:
                 task = cal.CalibrationTask.from_document(json.loads(row["calibration_json"]))
                 self.calibration_tasks[task.task_id] = task
+        self.element_sets = {}
+        for row in db.query("SELECT * FROM element_sets ORDER BY norad_id, epoch, sha256"):
+            stored = orbits.StoredSet.from_row(row)
+            self.element_sets.setdefault(stored.norad_id, []).append(stored)
         reload = getattr(self.adapter, "reload", None)
         if reload is not None:
             reload()
@@ -389,6 +398,10 @@ class RequestService:
     ) -> Delivered:
         """Keep a delivered file, run automated verification and keep its report."""
         observations_sha256 = self._store(observations)
+        try:
+            norad_id = Request.parse(self.request_documents[request_id]).norad_id
+        except FormatError:  # pragma: no cover - a stored request was valid when it was made
+            norad_id = None
         previous = sorted(
             (self.files[d.observations_sha256] for d in self.deliveries.values()),
             key=sha256_bytes,
@@ -399,7 +412,7 @@ class RequestService:
                     request=self.request_documents[request_id],
                     observations=observations,
                     observations_format=observations_format,
-                    catalog=self.context.catalog,
+                    catalog=self.catalog_for([] if norad_id is None else [norad_id]),
                     policy=self.context.policy,
                     previous=previous,
                     declared_sha256=observations_sha256,
@@ -419,6 +432,79 @@ class RequestService:
         )
         self._save_delivery(delivered)
         return delivered
+
+    # ------------------------------------------------------------------ reference orbits
+
+    def _simulated_objects(self) -> set[int]:
+        base = parse_catalog(self.context.catalog)
+        return set(base.sets) if base.simulated else set()
+
+    def catalog_for(self, norad_ids: list[int]) -> bytes:
+        """The catalogue that verifies these objects (step 5.4, D-47). Without stored sets
+        it is the service's own catalogue, as before. With them it holds every stored set of
+        the objects, from which verification picks the one nearest the observations (P5-04),
+        and the service's own records of the objects when those are real too."""
+        stored = [s.record for norad in norad_ids for s in self.element_sets.get(norad, [])]
+        if not stored:
+            return self.context.catalog
+        base = parse_catalog(self.context.catalog)
+        records = list(stored)
+        if not base.simulated:
+            records += [r for norad in norad_ids for r in base.sets.get(norad, [])]
+        document = {
+            "format": "orbit-watch/gp-catalog",
+            "format_version": "1.0",
+            "simulated": False,
+            "description": (
+                "Real element sets that the service keeps: fetched from CelesTrak or "
+                "SatChecker, or uploaded by an administrator. Not for redistribution."
+            ),
+            "records": records,
+        }
+        return dumps_pretty(document, sort_keys=False).encode("utf-8")
+
+    @_atomic
+    def keep_element_sets(
+        self,
+        records: list[dict[str, Any]],
+        source: str,
+        now: datetime,
+        uploaded_by: str | None = None,
+    ) -> tuple[list[orbits.StoredSet], int]:
+        """Keep real element sets; returns the new ones and how many were already kept. A
+        set of a SIMULATED object is refused: the simulated objects have their own orbits,
+        and a real set of one would only confuse the labels (P5-09)."""
+        simulated = self._simulated_objects()
+        fetched_at = format_utc(now)
+        new: list[orbits.StoredSet] = []
+        already = 0
+        for record in records:
+            stored = orbits.keep(record, source, fetched_at, uploaded_by)
+            if stored.norad_id in simulated:
+                raise ServiceError(
+                    "simulated_object",
+                    f"object {stored.norad_id} is SIMULATED; it has no real element sets",
+                )
+            known = {s.sha256 for s in self.element_sets.get(stored.norad_id, [])}
+            if stored.sha256 in known or any(n.sha256 == stored.sha256 for n in new):
+                already += 1
+                continue
+            new.append(stored)
+        for stored in new:
+            if self.storage is not None:
+                self.storage.db.execute(
+                    "INSERT INTO element_sets (sha256, norad_id, epoch, source, fetched_at, "
+                    "uploaded_by, record_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    stored.row(),
+                )
+            self.element_sets.setdefault(stored.norad_id, []).append(stored)
+            self.element_sets[stored.norad_id].sort(key=lambda s: (s.epoch, s.sha256))
+        return new, already
+
+    def reference_orbits(self, norad_id: int | None = None) -> list[dict[str, Any]]:
+        """The names of the kept element sets, never their elements (P5-05)."""
+        objects = [norad_id] if norad_id is not None else sorted(self.element_sets)
+        return [s.public() for norad in objects for s in self.element_sets.get(norad, [])]
 
     # ------------------------------------------------------------------ challenges
 

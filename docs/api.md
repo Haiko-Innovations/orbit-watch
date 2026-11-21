@@ -88,6 +88,7 @@ call.
 | `POST /v1/admin/grants` | admin | `{"party": "…", "points": 1000}` | give points (phase 1 budgets) |
 | `POST /v1/admin/keys` | admin | `{"party": "…", "role": "…"}` | create a key; shown once (a replay returns `"key": null`) |
 | `POST /v1/admin/tick` | admin | | apply passed deadlines and settle finished requests |
+| `POST /v1/admin/element-sets` | admin | an `orbit-watch/gp-catalog` document, or CelesTrak's OMM JSON or CSV | upload real element sets by hand; kept labelled as uploaded, a SIMULATED catalogue or object refused ([D-47](decisions.md#d-47-reference-orbits-in-the-service)) |
 | `GET /v1/admin/overview` | admin | | every request with status, observer, automated result, votes, outcome and payments; counts by status; on a chain also the chain's state, conflicts, watched transactions and the latest 200 escrow events, newest first ([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)) |
 | `GET /v1/admin/governance` | admin | | on a chain: the reviewer registry and its reviewers, the timelock that owns it, the Safe that proposes, and the timelock's operations with their state and, while not done, the data to execute them |
 | `POST /v1/admin/governance/proposals` | admin | `{"action": "add"\|"remove", "reviewer": "0x…" or a party}` | the data for the Safe to schedule the change through the timelock, a Safe Transaction Builder batch file, and the data to execute it after the delay; sends and keeps nothing |
@@ -100,6 +101,7 @@ call.
 | `DELETE /v1/stations/{party}/profile` | that station, admin | | delete the profile: `{"party", "deleted": true}`, or `false` if there was none |
 | `POST /v1/requests/{id}/simulate` | the station that reserved it, with a profile | | SIMULATED observations of the request's target in its window, made with the station's profile: `{file_name, format, observations, sha256, simulated}`; changes nothing |
 | `GET /v1/public/targets` | none | | the allow-list: the objects requests may target, with names ([D-29](decisions.md#d-29-the-requesters-view)) |
+| `GET /v1/public/reference-orbits` | none | | the real element sets the service keeps, by name only: object, epoch, source and SHA-256, never the elements (`?norad_id=` for one object; [P5-05](decisions.md#p5-05-orbit-data-stays-out-of-the-repository)) |
 | `GET /v1/public/open-requests` | none | | requests that invite observers: opened or funded, not reserved, with their request document, terms and reward split ([D-26](decisions.md#d-26-open-requests-are-public)) |
 | `GET /v1/public/requests` | none | | published requests ([data-publication.md](data-publication.md)) |
 | `GET /v1/public/requests/{id}` | none | | one published request |

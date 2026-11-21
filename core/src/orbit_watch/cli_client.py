@@ -447,6 +447,23 @@ def cmd_admin_tick(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_admin_upload_orbits(args: argparse.Namespace) -> int:
+    data = Path(args.file).read_bytes()
+    content_type = "text/csv" if args.file.lower().endswith(".csv") else "application/json"
+    result = _post(args, "/v1/admin/element-sets", body=data, content_type=content_type).json()
+    lines = [
+        f"kept {s['norad_id']} {s['object_name']}: epoch {s['epoch']}, "
+        f"SHA-256 {s['element_set_sha256']}"
+        for s in result["kept"]
+    ]
+    lines.append(
+        f"{len(result['kept'])} element set(s) kept, labelled as uploaded; "
+        f"{result['already_kept']} already kept"
+    )
+    _print(args, result, "\n".join(lines))
+    return 0
+
+
 def cmd_balance(args: argparse.Namespace) -> int:
     result = _client(args).get(f"/v1/balances/{args.party}")
     if "points" in result:
@@ -709,6 +726,13 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
     sub.add_parser("tick", parents=[common], help="apply passed deadlines").set_defaults(
         handler=cmd_admin_tick
     )
+    upload = sub.add_parser(
+        "upload-orbits",
+        parents=[common],
+        help="upload real element sets by hand (orbit-watch/gp-catalog JSON, OMM JSON or CSV)",
+    )
+    upload.add_argument("file", help="the element sets, for example from orbit-watch fetch-gp")
+    upload.set_defaults(handler=cmd_admin_upload_orbits)
 
     public = commands.add_parser("public", help="published requests and files (no key needed)")
     sub = public.add_subparsers(dest="public_command", metavar="command")
