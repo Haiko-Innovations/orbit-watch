@@ -1,7 +1,7 @@
 # Data sources, libraries and standards
 
-Checked on 2026-11-11; SatChecker on 2026-11-20, and CelesTrak's usage policy again on
-2026-11-21.
+Checked on 2026-11-11; SatChecker on 2026-11-20, and CelesTrak's usage policy and
+groups again on 2026-11-21.
 Do not copy versions or URLs from here into new code without checking the
 current official source again.
 
@@ -38,6 +38,13 @@ current official source again.
   at a time, only the objects of open requests, at most once per update, at
   most three requests per run. At the first answer that is not 200, or no
   answer, it stops asking and the uptime check alerts a person, who resumes it.
+- For the allow-list the follower fetches six small groups, each at most once a
+  day ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)): `science`,
+  `education`, `amateur` and `cubesat` to include, `military` and `radar` to
+  exclude. These are the group names in the links of
+  [CelesTrak's index of GP data](https://celestrak.org/NORAD/elements/), read on
+  2026-11-21. Large groups, such as `active` and `starlink`, are never fetched.
+  It keeps the groups' objects and names, not their element sets.
 - Historical GP data is available only through a
   [request form](https://celestrak.org/NORAD/archives/request.php) (CAPTCHA,
   delivered by email, 10 requests per day).

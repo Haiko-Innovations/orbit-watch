@@ -72,7 +72,7 @@ call.
 | `GET`, `POST /v1/internal/follow` | the follower's secret | | run the follower once: `{changed, sent, followed_at}`, on a chain also `synced_block`; `404` when the service has no follower secret |
 | `GET /v1/internal/backup` | the backup token | | an encrypted backup of the database, streamed ([backups](#read-only-mode-and-backups)); `404` when the service has no backup token |
 | `GET /v1/requests` | any | | all requests with requester, title, reserving station, observer, status and outcome |
-| `POST /v1/requests` | requester | `{"request": <request document>, "terms": {…}}` | create a request in draft; `terms` may set `delivery_deadline`, `reservation_hours`, `challenge_period_hours`, `review_hours`, `verification_timeout_hours`, `embargo_days` |
+| `POST /v1/requests` | requester | `{"request": <request document>, "terms": {…}}` | create a request in draft; `terms` may set `delivery_deadline`, `reservation_hours`, `challenge_period_hours`, `review_hours`, `verification_timeout_hours`, `embargo_days`; a target not on the allow-list is refused with `target_not_allowed` ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)) |
 | `GET /v1/requests/{id}` | any | | summary and full lifecycle record; the reasons people wrote (`challenge_reason`, `vote_reasons`) only for the request's parties and administrators, or once it is published, and otherwise `"reasons_hidden": true` |
 | `POST /v1/requests/{id}/open` | requester | | publish; freezes the terms |
 | `POST /v1/requests/{id}/fund` | requester | `{"observer": 100, "reviewer": 10, "platform_fee": 0}` | lock the reward split and deposit the points |
@@ -90,19 +90,21 @@ call.
 | `POST /v1/admin/keys` | admin | `{"party": "…", "role": "…"}` | create a key; shown once (a replay returns `"key": null`) |
 | `POST /v1/admin/tick` | admin | | apply passed deadlines and settle finished requests |
 | `POST /v1/admin/reference-orbits/resume` | admin | `{"source": "celestrak"}` or `"satchecker"`, optionally `"ask_again": [norad_id, …]` | let the follower ask the source again once a person has looked at why it stopped; a wait after a `500` or a `503` still holds; `ask_again` forgets what the source answered for these objects, a `404` included ([D-48](decisions.md#d-48-the-follower-fetches-reference-orbits)) |
+| `POST /v1/admin/allowlist` | admin | `{"norad_id": 12345, "name": "…", "reason": "…"}` | add a real object to the allow-list after checking its owner in the satellite catalogue; the reason is public; refused for a name that matches the patterns (`excluded_name`), an object of an excluded group (`excluded_group`), a SIMULATED object, or one on the service's own list (`already_allowed`); answers the object as `GET /v1/public/targets` lists it ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)) |
+| `POST /v1/admin/allowlist/remove` | admin | `{"norad_id": 12345}` | take back an addition: `{"norad_id", "allowed"}`, where `allowed` is true when CelesTrak's groups still hold the object |
 | `POST /v1/admin/element-sets` | admin | an `orbit-watch/gp-catalog` document, or CelesTrak's OMM JSON or CSV | upload real element sets by hand; kept labelled as uploaded, a SIMULATED catalogue or object refused ([D-47](decisions.md#d-47-reference-orbits-in-the-service)) |
 | `GET /v1/admin/overview` | admin | | every request with status, observer, automated result, votes, outcome and payments; counts by status; on a chain also the chain's state, conflicts, watched transactions and the latest 200 escrow events, newest first ([D-32](decisions.md#d-32-the-administrator-view-and-the-public-pages)) |
 | `GET /v1/admin/governance` | admin | | on a chain: the reviewer registry and its reviewers, the timelock that owns it, the Safe that proposes, and the timelock's operations with their state and, while not done, the data to execute them |
 | `POST /v1/admin/governance/proposals` | admin | `{"action": "add"\|"remove", "reviewer": "0x…" or a party}` | the data for the Safe to schedule the change through the timelock, a Safe Transaction Builder batch file, and the data to execute it after the delay; sends and keeps nothing |
 | `GET /v1/admin/demo-datasets` | admin | | the six SIMULATED demo datasets with their expected results |
 | `POST /v1/admin/demo-datasets/{name}` | admin | | one demo dataset, made afresh: `{file_name, format, observations, sha256, expected_verdict, expected_failures, simulated}` |
-| `POST /v1/admin/simulate` | admin | `{"profile": "sim-cmos-gps", "norad_id": 339001, "start": "…", "end": "…", "max_passes": 2}` | SIMULATED observations by a built-in station profile of an allowed target, in a window of at most three days; changes nothing |
+| `POST /v1/admin/simulate` | admin | `{"profile": "sim-cmos-gps", "norad_id": 339001, "start": "…", "end": "…", "max_passes": 2}` | SIMULATED observations by a built-in station profile of an allowed target of the service's own catalogue, in a window of at most three days; changes nothing |
 | `GET /v1/public/station-templates` | none | | the built-in SIMULATED station profiles, as starting points ([D-30](decisions.md#d-30-the-observers-view)) |
 | `GET /v1/stations/{party}/profile` | that station, admin | | the station's profile |
 | `PUT /v1/stations/{party}/profile` | that station | `{"profile": <station profile>}` | register or replace the profile; its station ID is the party's own name; `serve` keeps its coordinates to two decimals ([personal data](#personal-data)) |
 | `DELETE /v1/stations/{party}/profile` | that station, admin | | delete the profile: `{"party", "deleted": true}`, or `false` if there was none |
 | `POST /v1/requests/{id}/simulate` | the station that reserved it, with a profile | | SIMULATED observations of the request's target in its window, made with the station's profile: `{file_name, format, observations, sha256, simulated}`; changes nothing |
-| `GET /v1/public/targets` | none | | the allow-list: the objects requests may target, with names ([D-29](decisions.md#d-29-the-requesters-view)) |
+| `GET /v1/public/targets` | none | | the allow-list: the objects requests may target ([D-29](decisions.md#d-29-the-requesters-view), [D-49](decisions.md#d-49-real-objects-on-the-allow-list)). Each has `norad_id`, `name`, `simulated` and `source`: `service` (the service's own list), `celestrak` with its `groups`, or `administrator` with its `reason` and `added_at`. `simulated` is true when every target is; `groups` says when each of CelesTrak's groups was last fetched and how many objects it held |
 | `GET /v1/public/reference-orbits` | none | | the real element sets the service keeps, by name only: object, epoch, source and SHA-256, never the elements (`?norad_id=` for one object; [P5-05](decisions.md#p5-05-orbit-data-stays-out-of-the-repository)) |
 | `GET /v1/public/open-requests` | none | | requests that invite observers: opened or funded, not reserved, with their request document, terms and reward split ([D-26](decisions.md#d-26-open-requests-are-public)) |
 | `GET /v1/public/requests` | none | | published requests ([data-publication.md](data-publication.md)) |
@@ -147,7 +149,10 @@ follower also fetches the element sets that open requests for real objects need,
 its other work: CelesTrak's current sets while a request's window has not ended, and
 SatChecker's set nearest the middle of a window that has ended. It makes at most three
 requests per run, two seconds apart, outside the database's lock. Its answer lists them
-under `reference_orbits`, each with the sets kept, or why it stopped.
+under `reference_orbits`, each with the sets kept, or why it stopped. With the requests
+left over, it fetches CelesTrak's groups for the allow-list, each at most once a day, the
+excluded ones first ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)); an entry
+for a group names it and says how many objects it held.
 
 The first answer that is not 200 with the object's element sets, or no answer, stops that
 source until an administrator resumes it (`POST /v1/admin/reference-orbits/resume`).

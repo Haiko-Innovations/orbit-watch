@@ -69,14 +69,13 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from orbit_watch import __version__, backup, orbit_follower, orbits
+from orbit_watch import __version__, allowlist, backup, orbit_follower, orbits
 from orbit_watch import lifecycle as lc
 from orbit_watch.api import keys, privacy, sessions
 from orbit_watch.api.limits import Limits, RateLimited, client_ip
 from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.chain import WALLET_PREFIX, ChainError
-from orbit_watch.documents import TargetPolicy
 from orbit_watch.fetch import FetchError
 from orbit_watch.schema import validate
 from orbit_watch.service import RequestService, ServiceError
@@ -157,6 +156,7 @@ STATUS = {
     "insufficient_balance": 409,
     "points_not_used": 409,
     "already_reviewer": 409,
+    "already_allowed": 409,
     "not_a_reviewer": 409,
     "registry_full": 409,
     "no_timelock": 409,
@@ -565,7 +565,11 @@ class Api:
             return []
         with self.lock, self.db.transaction():
             wants = orbit_follower.plan(
-                self.db, self.service, self.wall_clock(), fetcher.objects_per_run
+                self.db,
+                self.service,
+                self.wall_clock(),
+                fetcher.requests_per_run,
+                fetcher.groups,
             )
         done: list[dict[str, Any]] = []
         for want in wants:
@@ -575,20 +579,28 @@ class Api:
             if done:
                 fetcher.sleep(orbit_follower.PAUSE_S)
             try:
-                records = orbit_follower.fetch(want, fetcher.opener)
+                if want.group:
+                    body = orbit_follower.fetch_group(want, fetcher.opener)
+                else:
+                    records = orbit_follower.fetch(want, fetcher.opener)
             except FetchError as error:
                 with self.lock, self.db.transaction():
                     orbit_follower.stop(self.db, want, error, self.wall_clock())
                 log.warning("fetching reference orbits stopped: %s", error)
                 done.append({**want.public(), "stopped": str(error)})
                 continue
-            with self.lock:
-                kept, already = self.service.keep_element_sets(
-                    records, want.source, self.wall_clock()
-                )
-                with self.db.transaction():
-                    orbit_follower.answered(self.db, want, self.wall_clock())
-            done.append({**want.public(), "kept": len(kept), "already_kept": already})
+            with self.lock, self.db.transaction():
+                if want.group:
+                    result = {
+                        "objects": self.service.keep_group(want.group, body, self.wall_clock())
+                    }
+                else:
+                    kept, already = self.service.keep_element_sets(
+                        records, want.source, self.wall_clock()
+                    )
+                    result = {"kept": len(kept), "already_kept": already}
+                orbit_follower.answered(self.db, want, self.wall_clock())
+            done.append({**want.public(), **result})
         return done
 
     async def internal_follow(self, request: Request) -> Response:
@@ -979,15 +991,31 @@ class Api:
         return {"requests": self.service.published(now)}
 
     def public_targets(self, request, now):
-        """The objects requests may target: the allow-list (decision D-05), which is public."""
-        policy = TargetPolicy.parse(self.service.context.policy)
+        """The objects requests may target: the allow-list (decisions D-05 and D-49), which
+        is public. Each says whether it is SIMULATED and why it is on the list: the service's
+        own list, CelesTrak's groups, or an administrator's addition with its reason.
+        ``simulated`` is true when every target is."""
+        targets = list(self.service.targets().values())
+        groups = self.service.allowlist_groups
         return {
-            "targets": [
-                {"norad_id": norad_id, "name": name}
-                for norad_id, name in sorted(policy.allowed.items())
+            "targets": [t.public() for t in targets],
+            "simulated": bool(targets) and all(t.simulated for t in targets),
+            "description": (
+                "Civilian objects only (decision D-05): the service's own list, CelesTrak's "
+                f"groups {', '.join(allowlist.INCLUDED_GROUPS)} and the objects an "
+                "administrator added with a public reason, minus CelesTrak's groups "
+                f"{', '.join(allowlist.EXCLUDED_GROUPS)} and names that match the patterns for "
+                "military, intelligence and government security payloads (decision D-49)."
+            ),
+            "groups": [
+                {
+                    "group": group,
+                    "role": "include" if group in allowlist.INCLUDED_GROUPS else "exclude",
+                    "fetched_at": groups[group]["fetched_at"] if group in groups else None,
+                    "objects": len(groups[group]["members"]) if group in groups else None,
+                }
+                for group in allowlist.GROUPS
             ],
-            "simulated": policy.simulated,
-            "description": policy.description,
         }
 
     def public_reference_orbits(self, request, now):
@@ -1022,6 +1050,33 @@ class Api:
             records, "uploaded", self.wall_clock(), uploaded_by=principal.party
         )
         return 200, {"kept": [s.public() for s in kept], "already_kept": already}
+
+    def admin_allow_object(self, principal, request, body, now, key):
+        """``POST /v1/admin/allowlist``: an administrator adds a real object to the list,
+        such as one of a large group that is not fetched, after checking its owner in the
+        satellite catalogue (P5-08, D-49). The reason is public; the name patterns and the
+        excluded groups still apply."""
+        self._require(principal, "admin")
+        document = _json(body)
+        norad_id = _field(document, "norad_id", int)
+        if norad_id < 1 or norad_id > 999_999_999:
+            raise ApiError("invalid_body", "norad_id must be a catalogue number")
+        target = self.service.allow_object(
+            norad_id,
+            _field(document, "name", str),
+            _field(document, "reason", str),
+            principal.party,
+            self.wall_clock(),
+        )
+        return 200, target.public()
+
+    def admin_disallow_object(self, principal, request, body, now, key):
+        """``POST /v1/admin/allowlist/remove``: an administrator takes back an addition."""
+        self._require(principal, "admin")
+        norad_id = _field(_json(body), "norad_id", int)
+        self.service.disallow_object(norad_id)
+        target = self.service.targets().get(norad_id)
+        return 200, {"norad_id": norad_id, "allowed": target is not None}
 
     def admin_resume_orbit_fetching(self, principal, request, body, now, key):
         """``POST /v1/admin/reference-orbits/resume``: a person has looked at why fetching
@@ -1374,8 +1429,12 @@ class Api:
         if profile not in builtin_profiles():
             raise ApiError("unknown_profile", f"no built-in station profile {profile!r}")
         norad_id = _field(document, "norad_id", int)
-        if not TargetPolicy.parse(self.service.context.policy).allows(norad_id):
+        if norad_id not in self.service.targets():
             raise ApiError("unknown_target", f"{norad_id} is not an allowed target")
+        if norad_id not in parse_catalog(self.service.context.catalog).sets:
+            raise ApiError(
+                "unknown_target", f"{norad_id} has no orbit in the service's own catalogue"
+            )
         start = _utc_field(document, "start")
         end = _utc_field(document, "end")
         if not start < end or (end - start).total_seconds() > 3 * 24 * 3600:
@@ -1690,6 +1749,9 @@ def create_app(
             change(api.admin_resume_orbit_fetching),
             methods=["POST"],
         ),
+        # Real objects on the allow-list (step 5.4, D-49): an administrator's additions.
+        Route("/v1/admin/allowlist", change(api.admin_allow_object), methods=["POST"]),
+        Route("/v1/admin/allowlist/remove", change(api.admin_disallow_object), methods=["POST"]),
         # The administrator view (step 3.7): reads, and data for others to sign.
         Route("/v1/admin/overview", read(api.admin_overview), methods=["GET"]),
         Route("/v1/admin/governance", read(api.admin_governance), methods=["GET"]),

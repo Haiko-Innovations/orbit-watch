@@ -63,8 +63,21 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   it (`POST /v1/admin/reference-orbits/resume`, `orbit-watch admin resume-orbits`), and
   `GET /v1/health/reference-orbits` answers `503` meanwhile, which the hourly uptime check
   reports (D-48).
+- Real objects on the allow-list (step 5.4, third part, #107): the follower fetches
+  CelesTrak's groups `science`, `education`, `amateur` and `cubesat`, and `military` and
+  `radar` to exclude, each at most once a day, with the same stops (migration 0012). An
+  administrator adds an object with a public reason (`POST /v1/admin/allowlist`,
+  `orbit-watch admin allow`) and takes it back (`orbit-watch admin disallow`); the name
+  patterns apply to both. `GET /v1/public/targets` says of each object whether it is
+  SIMULATED and why it is on the list (D-49).
 
 ### Changed
+
+- A request for an object not on the allow-list is refused when it is made
+  (`target_not_allowed`), instead of failing the target check at delivery. A delivery
+  for a real object is verified against the real objects of the list, so that its report
+  does not say SIMULATED. The web application marks a request SIMULATED when its target
+  is, and simulated stations observe only the service's own objects (D-49).
 
 - Verification method 2.1.0 and report format 1.1: when the catalogue holds
   several element sets of the object, the residuals use the set nearest the

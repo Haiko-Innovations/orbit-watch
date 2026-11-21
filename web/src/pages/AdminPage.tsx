@@ -593,7 +593,9 @@ async function loadSimulatorInputs(): Promise<SimulatorInputs> {
     getJson<{ targets: Target[] }>("/v1/public/targets"),
     getJson<{ datasets: DemoDataset[] }>("/v1/admin/demo-datasets"),
   ]);
-  return { templates: templates.templates, targets: targets.targets, demo: demo.datasets };
+  // Simulated stations observe the service's own objects (decision D-49).
+  const own = targets.targets.filter((target) => (target.source ?? "service") === "service");
+  return { templates: templates.templates, targets: own, demo: demo.datasets };
 }
 
 function SimulatorForm({ templates, targets }: Omit<SimulatorInputs, "demo">) {

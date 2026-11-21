@@ -117,7 +117,12 @@ def test_the_allow_list_is_public(world):  # noqa: F811
     """The requester's form offers the objects requests may target (step 3.4, D-05)."""
     listed = world["client"].call("GET", "/v1/public/targets").json()
     assert listed["simulated"] is True
-    assert {"norad_id": 339001, "name": "SIM-CUBESAT-A (SIMULATED)"} in listed["targets"]
+    assert {
+        "norad_id": 339001,
+        "name": "SIM-CUBESAT-A (SIMULATED)",
+        "simulated": True,
+        "source": "service",
+    } in listed["targets"]
     assert 339009 not in [t["norad_id"] for t in listed["targets"]]  # the restricted one
 
 

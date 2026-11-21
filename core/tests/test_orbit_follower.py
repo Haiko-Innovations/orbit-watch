@@ -26,7 +26,7 @@ from orbit_watch.cli import ServeError, build_parser, serve_app
 from orbit_watch.formats import owjson
 from orbit_watch.reviewers import ReviewerRegistry
 from orbit_watch.satchecker import julian_date
-from orbit_watch.service import VerificationContext, open_service
+from orbit_watch.service import ServiceError, VerificationContext, open_service
 from orbit_watch.sim.simulator import load_profile, simulate
 from orbit_watch.timeutil import parse_utc
 
@@ -140,7 +140,8 @@ def world(database):
         admin = keys.create_key(service.storage.db, "admin:maintainer", "admin", clock())
         station = keys.create_key(service.storage.db, STATION, "station", clock())
     stand_in, pauses = StandIn(), []
-    fetcher = orbit_follower.Fetcher(opener=stand_in, sleep=pauses.append)
+    # The groups of the allow-list are tested in test_allowlist_service.py.
+    fetcher = orbit_follower.Fetcher(opener=stand_in, sleep=pauses.append, groups=())
     app = create_app(service, clock=clock, wall_clock=clock, orbit_fetcher=fetcher)
     yield {
         "service": service,
@@ -274,7 +275,8 @@ def test_only_open_requests_for_real_objects_on_the_allow_list(world):
     service = world["service"]
     service.create(request_bytes(), REQUESTER, T0)  # a SIMULATED object
     service.open("SIM-REQ-0001", REQUESTER, T0)
-    open_request(world, 2, 99999)  # not on the allow-list
+    with pytest.raises(ServiceError, match="not on the allow-list"):
+        open_request(world, 2, 99999)  # refused when it is made (D-49)
     service.create(request_bytes(request_id="SIM-REQ-0003", norad_id=99002), REQUESTER, T0)
     open_request(world, 4, 99003, start="2026-11-04T00:00:00Z", end="2026-11-04T06:00:00Z")
     assert follow(world) == [] and world["stand_in"].calls == []
@@ -305,11 +307,11 @@ def test_another_process_does_not_ask_again(world):
     open_request(world, 2, 99001)
     db = world["service"].storage.db
     with db.transaction():
-        (want,) = orbit_follower.plan(db, world["service"], T0, 3)
+        (want,) = orbit_follower.plan(db, world["service"], T0, 3, groups=())
         assert orbit_follower.claim(db, want, T0)
     other = open_service(world["database"], world["registry"], world["context"])
     try:
-        fetcher = orbit_follower.Fetcher(opener=world["stand_in"], sleep=lambda s: None)
+        fetcher = orbit_follower.Fetcher(opener=world["stand_in"], sleep=lambda s: None, groups=())
         app = create_app(other, clock=world["clock"], wall_clock=world["clock"])
         app.state.api.orbit_fetcher = fetcher
         assert app.state.api.follow_once()["reference_orbits"] == []

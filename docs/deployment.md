@@ -59,7 +59,7 @@ service does not answer ([P4-12](decisions.md#p4-12-releases-and-deployment)).
 | `ORBIT_WATCH_BACKUP_TOKEN` | Secret | random, 64 hex characters: the backup workflow's token, also in the GitHub environment `backup` ([operations.md](operations.md#backups)) |
 | `ORBIT_WATCH_BACKUP_RECIPIENT` | Config | the age public key that backups are encrypted to |
 | `ORBIT_WATCH_READ_ONLY` | Config | set to `1` only during an incident ([read-only mode](operations.md#read-only-mode)) |
-| `ORBIT_WATCH_FETCH_ORBITS` | Config | `1`: the follower fetches reference orbits from CelesTrak and SatChecker ([operations.md](operations.md#fetching)). Not set until real objects come onto the allow-list, in step 5.4's third part |
+| `ORBIT_WATCH_FETCH_ORBITS` | Config | `1`: the follower fetches reference orbits from CelesTrak and SatChecker, and CelesTrak's groups for the allow-list ([operations.md](operations.md#fetching)). Production sets it ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)) |
 | `ORBIT_WATCH_CHAIN_RPC` | Secret | the dedicated RPC endpoint, Coinbase's CDP Node for Base Sepolia, with Base's public endpoint as the fallback ([D-43](decisions.md#d-43-the-dedicated-rpc-endpoint-coinbases-cdp-node)) |
 
 The limits and the station coordinates' precision take `serve`'s defaults.

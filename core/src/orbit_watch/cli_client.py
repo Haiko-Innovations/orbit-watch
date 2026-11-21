@@ -478,6 +478,24 @@ def cmd_admin_resume_orbits(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_admin_allow(args: argparse.Namespace) -> int:
+    document = {"norad_id": args.norad_id, "name": args.name, "reason": args.reason}
+    result = _post(args, "/v1/admin/allowlist", document).json()
+    _print(
+        args,
+        result,
+        f"{result['norad_id']} {result['name']} is on the allow-list: {result['reason']}",
+    )
+    return 0
+
+
+def cmd_admin_disallow(args: argparse.Namespace) -> int:
+    result = _post(args, "/v1/admin/allowlist/remove", {"norad_id": args.norad_id}).json()
+    state = "still on the allow-list from CelesTrak's groups" if result["allowed"] else "removed"
+    _print(args, result, f"{result['norad_id']}: {state}")
+    return 0
+
+
 def cmd_balance(args: argparse.Namespace) -> int:
     result = _client(args).get(f"/v1/balances/{args.party}")
     if "points" in result:
@@ -763,6 +781,21 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
         "now (repeatable)",
     )
     resume.set_defaults(handler=cmd_admin_resume_orbits)
+    allow = sub.add_parser(
+        "allow",
+        parents=[common],
+        help="add a real object to the allow-list, after checking its owner in the satellite "
+        "catalogue; the reason is public (docs/operations.md#the-allow-list)",
+    )
+    allow.add_argument("--norad-id", type=int, required=True, help="its catalogue number")
+    allow.add_argument("--name", required=True, help="its name in the satellite catalogue")
+    allow.add_argument("--reason", required=True, help="why it may be targeted, shown publicly")
+    allow.set_defaults(handler=cmd_admin_allow)
+    disallow = sub.add_parser(
+        "disallow", parents=[common], help="take back an addition to the allow-list"
+    )
+    disallow.add_argument("--norad-id", type=int, required=True, help="its catalogue number")
+    disallow.set_defaults(handler=cmd_admin_disallow)
 
     public = commands.add_parser("public", help="published requests and files (no key needed)")
     sub = public.add_subparsers(dest="public_command", metavar="command")
