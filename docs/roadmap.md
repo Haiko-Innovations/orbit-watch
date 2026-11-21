@@ -10,8 +10,8 @@ Every pull request that finishes a roadmap step also updates this page.
 
 ## Status (2026-11-21)
 
-**Phase 5 is planned**: real orbits and real observations on the testnet.
-Its decisions P5-01 to P5-15 wait for approval
+**Phase 5 has started**: real orbits and real observations on the testnet.
+Its decisions P5-01 to P5-15 were approved on 2026-11-21
 ([#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
@@ -245,7 +245,7 @@ station's place is published. The money stays testnet USDC on Base Sepolia.
 
 The choices behind this plan are **decisions P5-01 to P5-15** in
 [decisions.md](decisions.md#phase-5-decisions), proposed in [#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103) and
-waiting for approval. In short:
+approved on 2026-11-21. In short:
 - **reference orbits fetched one object at a time**, as CelesTrak's usage
   policy asks, and from SatChecker for the past; the element set **nearest
   the observations**;
@@ -279,8 +279,7 @@ waits for them, and they are not completion criteria.
 - Read Space-Track's user agreement on redistributing element sets
   ([#114](https://github.com/Haiko-Innovations/orbit-watch/issues/114)).
 
-**Phase 5 completion criteria** ([P5-15](decisions.md#p5-15-phase-5-completion-criteria),
-proposed):
+**Phase 5 completion criteria** ([P5-15](decisions.md#p5-15-phase-5-completion-criteria)):
 
 1. The service verifies deliveries for real objects against real reference
    orbits: CelesTrak's for current requests and SatChecker's for replays. It

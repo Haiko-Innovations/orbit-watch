@@ -1307,8 +1307,10 @@ The data, kept to the minimum:
 No analytics, no trackers, no third-party content.
 
 A station may be someone's home, so the public service keeps station
-coordinates to two decimals, about a kilometre. A party can delete its station
-profile and end its sessions. What is on the chain cannot be deleted, and the
+coordinates to two decimals, about a kilometre. Since 2026-11-21 the observer
+chooses the exact place or about a kilometre instead
+([P5-11](#p5-11-the-stations-place-the-observer-chooses)). A party can delete
+its station profile and end its sessions. What is on the chain cannot be deleted, and the
 notice says so.
 
 A privacy notice and terms of use, in English and Finnish, are linked from
@@ -2028,11 +2030,11 @@ Sources, read on 2026-11-18:
 
 ## Phase 5 decisions
 
-P5-01 to P5-15 are proposed for the
+P5-01 to P5-15 were proposed for the
 [roadmap](roadmap.md#phase-5-real-orbits-and-real-observations-on-the-testnet-target-version-060)'s
 phase 5, real orbits and real observations on the testnet, in
-[#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103).
-They wait for the maintainer's approval. They follow a discussion with the
+[#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103), and
+approved by the maintainer on 2026-11-21. They follow a discussion with the
 maintainer on 2026-11-20 and 2026-11-21:
 - real data on the testnet, with test money only;
 - real test data from public sources with open terms, instead of asking
@@ -2047,7 +2049,7 @@ Versions are chosen, and checked, when they are used.
 
 ### P5-01 Real data, test money
 
-Proposed · 2026-11-21. Phase 5 brings real data into Orbit Watch:
+Accepted · 2026-11-21. Phase 5 brings real data into Orbit Watch:
 - **real reference orbits** of real civilian objects, beside the simulated
   ones;
 - **real observations** that observers have published under an open licence,
@@ -2072,7 +2074,7 @@ decisions.
 
 ### P5-02 Current reference orbits from CelesTrak, one object at a time
 
-Proposed · 2026-11-21. The service fetches a real object's current reference
+Accepted · 2026-11-21. The service fetches a real object's current reference
 orbit from CelesTrak's GP data, as CelesTrak's usage policy asks:
 - **Only what is needed.** One object by its catalogue number, and only the
   objects of open requests. Never a large group such as `active`, which
@@ -2121,7 +2123,7 @@ for an object without public data answered `404 No GP data found`.
 
 ### P5-03 Past reference orbits from SatChecker
 
-Proposed · 2026-11-21. CelesTrak gives only current element sets by URL. Its
+Accepted · 2026-11-21. CelesTrak gives only current element sets by URL. Its
 history comes through a request form with a CAPTCHA, by email
 ([data-sources.md](data-sources.md)). Real observations are from the past, so
 their reference orbits come from the IAU CPS's SatChecker. It keeps the
@@ -2149,7 +2151,7 @@ and [notes](https://satchecker.readthedocs.io/en/latest/notes.html).
 
 ### P5-04 The element set nearest the observations
 
-Proposed · 2026-11-21. Method 2.0.0 uses only the newest element set of each
+Accepted · 2026-11-21. Method 2.0.0 uses only the newest element set of each
 object ([verification.md](verification.md#known-limitations-method-200)). With
 history, a catalogue holds several sets of one object. The reference for a
 delivery is then the set whose epoch is nearest the middle of its
@@ -2165,7 +2167,7 @@ method's version and the new field change.
 
 ### P5-05 Orbit data stays out of the repository
 
-Proposed · 2026-11-21. Confirms
+Accepted · 2026-11-21. Confirms
 [D-06](#d-06-no-real-orbit-data-in-the-repository) for phase 5. The element
 sets come from the US Space Force through Space-Track, whose user agreement
 governs their redistribution, and CelesTrak states no terms. We have not read
@@ -2184,7 +2186,7 @@ terms that allow us to republish them; reading them is a follow-up
 
 ### P5-06 Real observations from SCORE
 
-Proposed · 2026-11-21. The IAU CPS's Satellite Constellation Observation
+Accepted · 2026-11-21. The IAU CPS's Satellite Constellation Observation
 Repository (SCORE) publishes observers' positional and brightness observations
 of satellites under CC BY 4.0. On 2026-11-20 it held 42,669 observations of
 3,344 satellites, from 2019-12-14 to 2026-11-19.
@@ -2249,7 +2251,7 @@ Sources:
 
 ### P5-07 Measure first
 
-Proposed · 2026-11-21. The method's behaviour on real data is measured and
+Accepted · 2026-11-21. The method's behaviour on real data is measured and
 published before the method changes.
 
 A first look on 2026-11-20 used 13 tracks, about 1,775 observations from SCORE,
@@ -2281,7 +2283,7 @@ afterwards, as a decision of its own, with the measurement behind it.
 
 ### P5-08 Real objects on the allow-list
 
-Proposed · 2026-11-21. Requests may target only civilian objects (D-05). For
+Accepted · 2026-11-21. Requests may target only civilian objects (D-05). For
 real objects the allow-list is built as now, with `orbit-watch allowlist
 build`:
 - from CelesTrak's small civilian groups, such as `science`, `education`,
@@ -2295,7 +2297,7 @@ patterns still apply. The simulated objects stay on the list.
 
 ### P5-09 Real and simulated side by side
 
-Proposed · 2026-11-21. The service carries real and simulated data at once, and
+Accepted · 2026-11-21. The service carries real and simulated data at once, and
 every item says which it is:
 - **objects**: real, or SIMULATED;
 - **reference orbits**: CelesTrak, SatChecker or uploaded by hand, with the
@@ -2314,7 +2316,7 @@ redesign stays separate
 
 ### P5-10 Replays name their observers
 
-Proposed · 2026-11-21. A replay delivers observations that someone else
+Accepted · 2026-11-21. A replay delivers observations that someone else
 published, through the service, to show and test the whole chain with real
 data:
 - **Only an administrator creates a replay request.** Its window lies in the
@@ -2332,8 +2334,8 @@ every station.
 
 ### P5-11 The station's place: the observer chooses
 
-Proposed · 2026-11-21. Replaces, once accepted, the public service's fixed
-rounding of station coordinates to two decimals
+Accepted · 2026-11-21. Replaces the public service's fixed rounding of
+station coordinates to two decimals
 ([P4-09](#p4-09-personal-data-a-privacy-notice-and-terms-of-use)).
 
 Verification needs a precise place. Rounding to two decimals moves a station by
@@ -2367,7 +2369,7 @@ natural persons".
 
 ### P5-12 Visibility
 
-Proposed · 2026-11-21. An optical observer sees a satellite only when the Sun
+Accepted · 2026-11-21. An optical observer sees a satellite only when the Sun
 lights it and the observer's sky is dark. The simulator learns both
 ([#7](https://github.com/Haiko-Innovations/orbit-watch/issues/7)), and the
 service lists a station's visible passes for a request:
@@ -2389,7 +2391,7 @@ Sources: [Skyfield: JPL ephemeris files](https://rhodesmill.org/skyfield/planets
 
 ### P5-13 Credits and statements
 
-Proposed · 2026-11-21. The sources ask for credit. They get it in a credits
+Accepted · 2026-11-21. The sources ask for credit. They get it in a credits
 file beside the data, in the documentation, and on a public page of the
 service that says where its real data comes from:
 - **SCORE**:
@@ -2409,7 +2411,7 @@ Sources: the [SCORE use policy](https://score.cps.iau.org/policy) and
 
 ### P5-14 Follow-ups at the end, not in the way
 
-Proposed · 2026-11-21. Phase 5's steps need nothing from the maintainer but
+Accepted · 2026-11-21. Phase 5's steps need nothing from the maintainer but
 reviews and merges, and nothing from anyone outside the repository. Work that
 does becomes a follow-up issue in the phase's milestone, for example:
 - a note to a data source;
@@ -2435,7 +2437,7 @@ wallet.
 
 ### P5-15 Phase 5 completion criteria
 
-Proposed · 2026-11-21. Phase 5 is done when:
+Accepted · 2026-11-21. Phase 5 is done when:
 
 1. The service verifies deliveries for real objects against real reference
    orbits: CelesTrak's for current requests and SatChecker's for replays. It
