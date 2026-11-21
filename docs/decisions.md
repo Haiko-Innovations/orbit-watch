@@ -2152,7 +2152,7 @@ and [notes](https://satchecker.readthedocs.io/en/latest/notes.html).
 ### P5-04 The element set nearest the observations
 
 Accepted · 2026-11-21. Method 2.0.0 uses only the newest element set of each
-object ([verification.md](verification.md#known-limitations-method-200)). With
+object ([verification.md](verification.md#orbit-residuals)). With
 history, a catalogue holds several sets of one object. The reference for a
 delivery is then the set whose epoch is nearest the middle of its
 observations, among the sets known when it is verified. The 7-day age limit
