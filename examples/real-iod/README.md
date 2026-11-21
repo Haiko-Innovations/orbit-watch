@@ -26,7 +26,7 @@
 3. **Reference orbit.** Download current GP data for the object (one request):
 
    ```sh
-   orbit-watch fetch-gp --catnr 25544 -o gp.json
+   orbit-watch fetch-gp --catnr 25544 -o gp.csv
    ```
 
    The epoch must be within 7 days of the observations. CelesTrak offers only
@@ -34,7 +34,7 @@
 4. **Score.**
 
    ```sh
-   orbit-watch score-station obs.iod --sites sites.json --catalog gp.json
+   orbit-watch score-station obs.iod --sites sites.json --catalog gp.csv
    ```
 
 ## Why there is no file here yet

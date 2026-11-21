@@ -37,7 +37,7 @@ from orbit_watch.timeutil import format_utc
 
 REPORT_FORMAT = "orbit-watch/station-quality-report"
 REPORT_FORMAT_VERSION = "1.0"
-METHOD_VERSION = "1.0.0"
+METHOD_VERSION = "1.1.0"
 MAX_REFERENCE_AGE_DAYS = 7.0
 PASS_GAP_S = 900.0  # a gap longer than this starts a new pass
 MIN_POINTS_FOR_SCATTER = 4
@@ -104,12 +104,17 @@ def _collect(
         if norad not in catalog:
             notices.append(f"Object {norad} was left out: no reference orbit in the catalogue.")
             continue
+        times = [o.time for o in observation_set.observations]
+        if not times:
+            continue
+        middle = min(times) + (max(times) - min(times)) / 2
         try:
-            satellite = catalog.satellite(norad)
+            # The element set nearest the middle of the observations (decision P5-04).
+            reference = catalog.nearest(norad, middle)
         except CatalogError as exc:
             notices.append(f"Object {norad} was left out: {exc}.")
             continue
-        epoch = satellite.epoch.utc_datetime()
+        satellite, epoch = reference.satellite, reference.epoch
         usable = [
             o
             for o in observation_set.observations

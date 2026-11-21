@@ -92,7 +92,7 @@ class Terms:
     verification_timeout_hours: float = DEFAULT_VERIFICATION_TIMEOUT_HOURS
     embargo_days: int = 0
     licence: str = "CC-BY-4.0"
-    verification_method: str = "orbit-watch-automated-verification 2.0.0"
+    verification_method: str = "orbit-watch-automated-verification 2.1.0"
 
     def problems(self) -> list[str]:
         found = []

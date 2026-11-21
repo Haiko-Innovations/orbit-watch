@@ -2152,7 +2152,7 @@ and [notes](https://satchecker.readthedocs.io/en/latest/notes.html).
 ### P5-04 The element set nearest the observations
 
 Accepted · 2026-11-21. Method 2.0.0 uses only the newest element set of each
-object ([verification.md](verification.md#known-limitations-method-200)). With
+object ([verification.md](verification.md#orbit-residuals)). With
 history, a catalogue holds several sets of one object. The reference for a
 delivery is then the set whose epoch is nearest the middle of its
 observations, among the sets known when it is verified. The 7-day age limit
@@ -2467,3 +2467,78 @@ Accepted · 2026-11-21. Phase 5 is done when:
 10. On the public service, a replay of real observations and a request for a
     real object with simulated observations have both settled on Base Sepolia.
     Every CI check passes; release 0.6.0.
+
+### D-44 Reference orbits in the core
+
+Accepted · 2026-11-21 (with the pull request that implements step 5.1).
+
+- **A catalogue holds several element sets per object** (P5-04). The same set
+  twice counts once.
+  - `Catalog.nearest(object, time)` gives the set whose epoch is nearest the
+    time; on a tie, the earlier one.
+  - `records` and `satellite()` still give the newest set, for the simulator
+    and the allow-list.
+  - A wrapper's record may carry a `source` object. It is not an OMM field, it
+    is not passed to SGP4, and a set's SHA-256 leaves it out.
+- **Method 2.1.0, report format 1.1.** The reference for a delivery is the set
+  nearest the middle of its observations, halfway between the first and the
+  last. When no observations could be read, the report names the newest set.
+  The report's `reference_orbit` gains three fields, and a fourth when the
+  catalogue says where the set came from:
+  - `element_set_sha256`;
+  - `selection`;
+  - `element_sets_in_catalogue`;
+  - `source`.
+
+  The `source` never includes the set itself, such as a TLE's lines: reports
+  are published, and real element sets are not (D-06, P5-05). Every committed
+  example keeps its verdict, checks and residuals; it was regenerated for the
+  versions and the new fields. The terms' default method is
+  `orbit-watch-automated-verification 2.1.0`, and a test keeps the two equal.
+- **The quality meter 1.1.0** compares each observation file with the set
+  nearest the middle of its observations.
+- **`fetch-gp`** asks for `FORMAT=csv` with `Accept-Encoding: gzip`, and saves
+  the answer decompressed, at most 50 MB before and after. An answer that is
+  not 200 stops it with what CelesTrak's usage policy asks next:
+  - after a 500 or a 503, wait at least 15 minutes;
+  - after a 404, do not ask again;
+  - after a 403, read the message;
+  - after a 301, correct the URL.
+- **`fetch-satchecker`** (`satchecker.py`) asks SatChecker's
+  `get-nearest-tle` or `get-nearest-omm` for one object at one time: one
+  request, no retries. It refuses an answer with no set, several sets, or
+  another object's set.
+  - A TLE is converted to OMM form with `sgp4.exporter.export_omm`, which
+    sgp4's README documents. For the real sets of ACS 3 and PELICAN 3001 the
+    two give the same orbit to 2 mm.
+  - The record's `source` names SatChecker's version, the endpoint, its
+    `data_source` and `date_collected`, the TLE, and the original set's
+    SHA-256.
+- **Manifests and the cache** (`orbit_cache.py`, format
+  `orbit-watch/reference-orbits` 1.0).
+  - An entry names a set by its object, kind, source, epoch and the SHA-256 of
+    the original set: of the TLE's two lines, each ending in a newline, or of
+    the OMM fields as compact canonical JSON.
+  - `fetch-orbits` asks for the set nearest each epoch the cache lacks, one
+    request at a time and two seconds apart. It stops at the first answer that
+    is not 200, and at any set whose SHA-256 is not the manifest's.
+  - The cache keeps SatChecker's answers as received, one file per set named
+    by its SHA-256, in `$ORBIT_WATCH_CACHE` or `~/.cache/orbit-watch`.
+- **Tests and CI.**
+  - The stand-ins for CelesTrak's and SatChecker's answers are built from the
+    SIMULATED catalogue: 339001 as an Alpha-5 TLE, `Z9001`. No real set is in
+    the repository.
+  - `core/tests/data/reference-orbits.json` names four real sets: three of
+    PELICAN 3001 and one of ACS 3, objects of SCORE observations. The tests
+    that use them are skipped without the cache.
+  - CI restores the cache with `actions/cache` v6.1.0, keyed by the
+    manifest's hash, and runs `fetch-orbits` before the tests. If SatChecker
+    cannot be asked, a warning says so and those tests are skipped.
+  - On 2026-11-21 SatChecker returned all four sets by their exact epochs,
+    with matching SHA-256s, in 9.5 seconds.
+
+Sources:
+- [SatChecker's orbital data access](https://satchecker.readthedocs.io/en/latest/tools_data_access.html)
+  (version 1.9.0);
+- sgp4 2.27's README, "Export" (`exporter.export_omm`);
+- [actions/cache](https://github.com/actions/cache) v6.1.0 (`path`, `key`).

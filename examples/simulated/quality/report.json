@@ -1,7 +1,7 @@
 {
   "report_format": "orbit-watch/station-quality-report",
   "report_format_version": "1.0",
-  "method_version": "1.0.0",
+  "method_version": "1.1.0",
   "software": {
     "orbit-watch": "0.6.0.dev0"
   },

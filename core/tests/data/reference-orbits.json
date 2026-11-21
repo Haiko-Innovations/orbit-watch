@@ -1,0 +1,35 @@
+{
+  "format": "orbit-watch/reference-orbits",
+  "format_version": "1.0",
+  "description": "Real element sets for the tests of reference orbits (step 5.1): three successive sets of PELICAN 3001 (58296) and one of ACS 3 (59588), the objects of SCORE observations. Fetched on demand from the IAU CPS's SatChecker; never committed (D-06).",
+  "element_sets": [
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-08T13:35:16.605888",
+      "sha256": "4cb499f0a12dfc19b9fcdc4220cdb46de56d3fdf09e3d0b571a8476c4eb85862"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-21T05:09:27.523295",
+      "sha256": "2355a568213b332d1e68fab8a5961b96183014a79b517200a598f94efd6510d2"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-06-06T11:37:27.907392",
+      "sha256": "c76996d0bb99643d17598a4ce8033692b816e6b89645f6d291905f2815cdc496"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-01T18:26:43.156320",
+      "sha256": "7cc151174ea40fec288648aae7f836fb4280ec6efb9ecb8ed318c18acc5a72f2"
+    }
+  ]
+}

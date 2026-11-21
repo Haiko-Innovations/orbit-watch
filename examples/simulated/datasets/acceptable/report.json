@@ -1,6 +1,6 @@
 {
   "report_format": "orbit-watch/verification-report",
-  "report_format_version": "1.0",
+  "report_format_version": "1.1",
   "verdict": "pass",
   "summary": "PASS: all 10 applicable checks passed.",
   "simulated_input": true,
@@ -8,7 +8,7 @@
   "disclaimer": "Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.",
   "method": {
     "name": "orbit-watch-automated-verification",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "parameters": {
       "reference_position_error_km": 5.0,
       "residual_sigma_multiplier": 3.0,
@@ -52,6 +52,9 @@
     "object_name": "SIM-CUBESAT-A (SIMULATED)",
     "epoch": "2026-11-01T00:00:00.000000",
     "element_set_no": "999",
+    "element_set_sha256": "b5b289e7f60495b657f0e863e7366d5753a8abca7027939a65e3f5cc9db0e8ec",
+    "selection": "nearest the middle of the observations",
+    "element_sets_in_catalogue": 1,
     "propagator": "SGP4 (sgp4 library via Skyfield)"
   },
   "checks": [

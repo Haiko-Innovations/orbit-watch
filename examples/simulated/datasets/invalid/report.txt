@@ -1,4 +1,4 @@
-Orbit Watch verification (orbit-watch-automated-verification 2.0.0)
+Orbit Watch verification (orbit-watch-automated-verification 2.1.0)
 Inputs include SIMULATED data.
 Request SIM-REQ-0001: object 339001, window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z
 FAIL: 1 check(s) failed: required fields and format.
