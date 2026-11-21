@@ -225,6 +225,41 @@ def _key(item: dict[str, Any]) -> tuple:
 NOTHING_ASSUMED = Assumed()
 
 
+def place_jumps(points: list[tuple[datetime, tuple[float, float, float]]]) -> dict[int, float]:
+    """The observations whose place jumps away from the rest of their track, by index, with
+    the distance in metres to the nearest other place. ``points`` are one object's
+    observations by one instrument, as (time, place) in time order, and a track is a run
+    without a gap longer than ``TRACK_GAP_S``. An observation jumps when no other
+    observation of its track lies within ``PLACE_TOLERANCE_M`` of it, while most of them
+    share a place with another: a phone's position fix that failed for one exposure. A
+    phone that truly moves has no such majority, and nothing is left out."""
+    jumps: dict[int, float] = {}
+    start = 0
+    for end in range(1, len(points) + 1):
+        if end < len(points) and points[end][0] - points[end - 1][0] <= timedelta(
+            seconds=TRACK_GAP_S
+        ):
+            continue
+        track = range(start, end)
+        start = end
+        if len(track) < 3:
+            continue
+        places: dict[tuple[float, float, float], list[int]] = {}
+        for index in track:
+            places.setdefault(points[index][1], []).append(index)
+        alone: dict[tuple[float, float, float], float] = {}
+        for place, members in places.items():
+            if len(members) > 1:
+                continue
+            others = [distance_m(place, other) for other in places if other != place]
+            if others and min(others) > PLACE_TOLERANCE_M:
+                alone[place] = min(others)
+        if alone and 2 * sum(len(places[place]) for place in alone) < len(track):
+            for place, away in alone.items():
+                jumps[places[place][0]] = away
+    return jumps
+
+
 def convert(
     documents: list[dict[str, Any]], assumed: Assumed = NOTHING_ASSUMED
 ) -> tuple[list[ObservationSet], dict[str, int]]:
@@ -290,8 +325,14 @@ def convert(
         groups.setdefault(_key(item), []).append((item, observation, angle_assumed, time_assumed))
 
     tracks: list[tuple[tuple, list[tuple]]] = []
+    jumped: dict[tuple, list[tuple[datetime, float]]] = {}
     for key in sorted(groups):
         rows = sorted(groups[key], key=lambda row: (row[1].time, int(row[0]["id"])))
+        jumps = place_jumps([(row[1].time, _place(row[0])) for row in rows])
+        for index in sorted(jumps):
+            skip("its place lies far from every other observation of its track")
+            jumped.setdefault(key, []).append((rows[index][1].time, jumps[index]))
+        rows = [row for index, row in enumerate(rows) if index not in jumps]
         current: list[tuple] = []
         for row in rows:
             if (
@@ -318,7 +359,12 @@ def convert(
             place = first
             sites.append(place)
         day = retrieved[int(track[0][0]["id"])]
-        sets.append(_observation_set(track, norad_id, place, instrument, observers, assumed, day))
+        start, end = track[0][1].time, track[-1][1].time
+        jumps = jumped.get((norad_id, instrument, observers), [])
+        left_out = [distance for moment, distance in jumps if start < moment < end]
+        sets.append(
+            _observation_set(track, norad_id, place, instrument, observers, assumed, day, left_out)
+        )
     sets.sort(key=lambda s: (s.observations[0].time, s.target.norad_id, s.station.id))
     return sets, skipped
 
@@ -331,6 +377,7 @@ def _observation_set(
     observers: tuple,
     assumed: Assumed,
     retrieved: str,
+    jumps: list[float],
 ) -> ObservationSet:
     items = [row[0] for row in track]
     angles_assumed = sum(1 for row in track if row[2])
@@ -366,6 +413,12 @@ def _observation_set(
             f"SCORE gives the observer's place for each observation; they differ by up to "
             f"{spread:.0f} m from the station's place, the first seen at this site."
         )
+    if jumps:
+        notes.append(
+            f"{len(jumps)} observation(s) of this track are left out: SCORE gives each a place "
+            f"{min(jumps) / 1000:.1f} to {max(jumps) / 1000:.1f} km from every other "
+            "observation of the track, while the others share one place."
+        )
     name = str(items[0].get("satellite_name") or "") or None
     return ObservationSet(
         station=Station(
@@ -398,11 +451,12 @@ def credits_markdown(sets: list[ObservationSet], title: str = "Credits") -> str:
     lines = [
         f"# {title}",
         "",
-        "The observations in this example were made and published by the observers below in",
+        "The observations here were made and published by the observers below in",
         f"[SCORE]({SITE_URL}), the IAU CPS's Satellite Constellation Observation Repository,",
         "under the [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/)",
         "licence. Orbit Watch converted them to its own format and changed nothing else: the",
-        "files name SCORE's observation IDs, and any uncertainty the converter assumed.",
+        "files name SCORE's observation IDs, any uncertainty the converter assumed and any",
+        "observation it left out.",
         "",
         "| File | Object | Instrument | Observations | Observers (ORCID iD) |",
         "|---|---|---|---|---|",

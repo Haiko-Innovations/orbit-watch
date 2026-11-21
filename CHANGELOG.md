@@ -40,6 +40,15 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   published. Every other file stays 1.0.
 - The privacy notice (version of 21 November 2026) and the data inventory say what
   Orbit Watch keeps of observations that others published in SCORE.
+- The verification method measured on real data (step 5.3, #106): `orbit-watch
+  measure-method` runs method 2.1.0, unchanged, over 56 real tracks and over copies
+  with faults put into them, and writes `validation/real/results.json` and the tables
+  of `docs/real-data-validation.md`. The page gives the numbers and five candidates
+  for later decisions; the method is unchanged (D-46).
+- `validation/real/`: a validation set of 38 more real tracks from SCORE, credited,
+  with its reference orbits named in a manifest.
+- Known answers from real tracks for reviewer calibration:
+  `validation/real/known-answers.json` and `calibration.build_real_files`.
 
 ### Changed
 
@@ -52,6 +61,18 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 - `orbit-watch fetch-gp` asks CelesTrak for CSV with gzip, as its usage policy
   of 2026-11-16 asks, and after an answer that is not 200 says what the policy
   asks next.
+- CI restores the older cache of real element sets when a manifest changes, so that
+  SatChecker is asked only for the sets it lacks, and runs the tests with one BLAS
+  thread.
+
+### Fixed
+
+- `convert-score` no longer splits a track where a phone's place jumps for one
+  observation: such an observation is left out, counted and noted in the file. Before,
+  two pieces of a track could get the same file name, and one overwrote the other; the
+  command now refuses to write two tracks to one file. The track left out of
+  `examples/real/` in step 5.2 was described as a phone that moved 7 km; six of its
+  observations had jumped (D-46).
 
 ## [0.5.0] - 2026-11-18
 

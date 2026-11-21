@@ -1,0 +1,567 @@
+{
+  "format": "orbit-watch/reference-orbits",
+  "format_version": "1.0",
+  "description": "Real reference orbits, fetched on demand.",
+  "element_sets": [
+    {
+      "norad_id": 17844,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-16T01:24:15.764255",
+      "sha256": "00a19594598bb9ecac8d5ac665e1edd770149857c829a699d96eb0652c4f4626"
+    },
+    {
+      "norad_id": 18749,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-12T01:31:09.875999",
+      "sha256": "224e723029995046aac50f6373037e75c700cb6b99eba33ef83162503abcc4ef"
+    },
+    {
+      "norad_id": 21429,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-15T15:53:40.574688",
+      "sha256": "a22c16e5c4cfb878ece5094974dd4bd78d1529ddfc08f04eee10adc958c65797"
+    },
+    {
+      "norad_id": 23343,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-19T03:35:17.900735",
+      "sha256": "cd54a591874455aea65afd530f4b942b736c305e959b3045969e099ec0d3e23b"
+    },
+    {
+      "norad_id": 23756,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2023-01-23T09:25:36.647328",
+      "sha256": "d13ebb344c4dff5030c555e8b3e698e79c120b00bf59d09766104b83930159d7"
+    },
+    {
+      "norad_id": 27389,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-03T02:56:04.803647",
+      "sha256": "b201af8a71e329e4d2b523c2e6ff05ee650dac6632226606b73322c84b71e84f"
+    },
+    {
+      "norad_id": 27389,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-10T12:56:51.580032",
+      "sha256": "5920d7695ac47bc0a2fe50d9234b366963a1ca74dbed18922d4ae1fec56f7648"
+    },
+    {
+      "norad_id": 27389,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-14T03:38:41.141184",
+      "sha256": "32f4a0376d0234c0df4122a290fee00be79643a72b3d5ddbf35047c2f90f4ee9"
+    },
+    {
+      "norad_id": 27389,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-16T04:42:59.981183",
+      "sha256": "db73da70fb51913a81ccd43e5638043ada7f201210f820daa543c03f159eeef9"
+    },
+    {
+      "norad_id": 32255,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-12-05T20:46:54.084864",
+      "sha256": "7c931f010d072bee2f4d6148b8df764239a6094c47823bf62f912fe9a66c3ab8"
+    },
+    {
+      "norad_id": 32987,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2023-12-26T16:11:13.197983",
+      "sha256": "1aab9728425279d4d05cdcad4542d5b14be0a6a2f69e82054680b0cee73be718"
+    },
+    {
+      "norad_id": 36086,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T03:25:12.177120",
+      "sha256": "83f101fd7ebd426868e8396187dcf90e3eb8b158971d55687ba3770b7f4abad1"
+    },
+    {
+      "norad_id": 40259,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2023-02-11T04:28:13.704672",
+      "sha256": "2e2eab181c638bb53e075836bbfe0f6399defd50f03a733a14e3bac1a64f7bf1"
+    },
+    {
+      "norad_id": 41589,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2023-12-31T10:56:06.774143",
+      "sha256": "45a559e9e815ef1eb10979453f6cff72210fe6ba2ef237282e508d02271fba80"
+    },
+    {
+      "norad_id": 43056,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-16T19:38:14.970048",
+      "sha256": "f0a5ef2cecc4fd2a9901f2678c68918c0653e120369e40a1addb8bd0d22df824"
+    },
+    {
+      "norad_id": 43641,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-12T04:28:48.371808",
+      "sha256": "c6ab93c69ed933fedc8e555a62bb2c7950e61d49016cab6fd6ed225eab23285f"
+    },
+    {
+      "norad_id": 43641,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-15T23:12:50.601312",
+      "sha256": "585d3561293a7240cab2fa19b4da1f6f16e4b5d41016266e33085a4f30cc61db"
+    },
+    {
+      "norad_id": 46601,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2021-12-15T06:47:45.006720",
+      "sha256": "7b8e194cce2c47ae507afe79dfa1f603c858b3accf723d53de44563fce2a57bc"
+    },
+    {
+      "norad_id": 47353,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-12T02:49:03.207072",
+      "sha256": "eba6b064fe6eb736f97d26d73e1539fb8a7cb83ea217b4d0a740a4fe185c9993"
+    },
+    {
+      "norad_id": 49175,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T04:11:42.000287",
+      "sha256": "57ad7509bdb1348cd723a750613bbefb70893ea132f6d180c34e847f8457d616"
+    },
+    {
+      "norad_id": 51773,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T03:46:42.000383",
+      "sha256": "414d9a88fc895f6099b2a475c0f135f51c4a3ddbbb9f963c25d898130f92cca2"
+    },
+    {
+      "norad_id": 53742,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-19T02:11:41.999712",
+      "sha256": "272ee59789d6804187c680a10de24d585e308dcfce5754822b63e8730ce93faa"
+    },
+    {
+      "norad_id": 53962,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2025-09-10T13:51:04.645439",
+      "sha256": "486c8759ffbba32288005ff2df7541379323b3a90932e240486833ad3d04e6c0"
+    },
+    {
+      "norad_id": 53984,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-12T02:24:41.999904",
+      "sha256": "e16e5409c09563c0c813fe4735857f0502e55142e0811e3cea442eb5220d1312"
+    },
+    {
+      "norad_id": 54183,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T03:55:42.000383",
+      "sha256": "67a5e000ffbd12c588e885e0647931f6c714e3c7639980c9b1d1ef3c1da67d37"
+    },
+    {
+      "norad_id": 55945,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T00:06:52.334496",
+      "sha256": "c4e94c3280c2644f89a6270b0f6b908a21f243677f16bc7ea7badaa77faf55f1"
+    },
+    {
+      "norad_id": 56530,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-19T01:04:17.105951",
+      "sha256": "879d9f783941b92a75e356a47847904bb839b4d21c4b12c0e4a3dc363b23dcf4"
+    },
+    {
+      "norad_id": 57115,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-19T01:38:42.000287",
+      "sha256": "8632fb43f717b50de85013857d46ea2b0aece4fcf815d7cb20c8d68b4af307db"
+    },
+    {
+      "norad_id": 57290,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T03:48:41.999616",
+      "sha256": "84c88f41635e0fd863000412d3fb610f9e25e6afbe2e3bb8845f1200ab029d50"
+    },
+    {
+      "norad_id": 58193,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-12T00:59:29.388767",
+      "sha256": "b5c253d8d443dd5fbc8efb5b83d39a928a684968d2b27c636e19310d46d27717"
+    },
+    {
+      "norad_id": 58207,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-12T02:56:41.999712",
+      "sha256": "1607c61d9af8103a16b1fb27951f5050a563c03b4b4170061ba2e89102ca12c3"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-04-25T04:34:19.239744",
+      "sha256": "48cdebe3dd06cb4b6e52b6af12eb540891b0758c2e8883be5edfe8cb653d719e"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-02T04:12:03.525983",
+      "sha256": "1e6202de56eb4e5b015f5db1c2daafee45f1aa3472df3d73ca5da8350f35f5de"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-05T12:50:57.638975",
+      "sha256": "3057317d0ee9454bfe91798aaf896bd28213f506a1196052216cc057c85027d7"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-06T10:59:16.028159",
+      "sha256": "439aa429fbf78eb9376e8d36a93a52f8ef78d1f9cbfeeed3a129db8cd684e5c5"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-07T20:11:39.531264",
+      "sha256": "22bb1c94cccb81b70d549d57bec955dac3102bcd7524cb16f825ae748f4c93fb"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-14T05:34:06.914208",
+      "sha256": "8b7b5f9ff4633d914796e0c1e00adf9bd4b996dc2b338b94d8f437bbf949eb18"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-18T04:25:57.029375",
+      "sha256": "630ff037d9a5c9a3ea0dc2c32984ced3c42a332a83d9a0b5fa277fca9135be61"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-19T18:22:35.215967",
+      "sha256": "9128baf291521f7be09412d773db52ed04a8c364bee399a399665edb7ae6249e"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-22T19:06:00.010944",
+      "sha256": "561634dcaf26e17ea8a8d39d217b05503235074b7d26ffb75a6e5a11bdad6060"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-05-29T18:40:19.412544",
+      "sha256": "f0605f8de59b74b88982a27f5fcf872b5b0b9d75584469f122ddd15c006b01e9"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-06-02T19:06:05.166432",
+      "sha256": "8ee17d5166e298de8d4cdcdee0ab0beade85903424754bd2b91ff0aea6a13601"
+    },
+    {
+      "norad_id": 58296,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-06-05T04:00:33.823295",
+      "sha256": "cd06509b6b2bdbb8dff06e1f860987917222408968c4ffedf55cf5b814b4aa85"
+    },
+    {
+      "norad_id": 59083,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T04:06:41.999616",
+      "sha256": "6cb905f925a9abd2b6b2eafb5122ce5d97cd9282fbfd5ff9e7c858d862913d13"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-08-18T15:35:38.915807",
+      "sha256": "26c469a1d7532d108601da3e3450fce402541232b2309a9d82e26f99db25b443"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-08-25T21:24:46.552607",
+      "sha256": "25e164b295d07f0083a8bf83c9bf29f476a9f35b0ffb08af84d6d1dbe035d5cb"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-08-26T09:42:11.331647",
+      "sha256": "449c2f236da8039507eefb014ba30831dbf8a32a761bb61f91e958dcd1bd2117"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-08-29T09:41:19.362912",
+      "sha256": "6d335a08d056180698c187a114b96b4333ab5bc982c1842f9a1cc2d156383885"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-08-30T20:48:06.189983",
+      "sha256": "85a00442b554f0d8af7eaa10c25427a6cf2fe46d599963f7b11c56b61c94c6ed"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-08-31T21:22:46.140383",
+      "sha256": "efa1a43667f1237f8e79b5132264420704929ac7ac3da4a5d29344b03f4b938c"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-02T20:46:35.137343",
+      "sha256": "87af01d32ebc5698fd4572c9a70ad93920d07fd70120921232ee23d78b955015"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-06T14:17:31.307135",
+      "sha256": "d2f0b341ae58ef3bd25eb9e84b71211adb7a9b36863e0e911b60150dbc5d0648"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-07T20:07:37.225920",
+      "sha256": "0d5e0a56e2502ab2d0c673f0c1961d452f7f8ad29f29b1a86a32c52df97c240f"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-08T17:11:08.866175",
+      "sha256": "7377ad0432743bf515230597d9b4617ba5ec76f616503014856892ca39a6a010"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-09T21:15:45.736992",
+      "sha256": "7f8bad152a5851a2f4609805d9e50ea351884ca592e3d83cdea0f150167abe0a"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-10T16:33:51.958944",
+      "sha256": "61b187260d711ba9cff021a9b221c977741af1e051475c75836f9fe2150014e3"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-12T17:41:32.964576",
+      "sha256": "d579b72992d8c9f45f1555fbdcb3e442ed998d0b4289be161c339a3f125eb4a0"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-13T20:00:31.590143",
+      "sha256": "4c5e56c192ac558bd3814ad6d44ee243173ba841a7d7e6f596e001080ef5b9c4"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-14T20:34:08.477183",
+      "sha256": "235de78d15dcbce5440c81fa2d2ed70ca6764c134846931333893dfa04c64400"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-18T17:32:19.587264",
+      "sha256": "b84bb2432f9acb4c18074d8a55c1edc1110c0130eebec55ce740758581b7f0e5"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-20T13:23:17.788128",
+      "sha256": "4912fecaab3dd3a8625e71fcf74957123b9ca6a4877d82886a925036f577ec38"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-21T13:56:35.890079",
+      "sha256": "7bf8933ee87641c615dc9b66c75c1b6badf8aab3e45ad5179152d8285340ba32"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-09-28T21:18:37.950336",
+      "sha256": "7130fc234c715f2240ff23dc501fefc9272c35ae5bac4deb281317fb2a893e5f"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-10-02T23:29:27.607199",
+      "sha256": "70980bbe83aa1f2bdfe6944e705865a05a8ca2b8267ba19072960656f01b9c7e"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-10-04T17:33:38.710656",
+      "sha256": "e0a0a721905c4dc47ee2d40fdb31803a2b75b348cd4817434a6725ad631158ec"
+    },
+    {
+      "norad_id": 59588,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2024-10-05T18:05:59.774783",
+      "sha256": "4a21e0a1d0385a474a02ca3f01eab7e2701ba01be7f8d123c01e46e7f8aef656"
+    },
+    {
+      "norad_id": 62078,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-12T03:03:46.304063",
+      "sha256": "f280cd9a34402a687cea5a3d029a87a77975d71fac1fc8372b382378b93204dc"
+    },
+    {
+      "norad_id": 62078,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-16T03:04:40.482911",
+      "sha256": "d78cbdbfb8c0352d9228d95c5ad231e0fc30b930ec5b05bee410da54b943ea69"
+    },
+    {
+      "norad_id": 66051,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-17T22:06:38.771712",
+      "sha256": "6c0d3a64cf0688b8e12550979e19fc777c494cb19e15fb1b2176e2a5b916ba92"
+    },
+    {
+      "norad_id": 66051,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-25T03:10:25.992191",
+      "sha256": "5e79cdae2a142a8d309c2d762ccb5d15187bb17fcef078d9f4e886aef7d31f9e"
+    },
+    {
+      "norad_id": 66051,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-28T20:10:37.871040",
+      "sha256": "120e917559e66cf47a805ac7b0fc50763ef6319e54455b2bd0f03e249bfb4369"
+    },
+    {
+      "norad_id": 66051,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-31T02:34:04.442304",
+      "sha256": "474b5bd251d2a79c3798803e807fcd8bf05ca2d7b4c7d9e0f934367d72e81db5"
+    },
+    {
+      "norad_id": 67232,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-20T02:48:32.844383",
+      "sha256": "d22ec827ae1698cd67cb973b1e9946dc6e2f0ce7f991dc7afe12c136b9b315e6"
+    },
+    {
+      "norad_id": 67232,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-01-28T21:00:00.183168",
+      "sha256": "eb0c4aa61ab4b187b5847f0dc77b1b53548e573cdca1614e802cd534fdb2183c"
+    },
+    {
+      "norad_id": 67232,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-02-01T00:51:25.953119",
+      "sha256": "084be67a7cdceae4b756760fba51de9dbc1ff7f810c43fef529401974f07f9fb"
+    },
+    {
+      "norad_id": 67232,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-02-03T14:29:26.236032",
+      "sha256": "415272d50ba2f9b43e781c7f4a2a8b79d0eba2c1446ce721256d8f4e1ea01986"
+    },
+    {
+      "norad_id": 69568,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T02:05:43.925280",
+      "sha256": "e07b445666dc744237f1ff579ae07c6be7fdd1c2e25989530a034de25e4b5c37"
+    },
+    {
+      "norad_id": 100365,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-09-30T00:06:35.700767",
+      "sha256": "3acdd7c4b25c62583f55a489d995b6f14c4711f05bef2dfb9be7ce16751a8579"
+    },
+    {
+      "norad_id": 100800,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-18T23:50:16.693728",
+      "sha256": "6fbf83424a2e074a341061d28792fafe1a75a0b6b80f97189f68749c2441049b"
+    },
+    {
+      "norad_id": 101286,
+      "kind": "tle",
+      "source": "satchecker",
+      "epoch": "2026-11-16T02:27:09.105408",
+      "sha256": "37cfcc62eb0fe09f66665cca0cf90b8c7de7f702b94c7f9261969f0a04489647"
+    }
+  ]
+}

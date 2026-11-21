@@ -76,26 +76,33 @@ jobs:
       # They are kept in GitHub Actions' cache only, never in the repository or an artifact
       # (D-06). SatChecker is asked only for what the cache lacks, two seconds apart, and
       # fetching stops at the first answer that is not 200. If SatChecker cannot be asked,
-      # those tests are skipped, and a warning says so.
+      # those tests are skipped, and a warning says so. When a manifest changes, the older
+      # cache is restored, so that only the sets it lacks are asked for.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/orbit-watch
-          key: reference-orbits-${{ hashFiles('core/tests/data/reference-orbits.json', 'examples/real/reference-orbits.json') }}
+          key: reference-orbits-${{ hashFiles('core/tests/data/reference-orbits.json', 'examples/real/reference-orbits.json', 'validation/real/reference-orbits.json') }}
+          restore-keys: reference-orbits-
 
       - name: Real reference orbits (fetched only when the cache lacks them)
         run: |
-          for manifest in tests/data/reference-orbits.json ../examples/real/reference-orbits.json; do
+          for manifest in tests/data/reference-orbits.json ../examples/real/reference-orbits.json ../validation/real/reference-orbits.json; do
             uv run --locked --python 3.12 orbit-watch fetch-orbits "$manifest" \
               || { echo "::warning::SatChecker could not be asked: the tests of real reference orbits are skipped"; break; }
             sleep 2  # SatChecker is asked two seconds apart (P5-03)
           done
 
+      # One BLAS thread: the tests' arrays are small, and with threads the measurement on
+      # real data (step 5.3) took 17 times the processor time for the same results.
       - name: Tests (Python 3.12)
+        env:
+          OPENBLAS_NUM_THREADS: "1"
         run: uv run --locked --python 3.12 pytest
 
       - name: Tests (Python 3.15)
         env:
           UV_PROJECT_ENVIRONMENT: .venv-3.15
+          OPENBLAS_NUM_THREADS: "1"
         run: uv run --locked --python 3.15 pytest
 
       # The README promises that a plain `pip install` works. Install exactly the

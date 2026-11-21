@@ -141,12 +141,21 @@ as an observation set, format 1.1 ([observation-format.md](observation-format.md
 - **A station** is one instrument and set of observers at one site. Places within 100 m
   of a station's first place share it, since a phone's place jitters by metres.
   The file says how far its observations' places differ.
+- **A place that jumps.** A phone's place sometimes jumps by 0.1 to 10 km for one
+  observation and comes back. When no other observation of a track lies within 100 m
+  of one, while most of them share a place, it is left out: the file says how many and
+  how far, and the command counts them. A phone that truly moves keeps every
+  observation ([D-46](decisions.md#d-46-the-method-measured-on-real-data)).
 - **The angle uncertainty** is the square root of the larger of SCORE's two variances.
   When SCORE gives none, which is common, `--assume-angle-uncertainty` says what to
   assume; each file records it. Without it such observations are left out, and the
   command counts them.
 - `source.origin` names SCORE, the observers, SCORE's observation IDs, the licence and
   the date fetched.
+
+Two sets are committed: the example [`examples/real/`](../examples/real), and the
+validation set [`validation/real/`](../validation/real), on which step 5.3 measures the
+verification method ([real-data-validation.md](real-data-validation.md)).
 
 SCORE also gives SatChecker's predicted position for each observation. Orbit Watch does
 not use it: it computes its own from the element set the manifest names.

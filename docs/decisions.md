@@ -2624,3 +2624,71 @@ Sources:
   2.0.0);
 - [GDPR article 14](https://gdpr-info.eu/art-14-gdpr/). EUR-Lex's page asked for a
   browser check, which an automated client does not pass.
+
+### D-46 The method measured on real data
+
+Accepted · 2026-11-21 (with the pull request that implements step 5.3). The numbers are
+in [real-data-validation.md](real-data-validation.md).
+
+- **The measurement** (`validation.py`, `orbit-watch measure-method`). Method 2.1.0
+  runs, as it is, over every real track: each one is verified from its file's bytes as a
+  delivery for a request of its own object over its time. The request's requirements let
+  every track through, so the residual check decides. Faults are put into copies in
+  memory and never written: times shifted, the station moved or rounded, another object,
+  positions made from the reference orbit, other angle uncertainties, older element
+  sets. The command writes `validation/real/results.json`, `known-answers.json` and the
+  tables of the page; with `--check` it writes nothing and fails on any difference.
+  `results.json` names the method, orbit-watch's version and the SHA-256 of every
+  input.
+- **The validation set** (`validation/real/`). 38 more tracks from SCORE, from the
+  instruments and observers of `examples/real/`: four more nights of the video camera,
+  seven DECam tracks and 27 phone tracks, 13,713 observations. Together with the
+  example, 56 tracks and some tens as P5-06 says, in two directories because they serve
+  two purposes. It is credited, named in the privacy notice and the data inventory, and
+  removable on request like the example. Six windows were not fetched, as not clearly
+  civilian: two unidentified objects, a Shijian satellite, COSMO-SkyMed and a US Air
+  Force satellite. `tracks.json` gives each reason.
+- **The element sets** for the measurement are named in
+  `validation/real/reference-orbits.json`: the nearest set of each new track, and for
+  each track that passes the sets nearest 1, 3, 7 and 14 days before it. CI fetches them
+  into its cache with the others, and restores a partial cache, so that only new sets
+  are asked for.
+- **What it found**, in short:
+  - the video camera's 8 tracks and the eVscopes' 2 all pass;
+  - all 35 phone tracks fail, rightly: their times are 1.3 to 1.9 s late. With the
+    offset taken out, 25 of them pass;
+  - 9 of DECam's 11 fail, for reasons not understood;
+  - in low orbits the orbit term's 5 km is 82 to 97 % of the limit's square, so a time
+    error of half a second passes and one second does not;
+  - in low orbits an element set about 3 days old rejects good tracks, while the method
+    accepts sets up to 7 days old;
+  - no track passed for another object (397 tries), and every track made from the
+    reference orbit passed;
+  - rounding the station to about a kilometre, and any assumed angle uncertainty from
+    10″ to 120″, changed no result.
+- **The method is unchanged.** The page lists five candidates (the reference orbit's
+  age, the orbit term, time uncertainties in high orbits, rounding, and the phones'
+  timestamps). Each needs a decision of its own.
+- **Known answers.** 39 real tracks with a settled answer join reviewer calibration: the
+  video camera's 8 to approve and 31 phone tracks to reject. They are written by the
+  measurement, by rules the page gives. DECam's tracks are left out, and so are the
+  eVscopes': each is one observation that SCORE holds twice, so its delivery fails as a
+  duplicate. `calibration.build_real_files` makes a task's
+  request and report from one of them. The service uses them once it verifies real
+  deliveries (steps 5.4 and 5.5): a round about real observations needs real
+  calibration tasks, since a SIMULATED one gives itself away.
+- **The converter leaves out a place that jumps.** A phone's place sometimes jumps by
+  0.1 to 10 km for one observation and comes back for the next. The converter split the
+  track there, and in one minute two pieces of a track could get the same file name,
+  so that one overwrote the other. Now an observation is left out when no other
+  observation of its track lies within 100 m of it while most of them share a place;
+  the file says how many and how far, and the converter's summary counts them. A phone
+  that truly moves keeps all its observations. `convert-score` also refuses to write two
+  tracks to one file name. The files of `examples/real/` are unchanged.
+- **Correction to D-45.** The track of 55945 was not "a phone whose place moved 7 km in
+  two minutes". Six of its 57 observations had places 0.1 to 10 km away, and the other
+  51 shared one. It is in the validation set now, with those six left out.
+  `examples/real/tracks.json` and its README say so.
+- **Questions for the observers**, added to the follow-up about telling SCORE
+  ([#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113)): how the phones'
+  times are recorded, and what DECam's two observations of a track are.

@@ -399,6 +399,54 @@ def cmd_fetch_orbits(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_measure_method(args: argparse.Namespace) -> int:
+    from orbit_watch import orbit_cache, validation
+    from orbit_watch.canonical import dumps_pretty
+
+    root = Path(args.root)
+    cache_dir = Path(args.cache) if args.cache else orbit_cache.default_cache_dir()
+    absent = validation.missing_sets(root, cache_dir)
+    if absent:
+        _err(
+            f"{len(absent)} element set(s) are not in the cache {cache_dir}. Fetch them first: "
+            "orbit-watch fetch-orbits for examples/real/reference-orbits.json and "
+            "validation/real/reference-orbits.json"
+        )
+        return EXIT_USAGE
+    inputs = validation.load_inputs(root, cache_dir)
+    results = validation.measure(inputs, log=print if args.verbose else lambda m: None)
+    outputs = {
+        root / "validation/real/results.json": dumps_pretty(results, sort_keys=False),
+        root / "validation/real/known-answers.json": dumps_pretty(
+            validation.known_answers(results), sort_keys=False
+        ),
+    }
+    document = root / "docs/real-data-validation.md"
+    outputs[document] = validation.update_document(
+        document.read_text(encoding="utf-8"), validation.tables(results)
+    )
+    stale = [path for path, text in outputs.items() if _read_or_none(path) != text]
+    if args.check:
+        for path in stale:
+            _err(f"{path} is not what the measurement gives: run orbit-watch measure-method")
+        print(f"{len(inputs.tracks)} track(s) measured; {len(stale)} file(s) out of date")
+        return EXIT_FAILED if stale else EXIT_OK
+    for path, text in outputs.items():
+        write_text(path, text)
+    print(
+        f"{len(inputs.tracks)} track(s) measured with method {validation.METHOD_VERSION}; "
+        f"{len(stale)} file(s) changed of {len(outputs)}"
+    )
+    return EXIT_OK
+
+
+def _read_or_none(path: Path) -> str | None:
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+
+
 def cmd_fetch_score(args: argparse.Namespace) -> int:
     import json as json_module
 
@@ -441,6 +489,13 @@ def cmd_convert_score(args: argparse.Namespace) -> int:
         sets, skipped = score.convert(documents, assumed)
     except (ValueError, KeyError) as exc:
         raise FormatError(f"cannot convert: {exc}") from None
+    names = [score.file_name(s) for s in sets]
+    twice = sorted({name for name in names if names.count(name) > 1})
+    if twice:
+        raise FormatError(
+            f"cannot convert: {len(twice)} file name(s) would be written twice, such as "
+            f"{twice[0]}; nothing was written"
+        )
     for observation_set in sets:
         target = out / score.file_name(observation_set)
         write_text(target, owjson.write_observation_set(observation_set))
@@ -1139,6 +1194,29 @@ def build_parser() -> argparse.ArgumentParser:
     orbits.add_argument("--cache", help="cache directory (default: $ORBIT_WATCH_CACHE or ~/.cache)")
     orbits.add_argument("-o", "--output", help="also write the catalogue the manifest names")
     orbits.set_defaults(handler=cmd_fetch_orbits)
+
+    measure = commands.add_parser(
+        "measure-method",
+        help="measure the verification method on the committed real observations",
+        description="Run the verification method, as it is, over every real track in "
+        "examples/real and validation/real against the element sets their manifests name "
+        "(fetch them first with fetch-orbits). Also runs copies changed in memory to stand "
+        "for faults. Writes validation/real/results.json and known-answers.json, and the "
+        "tables of docs/real-data-validation.md. Docs: real-data-validation.md",
+    )
+    measure.add_argument(
+        "--root", default="..", help="the repository's root directory (default: ..)"
+    )
+    measure.add_argument(
+        "--cache", help="cache directory (default: $ORBIT_WATCH_CACHE or ~/.cache)"
+    )
+    measure.add_argument(
+        "--check",
+        action="store_true",
+        help="write nothing; fail if any of the files is not what the measurement gives",
+    )
+    measure.add_argument("-v", "--verbose", action="store_true", help="name each track")
+    measure.set_defaults(handler=cmd_measure_method)
 
     allowlist = commands.add_parser(
         "allowlist",

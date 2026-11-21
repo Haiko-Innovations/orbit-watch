@@ -1,0 +1,79 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.1",
+  "simulated": false,
+  "station": {
+    "id": "SCORE-7da85e3920f6",
+    "latitude_deg": 32.223862,
+    "longitude_deg": -110.7675,
+    "altitude_m": 835.9,
+    "name": "SCORE observer, Apple iPhone 17 Pro"
+  },
+  "target": {
+    "norad_id": 101286,
+    "name": "CZ-2C R/B"
+  },
+  "observations": [
+    {
+      "time": "2026-11-16T01:27:59.611Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 2.0525,
+      "dec_deg": 3.4906,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.96
+    },
+    {
+      "time": "2026-11-16T01:28:02.516Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 2.828,
+      "dec_deg": 2.6463,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.91
+    },
+    {
+      "time": "2026-11-16T01:28:04.618Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 3.309,
+      "dec_deg": 2.0518,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 0.67
+    },
+    {
+      "time": "2026-11-16T01:28:05.626Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 3.5929,
+      "dec_deg": 1.8041,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.75
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.6.0.dev0",
+    "converted_from": "score",
+    "notes": "Real observations published in SCORE under CC-BY-4.0, converted by Orbit Watch. SCORE gives no angle uncertainty for 4 of 4 observations: 60 arcsec is assumed by the converter, not declared by the observer.",
+    "origin": {
+      "name": "SCORE, the IAU CPS Satellite Constellation Observation Repository",
+      "url": "https://score.cps.iau.org",
+      "licence": "CC-BY-4.0",
+      "observers": [
+        "0000-0002-7042-068X"
+      ],
+      "observation_ids": [
+        "49100",
+        "49101",
+        "49102",
+        "49103"
+      ],
+      "retrieved": "2026-11-21",
+      "assumed_angle_uncertainty_arcsec": 60.0
+    }
+  }
+}

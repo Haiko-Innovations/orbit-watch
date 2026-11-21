@@ -35,7 +35,7 @@ Orbit Watch's public repository also holds real observations of satellites that 
 - **From where.** [SCORE](https://score.cps.iau.org), where the observers published them for anyone to use under CC BY 4.0: a publicly accessible source.
 - **Why, and on what basis.** To measure and show how Orbit Watch's verification works on real observations, and to credit the observers as the licence asks. The legal basis is our legitimate interest in a verification method that is tested on real data and open to review (article 6(1)(f)). The place is kept as published, because verification needs the exact place.
 - **Who sees it.** Anyone: the repository is public, as SCORE is.
-- **How long.** As long as the examples are in the repository. If an observer asks, their observations are removed from the next version of the repository and from the service. Copies others have made, and the repository's history, stay.
+- **How long.** As long as the examples and the validation set that hold them are in the repository. If an observer asks, their observations are removed from the next version of the repository and from the service. Copies others have made, and the repository's history, stay.
 
 The observers have the same rights as everyone else, below. They can also ask SCORE about what they published there.
 

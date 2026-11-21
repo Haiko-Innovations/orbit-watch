@@ -49,12 +49,34 @@ In phase 1 the profile is information for the maintainers who approve
 reviewers. It does not change reviewer selection or payments; see
 [decision D-14](decisions.md#d-14-reviewer-accuracy).
 
+## Real known-answer tasks
+
+Phase 5, step 5.3 ([D-46](decisions.md#d-46-the-method-measured-on-real-data)). A
+round about real observations needs real calibration tasks, since a SIMULATED task
+gives itself away by its label. The measurement on real data
+([real-data-validation.md](real-data-validation.md)) writes
+[`validation/real/known-answers.json`](../validation/real/known-answers.json): real
+tracks from SCORE whose correct answer is settled, each named by its file and SHA-256.
+
+| Kind | What it is | Automated result | Correct answer |
+|---|---|---|---|
+| `real_sound` | a track of the video camera, whose tracks all pass | pass | approve |
+| `real_faulty` | a phone's track whose times are off by a constant 1.3 to 1.9 s, or whose positions lie a degree or more from the object's orbit | fail | reject |
+
+`calibration.build_real_files(entry, observations, catalog, source)` makes the task's
+request and automated report from the committed file as published and the object's
+element sets. The files are never changed: no fault is put into a track that a
+reviewer sees, since the observers' names are on it. The service gives these tasks
+once it verifies real deliveries (steps 5.4 and 5.5).
+
 ## Limits of the prototype
 
-- **Only simulated data.** In phase 1 every delivery is simulated, so
-  calibration tasks look exactly like real ones. With real observations,
-  calibration tasks must be **archived real deliveries with settled answers**,
-  otherwise the `simulated` label would give them away.
+- **Only simulated data in the service so far.** In phase 1 every delivery is
+  simulated, so calibration tasks look exactly like real ones. With real
+  observations, calibration tasks must be **real deliveries with settled
+  answers**, otherwise the `simulated` label would give them away; step 5.3 made
+  the first set. A reviewer who looks a real task's observations up in SCORE can
+  tell that it is a replay.
 - Calibration challenge reasons come from a short list of stock sentences, and
   rounds that start from an inconclusive automated result are always real.
   An attentive reviewer could notice either.

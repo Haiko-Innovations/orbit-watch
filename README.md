@@ -85,6 +85,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Station quality meter | `score-station` | [quality-meter.md](docs/quality-meter.md) |
 | Public orbit data and the civilian allow-list | `fetch-gp`, `fetch-satchecker`, `fetch-orbits`, `allowlist build` | [data-sources.md](docs/data-sources.md) |
 | Real observations that observers published in SCORE (CC BY 4.0) | `fetch-score`, `convert-score` | [data-sources.md](docs/data-sources.md#real-observations-score), [examples/real/](examples/real) |
+| The verification method measured on real data, with faults put into copies of real tracks | `measure-method` | [real-data-validation.md](docs/real-data-validation.md), [validation/real/](validation/real) |
 | Request lifecycle, optimistic verification, reviewer rounds | | [lifecycle.md](docs/lifecycle.md), [optimistic-verification.md](docs/optimistic-verification.md) |
 | Settlement rules and the points ledger | | [settlement.md](docs/settlement.md) |
 | Reviewer accuracy with known-answer tasks | | [reviewer-accuracy.md](docs/reviewer-accuracy.md) |
@@ -100,14 +101,16 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 
 The Python code is in [`core/`](core), the Solidity contracts in [`contracts/`](contracts) and the web application in [`web/`](web). Simulated examples are in
 [`examples/`](examples), and real observations from SCORE in
-[`examples/real/`](examples/real).
+[`examples/real/`](examples/real) and [`validation/real/`](validation/real).
 
 ### What is simulated, and what is real
 
 - All stations, observations and test datasets in this repository are SIMULATED,
-  except [`examples/real/`](examples/real), as are the four objects in the built-in
-  catalogue (numbers 339001–339009, marked `(SIMULATED)`).
-- [`examples/real/`](examples/real) holds **real** observations that their observers
+  except [`examples/real/`](examples/real) and [`validation/real/`](validation/real),
+  as are the four objects in the built-in catalogue (numbers 339001–339009, marked
+  `(SIMULATED)`).
+- [`examples/real/`](examples/real) and the validation set
+  [`validation/real/`](validation/real) hold **real** observations that their observers
   published in the IAU CPS's [SCORE](https://score.cps.iau.org) under CC BY 4.0, with
   credits to each observer. `fetch-score` and `convert-score` fetch and convert more.
 - Simulated files say so themselves (`"simulated": true`, or a marker line in

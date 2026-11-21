@@ -1,0 +1,5278 @@
+{
+  "format": "orbit-watch/real-data-validation",
+  "format_version": "1.0",
+  "simulated": false,
+  "method": {
+    "name": "orbit-watch-automated-verification",
+    "version": "2.1.0",
+    "parameters": {
+      "reference_position_error_km": 5.0,
+      "residual_sigma_multiplier": 3.0,
+      "min_fraction_within_limit": 0.8,
+      "max_reference_age_days": 7.0,
+      "duplicate_time_resolution_s": 0.001,
+      "duplicate_angle_resolution_arcsec": 1.0
+    }
+  },
+  "software": {
+    "orbit-watch": "0.6.0.dev0"
+  },
+  "settings": {
+    "requirements": {
+      "min_observations": 1,
+      "max_angle_uncertainty_arcsec": 3600.0,
+      "max_time_uncertainty_s": 3600.0,
+      "angle_types": [
+        "radec"
+      ]
+    },
+    "time_shifts_s": [
+      0.25,
+      0.5,
+      1.0,
+      2.0,
+      5.0,
+      10.0,
+      30.0
+    ],
+    "station_moves_km": [
+      1.0,
+      10.0,
+      100.0
+    ],
+    "assumed_angles_arcsec": [
+      10.0,
+      30.0,
+      60.0,
+      120.0
+    ],
+    "reference_ages_days": [
+      1.0,
+      3.0,
+      7.0,
+      14.0
+    ],
+    "rounding_decimals": 2,
+    "fabricated_noise_arcsec": 10.0
+  },
+  "inputs": {
+    "observation_files": [
+      {
+        "group": "examples/real",
+        "file": "14208-20261119T0123-SCORE-f08826b327e0.json",
+        "sha256": "66cfa0f79c35b3622a4ab85be4ecf8ff707cedf13600b1d136c0e17d033665f7"
+      },
+      {
+        "group": "examples/real",
+        "file": "18374-20261116T0126-SCORE-7da85e3920f6.json",
+        "sha256": "e0bf6c4bcb04a66497dc34247ffe8bdb9af11af162a6ca1d3b6e40a9d6dd9104"
+      },
+      {
+        "group": "examples/real",
+        "file": "19169-20261116T0127-SCORE-7da85e3920f6.json",
+        "sha256": "85e48ac2e31eca24dc71ece45e471ee3a309fffd090622d259c694662447f356"
+      },
+      {
+        "group": "examples/real",
+        "file": "27389-20260117T0106-SCORE-77d01109b5d1.json",
+        "sha256": "10e52ecebc56519be7965359545c1cc5de6622e1b9f6ef88a8016f9309fdd96f"
+      },
+      {
+        "group": "examples/real",
+        "file": "27426-20240131T0054-SCORE-77d01109b5d1.json",
+        "sha256": "0fcddfa8917151e3fdfbd69634a3d5770897d3f6efb54d6f08a737f34b550aa8"
+      },
+      {
+        "group": "examples/real",
+        "file": "28935-20240128T0103-SCORE-77d01109b5d1.json",
+        "sha256": "235d0081a9c27ead7345875cddc10bf5861bdbc52f8f3803b162dcf41266d8da"
+      },
+      {
+        "group": "examples/real",
+        "file": "39174-20261116T0127-SCORE-7da85e3920f6.json",
+        "sha256": "69177dc0674b5930adaa28a380e20e5e27392e5770881e72223823d5e632d10c"
+      },
+      {
+        "group": "examples/real",
+        "file": "45473-20220829T0801-SCORE-77d01109b5d1.json",
+        "sha256": "0a908119b3557b4527f6009f41f714ea83f8d928434a4eefab1301348c22683a"
+      },
+      {
+        "group": "examples/real",
+        "file": "46265-20261119T0131-SCORE-f08826b327e0.json",
+        "sha256": "861110c142a921b23d081254b6fe463989e6f3a56822de08486baf7481388a5e"
+      },
+      {
+        "group": "examples/real",
+        "file": "48043-20260930T0214-SCORE-3727e074cd22.json",
+        "sha256": "149cecc0e3edefd29e22046932c23c90ccb66fed036b68cf0f3a4a7704325675"
+      },
+      {
+        "group": "examples/real",
+        "file": "52621-20261119T0131-SCORE-f08826b327e0.json",
+        "sha256": "399f7cf2adfaa24316e59d164abf03f9f47527e6660858957f63ec2987ac185b"
+      },
+      {
+        "group": "examples/real",
+        "file": "58296-20240508T2142-SCORE-a25cc06b7fd1.json",
+        "sha256": "d74f5c39e02e16ef6e1aa7d93e95d5f11a7baf8425e7be73a661e05d4268686a"
+      },
+      {
+        "group": "examples/real",
+        "file": "58296-20240520T2128-SCORE-a25cc06b7fd1.json",
+        "sha256": "ebc132f003bcee1497d8bf8ed4e31cacf339a0c8e020dbfa2323d50eba82fa6c"
+      },
+      {
+        "group": "examples/real",
+        "file": "58296-20240605T2137-SCORE-a25cc06b7fd1.json",
+        "sha256": "3ddb2c32b6bec3c5867b9c81fbc8feda579bb6a681004130b584a20311f764cc"
+      },
+      {
+        "group": "examples/real",
+        "file": "59588-20240901T2024-SCORE-a25cc06b7fd1.json",
+        "sha256": "f5eb4e0f08c8e0fd6e852f768eb423d10e0b2bbd94732b43fb8985d18f51c1b1"
+      },
+      {
+        "group": "examples/real",
+        "file": "66051-20260201T0146-SCORE-ae5a282af528.json",
+        "sha256": "4e316abcc501dcd8ec3e2c154c1811689b4ef32458890c6ce661b2aa17dc5c19"
+      },
+      {
+        "group": "examples/real",
+        "file": "67232-20260204T1027-SCORE-caef8cca1acf.json",
+        "sha256": "843acb3a050900f4398d1a512ed30dab0d91ad3eb31cc2873d966ca5f817fca6"
+      },
+      {
+        "group": "examples/real",
+        "file": "69591-20260930T0210-SCORE-3727e074cd22.json",
+        "sha256": "b8e38a31122b3348477d84fe83d36dedc21bd13341c2f13de381b1c9d317f1d2"
+      },
+      {
+        "group": "validation/real",
+        "file": "100365-20260930T0226-SCORE-3727e074cd22.json",
+        "sha256": "5207bb4cbdce73f1fe4f9060a147ca78f8d0704103a5836f0d93225ba6efdb38"
+      },
+      {
+        "group": "validation/real",
+        "file": "100800-20261119T0150-SCORE-f08826b327e0.json",
+        "sha256": "e7ae7fda435c091aa480a79fe5a029832dc065cb6474c1b94463525783c48463"
+      },
+      {
+        "group": "validation/real",
+        "file": "101286-20261116T0127-SCORE-7da85e3920f6.json",
+        "sha256": "6455e3501cbeaa61fc3170b3b6234c4e62175d69c914bcba6f706bdb526a3052"
+      },
+      {
+        "group": "validation/real",
+        "file": "17844-20261116T0127-SCORE-7da85e3920f6.json",
+        "sha256": "9075ea68081bdfdad1201239afe30a83c4d8af61c0f0a73e3d1d2d3c5816c7ea"
+      },
+      {
+        "group": "validation/real",
+        "file": "18749-20261112T0140-SCORE-3727e074cd22.json",
+        "sha256": "68a42a9ed21cfefd558907b2cccd1b20a2174ce0d93d82f7205bedead00baf8d"
+      },
+      {
+        "group": "validation/real",
+        "file": "21429-20261116T0127-SCORE-7da85e3920f6.json",
+        "sha256": "b1d92af332adf0f52cd0deb6c2c4ab24ce2e9b0ea397fb88e813fd8de50d8baf"
+      },
+      {
+        "group": "validation/real",
+        "file": "23343-20261119T0155-SCORE-f08826b327e0.json",
+        "sha256": "6c107226a580c8796dce527944159dd73469c698e7fde225433d91e51901a107"
+      },
+      {
+        "group": "validation/real",
+        "file": "23756-20230124T0048-SCORE-77d01109b5d1.json",
+        "sha256": "65ecec136be3077a6f0d18f884e80d3284caa29714592bb5c3284b955c08d3b5"
+      },
+      {
+        "group": "validation/real",
+        "file": "32255-20241206T0040-SCORE-77d01109b5d1.json",
+        "sha256": "a5df9eca037aac26039d4d271e0c35076801d9390653bb70506413827bd05fbd"
+      },
+      {
+        "group": "validation/real",
+        "file": "32987-20240119T0054-SCORE-77d01109b5d1.json",
+        "sha256": "fa9f71284a853cb6552234ae2a56f89a0bacec93997c4d5beae95a678927dce4"
+      },
+      {
+        "group": "validation/real",
+        "file": "36086-20260930T0228-SCORE-3727e074cd22.json",
+        "sha256": "b4cd95be7600ad7216a0da0c6a5cde0e446854828d96a2060c09b29aa4fd0f4d"
+      },
+      {
+        "group": "validation/real",
+        "file": "40259-20230211T0036-SCORE-77d01109b5d1.json",
+        "sha256": "08b269394d5be60ab14e18d00eae12be0bd1f75c02190f8d295fcee0a26b6b70"
+      },
+      {
+        "group": "validation/real",
+        "file": "41589-20231231T0151-SCORE-77d01109b5d1.json",
+        "sha256": "1d845e3d44cab9c2350e838819bc772a45895a22452f21068398d85734430305"
+      },
+      {
+        "group": "validation/real",
+        "file": "43056-20261117T0131-SCORE-7da85e3920f6.json",
+        "sha256": "4f5f271ff47b2311ffc6f0c687e123a81b581a9c4f625f8657979f19e79655bf"
+      },
+      {
+        "group": "validation/real",
+        "file": "43641-20261112T0153-SCORE-3727e074cd22.json",
+        "sha256": "df536b68dbe71b522b9516e01e3626e5307480eaa311eba1abbbc48445150747"
+      },
+      {
+        "group": "validation/real",
+        "file": "43641-20261116T0128-SCORE-7da85e3920f6.json",
+        "sha256": "22823027b23969891c95dca356e81a96504007ff9dadc46bb6eaa84e3d459c7d"
+      },
+      {
+        "group": "validation/real",
+        "file": "46601-20211216T0110-SCORE-77d01109b5d1.json",
+        "sha256": "5bc838d3eca5bf328b8a5877083f87a8c57169f870ff4cbc9ceab384b1ba8fa7"
+      },
+      {
+        "group": "validation/real",
+        "file": "47353-20261112T0127-SCORE-3727e074cd22.json",
+        "sha256": "98ea6ca815d7c51bc2661e57422082ae42d324e9540a9e12406b5d600ecea071"
+      },
+      {
+        "group": "validation/real",
+        "file": "49175-20260930T0218-SCORE-3727e074cd22.json",
+        "sha256": "2403550d9c173e468eae77eba5b966cfd0ac163a02bcce9f3719b87fb24e16d8"
+      },
+      {
+        "group": "validation/real",
+        "file": "51773-20260930T0223-SCORE-3727e074cd22.json",
+        "sha256": "b33d93c6a3e1266c9bff7a1b883f56bc59c76f7b2d773816af800cf76bf480fe"
+      },
+      {
+        "group": "validation/real",
+        "file": "53742-20261119T0141-SCORE-f08826b327e0.json",
+        "sha256": "69953ffbafe12f92f498c41a94877003e86e035bf9f372fa35bf74cd223211bc"
+      },
+      {
+        "group": "validation/real",
+        "file": "53962-20250911T0008-SCORE-77d01109b5d1.json",
+        "sha256": "1bb3c96add4e3da3190f42b26bb6b3fd258ca51c4a1f604542fa5323213ee4cd"
+      },
+      {
+        "group": "validation/real",
+        "file": "53984-20261112T0146-SCORE-3727e074cd22.json",
+        "sha256": "06e1e037c9e8d30f2b8143f0b7c17fc186cf65df37403427405bd7c29ab803c8"
+      },
+      {
+        "group": "validation/real",
+        "file": "54183-20260930T0234-SCORE-3727e074cd22.json",
+        "sha256": "afa5a817c58001fedfcb237d2b7e739b69aaf1404a0e84b77116e5c9a7c3e2ac"
+      },
+      {
+        "group": "validation/real",
+        "file": "55945-20260930T0220-SCORE-3727e074cd22.json",
+        "sha256": "50de6846a1900ee6cfddabd1130006395a062cee330f55798250d7963cc6fabf"
+      },
+      {
+        "group": "validation/real",
+        "file": "56530-20261119T0138-SCORE-f08826b327e0.json",
+        "sha256": "360f560aa137967f7ee05f8d4534f5a9ee330deb830d27a6c18d43f344e68817"
+      },
+      {
+        "group": "validation/real",
+        "file": "57115-20261119T0138-SCORE-f08826b327e0.json",
+        "sha256": "f746830f494d1ed160543b320bb9fb970a5fc7ecfc69c049d563731e75950276"
+      },
+      {
+        "group": "validation/real",
+        "file": "57290-20260930T0232-SCORE-3727e074cd22.json",
+        "sha256": "a82e52eff83176df25452c8adfc0b327b2f9296096c010d5d85f450cf8f55b41"
+      },
+      {
+        "group": "validation/real",
+        "file": "58193-20261112T0133-SCORE-3727e074cd22.json",
+        "sha256": "4f4c6b745769bfdd0737e67e47b54cd13fc97a8ab9e353ae139cac27b5eaa39b"
+      },
+      {
+        "group": "validation/real",
+        "file": "58207-20261112T0148-SCORE-3727e074cd22.json",
+        "sha256": "bf9a6bded860fb63ad1ef20b3f6e463389c08a269cc6f44d305318471c027ab2"
+      },
+      {
+        "group": "validation/real",
+        "file": "59083-20260930T0230-SCORE-3727e074cd22.json",
+        "sha256": "69e276de8e554dc9eba5dcf110c69b8ff8c31b24ae41db66edb5d00c45f077e2"
+      },
+      {
+        "group": "validation/real",
+        "file": "59588-20240909T1943-SCORE-a25cc06b7fd1.json",
+        "sha256": "77bb0a5f33cf756f95ed34d4c08e89115eac2ba439d6fee8dbc7be8caca4c8db"
+      },
+      {
+        "group": "validation/real",
+        "file": "59588-20240913T2012-SCORE-a25cc06b7fd1.json",
+        "sha256": "35be868afb94124aecaf28b80eb3d58cdf2269cb2038f57597bc31ce5450920c"
+      },
+      {
+        "group": "validation/real",
+        "file": "59588-20240921T1924-SCORE-a25cc06b7fd1.json",
+        "sha256": "9652a6e2bda8d70d9e8e0461677166572fa1629f4dd8efbce44a623196d469a2"
+      },
+      {
+        "group": "validation/real",
+        "file": "59588-20241005T2003-SCORE-a25cc06b7fd1.json",
+        "sha256": "7fc0cc4b7cf367ba8335ca8af11bc7410545b50d539cf8c8465b4f649f1a5eda"
+      },
+      {
+        "group": "validation/real",
+        "file": "62078-20261112T0137-SCORE-3727e074cd22.json",
+        "sha256": "2d7258423cc3dff56c4fb49754ffb317bbf7b019fc0f380f6042d1bc4fbe2e2d"
+      },
+      {
+        "group": "validation/real",
+        "file": "62078-20261116T0140-SCORE-7da85e3920f6.json",
+        "sha256": "e34e73a6573f434b2cb9a77c2ee25dcda1aa32370974119823e56797f3cea214"
+      },
+      {
+        "group": "validation/real",
+        "file": "69568-20260930T0214-SCORE-3727e074cd22.json",
+        "sha256": "8843115ba9238154e35066a2a95aa5bf416e60cdba870c3bfd20a8ea3b508f10"
+      }
+    ],
+    "element_sets": [
+      {
+        "norad_id": 14208,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-19T02:47:50.089343",
+        "sha256": "431975f0fe6ea0afa657d8d72147aec8b4248bd147b3df26d9748ecf912ca2fa"
+      },
+      {
+        "norad_id": 17844,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-16T01:24:15.764255",
+        "sha256": "00a19594598bb9ecac8d5ac665e1edd770149857c829a699d96eb0652c4f4626"
+      },
+      {
+        "norad_id": 18374,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-16T00:07:31.700064",
+        "sha256": "ed2d9fae02309aea72913a8cd270a5d17909318bd33acd788482c78a3da7e5ae"
+      },
+      {
+        "norad_id": 18749,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-12T01:31:09.875999",
+        "sha256": "224e723029995046aac50f6373037e75c700cb6b99eba33ef83162503abcc4ef"
+      },
+      {
+        "norad_id": 19169,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-15T22:53:41.509824",
+        "sha256": "8b26b34f766bbca38b5b4fb0878c2182cdadb6e6fc815e5d04d28b4ee3f1bb2b"
+      },
+      {
+        "norad_id": 21429,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-15T15:53:40.574688",
+        "sha256": "a22c16e5c4cfb878ece5094974dd4bd78d1529ddfc08f04eee10adc958c65797"
+      },
+      {
+        "norad_id": 23343,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-19T03:35:17.900735",
+        "sha256": "cd54a591874455aea65afd530f4b942b736c305e959b3045969e099ec0d3e23b"
+      },
+      {
+        "norad_id": 23756,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2023-01-23T09:25:36.647328",
+        "sha256": "d13ebb344c4dff5030c555e8b3e698e79c120b00bf59d09766104b83930159d7"
+      },
+      {
+        "norad_id": 27389,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-03T02:56:04.803647",
+        "sha256": "b201af8a71e329e4d2b523c2e6ff05ee650dac6632226606b73322c84b71e84f"
+      },
+      {
+        "norad_id": 27389,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-10T12:56:51.580032",
+        "sha256": "5920d7695ac47bc0a2fe50d9234b366963a1ca74dbed18922d4ae1fec56f7648"
+      },
+      {
+        "norad_id": 27389,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-14T03:38:41.141184",
+        "sha256": "32f4a0376d0234c0df4122a290fee00be79643a72b3d5ddbf35047c2f90f4ee9"
+      },
+      {
+        "norad_id": 27389,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-16T04:42:59.981183",
+        "sha256": "db73da70fb51913a81ccd43e5638043ada7f201210f820daa543c03f159eeef9"
+      },
+      {
+        "norad_id": 27389,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-17T03:10:52.155839",
+        "sha256": "f993dc849e970052f5a6ef5c0752ebe6229444024ce99fe164bf1e7761853b22"
+      },
+      {
+        "norad_id": 27426,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-01-30T21:28:32.289023",
+        "sha256": "bdbc7e38d60335faa0e9a0098e4dfd11aaa8880c2dc929b105cd9efd3175346e"
+      },
+      {
+        "norad_id": 28935,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-01-27T16:07:48.478368",
+        "sha256": "eacb5346e1b8b2ae8fd4e0649d46f860ef4ec401ce9882032bb3078f3322fd7a"
+      },
+      {
+        "norad_id": 32255,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-12-05T20:46:54.084864",
+        "sha256": "7c931f010d072bee2f4d6148b8df764239a6094c47823bf62f912fe9a66c3ab8"
+      },
+      {
+        "norad_id": 32987,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2023-12-26T16:11:13.197983",
+        "sha256": "1aab9728425279d4d05cdcad4542d5b14be0a6a2f69e82054680b0cee73be718"
+      },
+      {
+        "norad_id": 36086,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T03:25:12.177120",
+        "sha256": "83f101fd7ebd426868e8396187dcf90e3eb8b158971d55687ba3770b7f4abad1"
+      },
+      {
+        "norad_id": 39174,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-16T03:23:24.451008",
+        "sha256": "cea37088f666214e310de27a4f30cae66c5db8bf47fcaf46860ec134a5d668d4"
+      },
+      {
+        "norad_id": 40259,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2023-02-11T04:28:13.704672",
+        "sha256": "2e2eab181c638bb53e075836bbfe0f6399defd50f03a733a14e3bac1a64f7bf1"
+      },
+      {
+        "norad_id": 41589,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2023-12-31T10:56:06.774143",
+        "sha256": "45a559e9e815ef1eb10979453f6cff72210fe6ba2ef237282e508d02271fba80"
+      },
+      {
+        "norad_id": 43056,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-16T19:38:14.970048",
+        "sha256": "f0a5ef2cecc4fd2a9901f2678c68918c0653e120369e40a1addb8bd0d22df824"
+      },
+      {
+        "norad_id": 43641,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-12T04:28:48.371808",
+        "sha256": "c6ab93c69ed933fedc8e555a62bb2c7950e61d49016cab6fd6ed225eab23285f"
+      },
+      {
+        "norad_id": 43641,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-15T23:12:50.601312",
+        "sha256": "585d3561293a7240cab2fa19b4da1f6f16e4b5d41016266e33085a4f30cc61db"
+      },
+      {
+        "norad_id": 45473,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2022-08-29T14:15:42.964128",
+        "sha256": "d924bc2f714eaf93ca3a3708b32ad502a94843926277a59a9a7315f680e484cc"
+      },
+      {
+        "norad_id": 46265,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-18T23:15:18.582048",
+        "sha256": "abaa2d3d1fb5600b695bad97b8dada1279590a6da05aefdcd287f08ccdf5623e"
+      },
+      {
+        "norad_id": 46601,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2021-12-15T06:47:45.006720",
+        "sha256": "7b8e194cce2c47ae507afe79dfa1f603c858b3accf723d53de44563fce2a57bc"
+      },
+      {
+        "norad_id": 47353,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-12T02:49:03.207072",
+        "sha256": "eba6b064fe6eb736f97d26d73e1539fb8a7cb83ea217b4d0a740a4fe185c9993"
+      },
+      {
+        "norad_id": 48043,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T02:03:34.546464",
+        "sha256": "4cdbaf30ef1a2cb0197d306e74e4393a87262c56b9cfd07a08097b5c8959b222"
+      },
+      {
+        "norad_id": 49175,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T04:11:42.000287",
+        "sha256": "57ad7509bdb1348cd723a750613bbefb70893ea132f6d180c34e847f8457d616"
+      },
+      {
+        "norad_id": 51773,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T03:46:42.000383",
+        "sha256": "414d9a88fc895f6099b2a475c0f135f51c4a3ddbbb9f963c25d898130f92cca2"
+      },
+      {
+        "norad_id": 52621,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-19T01:27:42.000191",
+        "sha256": "4414d61335739aef84f55fe154a42bf057224e40f2b857613c0529f520ed207a"
+      },
+      {
+        "norad_id": 53742,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-19T02:11:41.999712",
+        "sha256": "272ee59789d6804187c680a10de24d585e308dcfce5754822b63e8730ce93faa"
+      },
+      {
+        "norad_id": 53962,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2025-09-10T13:51:04.645439",
+        "sha256": "486c8759ffbba32288005ff2df7541379323b3a90932e240486833ad3d04e6c0"
+      },
+      {
+        "norad_id": 53984,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-12T02:24:41.999904",
+        "sha256": "e16e5409c09563c0c813fe4735857f0502e55142e0811e3cea442eb5220d1312"
+      },
+      {
+        "norad_id": 54183,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T03:55:42.000383",
+        "sha256": "67a5e000ffbd12c588e885e0647931f6c714e3c7639980c9b1d1ef3c1da67d37"
+      },
+      {
+        "norad_id": 55945,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T00:06:52.334496",
+        "sha256": "c4e94c3280c2644f89a6270b0f6b908a21f243677f16bc7ea7badaa77faf55f1"
+      },
+      {
+        "norad_id": 56530,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-19T01:04:17.105951",
+        "sha256": "879d9f783941b92a75e356a47847904bb839b4d21c4b12c0e4a3dc363b23dcf4"
+      },
+      {
+        "norad_id": 57115,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-19T01:38:42.000287",
+        "sha256": "8632fb43f717b50de85013857d46ea2b0aece4fcf815d7cb20c8d68b4af307db"
+      },
+      {
+        "norad_id": 57290,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T03:48:41.999616",
+        "sha256": "84c88f41635e0fd863000412d3fb610f9e25e6afbe2e3bb8845f1200ab029d50"
+      },
+      {
+        "norad_id": 58193,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-12T00:59:29.388767",
+        "sha256": "b5c253d8d443dd5fbc8efb5b83d39a928a684968d2b27c636e19310d46d27717"
+      },
+      {
+        "norad_id": 58207,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-12T02:56:41.999712",
+        "sha256": "1607c61d9af8103a16b1fb27951f5050a563c03b4b4170061ba2e89102ca12c3"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-04-25T04:34:19.239744",
+        "sha256": "48cdebe3dd06cb4b6e52b6af12eb540891b0758c2e8883be5edfe8cb653d719e"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-02T04:12:03.525983",
+        "sha256": "1e6202de56eb4e5b015f5db1c2daafee45f1aa3472df3d73ca5da8350f35f5de"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-05T12:50:57.638975",
+        "sha256": "3057317d0ee9454bfe91798aaf896bd28213f506a1196052216cc057c85027d7"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-06T10:59:16.028159",
+        "sha256": "439aa429fbf78eb9376e8d36a93a52f8ef78d1f9cbfeeed3a129db8cd684e5c5"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-07T20:11:39.531264",
+        "sha256": "22bb1c94cccb81b70d549d57bec955dac3102bcd7524cb16f825ae748f4c93fb"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-08T13:35:16.605888",
+        "sha256": "4cb499f0a12dfc19b9fcdc4220cdb46de56d3fdf09e3d0b571a8476c4eb85862"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-14T05:34:06.914208",
+        "sha256": "8b7b5f9ff4633d914796e0c1e00adf9bd4b996dc2b338b94d8f437bbf949eb18"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-18T04:25:57.029375",
+        "sha256": "630ff037d9a5c9a3ea0dc2c32984ced3c42a332a83d9a0b5fa277fca9135be61"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-19T18:22:35.215967",
+        "sha256": "9128baf291521f7be09412d773db52ed04a8c364bee399a399665edb7ae6249e"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-21T05:09:27.523295",
+        "sha256": "2355a568213b332d1e68fab8a5961b96183014a79b517200a598f94efd6510d2"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-22T19:06:00.010944",
+        "sha256": "561634dcaf26e17ea8a8d39d217b05503235074b7d26ffb75a6e5a11bdad6060"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-05-29T18:40:19.412544",
+        "sha256": "f0605f8de59b74b88982a27f5fcf872b5b0b9d75584469f122ddd15c006b01e9"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-06-02T19:06:05.166432",
+        "sha256": "8ee17d5166e298de8d4cdcdee0ab0beade85903424754bd2b91ff0aea6a13601"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-06-05T04:00:33.823295",
+        "sha256": "cd06509b6b2bdbb8dff06e1f860987917222408968c4ffedf55cf5b814b4aa85"
+      },
+      {
+        "norad_id": 58296,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-06-06T11:37:27.907392",
+        "sha256": "c76996d0bb99643d17598a4ce8033692b816e6b89645f6d291905f2815cdc496"
+      },
+      {
+        "norad_id": 59083,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T04:06:41.999616",
+        "sha256": "6cb905f925a9abd2b6b2eafb5122ce5d97cd9282fbfd5ff9e7c858d862913d13"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-08-18T15:35:38.915807",
+        "sha256": "26c469a1d7532d108601da3e3450fce402541232b2309a9d82e26f99db25b443"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-08-25T21:24:46.552607",
+        "sha256": "25e164b295d07f0083a8bf83c9bf29f476a9f35b0ffb08af84d6d1dbe035d5cb"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-08-26T09:42:11.331647",
+        "sha256": "449c2f236da8039507eefb014ba30831dbf8a32a761bb61f91e958dcd1bd2117"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-08-29T09:41:19.362912",
+        "sha256": "6d335a08d056180698c187a114b96b4333ab5bc982c1842f9a1cc2d156383885"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-08-30T20:48:06.189983",
+        "sha256": "85a00442b554f0d8af7eaa10c25427a6cf2fe46d599963f7b11c56b61c94c6ed"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-08-31T21:22:46.140383",
+        "sha256": "efa1a43667f1237f8e79b5132264420704929ac7ac3da4a5d29344b03f4b938c"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-01T18:26:43.156320",
+        "sha256": "7cc151174ea40fec288648aae7f836fb4280ec6efb9ecb8ed318c18acc5a72f2"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-02T20:46:35.137343",
+        "sha256": "87af01d32ebc5698fd4572c9a70ad93920d07fd70120921232ee23d78b955015"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-06T14:17:31.307135",
+        "sha256": "d2f0b341ae58ef3bd25eb9e84b71211adb7a9b36863e0e911b60150dbc5d0648"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-07T20:07:37.225920",
+        "sha256": "0d5e0a56e2502ab2d0c673f0c1961d452f7f8ad29f29b1a86a32c52df97c240f"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-08T17:11:08.866175",
+        "sha256": "7377ad0432743bf515230597d9b4617ba5ec76f616503014856892ca39a6a010"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-09T21:15:45.736992",
+        "sha256": "7f8bad152a5851a2f4609805d9e50ea351884ca592e3d83cdea0f150167abe0a"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-10T16:33:51.958944",
+        "sha256": "61b187260d711ba9cff021a9b221c977741af1e051475c75836f9fe2150014e3"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-12T17:41:32.964576",
+        "sha256": "d579b72992d8c9f45f1555fbdcb3e442ed998d0b4289be161c339a3f125eb4a0"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-13T20:00:31.590143",
+        "sha256": "4c5e56c192ac558bd3814ad6d44ee243173ba841a7d7e6f596e001080ef5b9c4"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-14T20:34:08.477183",
+        "sha256": "235de78d15dcbce5440c81fa2d2ed70ca6764c134846931333893dfa04c64400"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-18T17:32:19.587264",
+        "sha256": "b84bb2432f9acb4c18074d8a55c1edc1110c0130eebec55ce740758581b7f0e5"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-20T13:23:17.788128",
+        "sha256": "4912fecaab3dd3a8625e71fcf74957123b9ca6a4877d82886a925036f577ec38"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-21T13:56:35.890079",
+        "sha256": "7bf8933ee87641c615dc9b66c75c1b6badf8aab3e45ad5179152d8285340ba32"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-09-28T21:18:37.950336",
+        "sha256": "7130fc234c715f2240ff23dc501fefc9272c35ae5bac4deb281317fb2a893e5f"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-10-02T23:29:27.607199",
+        "sha256": "70980bbe83aa1f2bdfe6944e705865a05a8ca2b8267ba19072960656f01b9c7e"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-10-04T17:33:38.710656",
+        "sha256": "e0a0a721905c4dc47ee2d40fdb31803a2b75b348cd4817434a6725ad631158ec"
+      },
+      {
+        "norad_id": 59588,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2024-10-05T18:05:59.774783",
+        "sha256": "4a21e0a1d0385a474a02ca3f01eab7e2701ba01be7f8d123c01e46e7f8aef656"
+      },
+      {
+        "norad_id": 62078,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-12T03:03:46.304063",
+        "sha256": "f280cd9a34402a687cea5a3d029a87a77975d71fac1fc8372b382378b93204dc"
+      },
+      {
+        "norad_id": 62078,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-16T03:04:40.482911",
+        "sha256": "d78cbdbfb8c0352d9228d95c5ad231e0fc30b930ec5b05bee410da54b943ea69"
+      },
+      {
+        "norad_id": 66051,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-17T22:06:38.771712",
+        "sha256": "6c0d3a64cf0688b8e12550979e19fc777c494cb19e15fb1b2176e2a5b916ba92"
+      },
+      {
+        "norad_id": 66051,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-25T03:10:25.992191",
+        "sha256": "5e79cdae2a142a8d309c2d762ccb5d15187bb17fcef078d9f4e886aef7d31f9e"
+      },
+      {
+        "norad_id": 66051,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-28T20:10:37.871040",
+        "sha256": "120e917559e66cf47a805ac7b0fc50763ef6319e54455b2bd0f03e249bfb4369"
+      },
+      {
+        "norad_id": 66051,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-31T02:34:04.442304",
+        "sha256": "474b5bd251d2a79c3798803e807fcd8bf05ca2d7b4c7d9e0f934367d72e81db5"
+      },
+      {
+        "norad_id": 66051,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-31T22:20:46.716864",
+        "sha256": "90db15f6abca513669afac1ca12c1141ee075f12c1cf8e11296630b9411ecfcb"
+      },
+      {
+        "norad_id": 67232,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-20T02:48:32.844383",
+        "sha256": "d22ec827ae1698cd67cb973b1e9946dc6e2f0ce7f991dc7afe12c136b9b315e6"
+      },
+      {
+        "norad_id": 67232,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-01-28T21:00:00.183168",
+        "sha256": "eb0c4aa61ab4b187b5847f0dc77b1b53548e573cdca1614e802cd534fdb2183c"
+      },
+      {
+        "norad_id": 67232,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-02-01T00:51:25.953119",
+        "sha256": "084be67a7cdceae4b756760fba51de9dbc1ff7f810c43fef529401974f07f9fb"
+      },
+      {
+        "norad_id": 67232,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-02-03T14:29:26.236032",
+        "sha256": "415272d50ba2f9b43e781c7f4a2a8b79d0eba2c1446ce721256d8f4e1ea01986"
+      },
+      {
+        "norad_id": 67232,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-02-03T23:58:21.459071",
+        "sha256": "0be883b296309cfecb00fd5548a2e118dc246b32a29271607c800ca61616bfcf"
+      },
+      {
+        "norad_id": 69568,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T02:05:43.925280",
+        "sha256": "e07b445666dc744237f1ff579ae07c6be7fdd1c2e25989530a034de25e4b5c37"
+      },
+      {
+        "norad_id": 69591,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T01:34:28.931232",
+        "sha256": "d5c742fc43230177e6eafd38431a4090f47af831cb9326cefd524d2bd824421a"
+      },
+      {
+        "norad_id": 100365,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-09-30T00:06:35.700767",
+        "sha256": "3acdd7c4b25c62583f55a489d995b6f14c4711f05bef2dfb9be7ce16751a8579"
+      },
+      {
+        "norad_id": 100800,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-18T23:50:16.693728",
+        "sha256": "6fbf83424a2e074a341061d28792fafe1a75a0b6b80f97189f68749c2441049b"
+      },
+      {
+        "norad_id": 101286,
+        "kind": "tle",
+        "source": "satchecker",
+        "epoch": "2026-11-16T02:27:09.105408",
+        "sha256": "37cfcc62eb0fe09f66665cca0cf90b8c7de7f702b94c7f9261969f0a04489647"
+      }
+    ]
+  },
+  "tracks": [
+    {
+      "group": "examples/real",
+      "file": "14208-20261119T0123-SCORE-f08826b327e0.json",
+      "norad_id": 14208,
+      "object": "SL-3 R/B",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-f08826b327e0",
+      "start": "2026-11-19T01:23:27.669Z",
+      "observations": 4,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 4,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3506.827,
+        "max_residual_arcsec": 3958.803,
+        "rms_cross_track_arcsec": 71.8,
+        "mean_along_track_s": -1.5315,
+        "std_along_track_s": 0.3171,
+        "median_limit_arcsec": 1629.378,
+        "reference_epoch_max_age_days": 0.0586
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 656.99,
+        "orbit_term_arcsec": 1480.14,
+        "orbit_share_of_limit": 0.8252,
+        "median_range_km": 696.8,
+        "median_rate_arcsec_per_s": 2189.96
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3576.087,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.5315,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "18374-20261116T0126-SCORE-7da85e3920f6.json",
+      "norad_id": 18374,
+      "object": "SL-12 R/B(AUX MOTOR)",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-16T01:26:56.873Z",
+      "observations": 4,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 4,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3747.85,
+        "max_residual_arcsec": 7090.131,
+        "rms_cross_track_arcsec": 4432.892,
+        "mean_along_track_s": -16.8812,
+        "std_along_track_s": 30.3915,
+        "median_limit_arcsec": 193.202,
+        "reference_epoch_max_age_days": 0.0552
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 11.75,
+        "orbit_term_arcsec": 69.2,
+        "orbit_share_of_limit": 0.1283,
+        "median_range_km": 14903.1,
+        "median_rate_arcsec_per_s": 39.17
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3746.16,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -16.8812,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "19169-20261116T0127-SCORE-7da85e3920f6.json",
+      "norad_id": 19169,
+      "object": "SL-12 R/B(AUX MOTOR)",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-16T01:27:08.583Z",
+      "observations": 4,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 4,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 8150.767,
+        "max_residual_arcsec": 10459.663,
+        "rms_cross_track_arcsec": 4482.722,
+        "mean_along_track_s": 305.6095,
+        "std_along_track_s": 99.8151,
+        "median_limit_arcsec": 187.274,
+        "reference_epoch_max_age_days": 0.1066
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 7.08,
+        "orbit_term_arcsec": 51.2,
+        "orbit_share_of_limit": 0.0747,
+        "median_range_km": 20143.6,
+        "median_rate_arcsec_per_s": 23.61
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 8153.051,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": 305.6095,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "27389-20260117T0106-SCORE-77d01109b5d1.json",
+      "norad_id": 27389,
+      "object": "TDRS 9",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2026-01-17T01:06:43.732Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "GEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 2,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 516.935,
+        "max_residual_arcsec": 772.224,
+        "rms_cross_track_arcsec": 6.215,
+        "mean_along_track_s": 17.0614,
+        "std_along_track_s": 48.8475,
+        "median_limit_arcsec": 1136.976,
+        "reference_epoch_max_age_days": 0.0862
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 1122.32,
+        "orbit_term_arcsec": 26.65,
+        "orbit_share_of_limit": 0.0005,
+        "median_range_km": 38699.6,
+        "median_rate_arcsec_per_s": 14.96
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 516.901,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "pass",
+          "2": "pass",
+          "5": "pass",
+          "10": "pass",
+          "30": "pass"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "pass",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "66051": "fail",
+          "67232": "fail"
+        },
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2026-01-16T04:42:59.981183Z",
+          "age_days": 0.85,
+          "median_residual_arcsec": 516.93,
+          "mean_along_track_s": 16.9325,
+          "rms_cross_track_arcsec": 6.23,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2026-01-14T03:38:41.141184Z",
+          "age_days": 2.895,
+          "median_residual_arcsec": 516.92,
+          "mean_along_track_s": 16.6709,
+          "rms_cross_track_arcsec": 5.98,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2026-01-10T12:56:51.580032Z",
+          "age_days": 6.507,
+          "median_residual_arcsec": 516.89,
+          "mean_along_track_s": 16.2865,
+          "rms_cross_track_arcsec": 5.48,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2026-01-03T02:56:04.803647Z",
+          "age_days": 13.925,
+          "median_residual_arcsec": 516.87,
+          "mean_along_track_s": 16.2882,
+          "rms_cross_track_arcsec": 5.71,
+          "fraction_within_limit": 1.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "examples/real",
+      "file": "27426-20240131T0054-SCORE-77d01109b5d1.json",
+      "norad_id": 27426,
+      "object": "DIRECTV 5 (TEMPO 1)",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2024-01-31T00:54:45.317Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "GEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 1654.634,
+        "max_residual_arcsec": 1831.561,
+        "rms_cross_track_arcsec": 1584.767,
+        "mean_along_track_s": -28.4854,
+        "std_along_track_s": 25.5502,
+        "median_limit_arcsec": 1143.004,
+        "reference_epoch_max_age_days": 0.1438
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 1128.42,
+        "orbit_term_arcsec": 27.11,
+        "orbit_share_of_limit": 0.0006,
+        "median_range_km": 38048.9,
+        "median_rate_arcsec_per_s": 15.05
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 1652.202,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -28.4854,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "28935-20240128T0103-SCORE-77d01109b5d1.json",
+      "norad_id": 28935,
+      "object": "ECHOSTAR 10",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2024-01-28T01:03:36.519Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "GEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 1376.25,
+        "max_residual_arcsec": 1493.745,
+        "rms_cross_track_arcsec": 1134.527,
+        "mean_along_track_s": -40.2589,
+        "std_along_track_s": 47.8183,
+        "median_limit_arcsec": 1138.532,
+        "reference_epoch_max_age_days": 0.3727
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 1123.89,
+        "orbit_term_arcsec": 27.0,
+        "orbit_share_of_limit": 0.0006,
+        "median_range_km": 38194.8,
+        "median_rate_arcsec_per_s": 14.99
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 1374.069,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -40.2589,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "39174-20261116T0127-SCORE-7da85e3920f6.json",
+      "norad_id": 39174,
+      "object": "BREEZE-M DEB (TANK)",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-16T01:27:23.775Z",
+      "observations": 3,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 3,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 8324.847,
+        "max_residual_arcsec": 8508.119,
+        "rms_cross_track_arcsec": 8064.272,
+        "mean_along_track_s": 34.378,
+        "std_along_track_s": 24.8792,
+        "median_limit_arcsec": 195.894,
+        "reference_epoch_max_age_days": 0.0806
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 15.97,
+        "orbit_term_arcsec": 75.63,
+        "orbit_share_of_limit": 0.149,
+        "median_range_km": 13637.0,
+        "median_rate_arcsec_per_s": 53.25
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 8328.404,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": 34.378,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "45473-20220829T0801-SCORE-77d01109b5d1.json",
+      "norad_id": 45473,
+      "object": "ATLAS 5 CENTAUR DEB",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2022-08-29T08:01:25.198Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 1,
+        "fraction_within_limit": 0.5,
+        "median_residual_arcsec": 892.206,
+        "max_residual_arcsec": 1539.285,
+        "rms_cross_track_arcsec": 420.088,
+        "mean_along_track_s": 64.19,
+        "std_along_track_s": 105.0845,
+        "median_limit_arcsec": 799.456,
+        "reference_epoch_max_age_days": 0.2599
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 778.44,
+        "orbit_term_arcsec": 27.7,
+        "orbit_share_of_limit": 0.0012,
+        "median_range_km": 37232.5,
+        "median_rate_arcsec_per_s": 10.38
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 891.809,
+        "fraction_within_limit": 0.5
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": 64.19,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "46265-20261119T0131-SCORE-f08826b327e0.json",
+      "norad_id": 46265,
+      "object": "SAOCOM 1-B",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-f08826b327e0",
+      "start": "2026-11-19T01:31:47.551Z",
+      "observations": 10,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 10,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3717.384,
+        "max_residual_arcsec": 5064.933,
+        "rms_cross_track_arcsec": 107.986,
+        "mean_along_track_s": -1.6165,
+        "std_along_track_s": 0.3795,
+        "median_limit_arcsec": 1728.798,
+        "reference_epoch_max_age_days": 0.0957
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 698.8,
+        "orbit_term_arcsec": 1570.99,
+        "orbit_share_of_limit": 0.8258,
+        "median_range_km": 656.5,
+        "median_rate_arcsec_per_s": 2329.34
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3586.133,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6165,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "fail",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "48043-20260930T0214-SCORE-3727e074cd22.json",
+      "norad_id": 48043,
+      "object": "ONEWEB-0152",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:14:44.571Z",
+      "observations": 3,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 3,
+        "within_limit": 1,
+        "fraction_within_limit": 0.3333,
+        "median_residual_arcsec": 1532.992,
+        "max_residual_arcsec": 2985.348,
+        "rms_cross_track_arcsec": 341.056,
+        "mean_along_track_s": -1.6516,
+        "std_along_track_s": 1.6704,
+        "median_limit_arcsec": 713.585,
+        "reference_epoch_max_age_days": 0.0078
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 266.84,
+        "orbit_term_arcsec": 636.87,
+        "orbit_share_of_limit": 0.7965,
+        "median_range_km": 1619.4,
+        "median_rate_arcsec_per_s": 889.47
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 1570.982,
+        "fraction_within_limit": 0.3333
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6516,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "52621-20261119T0131-SCORE-f08826b327e0.json",
+      "norad_id": 52621,
+      "object": "STARLINK-3984",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-f08826b327e0",
+      "start": "2026-11-19T01:31:12.180Z",
+      "observations": 3,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 3,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 4300.474,
+        "max_residual_arcsec": 4352.813,
+        "rms_cross_track_arcsec": 23.643,
+        "mean_along_track_s": -1.6749,
+        "std_along_track_s": 0.0553,
+        "median_limit_arcsec": 1895.205,
+        "reference_epoch_max_age_days": 0.0025
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 761.28,
+        "orbit_term_arcsec": 1726.22,
+        "orbit_share_of_limit": 0.8296,
+        "median_range_km": 597.4,
+        "median_rate_arcsec_per_s": 2537.61
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 4258.744,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6749,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "examples/real",
+      "file": "58296-20240508T2142-SCORE-a25cc06b7fd1.json",
+      "norad_id": 58296,
+      "object": "PELICAN 3001",
+      "instrument": "Video camera (WATEC 902H2)",
+      "station": "SCORE-a25cc06b7fd1",
+      "start": "2024-05-08T21:42:54.572Z",
+      "observations": 108,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 108,
+        "within_limit": 108,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 248.87,
+        "max_residual_arcsec": 363.061,
+        "rms_cross_track_arcsec": 86.123,
+        "mean_along_track_s": -0.0892,
+        "std_along_track_s": 0.0042,
+        "median_limit_arcsec": 1829.852,
+        "reference_epoch_max_age_days": 0.3388
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 7.93,
+        "orbit_term_arcsec": 1820.96,
+        "orbit_share_of_limit": 0.9903,
+        "median_range_km": 566.3,
+        "median_rate_arcsec_per_s": 2641.86
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 396.223,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {},
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2024-05-07T20:11:39.531264Z",
+          "age_days": 1.064,
+          "median_residual_arcsec": 234.19,
+          "mean_along_track_s": -0.0842,
+          "rms_cross_track_arcsec": 79.71,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2024-05-05T12:50:57.638975Z",
+          "age_days": 3.37,
+          "median_residual_arcsec": 15836.38,
+          "mean_along_track_s": 6.3394,
+          "rms_cross_track_arcsec": 514.06,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2024-05-02T04:12:03.525983Z",
+          "age_days": 6.73,
+          "median_residual_arcsec": 7427.06,
+          "mean_along_track_s": 2.8833,
+          "rms_cross_track_arcsec": 222.41,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2024-04-25T04:34:19.239744Z",
+          "age_days": 13.714,
+          "median_residual_arcsec": 40079.43,
+          "mean_along_track_s": -13.7648,
+          "rms_cross_track_arcsec": 1839.3,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "examples/real",
+      "file": "58296-20240520T2128-SCORE-a25cc06b7fd1.json",
+      "norad_id": 58296,
+      "object": "PELICAN 3001",
+      "instrument": "Video camera (WATEC 902H2)",
+      "station": "SCORE-a25cc06b7fd1",
+      "start": "2024-05-20T21:28:24.146Z",
+      "observations": 97,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 97,
+        "within_limit": 97,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 299.659,
+        "max_residual_arcsec": 330.753,
+        "rms_cross_track_arcsec": 103.275,
+        "mean_along_track_s": -0.1186,
+        "std_along_track_s": 0.0035,
+        "median_limit_arcsec": 1744.19,
+        "reference_epoch_max_age_days": 0.3202
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 7.14,
+        "orbit_term_arcsec": 1734.86,
+        "orbit_share_of_limit": 0.9893,
+        "median_range_km": 594.5,
+        "median_rate_arcsec_per_s": 2380.97
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 442.664,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {},
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2024-05-19T18:22:35.215967Z",
+          "age_days": 1.129,
+          "median_residual_arcsec": 101.43,
+          "mean_along_track_s": 0.0138,
+          "rms_cross_track_arcsec": 95.82,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2024-05-18T04:25:57.029375Z",
+          "age_days": 2.71,
+          "median_residual_arcsec": 179.06,
+          "mean_along_track_s": 0.0626,
+          "rms_cross_track_arcsec": 100.73,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2024-05-14T05:34:06.914208Z",
+          "age_days": 6.663,
+          "median_residual_arcsec": 14331.15,
+          "mean_along_track_s": 6.4602,
+          "rms_cross_track_arcsec": 510.08,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2024-05-06T10:59:16.028159Z",
+          "age_days": 14.437,
+          "median_residual_arcsec": 121455.63,
+          "mean_along_track_s": 129.0461,
+          "rms_cross_track_arcsec": 8899.7,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "examples/real",
+      "file": "58296-20240605T2137-SCORE-a25cc06b7fd1.json",
+      "norad_id": 58296,
+      "object": "PELICAN 3001",
+      "instrument": "Video camera (WATEC 902H2)",
+      "station": "SCORE-a25cc06b7fd1",
+      "start": "2024-06-05T21:37:07.541Z",
+      "observations": 126,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 126,
+        "within_limit": 126,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 405.037,
+        "max_residual_arcsec": 485.179,
+        "rms_cross_track_arcsec": 122.978,
+        "mean_along_track_s": -0.1464,
+        "std_along_track_s": 0.0078,
+        "median_limit_arcsec": 1841.407,
+        "reference_epoch_max_age_days": 0.5836
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 7.91,
+        "orbit_term_arcsec": 1832.57,
+        "orbit_share_of_limit": 0.9904,
+        "median_range_km": 562.9,
+        "median_rate_arcsec_per_s": 2636.42
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 556.195,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {},
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2024-06-05T04:00:33.823295Z",
+          "age_days": 0.734,
+          "median_residual_arcsec": 385.57,
+          "mean_along_track_s": -0.1394,
+          "rms_cross_track_arcsec": 115.98,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2024-06-02T19:06:05.166432Z",
+          "age_days": 3.105,
+          "median_residual_arcsec": 113.44,
+          "mean_along_track_s": -0.0215,
+          "rms_cross_track_arcsec": 98.99,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2024-05-29T18:40:19.412544Z",
+          "age_days": 7.123,
+          "median_residual_arcsec": 10074.08,
+          "mean_along_track_s": 3.9677,
+          "rms_cross_track_arcsec": 310.49,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2024-05-22T19:06:00.010944Z",
+          "age_days": 14.105,
+          "median_residual_arcsec": 79536.54,
+          "mean_along_track_s": -25.752,
+          "rms_cross_track_arcsec": 2950.84,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "examples/real",
+      "file": "59588-20240901T2024-SCORE-a25cc06b7fd1.json",
+      "norad_id": 59588,
+      "object": "ACS 3",
+      "instrument": "Video camera (WATEC 902H2)",
+      "station": "SCORE-a25cc06b7fd1",
+      "start": "2024-09-01T20:24:07.030Z",
+      "observations": 1808,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 1808,
+        "within_limit": 1808,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 29.764,
+        "max_residual_arcsec": 160.161,
+        "rms_cross_track_arcsec": 25.204,
+        "mean_along_track_s": -0.0133,
+        "std_along_track_s": 0.027,
+        "median_limit_arcsec": 796.284,
+        "reference_epoch_max_age_days": 0.0849
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 2.99,
+        "orbit_term_arcsec": 775.67,
+        "orbit_share_of_limit": 0.9489,
+        "median_range_km": 1329.6,
+        "median_rate_arcsec_per_s": 995.47
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 85.645,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {},
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2024-08-31T21:22:46.140383Z",
+          "age_days": 0.963,
+          "median_residual_arcsec": 336.3,
+          "mean_along_track_s": 0.3717,
+          "rms_cross_track_arcsec": 12.23,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2024-08-29T09:41:19.362912Z",
+          "age_days": 3.45,
+          "median_residual_arcsec": 29652.23,
+          "mean_along_track_s": 29.0457,
+          "rms_cross_track_arcsec": 1038.37,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2024-08-25T21:24:46.552607Z",
+          "age_days": 6.961,
+          "median_residual_arcsec": 29647.73,
+          "mean_along_track_s": 29.0541,
+          "rms_cross_track_arcsec": 1055.19,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2024-08-18T15:35:38.915807Z",
+          "age_days": 14.204,
+          "median_residual_arcsec": 28739.15,
+          "mean_along_track_s": 28.2091,
+          "rms_cross_track_arcsec": 1058.38,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "examples/real",
+      "file": "66051-20260201T0146-SCORE-ae5a282af528.json",
+      "norad_id": 66051,
+      "object": "CZ-6A R/B",
+      "instrument": "eVscope",
+      "station": "SCORE-ae5a282af528",
+      "start": "2026-02-01T01:46:53.811Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "pass",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 2,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 145.353,
+        "max_residual_arcsec": 145.353,
+        "rms_cross_track_arcsec": 92.77,
+        "mean_along_track_s": -0.0571,
+        "std_along_track_s": 0.0,
+        "median_limit_arcsec": 1443.283,
+        "reference_epoch_max_age_days": 0.1431
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 588.04,
+        "orbit_term_arcsec": 1305.71,
+        "orbit_share_of_limit": 0.8184,
+        "median_range_km": 789.8,
+        "median_rate_arcsec_per_s": 1960.12
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 171.761,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "67232": "fail"
+        },
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2026-01-31T02:34:04.442304Z",
+          "age_days": 0.967,
+          "median_residual_arcsec": 140.71,
+          "mean_along_track_s": -0.0504,
+          "rms_cross_track_arcsec": 100.16,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2026-01-28T20:10:37.871040Z",
+          "age_days": 3.234,
+          "median_residual_arcsec": 278.96,
+          "mean_along_track_s": -0.1304,
+          "rms_cross_track_arcsec": 111.33,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2026-01-25T03:10:25.992191Z",
+          "age_days": 6.942,
+          "median_residual_arcsec": 715.04,
+          "mean_along_track_s": -0.3604,
+          "rms_cross_track_arcsec": 107.37,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2026-01-17T22:06:38.771712Z",
+          "age_days": 14.153,
+          "median_residual_arcsec": 5394.16,
+          "mean_along_track_s": 2.7457,
+          "rms_cross_track_arcsec": 392.16,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "examples/real",
+      "file": "67232-20260204T1027-SCORE-caef8cca1acf.json",
+      "norad_id": 67232,
+      "object": "SPACEMOBILE-006",
+      "instrument": "eVscope",
+      "station": "SCORE-caef8cca1acf",
+      "start": "2026-02-04T10:27:31.089Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "pass",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 2,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 133.587,
+        "max_residual_arcsec": 133.587,
+        "rms_cross_track_arcsec": 46.16,
+        "mean_along_track_s": 0.0973,
+        "std_along_track_s": 0.0,
+        "median_limit_arcsec": 1014.359,
+        "reference_epoch_max_age_days": 0.4369
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 386.42,
+        "orbit_term_arcsec": 920.44,
+        "orbit_share_of_limit": 0.8234,
+        "median_range_km": 1120.5,
+        "median_rate_arcsec_per_s": 1288.08
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 160.183,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "66051": "fail"
+        },
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2026-02-03T14:29:26.236032Z",
+          "age_days": 0.832,
+          "median_residual_arcsec": 264.59,
+          "mean_along_track_s": 0.2027,
+          "rms_cross_track_arcsec": 43.96,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2026-02-01T00:51:25.953119Z",
+          "age_days": 3.4,
+          "median_residual_arcsec": 533.64,
+          "mean_along_track_s": 0.4105,
+          "rms_cross_track_arcsec": 76.4,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2026-01-28T21:00:00.183168Z",
+          "age_days": 6.561,
+          "median_residual_arcsec": 1009.82,
+          "mean_along_track_s": -0.7777,
+          "rms_cross_track_arcsec": 101.92,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "group": "examples/real",
+      "file": "69591-20260930T0210-SCORE-3727e074cd22.json",
+      "norad_id": 69591,
+      "object": "SPACEMOBILE-010",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:10:02.568Z",
+      "observations": 41,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 41,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2369.595,
+        "max_residual_arcsec": 3556.448,
+        "rms_cross_track_arcsec": 105.389,
+        "mean_along_track_s": -1.6134,
+        "std_along_track_s": 0.2488,
+        "median_limit_arcsec": 1284.109,
+        "reference_epoch_max_age_days": 0.0258
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 450.58,
+        "orbit_term_arcsec": 1188.91,
+        "orbit_share_of_limit": 0.8572,
+        "median_range_km": 867.4,
+        "median_rate_arcsec_per_s": 1501.94
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2318.099,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6134,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "36086": "fail",
+          "48043": "fail",
+          "49175": "fail",
+          "51773": "fail",
+          "54183": "fail",
+          "55945": "fail",
+          "57290": "fail",
+          "59083": "fail",
+          "69568": "fail",
+          "100365": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "100365-20260930T0226-SCORE-3727e074cd22.json",
+      "norad_id": 100365,
+      "object": "CZ-12 R/B",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:26:24.544Z",
+      "observations": 5,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 5,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2099.087,
+        "max_residual_arcsec": 3497.463,
+        "rms_cross_track_arcsec": 1198.265,
+        "mean_along_track_s": -1.4002,
+        "std_along_track_s": 0.0824,
+        "median_limit_arcsec": 1209.369,
+        "reference_epoch_max_age_days": 0.0973
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 465.72,
+        "orbit_term_arcsec": 1101.49,
+        "orbit_share_of_limit": 0.8296,
+        "median_range_km": 936.3,
+        "median_rate_arcsec_per_s": 1552.4
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2097.174,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.4002,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "36086": "fail",
+          "48043": "fail",
+          "49175": "fail",
+          "51773": "fail",
+          "54183": "fail",
+          "55945": "fail",
+          "57290": "fail",
+          "59083": "fail",
+          "69568": "fail",
+          "69591": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "100800-20261119T0150-SCORE-f08826b327e0.json",
+      "norad_id": 100800,
+      "object": "CZ-8A R/B",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-f08826b327e0",
+      "start": "2026-11-19T01:50:34.408Z",
+      "observations": 16,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 16,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 1538.987,
+        "max_residual_arcsec": 2338.773,
+        "rms_cross_track_arcsec": 95.38,
+        "mean_along_track_s": -1.6719,
+        "std_along_track_s": 0.2727,
+        "median_limit_arcsec": 861.405,
+        "reference_epoch_max_age_days": 0.0845
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 270.91,
+        "orbit_term_arcsec": 797.58,
+        "orbit_share_of_limit": 0.8574,
+        "median_range_km": 1294.5,
+        "median_rate_arcsec_per_s": 903.04
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 1585.926,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6719,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "101286-20261116T0127-SCORE-7da85e3920f6.json",
+      "norad_id": 101286,
+      "object": "CZ-2C R/B",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-16T01:27:59.611Z",
+      "observations": 4,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 4,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2311.996,
+        "max_residual_arcsec": 2325.995,
+        "rms_cross_track_arcsec": 107.729,
+        "mean_along_track_s": -1.6828,
+        "std_along_track_s": 0.0647,
+        "median_limit_arcsec": 1313.094,
+        "reference_epoch_max_age_days": 0.0411
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 406.44,
+        "orbit_term_arcsec": 1235.57,
+        "orbit_share_of_limit": 0.8854,
+        "median_range_km": 834.7,
+        "median_rate_arcsec_per_s": 1354.79
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2304.895,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6828,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58193": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "17844-20261116T0127-SCORE-7da85e3920f6.json",
+      "norad_id": 17844,
+      "object": "SL-14 DEB",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-16T01:27:35.731Z",
+      "observations": 3,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 3,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3194.875,
+        "max_residual_arcsec": 3905.186,
+        "rms_cross_track_arcsec": 1107.551,
+        "mean_along_track_s": -2.8193,
+        "std_along_track_s": 0.8583,
+        "median_limit_arcsec": 840.65,
+        "reference_epoch_max_age_days": 0.0023
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 316.9,
+        "orbit_term_arcsec": 757.54,
+        "orbit_share_of_limit": 0.812,
+        "median_range_km": 1361.4,
+        "median_rate_arcsec_per_s": 1056.33
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3159.539,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -2.8193,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "18749-20261112T0140-SCORE-3727e074cd22.json",
+      "norad_id": 18749,
+      "object": "SL-14 R/B",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-11-12T01:40:03.683Z",
+      "observations": 12,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 12,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 4114.412,
+        "max_residual_arcsec": 5279.308,
+        "rms_cross_track_arcsec": 1072.264,
+        "mean_along_track_s": -1.8369,
+        "std_along_track_s": 0.6578,
+        "median_limit_arcsec": 1609.268,
+        "reference_epoch_max_age_days": 0.0066
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 618.87,
+        "orbit_term_arcsec": 1474.56,
+        "orbit_share_of_limit": 0.8396,
+        "median_range_km": 699.4,
+        "median_rate_arcsec_per_s": 2062.9
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 4221.077,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.8369,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "fail",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "17844": "fail",
+          "18374": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58193": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "21429-20261116T0127-SCORE-7da85e3920f6.json",
+      "norad_id": 21429,
+      "object": "SL-6 R/B(2)",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-16T01:27:27.853Z",
+      "observations": 4,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 4,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 7570.238,
+        "max_residual_arcsec": 8582.745,
+        "rms_cross_track_arcsec": 4087.139,
+        "mean_along_track_s": -268.0925,
+        "std_along_track_s": 82.3131,
+        "median_limit_arcsec": 185.194,
+        "reference_epoch_max_age_days": 0.3985
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 6.97,
+        "orbit_term_arcsec": 42.99,
+        "orbit_share_of_limit": 0.0539,
+        "median_range_km": 23989.2,
+        "median_rate_arcsec_per_s": 23.24
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 7569.223,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -268.0925,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "23343-20261119T0155-SCORE-f08826b327e0.json",
+      "norad_id": 23343,
+      "object": "SL-16 R/B",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-f08826b327e0",
+      "start": "2026-11-19T01:55:37.315Z",
+      "observations": 20,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 20,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3523.937,
+        "max_residual_arcsec": 31492.939,
+        "rms_cross_track_arcsec": 118.007,
+        "mean_along_track_s": -1.0238,
+        "std_along_track_s": 3.3766,
+        "median_limit_arcsec": 1554.683,
+        "reference_epoch_max_age_days": 0.0692
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 601.37,
+        "orbit_term_arcsec": 1422.32,
+        "orbit_share_of_limit": 0.837,
+        "median_range_km": 725.1,
+        "median_rate_arcsec_per_s": 2004.55
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3607.648,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.0238,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "23756-20230124T0048-SCORE-77d01109b5d1.json",
+      "norad_id": 23756,
+      "object": "ECHOSTAR 1 PKM",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2023-01-24T00:48:19.328Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 1269.281,
+        "max_residual_arcsec": 1424.283,
+        "rms_cross_track_arcsec": 917.08,
+        "mean_along_track_s": -39.6162,
+        "std_along_track_s": 1.8102,
+        "median_limit_arcsec": 385.689,
+        "reference_epoch_max_age_days": 0.6409
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 337.21,
+        "orbit_term_arcsec": 51.43,
+        "orbit_share_of_limit": 0.0178,
+        "median_range_km": 20052.6,
+        "median_rate_arcsec_per_s": 22.48
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 1264.603,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -39.6162,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "32255-20241206T0040-SCORE-77d01109b5d1.json",
+      "norad_id": 32255,
+      "object": "ARIANE 5 DEB (SYLDA)",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2024-12-06T00:40:41.934Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2655.575,
+        "max_residual_arcsec": 2994.246,
+        "rms_cross_track_arcsec": 2469.894,
+        "mean_along_track_s": -111.3366,
+        "std_along_track_s": 101.9611,
+        "median_limit_arcsec": 1064.637,
+        "reference_epoch_max_age_days": 0.1634
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 1048.9,
+        "orbit_term_arcsec": 29.47,
+        "orbit_share_of_limit": 0.0008,
+        "median_range_km": 34996.9,
+        "median_rate_arcsec_per_s": 7.77
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2657.118,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -111.3366,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "32987-20240119T0054-SCORE-77d01109b5d1.json",
+      "norad_id": 32987,
+      "object": "SATCOM 3 DEB",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2024-01-19T00:54:20.222Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "inconclusive",
+      "result": "inconclusive",
+      "statistics": {},
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 1775.25,
+        "orbit_term_arcsec": 52.4,
+        "orbit_share_of_limit": 0.0009,
+        "median_range_km": 19681.4,
+        "median_rate_arcsec_per_s": 33.81
+      },
+      "rounded": {
+        "result": "inconclusive",
+        "median_residual_arcsec": null,
+        "fraction_within_limit": null
+      },
+      "assumed_angle": {
+        "10": "inconclusive",
+        "30": "inconclusive",
+        "60": "inconclusive",
+        "120": "inconclusive"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "36086-20260930T0228-SCORE-3727e074cd22.json",
+      "norad_id": 36086,
+      "object": "POISK",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:28:05.299Z",
+      "observations": 7,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 7,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2546.794,
+        "max_residual_arcsec": 3787.688,
+        "rms_cross_track_arcsec": 94.713,
+        "mean_along_track_s": -1.3196,
+        "std_along_track_s": 0.2935,
+        "median_limit_arcsec": 1782.812,
+        "reference_epoch_max_age_days": 0.0397
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 608.9,
+        "orbit_term_arcsec": 1665.91,
+        "orbit_share_of_limit": 0.8732,
+        "median_range_km": 619.1,
+        "median_rate_arcsec_per_s": 2029.66
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2552.199,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.3196,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "48043": "fail",
+          "49175": "fail",
+          "51773": "fail",
+          "54183": "fail",
+          "55945": "fail",
+          "57290": "fail",
+          "59083": "fail",
+          "69568": "fail",
+          "69591": "fail",
+          "100365": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "40259-20230211T0036-SCORE-77d01109b5d1.json",
+      "norad_id": 40259,
+      "object": "BREEZE-M R/B",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2023-02-11T00:36:58.021Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "GEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2681.174,
+        "max_residual_arcsec": 2896.777,
+        "rms_cross_track_arcsec": 334.564,
+        "mean_along_track_s": -212.5985,
+        "std_along_track_s": 26.9247,
+        "median_limit_arcsec": 681.083,
+        "reference_epoch_max_age_days": 0.1606
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 656.45,
+        "orbit_term_arcsec": 23.54,
+        "orbit_share_of_limit": 0.0012,
+        "median_range_km": 43814.4,
+        "median_rate_arcsec_per_s": 12.5
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2681.584,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -212.5985,
+        "result": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "41589-20231231T0151-SCORE-77d01109b5d1.json",
+      "norad_id": 41589,
+      "object": "EUTE 117W B",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2023-12-31T01:51:17.168Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "GEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 13171.759,
+        "max_residual_arcsec": 13673.62,
+        "rms_cross_track_arcsec": 5402.389,
+        "mean_along_track_s": 800.1777,
+        "std_along_track_s": 63.3051,
+        "median_limit_arcsec": 2704.341,
+        "reference_epoch_max_age_days": 0.3784
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 2698.21,
+        "orbit_term_arcsec": 26.66,
+        "orbit_share_of_limit": 0.0001,
+        "median_range_km": 38678.1,
+        "median_rate_arcsec_per_s": 14.99
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 13173.08,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": 800.1777,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "43056-20261117T0131-SCORE-7da85e3920f6.json",
+      "norad_id": 43056,
+      "object": "GALILEO 20 (2C6)",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-17T01:31:39.778Z",
+      "observations": 7,
+      "angle_uncertainty": "assumed",
+      "orbit": "MEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 7,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 6734.839,
+        "max_residual_arcsec": 7542.535,
+        "rms_cross_track_arcsec": 2257.161,
+        "mean_along_track_s": -196.0615,
+        "std_along_track_s": 63.5545,
+        "median_limit_arcsec": 184.654,
+        "reference_epoch_max_age_days": 0.2456
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 8.29,
+        "orbit_term_arcsec": 40.35,
+        "orbit_share_of_limit": 0.0478,
+        "median_range_km": 25557.0,
+        "median_rate_arcsec_per_s": 27.63
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 6732.999,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -196.0615,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "43641-20261112T0153-SCORE-3727e074cd22.json",
+      "norad_id": 43641,
+      "object": "SAOCOM 1-A",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-11-12T01:53:00.839Z",
+      "observations": 25,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 25,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3232.227,
+        "max_residual_arcsec": 4096.838,
+        "rms_cross_track_arcsec": 69.628,
+        "mean_along_track_s": -1.7158,
+        "std_along_track_s": 0.2443,
+        "median_limit_arcsec": 1478.504,
+        "reference_epoch_max_age_days": 0.1082
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 573.17,
+        "orbit_term_arcsec": 1350.94,
+        "orbit_share_of_limit": 0.8349,
+        "median_range_km": 763.4,
+        "median_rate_arcsec_per_s": 1910.58
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3124.605,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.7158,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58193": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "43641-20261116T0128-SCORE-7da85e3920f6.json",
+      "norad_id": 43641,
+      "object": "SAOCOM 1-A",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-16T01:28:32.628Z",
+      "observations": 31,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 31,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2581.975,
+        "max_residual_arcsec": 5070.341,
+        "rms_cross_track_arcsec": 173.461,
+        "mean_along_track_s": -1.8136,
+        "std_along_track_s": 0.3251,
+        "median_limit_arcsec": 1323.759,
+        "reference_epoch_max_age_days": 0.0964
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 464.18,
+        "orbit_term_arcsec": 1226.57,
+        "orbit_share_of_limit": 0.8586,
+        "median_range_km": 840.8,
+        "median_rate_arcsec_per_s": 1547.27
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2506.03,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.8136,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58193": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "46601-20211216T0110-SCORE-77d01109b5d1.json",
+      "norad_id": 46601,
+      "object": "ATLAS 5 CENTAUR DEB",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2021-12-16T01:10:37.298Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "HEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2523.005,
+        "max_residual_arcsec": 2694.221,
+        "rms_cross_track_arcsec": 1704.438,
+        "mean_along_track_s": 149.6287,
+        "std_along_track_s": 52.9784,
+        "median_limit_arcsec": 926.106,
+        "reference_epoch_max_age_days": 0.7665
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 907.94,
+        "orbit_term_arcsec": 30.2,
+        "orbit_share_of_limit": 0.0011,
+        "median_range_km": 34151.9,
+        "median_rate_arcsec_per_s": 12.11
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2523.919,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": 149.6287,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "47353-20261112T0127-SCORE-3727e074cd22.json",
+      "norad_id": 47353,
+      "object": "STARLINK-2045",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-11-12T01:27:03.836Z",
+      "observations": 43,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 43,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3693.802,
+        "max_residual_arcsec": 5256.69,
+        "rms_cross_track_arcsec": 94.623,
+        "mean_along_track_s": -1.8057,
+        "std_along_track_s": 0.218,
+        "median_limit_arcsec": 1719.214,
+        "reference_epoch_max_age_days": 0.0569
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 645.52,
+        "orbit_term_arcsec": 1583.23,
+        "orbit_share_of_limit": 0.8481,
+        "median_range_km": 651.4,
+        "median_rate_arcsec_per_s": 2151.73
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3812.386,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.8057,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "52621": "inconclusive",
+          "53984": "fail",
+          "56530": "fail",
+          "58193": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "49175-20260930T0218-SCORE-3727e074cd22.json",
+      "norad_id": 49175,
+      "object": "STARLINK-3087",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:18:41.553Z",
+      "observations": 27,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 27,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2308.719,
+        "max_residual_arcsec": 2793.919,
+        "rms_cross_track_arcsec": 109.301,
+        "mean_along_track_s": -1.3268,
+        "std_along_track_s": 0.197,
+        "median_limit_arcsec": 1377.283,
+        "reference_epoch_max_age_days": 0.0785
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 520.18,
+        "orbit_term_arcsec": 1262.51,
+        "orbit_share_of_limit": 0.8403,
+        "median_range_km": 816.9,
+        "median_rate_arcsec_per_s": 1733.94
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2253.729,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.3268,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "36086": "fail",
+          "48043": "fail",
+          "51773": "fail",
+          "54183": "fail",
+          "55945": "fail",
+          "57290": "fail",
+          "59083": "fail",
+          "69568": "fail",
+          "69591": "fail",
+          "100365": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "51773-20260930T0223-SCORE-3727e074cd22.json",
+      "norad_id": 51773,
+      "object": "STARLINK-3624",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:23:10.595Z",
+      "observations": 46,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 46,
+        "within_limit": 3,
+        "fraction_within_limit": 0.0652,
+        "median_residual_arcsec": 1919.866,
+        "max_residual_arcsec": 4049.265,
+        "rms_cross_track_arcsec": 50.663,
+        "mean_along_track_s": -1.4375,
+        "std_along_track_s": 0.2268,
+        "median_limit_arcsec": 1395.893,
+        "reference_epoch_max_age_days": 0.058
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 421.06,
+        "orbit_term_arcsec": 1318.65,
+        "orbit_share_of_limit": 0.8924,
+        "median_range_km": 782.1,
+        "median_rate_arcsec_per_s": 1403.53
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 1915.496,
+        "fraction_within_limit": 0.0652
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.4375,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "36086": "fail",
+          "48043": "fail",
+          "49175": "fail",
+          "54183": "fail",
+          "55945": "fail",
+          "57290": "fail",
+          "59083": "fail",
+          "69568": "fail",
+          "69591": "fail",
+          "100365": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "53742-20261119T0141-SCORE-f08826b327e0.json",
+      "norad_id": 53742,
+      "object": "STARLINK-4637",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-f08826b327e0",
+      "start": "2026-11-19T01:41:24.027Z",
+      "observations": 6,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 6,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3782.337,
+        "max_residual_arcsec": 4239.12,
+        "rms_cross_track_arcsec": 147.121,
+        "mean_along_track_s": -1.541,
+        "std_along_track_s": 0.3408,
+        "median_limit_arcsec": 1815.982,
+        "reference_epoch_max_age_days": 0.021
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 720.1,
+        "orbit_term_arcsec": 1657.36,
+        "orbit_share_of_limit": 0.8329,
+        "median_range_km": 622.3,
+        "median_rate_arcsec_per_s": 2400.32
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3737.619,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.541,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "53962-20250911T0008-SCORE-77d01109b5d1.json",
+      "norad_id": 53962,
+      "object": "ATLAS 5 CENTAUR R/B",
+      "instrument": "DECam (Blanco 4 m)",
+      "station": "SCORE-77d01109b5d1",
+      "start": "2025-09-11T00:08:34.059Z",
+      "observations": 2,
+      "angle_uncertainty": "assumed",
+      "orbit": "GEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 2,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3453.852,
+        "max_residual_arcsec": 3910.53,
+        "rms_cross_track_arcsec": 1925.109,
+        "mean_along_track_s": 183.228,
+        "std_along_track_s": 41.0931,
+        "median_limit_arcsec": 2120.862,
+        "reference_epoch_max_age_days": 0.4299
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 2113.01,
+        "orbit_term_arcsec": 28.88,
+        "orbit_share_of_limit": 0.0002,
+        "median_range_km": 35704.6,
+        "median_rate_arcsec_per_s": 15.65
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3454.623,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": 183.228,
+        "result": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "53984-20261112T0146-SCORE-3727e074cd22.json",
+      "norad_id": 53984,
+      "object": "STARLINK-5142",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-11-12T01:46:07.732Z",
+      "observations": 30,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 30,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 4137.431,
+        "max_residual_arcsec": 5435.489,
+        "rms_cross_track_arcsec": 77.509,
+        "mean_along_track_s": -1.6078,
+        "std_along_track_s": 0.2518,
+        "median_limit_arcsec": 2040.657,
+        "reference_epoch_max_age_days": 0.0268
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 770.84,
+        "orbit_term_arcsec": 1880.87,
+        "orbit_share_of_limit": 0.8495,
+        "median_range_km": 548.3,
+        "median_rate_arcsec_per_s": 2569.48
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 4066.522,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6078,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58193": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "54183-20260930T0234-SCORE-3727e074cd22.json",
+      "norad_id": 54183,
+      "object": "STARLINK-5239",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:34:06.583Z",
+      "observations": 14,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 14,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 4176.72,
+        "max_residual_arcsec": 5264.073,
+        "rms_cross_track_arcsec": 98.37,
+        "mean_along_track_s": -1.5274,
+        "std_along_track_s": 0.1912,
+        "median_limit_arcsec": 2066.168,
+        "reference_epoch_max_age_days": 0.0567
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 828.72,
+        "orbit_term_arcsec": 1884.11,
+        "orbit_share_of_limit": 0.8315,
+        "median_range_km": 547.4,
+        "median_rate_arcsec_per_s": 2762.38
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 4132.467,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.5274,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "36086": "fail",
+          "48043": "fail",
+          "49175": "fail",
+          "51773": "fail",
+          "55945": "fail",
+          "57290": "fail",
+          "59083": "fail",
+          "69568": "fail",
+          "69591": "fail",
+          "100365": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "55945-20260930T0220-SCORE-3727e074cd22.json",
+      "norad_id": 55945,
+      "object": "STARLINK-5925",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:20:56.610Z",
+      "observations": 51,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 51,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2191.492,
+        "max_residual_arcsec": 4484.739,
+        "rms_cross_track_arcsec": 83.776,
+        "mean_along_track_s": -1.4647,
+        "std_along_track_s": 0.1457,
+        "median_limit_arcsec": 1442.465,
+        "reference_epoch_max_age_days": 0.0944
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 473.46,
+        "orbit_term_arcsec": 1350.61,
+        "orbit_share_of_limit": 0.8767,
+        "median_range_km": 763.6,
+        "median_rate_arcsec_per_s": 1578.21
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2119.694,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.4647,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "36086": "fail",
+          "48043": "fail",
+          "49175": "fail",
+          "51773": "fail",
+          "54183": "fail",
+          "57290": "fail",
+          "59083": "fail",
+          "69568": "fail",
+          "69591": "fail",
+          "100365": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "56530-20261119T0138-SCORE-f08826b327e0.json",
+      "norad_id": 56530,
+      "object": "STARLINK-6318",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-f08826b327e0",
+      "start": "2026-11-19T01:38:17.112Z",
+      "observations": 3,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 3,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 4422.155,
+        "max_residual_arcsec": 4442.765,
+        "rms_cross_track_arcsec": 51.368,
+        "mean_along_track_s": -1.6508,
+        "std_along_track_s": 0.0095,
+        "median_limit_arcsec": 2070.503,
+        "reference_epoch_max_age_days": 0.0236
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 802.33,
+        "orbit_term_arcsec": 1900.22,
+        "orbit_share_of_limit": 0.8423,
+        "median_range_km": 542.7,
+        "median_rate_arcsec_per_s": 2674.43
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 4386.746,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6508,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "57115": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "57115-20261119T0138-SCORE-f08826b327e0.json",
+      "norad_id": 57115,
+      "object": "STARLINK-6085",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-f08826b327e0",
+      "start": "2026-11-19T01:38:33.003Z",
+      "observations": 18,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 18,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3902.894,
+        "max_residual_arcsec": 5036.149,
+        "rms_cross_track_arcsec": 64.371,
+        "mean_along_track_s": -1.5765,
+        "std_along_track_s": 0.1764,
+        "median_limit_arcsec": 2092.906,
+        "reference_epoch_max_age_days": 0.0011
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 797.02,
+        "orbit_term_arcsec": 1926.69,
+        "orbit_share_of_limit": 0.8477,
+        "median_range_km": 535.8,
+        "median_rate_arcsec_per_s": 2656.74
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 4039.91,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.5765,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "58207": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "57290-20260930T0232-SCORE-3727e074cd22.json",
+      "norad_id": 57290,
+      "object": "STARLINK-30198",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:32:01.562Z",
+      "observations": 4,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 4,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2223.261,
+        "max_residual_arcsec": 2695.405,
+        "rms_cross_track_arcsec": 60.381,
+        "mean_along_track_s": -1.4961,
+        "std_along_track_s": 0.1274,
+        "median_limit_arcsec": 1443.781,
+        "reference_epoch_max_age_days": 0.0532
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 467.12,
+        "orbit_term_arcsec": 1354.22,
+        "orbit_share_of_limit": 0.8798,
+        "median_range_km": 761.6,
+        "median_rate_arcsec_per_s": 1557.06
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2265.645,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.4961,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "36086": "fail",
+          "48043": "fail",
+          "49175": "fail",
+          "51773": "fail",
+          "54183": "fail",
+          "55945": "fail",
+          "59083": "fail",
+          "69568": "fail",
+          "69591": "fail",
+          "100365": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "58193-20261112T0133-SCORE-3727e074cd22.json",
+      "norad_id": 58193,
+      "object": "STARLINK-30822",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-11-12T01:33:53.522Z",
+      "observations": 10,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 10,
+        "within_limit": 1,
+        "fraction_within_limit": 0.1,
+        "median_residual_arcsec": 3746.821,
+        "max_residual_arcsec": 13181.663,
+        "rms_cross_track_arcsec": 158.236,
+        "mean_along_track_s": -2.1775,
+        "std_along_track_s": 2.0338,
+        "median_limit_arcsec": 1870.518,
+        "reference_epoch_max_age_days": 0.0245
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 631.67,
+        "orbit_term_arcsec": 1751.41,
+        "orbit_share_of_limit": 0.8767,
+        "median_range_km": 588.9,
+        "median_rate_arcsec_per_s": 2105.55
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3757.667,
+        "fraction_within_limit": 0.1
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -2.1775,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "58207-20261112T0148-SCORE-3727e074cd22.json",
+      "norad_id": 58207,
+      "object": "STARLINK-30845",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-11-12T01:48:08.250Z",
+      "observations": 15,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 15,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2790.733,
+        "max_residual_arcsec": 3561.512,
+        "rms_cross_track_arcsec": 57.909,
+        "mean_along_track_s": -1.6433,
+        "std_along_track_s": 0.2991,
+        "median_limit_arcsec": 1514.229,
+        "reference_epoch_max_age_days": 0.0476
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 489.9,
+        "orbit_term_arcsec": 1421.44,
+        "orbit_share_of_limit": 0.8812,
+        "median_range_km": 725.5,
+        "median_rate_arcsec_per_s": 1633.01
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2864.419,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.6433,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58193": "fail",
+          "62078": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "59083-20260930T0230-SCORE-3727e074cd22.json",
+      "norad_id": 59083,
+      "object": "STARLINK-31252",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:30:15.444Z",
+      "observations": 4,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 4,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 4192.663,
+        "max_residual_arcsec": 5472.975,
+        "rms_cross_track_arcsec": 2950.958,
+        "mean_along_track_s": -1.5296,
+        "std_along_track_s": 2.5511,
+        "median_limit_arcsec": 1306.446,
+        "reference_epoch_max_age_days": 0.067
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 368.34,
+        "orbit_term_arcsec": 1240.46,
+        "orbit_share_of_limit": 0.9015,
+        "median_range_km": 831.4,
+        "median_rate_arcsec_per_s": 1227.78
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 4112.651,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.5296,
+        "result": "fail"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "59588-20240909T1943-SCORE-a25cc06b7fd1.json",
+      "norad_id": 59588,
+      "object": "ACS 3",
+      "instrument": "Video camera (WATEC 902H2)",
+      "station": "SCORE-a25cc06b7fd1",
+      "start": "2024-09-09T19:43:33.334Z",
+      "observations": 2870,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 2870,
+        "within_limit": 2870,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 191.306,
+        "max_residual_arcsec": 399.476,
+        "rms_cross_track_arcsec": 38.447,
+        "mean_along_track_s": -0.1528,
+        "std_along_track_s": 0.0143,
+        "median_limit_arcsec": 928.558,
+        "reference_epoch_max_age_days": 0.064
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 3.8,
+        "orbit_term_arcsec": 910.94,
+        "orbit_share_of_limit": 0.9624,
+        "median_range_km": 1132.2,
+        "median_rate_arcsec_per_s": 1267.59
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 268.095,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {},
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2024-09-08T17:11:08.866175Z",
+          "age_days": 1.108,
+          "median_residual_arcsec": 140.5,
+          "mean_along_track_s": 0.098,
+          "rms_cross_track_arcsec": 79.95,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2024-09-06T14:17:31.307135Z",
+          "age_days": 3.229,
+          "median_residual_arcsec": 9468.73,
+          "mean_along_track_s": 7.6607,
+          "rms_cross_track_arcsec": 196.92,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2024-09-02T20:46:35.137343Z",
+          "age_days": 6.959,
+          "median_residual_arcsec": 6575.82,
+          "mean_along_track_s": 5.3835,
+          "rms_cross_track_arcsec": 75.67,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2024-08-26T09:42:11.331647Z",
+          "age_days": 14.42,
+          "median_residual_arcsec": 188015.59,
+          "mean_along_track_s": 462.0258,
+          "rms_cross_track_arcsec": 16400.93,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "validation/real",
+      "file": "59588-20240913T2012-SCORE-a25cc06b7fd1.json",
+      "norad_id": 59588,
+      "object": "ACS 3",
+      "instrument": "Video camera (WATEC 902H2)",
+      "station": "SCORE-a25cc06b7fd1",
+      "start": "2024-09-13T20:12:24.736Z",
+      "observations": 2675,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 2675,
+        "within_limit": 2675,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 66.667,
+        "max_residual_arcsec": 126.543,
+        "rms_cross_track_arcsec": 46.52,
+        "mean_along_track_s": -0.0372,
+        "std_along_track_s": 0.0166,
+        "median_limit_arcsec": 862.014,
+        "reference_epoch_max_age_days": 0.012
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 3.47,
+        "orbit_term_arcsec": 843.0,
+        "orbit_share_of_limit": 0.9564,
+        "median_range_km": 1223.4,
+        "median_rate_arcsec_per_s": 1157.97
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 129.321,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {},
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2024-09-12T17:41:32.964576Z",
+          "age_days": 1.109,
+          "median_residual_arcsec": 10364.51,
+          "mean_along_track_s": -8.8741,
+          "rms_cross_track_arcsec": 364.22,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2024-09-10T16:33:51.958944Z",
+          "age_days": 3.156,
+          "median_residual_arcsec": 3757.73,
+          "mean_along_track_s": -3.3438,
+          "rms_cross_track_arcsec": 78.26,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2024-09-06T14:17:31.307135Z",
+          "age_days": 7.25,
+          "median_residual_arcsec": 39583.63,
+          "mean_along_track_s": 37.7434,
+          "rms_cross_track_arcsec": 1461.43,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2024-08-30T20:48:06.189983Z",
+          "age_days": 13.979,
+          "median_residual_arcsec": 247511.18,
+          "mean_along_track_s": 717.8425,
+          "rms_cross_track_arcsec": 13514.65,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "validation/real",
+      "file": "59588-20240921T1924-SCORE-a25cc06b7fd1.json",
+      "norad_id": 59588,
+      "object": "ACS 3",
+      "instrument": "Video camera (WATEC 902H2)",
+      "station": "SCORE-a25cc06b7fd1",
+      "start": "2024-09-21T19:24:30.428Z",
+      "observations": 3577,
+      "angle_uncertainty": "declared",
+      "orbit": "LEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 3577,
+        "within_limit": 3577,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 81.15,
+        "max_residual_arcsec": 162.193,
+        "rms_cross_track_arcsec": 27.0,
+        "mean_along_track_s": -0.0724,
+        "std_along_track_s": 0.0223,
+        "median_limit_arcsec": 868.926,
+        "reference_epoch_max_age_days": 0.231
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 103.71,
+        "timing_term_arcsec": 3.53,
+        "orbit_term_arcsec": 862.71,
+        "orbit_share_of_limit": 0.9857,
+        "median_range_km": 1195.4,
+        "median_rate_arcsec_per_s": 1177.95
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 148.759,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {},
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2024-09-20T13:23:17.788128Z",
+          "age_days": 1.254,
+          "median_residual_arcsec": 123.12,
+          "mean_along_track_s": 0.0976,
+          "rms_cross_track_arcsec": 60.23,
+          "fraction_within_limit": 1.0,
+          "result": "pass"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2024-09-18T17:32:19.587264Z",
+          "age_days": 3.081,
+          "median_residual_arcsec": 2258.69,
+          "mean_along_track_s": -1.899,
+          "rms_cross_track_arcsec": 262.77,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2024-09-14T20:34:08.477183Z",
+          "age_days": 6.955,
+          "median_residual_arcsec": 26366.28,
+          "mean_along_track_s": -21.2871,
+          "rms_cross_track_arcsec": 1249.86,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2024-09-07T20:07:37.225920Z",
+          "age_days": 13.973,
+          "median_residual_arcsec": 109121.93,
+          "mean_along_track_s": -87.4709,
+          "rms_cross_track_arcsec": 3293.56,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "validation/real",
+      "file": "59588-20241005T2003-SCORE-a25cc06b7fd1.json",
+      "norad_id": 59588,
+      "object": "ACS 3",
+      "instrument": "Video camera (WATEC 902H2)",
+      "station": "SCORE-a25cc06b7fd1",
+      "start": "2024-10-05T20:03:39.432Z",
+      "observations": 4118,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "pass",
+      "result": "pass",
+      "statistics": {
+        "observations": 4118,
+        "within_limit": 4118,
+        "fraction_within_limit": 1.0,
+        "median_residual_arcsec": 50.414,
+        "max_residual_arcsec": 205.594,
+        "rms_cross_track_arcsec": 15.785,
+        "mean_along_track_s": 0.0191,
+        "std_along_track_s": 0.0495,
+        "median_limit_arcsec": 799.023,
+        "reference_epoch_max_age_days": 0.085
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 3.16,
+        "orbit_term_arcsec": 778.48,
+        "orbit_share_of_limit": 0.9492,
+        "median_range_km": 1324.8,
+        "median_rate_arcsec_per_s": 1052.61
+      },
+      "rounded": {
+        "result": "pass",
+        "median_residual_arcsec": 50.668,
+        "fraction_within_limit": 1.0
+      },
+      "assumed_angle": {
+        "10": "pass",
+        "30": "pass",
+        "60": "pass",
+        "120": "pass"
+      },
+      "faults_on": "as published",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {},
+        "fabricated": "pass"
+      },
+      "reference_age": [
+        {
+          "asked_days": 1.0,
+          "reference_epoch": "2024-10-04T17:33:38.710656Z",
+          "age_days": 1.107,
+          "median_residual_arcsec": 3884.32,
+          "mean_along_track_s": 3.6631,
+          "rms_cross_track_arcsec": 214.37,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 3.0,
+          "reference_epoch": "2024-10-02T23:29:27.607199Z",
+          "age_days": 2.86,
+          "median_residual_arcsec": 29672.73,
+          "mean_along_track_s": 28.1473,
+          "rms_cross_track_arcsec": 863.76,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 7.0,
+          "reference_epoch": "2024-09-28T21:18:37.950336Z",
+          "age_days": 6.951,
+          "median_residual_arcsec": 70539.99,
+          "mean_along_track_s": -69.0185,
+          "rms_cross_track_arcsec": 3286.17,
+          "fraction_within_limit": 0.0,
+          "result": "fail"
+        },
+        {
+          "asked_days": 14.0,
+          "reference_epoch": "2024-09-21T13:56:35.890079Z",
+          "age_days": 14.258,
+          "median_residual_arcsec": 155668.79,
+          "mean_along_track_s": 173.9998,
+          "rms_cross_track_arcsec": 592.9,
+          "fraction_within_limit": 0.0,
+          "result": "inconclusive"
+        }
+      ]
+    },
+    {
+      "group": "validation/real",
+      "file": "62078-20261112T0137-SCORE-3727e074cd22.json",
+      "norad_id": 62078,
+      "object": "CZ-2C R/B",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-11-12T01:37:42.221Z",
+      "observations": 17,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 17,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 3842.207,
+        "max_residual_arcsec": 5223.716,
+        "rms_cross_track_arcsec": 92.03,
+        "mean_along_track_s": -1.5171,
+        "std_along_track_s": 0.2638,
+        "median_limit_arcsec": 1891.93,
+        "reference_epoch_max_age_days": 0.0598
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 774.14,
+        "orbit_term_arcsec": 1716.89,
+        "orbit_share_of_limit": 0.8235,
+        "median_range_km": 600.7,
+        "median_rate_arcsec_per_s": 2580.48
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 3970.264,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.5171,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "58193": "fail",
+          "58207": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "62078-20261116T0140-SCORE-7da85e3920f6.json",
+      "norad_id": 62078,
+      "object": "CZ-2C R/B",
+      "instrument": "Phone (iPhone 17 Pro)",
+      "station": "SCORE-7da85e3920f6",
+      "start": "2026-11-16T01:40:04.649Z",
+      "observations": 3,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 3,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 2022.712,
+        "max_residual_arcsec": 2349.908,
+        "rms_cross_track_arcsec": 110.708,
+        "mean_along_track_s": -1.3877,
+        "std_along_track_s": 0.1529,
+        "median_limit_arcsec": 1356.295,
+        "reference_epoch_max_age_days": 0.0587
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 434.04,
+        "orbit_term_arcsec": 1272.3,
+        "orbit_share_of_limit": 0.88,
+        "median_range_km": 810.6,
+        "median_rate_arcsec_per_s": 1446.79
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 2056.79,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.3877,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "14208": "fail",
+          "17844": "fail",
+          "18374": "fail",
+          "18749": "fail",
+          "19169": "fail",
+          "21429": "fail",
+          "23343": "fail",
+          "39174": "fail",
+          "43056": "fail",
+          "43641": "fail",
+          "46265": "fail",
+          "47353": "fail",
+          "52621": "fail",
+          "53742": "fail",
+          "53984": "fail",
+          "56530": "fail",
+          "57115": "fail",
+          "58193": "fail",
+          "58207": "fail",
+          "100800": "fail",
+          "101286": "fail"
+        },
+        "fabricated": "pass"
+      }
+    },
+    {
+      "group": "validation/real",
+      "file": "69568-20260930T0214-SCORE-3727e074cd22.json",
+      "norad_id": 69568,
+      "object": "STARLINK-37938",
+      "instrument": "Phone (iPhone 12 Mini)",
+      "station": "SCORE-3727e074cd22",
+      "start": "2026-09-30T02:14:20.865Z",
+      "observations": 34,
+      "angle_uncertainty": "assumed",
+      "orbit": "LEO",
+      "verdict": "fail",
+      "result": "fail",
+      "statistics": {
+        "observations": 34,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
+        "median_residual_arcsec": 4319.665,
+        "max_residual_arcsec": 5926.687,
+        "rms_cross_track_arcsec": 74.256,
+        "mean_along_track_s": -1.9313,
+        "std_along_track_s": 0.2536,
+        "median_limit_arcsec": 1678.297,
+        "reference_epoch_max_age_days": 0.0068
+      },
+      "limit_terms": {
+        "angle_term_arcsec": 180.0,
+        "timing_term_arcsec": 668.65,
+        "orbit_term_arcsec": 1528.78,
+        "orbit_share_of_limit": 0.8298,
+        "median_range_km": 674.6,
+        "median_rate_arcsec_per_s": 2228.85
+      },
+      "rounded": {
+        "result": "fail",
+        "median_residual_arcsec": 4373.673,
+        "fraction_within_limit": 0.0
+      },
+      "assumed_angle": {
+        "10": "fail",
+        "30": "fail",
+        "60": "fail",
+        "120": "fail"
+      },
+      "offset_removed": {
+        "shift_s": -1.9313,
+        "result": "pass"
+      },
+      "faults_on": "offset removed",
+      "faults": {
+        "time_shift_s": {
+          "0.25": "pass",
+          "0.5": "pass",
+          "1": "fail",
+          "2": "fail",
+          "5": "fail",
+          "10": "fail",
+          "30": "fail"
+        },
+        "station_moved_km": {
+          "1": "pass",
+          "10": "fail",
+          "100": "fail"
+        },
+        "wrong_object": {
+          "36086": "fail",
+          "48043": "fail",
+          "49175": "fail",
+          "51773": "fail",
+          "54183": "fail",
+          "55945": "fail",
+          "57290": "fail",
+          "59083": "fail",
+          "69591": "fail",
+          "100365": "fail"
+        },
+        "fabricated": "pass"
+      }
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.1",
+  "simulated": false,
+  "station": {
+    "id": "SCORE-f08826b327e0",
+    "latitude_deg": 32.2238,
+    "longitude_deg": -110.7676,
+    "altitude_m": 834.0,
+    "name": "SCORE observer, Apple iPhone 12 Mini"
+  },
+  "target": {
+    "norad_id": 56530,
+    "name": "STARLINK-6318"
+  },
+  "observations": [
+    {
+      "time": "2026-11-19T01:38:17.112Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 300.6373,
+      "dec_deg": 21.1209,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.7
+    },
+    {
+      "time": "2026-11-19T01:38:19.154Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 302.0919,
+      "dec_deg": 20.5363,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 1.88
+    },
+    {
+      "time": "2026-11-19T01:38:20.147Z",
+      "time_uncertainty_s": 0.1,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 302.8261,
+      "dec_deg": 20.2476,
+      "angle_uncertainty_arcsec": 60.0,
+      "magnitude": 2.02
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.6.0.dev0",
+    "converted_from": "score",
+    "notes": "Real observations published in SCORE under CC-BY-4.0, converted by Orbit Watch. SCORE gives no angle uncertainty for 3 of 3 observations: 60 arcsec is assumed by the converter, not declared by the observer.",
+    "origin": {
+      "name": "SCORE, the IAU CPS Satellite Constellation Observation Repository",
+      "url": "https://score.cps.iau.org",
+      "licence": "CC-BY-4.0",
+      "observers": [
+        "0000-0002-7042-068X"
+      ],
+      "observation_ids": [
+        "49243",
+        "49244",
+        "49245"
+      ],
+      "retrieved": "2026-11-21",
+      "assumed_angle_uncertainty_arcsec": 60.0
+    }
+  }
+}

@@ -1,0 +1,360 @@
+{
+  "format": "orbit-watch/known-answers",
+  "format_version": "1.0",
+  "simulated": false,
+  "description": "Real tracks from SCORE with a settled answer, for reviewer calibration. Made by orbit-watch measure-method from results.json; see docs/real-data-validation.md.",
+  "method": "2.1.0",
+  "entries": [
+    {
+      "group": "examples/real",
+      "file": "14208-20261119T0123-SCORE-f08826b327e0.json",
+      "sha256": "66cfa0f79c35b3622a4ab85be4ecf8ff707cedf13600b1d136c0e17d033665f7",
+      "norad_id": 14208,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.5 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "examples/real",
+      "file": "18374-20261116T0126-SCORE-7da85e3920f6.json",
+      "sha256": "e0bf6c4bcb04a66497dc34247ffe8bdb9af11af162a6ca1d3b6e40a9d6dd9104",
+      "norad_id": 18374,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The positions lie a degree or more from the requested object's orbit."
+    },
+    {
+      "group": "examples/real",
+      "file": "19169-20261116T0127-SCORE-7da85e3920f6.json",
+      "sha256": "85e48ac2e31eca24dc71ece45e471ee3a309fffd090622d259c694662447f356",
+      "norad_id": 19169,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The positions lie a degree or more from the requested object's orbit."
+    },
+    {
+      "group": "examples/real",
+      "file": "39174-20261116T0127-SCORE-7da85e3920f6.json",
+      "sha256": "69177dc0674b5930adaa28a380e20e5e27392e5770881e72223823d5e632d10c",
+      "norad_id": 39174,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The positions lie a degree or more from the requested object's orbit."
+    },
+    {
+      "group": "examples/real",
+      "file": "46265-20261119T0131-SCORE-f08826b327e0.json",
+      "sha256": "861110c142a921b23d081254b6fe463989e6f3a56822de08486baf7481388a5e",
+      "norad_id": 46265,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.6 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "examples/real",
+      "file": "52621-20261119T0131-SCORE-f08826b327e0.json",
+      "sha256": "399f7cf2adfaa24316e59d164abf03f9f47527e6660858957f63ec2987ac185b",
+      "norad_id": 52621,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.7 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "examples/real",
+      "file": "58296-20240508T2142-SCORE-a25cc06b7fd1.json",
+      "sha256": "d74f5c39e02e16ef6e1aa7d93e95d5f11a7baf8425e7be73a661e05d4268686a",
+      "norad_id": 58296,
+      "expected": "approve",
+      "automated_verdict": "pass",
+      "reason": "The delivery passes, from an instrument whose tracks all pass."
+    },
+    {
+      "group": "examples/real",
+      "file": "58296-20240520T2128-SCORE-a25cc06b7fd1.json",
+      "sha256": "ebc132f003bcee1497d8bf8ed4e31cacf339a0c8e020dbfa2323d50eba82fa6c",
+      "norad_id": 58296,
+      "expected": "approve",
+      "automated_verdict": "pass",
+      "reason": "The delivery passes, from an instrument whose tracks all pass."
+    },
+    {
+      "group": "examples/real",
+      "file": "58296-20240605T2137-SCORE-a25cc06b7fd1.json",
+      "sha256": "3ddb2c32b6bec3c5867b9c81fbc8feda579bb6a681004130b584a20311f764cc",
+      "norad_id": 58296,
+      "expected": "approve",
+      "automated_verdict": "pass",
+      "reason": "The delivery passes, from an instrument whose tracks all pass."
+    },
+    {
+      "group": "examples/real",
+      "file": "59588-20240901T2024-SCORE-a25cc06b7fd1.json",
+      "sha256": "f5eb4e0f08c8e0fd6e852f768eb423d10e0b2bbd94732b43fb8985d18f51c1b1",
+      "norad_id": 59588,
+      "expected": "approve",
+      "automated_verdict": "pass",
+      "reason": "The delivery passes, from an instrument whose tracks all pass."
+    },
+    {
+      "group": "examples/real",
+      "file": "69591-20260930T0210-SCORE-3727e074cd22.json",
+      "sha256": "b8e38a31122b3348477d84fe83d36dedc21bd13341c2f13de381b1c9d317f1d2",
+      "norad_id": 69591,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.6 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "100365-20260930T0226-SCORE-3727e074cd22.json",
+      "sha256": "5207bb4cbdce73f1fe4f9060a147ca78f8d0704103a5836f0d93225ba6efdb38",
+      "norad_id": 100365,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.4 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "100800-20261119T0150-SCORE-f08826b327e0.json",
+      "sha256": "e7ae7fda435c091aa480a79fe5a029832dc065cb6474c1b94463525783c48463",
+      "norad_id": 100800,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.7 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "101286-20261116T0127-SCORE-7da85e3920f6.json",
+      "sha256": "6455e3501cbeaa61fc3170b3b6234c4e62175d69c914bcba6f706bdb526a3052",
+      "norad_id": 101286,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.7 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "18749-20261112T0140-SCORE-3727e074cd22.json",
+      "sha256": "68a42a9ed21cfefd558907b2cccd1b20a2174ce0d93d82f7205bedead00baf8d",
+      "norad_id": 18749,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.8 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "21429-20261116T0127-SCORE-7da85e3920f6.json",
+      "sha256": "b1d92af332adf0f52cd0deb6c2c4ab24ce2e9b0ea397fb88e813fd8de50d8baf",
+      "norad_id": 21429,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The positions lie a degree or more from the requested object's orbit."
+    },
+    {
+      "group": "validation/real",
+      "file": "36086-20260930T0228-SCORE-3727e074cd22.json",
+      "sha256": "b4cd95be7600ad7216a0da0c6a5cde0e446854828d96a2060c09b29aa4fd0f4d",
+      "norad_id": 36086,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.3 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "43056-20261117T0131-SCORE-7da85e3920f6.json",
+      "sha256": "4f5f271ff47b2311ffc6f0c687e123a81b581a9c4f625f8657979f19e79655bf",
+      "norad_id": 43056,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The positions lie a degree or more from the requested object's orbit."
+    },
+    {
+      "group": "validation/real",
+      "file": "43641-20261112T0153-SCORE-3727e074cd22.json",
+      "sha256": "df536b68dbe71b522b9516e01e3626e5307480eaa311eba1abbbc48445150747",
+      "norad_id": 43641,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.7 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "43641-20261116T0128-SCORE-7da85e3920f6.json",
+      "sha256": "22823027b23969891c95dca356e81a96504007ff9dadc46bb6eaa84e3d459c7d",
+      "norad_id": 43641,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.8 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "47353-20261112T0127-SCORE-3727e074cd22.json",
+      "sha256": "98ea6ca815d7c51bc2661e57422082ae42d324e9540a9e12406b5d600ecea071",
+      "norad_id": 47353,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.8 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "49175-20260930T0218-SCORE-3727e074cd22.json",
+      "sha256": "2403550d9c173e468eae77eba5b966cfd0ac163a02bcce9f3719b87fb24e16d8",
+      "norad_id": 49175,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.3 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "51773-20260930T0223-SCORE-3727e074cd22.json",
+      "sha256": "b33d93c6a3e1266c9bff7a1b883f56bc59c76f7b2d773816af800cf76bf480fe",
+      "norad_id": 51773,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.4 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "53742-20261119T0141-SCORE-f08826b327e0.json",
+      "sha256": "69953ffbafe12f92f498c41a94877003e86e035bf9f372fa35bf74cd223211bc",
+      "norad_id": 53742,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.5 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "53984-20261112T0146-SCORE-3727e074cd22.json",
+      "sha256": "06e1e037c9e8d30f2b8143f0b7c17fc186cf65df37403427405bd7c29ab803c8",
+      "norad_id": 53984,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.6 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "54183-20260930T0234-SCORE-3727e074cd22.json",
+      "sha256": "afa5a817c58001fedfcb237d2b7e739b69aaf1404a0e84b77116e5c9a7c3e2ac",
+      "norad_id": 54183,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.5 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "55945-20260930T0220-SCORE-3727e074cd22.json",
+      "sha256": "50de6846a1900ee6cfddabd1130006395a062cee330f55798250d7963cc6fabf",
+      "norad_id": 55945,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.5 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "56530-20261119T0138-SCORE-f08826b327e0.json",
+      "sha256": "360f560aa137967f7ee05f8d4534f5a9ee330deb830d27a6c18d43f344e68817",
+      "norad_id": 56530,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.7 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "57115-20261119T0138-SCORE-f08826b327e0.json",
+      "sha256": "f746830f494d1ed160543b320bb9fb970a5fc7ecfc69c049d563731e75950276",
+      "norad_id": 57115,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.6 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "57290-20260930T0232-SCORE-3727e074cd22.json",
+      "sha256": "a82e52eff83176df25452c8adfc0b327b2f9296096c010d5d85f450cf8f55b41",
+      "norad_id": 57290,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.5 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "58207-20261112T0148-SCORE-3727e074cd22.json",
+      "sha256": "bf9a6bded860fb63ad1ef20b3f6e463389c08a269cc6f44d305318471c027ab2",
+      "norad_id": 58207,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.6 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "59083-20260930T0230-SCORE-3727e074cd22.json",
+      "sha256": "69e276de8e554dc9eba5dcf110c69b8ff8c31b24ae41db66edb5d00c45f077e2",
+      "norad_id": 59083,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The positions lie a degree or more from the requested object's orbit."
+    },
+    {
+      "group": "validation/real",
+      "file": "59588-20240909T1943-SCORE-a25cc06b7fd1.json",
+      "sha256": "77bb0a5f33cf756f95ed34d4c08e89115eac2ba439d6fee8dbc7be8caca4c8db",
+      "norad_id": 59588,
+      "expected": "approve",
+      "automated_verdict": "pass",
+      "reason": "The delivery passes, from an instrument whose tracks all pass."
+    },
+    {
+      "group": "validation/real",
+      "file": "59588-20240913T2012-SCORE-a25cc06b7fd1.json",
+      "sha256": "35be868afb94124aecaf28b80eb3d58cdf2269cb2038f57597bc31ce5450920c",
+      "norad_id": 59588,
+      "expected": "approve",
+      "automated_verdict": "pass",
+      "reason": "The delivery passes, from an instrument whose tracks all pass."
+    },
+    {
+      "group": "validation/real",
+      "file": "59588-20240921T1924-SCORE-a25cc06b7fd1.json",
+      "sha256": "9652a6e2bda8d70d9e8e0461677166572fa1629f4dd8efbce44a623196d469a2",
+      "norad_id": 59588,
+      "expected": "approve",
+      "automated_verdict": "pass",
+      "reason": "The delivery passes, from an instrument whose tracks all pass."
+    },
+    {
+      "group": "validation/real",
+      "file": "59588-20241005T2003-SCORE-a25cc06b7fd1.json",
+      "sha256": "7fc0cc4b7cf367ba8335ca8af11bc7410545b50d539cf8c8465b4f649f1a5eda",
+      "norad_id": 59588,
+      "expected": "approve",
+      "automated_verdict": "pass",
+      "reason": "The delivery passes, from an instrument whose tracks all pass."
+    },
+    {
+      "group": "validation/real",
+      "file": "62078-20261112T0137-SCORE-3727e074cd22.json",
+      "sha256": "2d7258423cc3dff56c4fb49754ffb317bbf7b019fc0f380f6042d1bc4fbe2e2d",
+      "norad_id": 62078,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.5 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "62078-20261116T0140-SCORE-7da85e3920f6.json",
+      "sha256": "e34e73a6573f434b2cb9a77c2ee25dcda1aa32370974119823e56797f3cea214",
+      "norad_id": 62078,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.4 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    },
+    {
+      "group": "validation/real",
+      "file": "69568-20260930T0214-SCORE-3727e074cd22.json",
+      "sha256": "8843115ba9238154e35066a2a95aa5bf416e60cdba870c3bfd20a8ea3b508f10",
+      "norad_id": 69568,
+      "expected": "reject",
+      "automated_verdict": "fail",
+      "reason": "The times are 1.9 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
+    }
+  ]
+}
