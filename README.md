@@ -151,6 +151,9 @@ The full starting plan: [docs/plan.md](docs/plan.md).
   public sandbox on the testnet, still SIMULATED, at
   <https://orbit-watch-tan.vercel.app>
   ([phase 4 summary](docs/phase-4-summary.md)).
+- **Phase 5 (planned):** real reference orbits and real published observations
+  on the testnet, beside the simulated ones; still testnet money
+  ([#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103)).
 
 ## Open questions
 
