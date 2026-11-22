@@ -221,6 +221,28 @@ When an object leaves the groups, it leaves the list at the group's next fetch, 
 delivery for it then fails the target check. If that happens to an open request, an
 administrator can add the object back with a reason.
 
+## Replays
+
+A replay delivers observations that someone else published, such as the SCORE tracks in
+[`examples/real/`](../examples/real), through the service, under their observers' names
+([P5-10](decisions.md#p5-10-replays-name-their-observers),
+[D-51](decisions.md#d-51-replays)). The object must be on the allow-list; add it with
+`orbit-watch admin allow` first if it is not. An administrator creates the request for
+a requester and names the replay station, both the maintainer's own:
+
+```sh
+orbit-watch admin replay examples/real/observations/<file>.json --request-id REPLAY-0001 --requester requester:<name> --station station:<name> --api https://orbit-watch-tan.vercel.app --key "$(cat admin.key)"
+```
+
+The delivery deadline is seven days from now unless `--delivery-deadline` gives one.
+Then:
+1. The requester publishes and funds the request as usual.
+2. The follower fetches SatChecker's element set nearest the window on one of its next
+   runs. `GET /v1/public/reference-orbits?norad_id=<number>` shows it.
+3. The replay station reserves the request and delivers exactly the file, as it is. A
+   delivery before the set is kept answers `reference_orbit_pending`: try again later.
+4. The request settles like any other. The testnet reward goes to the replay station.
+
 ## Runbooks
 
 ### The uptime check failed

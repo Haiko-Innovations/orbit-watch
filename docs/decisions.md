@@ -2879,3 +2879,48 @@ Accepted · 2026-11-22 (with the pull request that implements the first part of 
   (`simulated_input`). The report names the real set by its source, epoch and SHA-256
   (P5-04), never the set itself (D-06). Labels by source on every page are the third
   part.
+
+### D-51 Replays
+
+Accepted · 2026-11-22 (with the pull request that implements the second part of step
+5.5). It carries out P5-10 in the service.
+
+- **The request names the replay.** A replay request is request format 1.1, whose
+  `replay` block names:
+  - the observation file it replays, by its SHA-256;
+  - the replay station that delivers it;
+  - the file's source, licence and observers' ORCID iDs.
+
+  Every other request stays format 1.0, byte for byte. `orbit-watch admin replay` builds
+  the document from a published file whose `source.origin` names where it comes from,
+  such as one in `examples/real/` (D-45). The window runs from five minutes before the
+  first observation to five minutes after the last, and the requirements are those that
+  the file meets.
+- **Only an administrator creates one** (`POST /v1/admin/replays`), for a requester, who
+  then publishes and funds it as usual. A requester's own request with a `replay` block
+  is refused (`replay_admin_only`). The window must have ended (`replay_window_not_past`)
+  and the delivery deadline must be in the future. A replay is never SIMULATED, and its
+  object must be a real object on the allow-list.
+- **Only the replay station reserves and delivers it** (`replay_station_only`), and only
+  the file it names (`not_the_replayed_file`). The service refuses both before it asks
+  the chain. The contract does not know replays; the replay station is the maintainer's
+  own.
+- **The reference orbit comes first.** Once the request is open, the follower fetches
+  SatChecker's set nearest the middle of its window (D-48). Until the service keeps a set
+  within the method's 7-day age limit of that middle, a delivery is refused
+  (`reference_orbit_pending`, 409), and the replay station tries again later. An
+  administrator may upload the set by hand instead (D-47). Verification then uses the
+  stored set nearest the observations (P5-04), and the report names it as SatChecker's.
+- **The place as published.** A replay delivers its file as it is. The public service's
+  rule against station places more precise than two decimals (P4-09) does not apply to
+  it. The observer published the place with the observations, and verification needs it
+  (P5-06). Every other delivery keeps the rule until step 5.6 replaces it (P5-11).
+- **Never the observer.** The replay station is the request's observer in the lifecycle
+  and on the chain, since the escrow pays it. The testnet reward goes to its wallet, and
+  testnet USDC has no value (P2-02). The request names the observers, and the delivered
+  file names them too. The pages show the replay station as the replay station, not as
+  the observer: that is the third part, with the labels by source.
+- **The report stays as it is.** It names the delivered file by its SHA-256, and that
+  file and the request name the source, the observers and the licence. Adding them to
+  the report would be a new method version, which every request's terms name. That is
+  not worth it for a field that the two files already carry.

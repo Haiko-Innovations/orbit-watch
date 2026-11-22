@@ -130,6 +130,9 @@ STATUS = {
     "not_reserved_by_you": 409,
     "party_taken": 409,
     "forbidden_role": 403,
+    "replay_admin_only": 403,
+    "replay_station_only": 403,
+    "reference_orbit_pending": 409,
     "not_requester": 403,
     "not_a_party": 403,
     "not_your_task": 403,
@@ -229,6 +232,25 @@ def _field(document: dict[str, Any], name: str, kind: type | tuple[type, ...]) -
     if not isinstance(value, kind) or (isinstance(value, bool) and kind is not bool):
         raise ApiError("invalid_body", f"field {name!r} is missing or has the wrong type")
     return value
+
+
+def _request_and_terms(document: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
+    """A request document and its terms from a body ``{"request": …, "terms": …}``."""
+    request_document = _field(document, "request", dict)
+    terms = document.get("terms", {})
+    if not isinstance(terms, dict) or set(terms) - set(TERMS_FIELDS):
+        raise ApiError("invalid_body", f"terms may only contain {', '.join(TERMS_FIELDS)}")
+    options: dict[str, Any] = {}
+    for name, kind in TERMS_FIELDS.items():
+        if name in terms:
+            value = _field(terms, name, kind)
+            if name == "delivery_deadline":
+                try:
+                    value = parse_utc(value)
+                except ValueError as error:
+                    raise ApiError("invalid_body", str(error)) from None
+            options[name] = value
+    return dumps_pretty(request_document, sort_keys=False).encode("utf-8"), options
 
 
 FOLLOW_MAX_AGE = 1800.0  # seconds: twice the 15-minute schedule (decision P4-06)
@@ -707,22 +729,22 @@ class Api:
     def create_request(self, principal, request, body, now, key):
         self._require(principal, "requester")
         document = _json(body)
-        request_document = _field(document, "request", dict)
-        terms = document.get("terms", {})
-        if not isinstance(terms, dict) or set(terms) - set(TERMS_FIELDS):
-            raise ApiError("invalid_body", f"terms may only contain {', '.join(TERMS_FIELDS)}")
-        options: dict[str, Any] = {}
-        for name, kind in TERMS_FIELDS.items():
-            if name in terms:
-                value = _field(terms, name, kind)
-                if name == "delivery_deadline":
-                    try:
-                        value = parse_utc(value)
-                    except ValueError as error:
-                        raise ApiError("invalid_body", str(error)) from None
-                options[name] = value
-        request_bytes = dumps_pretty(request_document, sort_keys=False).encode("utf-8")
+        request_bytes, options = _request_and_terms(document)
         record = self.service.create(request_bytes, principal.party, now, **options)
+        return 201, self._record_view(record.request_id)
+
+    def admin_create_replay(self, principal, request, body, now, key):
+        """A replay request (format 1.1) for a requester, who then publishes and funds it
+        as usual (P5-10, D-51)."""
+        self._require(principal, "admin")
+        document = _json(body)
+        requester = _field(document, "requester", str)
+        if not requester.startswith("requester:") or len(requester) > 128:
+            raise ApiError("invalid_body", "requester must be a party named 'requester:<name>'")
+        request_bytes, options = _request_and_terms(document)
+        record = self.service.create(
+            request_bytes, requester, now, replay_by=principal.party, **options
+        )
         return 201, self._record_view(record.request_id)
 
     def _requester_action(self, action: str):
@@ -755,6 +777,7 @@ class Api:
     def reserve(self, principal, request, body, now, key):
         self._require(principal, "station")
         request_id = request.path_params["request_id"]
+        self.service.check_reserve(request_id, principal.party)
         if self.service.on_chain(request_id):
             return self._signing(self.chain.prepare_reserve(request_id, principal.party, now))
         self.service.reserve(request_id, principal.party, now)
@@ -769,7 +792,11 @@ class Api:
         fmt = request.query_params.get("format")
         if fmt not in (None, "json", "iod", "tdm"):
             raise ApiError("invalid_format", "format must be json, iod or tdm")
-        if self.station_decimals is not None and fmt in (None, "json"):
+        if self.service.replay_of(request_id) is not None:
+            # A replay delivers a published file as it is: its place was published with it,
+            # and verification needs it (D-51).
+            self.service.check_delivery(request_id, principal.party, body)
+        elif self.station_decimals is not None and fmt in (None, "json"):
             problem = privacy.too_precise(body, self.station_decimals)
             if problem:
                 raise ApiError("too_precise", problem)
@@ -1762,6 +1789,7 @@ def create_app(
         ),
         # Real objects on the allow-list (step 5.4, D-49): an administrator's additions.
         Route("/v1/admin/allowlist", change(api.admin_allow_object), methods=["POST"]),
+        Route("/v1/admin/replays", change(api.admin_create_replay), methods=["POST"]),
         Route("/v1/admin/allowlist/remove", change(api.admin_disallow_object), methods=["POST"]),
         # The administrator view (step 3.7): reads, and data for others to sign.
         Route("/v1/admin/overview", read(api.admin_overview), methods=["GET"]),

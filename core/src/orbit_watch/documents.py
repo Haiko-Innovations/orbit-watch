@@ -24,6 +24,30 @@ def _load(data: bytes, kind: str) -> dict[str, Any]:
 
 
 @dataclass(frozen=True)
+class Replay:
+    """A replay request's published observations and who delivers them (P5-10, D-51)."""
+
+    station: str
+    observations_sha256: str
+    source: str
+    url: str | None
+    licence: str
+    observers: tuple[str, ...]
+
+    def public(self) -> dict[str, Any]:
+        view: dict[str, Any] = {
+            "station": self.station,
+            "observations_sha256": self.observations_sha256,
+            "source": self.source,
+        }
+        if self.url is not None:
+            view["url"] = self.url
+        view["licence"] = self.licence
+        view["observers"] = list(self.observers)
+        return view
+
+
+@dataclass(frozen=True)
 class Request:
     request_id: str
     norad_id: int
@@ -36,6 +60,7 @@ class Request:
     angle_types: tuple[str, ...]
     simulated: bool
     title: str | None
+    replay: Replay | None = None  # format 1.1
 
     @classmethod
     def parse(cls, data: bytes) -> Request:
@@ -56,7 +81,21 @@ class Request:
             angle_types=tuple(req.get("angle_types", ["radec", "azel"])),
             simulated=bool(doc["simulated"]),
             title=doc.get("title"),
+            replay=_replay(doc.get("replay")),
         )
+
+
+def _replay(found: dict[str, Any] | None) -> Replay | None:
+    if found is None:
+        return None
+    return Replay(
+        station=found["station"],
+        observations_sha256=found["observations_sha256"],
+        source=found["source"],
+        url=found.get("url"),
+        licence=found["licence"],
+        observers=tuple(found["observers"]),
+    )
 
 
 @dataclass(frozen=True)

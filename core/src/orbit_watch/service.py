@@ -42,7 +42,7 @@ from orbit_watch import calibration as cal
 from orbit_watch import lifecycle as lc
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.catalog import parse_catalog
-from orbit_watch.documents import Request
+from orbit_watch.documents import Replay, Request
 from orbit_watch.formats import FormatError, Sites
 from orbit_watch.lifecycle import RequestRecord, Status, TransitionError
 from orbit_watch.reviewers import ReviewerError, ReviewerRegistry
@@ -129,6 +129,7 @@ class RequestService:
     allowlist_groups: dict[str, dict[str, Any]] = field(default_factory=dict)
     allowlist_additions: dict[int, dict[str, Any]] = field(default_factory=dict)
     _targets: dict[int, allowlist.Target] | None = field(default=None, repr=False)
+    _replays: dict[str, Replay | None] = field(default_factory=dict, repr=False)
     storage: Storage | None = None
     # The testnet chain (step 2.6): an orbit_watch.chain.link.ChainLink, or None.
     chain: Any = None
@@ -332,8 +333,16 @@ class RequestService:
 
     @_atomic
     def create(
-        self, request_bytes: bytes, requester: str, now: datetime, **terms: Any
+        self,
+        request_bytes: bytes,
+        requester: str,
+        now: datetime,
+        *,
+        replay_by: str | None = None,
+        **terms: Any,
     ) -> RequestRecord:
+        """Create a request in draft. A replay request (format 1.1) only an administrator
+        creates, for a requester, and ``replay_by`` names the administrator (D-51)."""
         try:
             parsed_terms = lc.terms_from_request(request_bytes, requester, **terms)
         except ValueError as error:
@@ -348,12 +357,31 @@ class RequestService:
                 f"object {parsed_terms.target_norad_id} is not on the allow-list: requests may "
                 "target only the civilian objects on it",
             )
-        if target.simulated and not Request.parse(request_bytes).simulated:
+        parsed = Request.parse(request_bytes)
+        if target.simulated and not parsed.simulated:
             raise ServiceError(
                 "simulated_target",
                 f"object {target.norad_id} is SIMULATED, so a request for it must be marked as "
                 "SIMULATED too",
             )
+        if parsed.replay is not None:
+            if replay_by is None:
+                raise ServiceError(
+                    "replay_admin_only", "only an administrator creates a replay request"
+                )
+            if parsed_terms.window_end > now:
+                raise ServiceError(
+                    "replay_window_not_past",
+                    "a replay's window lies in the past: it replays observations already "
+                    "published, and a coming pass is a normal request",
+                )
+            if parsed_terms.delivery_deadline <= now:
+                raise ServiceError(
+                    "invalid_request",
+                    "a replay's delivery deadline must be in the future; give one in the terms",
+                )
+        elif replay_by is not None:
+            raise ServiceError("not_a_replay", "the request document has no replay block")
         self.request_documents[request_id] = request_bytes
         self._store(request_bytes)
         return self._save_record(lc.create(parsed_terms, now))
@@ -389,8 +417,54 @@ class RequestService:
 
     # ------------------------------------------------------------------ station
 
+    def replay_of(self, request_id: str) -> Replay | None:
+        """The request's replay block, if it is a replay (D-51)."""
+        if request_id not in self._replays:
+            document = self.request_documents.get(request_id)
+            if document is None:
+                return None  # not known yet: nothing to remember
+            self._replays[request_id] = Request.parse(document).replay
+        return self._replays[request_id]
+
+    def check_reserve(self, request_id: str, station: str) -> None:
+        """Only its replay station reserves a replay; before the chain is asked, too."""
+        replay = self.replay_of(request_id)
+        if replay is not None and station != replay.station:
+            raise ServiceError(
+                "replay_station_only",
+                f"{request_id} is a replay of published observations: only its replay station "
+                "delivers it",
+            )
+
+    def check_delivery(self, request_id: str, station: str, observations: bytes) -> None:
+        """A replay delivers exactly the file it names, and only once the service keeps a
+        reference orbit for it: SatChecker's set nearest its window, which the follower
+        fetches once the request is open (D-51). Before the chain is asked, too."""
+        replay = self.replay_of(request_id)
+        if replay is None:
+            return
+        self.check_reserve(request_id, station)
+        if sha256_bytes(observations) != replay.observations_sha256:
+            raise ServiceError(
+                "not_the_replayed_file",
+                f"{request_id} replays the file with SHA-256 {replay.observations_sha256}, and "
+                "only that file can be delivered for it",
+            )
+        terms = self._record(request_id).terms
+        middle = terms.window_start + (terms.window_end - terms.window_start) / 2
+        limit = timedelta(days=PARAMETERS["max_reference_age_days"])
+        epochs = [s.epoch_time for s in self.element_sets.get(terms.target_norad_id, [])]
+        if not any(e is not None and abs(e - middle) <= limit for e in epochs):
+            raise ServiceError(
+                "reference_orbit_pending",
+                f"the service keeps no element set of object {terms.target_norad_id} within "
+                f"{PARAMETERS['max_reference_age_days']:g} days of the window yet. The follower "
+                "fetches SatChecker's nearest set once the request is open; try again later",
+            )
+
     @_atomic
     def reserve(self, request_id: str, station: str, now: datetime) -> RequestRecord:
+        self.check_reserve(request_id, station)
         record = self._apply(request_id, lc.Reserve(now, station))
         count = sum(1 for h in record.history if h.event == "reserve")
         self.adapter.reserve(request_id, station, key=f"{request_id}/reserve/{count}")
@@ -406,6 +480,7 @@ class RequestService:
         observations_format: str | None = None,
     ) -> RequestRecord:
         """Accept a delivery and run automated verification at once."""
+        self.check_delivery(request_id, station, observations)
         observations_sha256 = sha256_bytes(observations)
         self._apply(request_id, lc.Deliver(now, station, observations_sha256))
         delivered = self._verify(request_id, station, observations, observations_format)
