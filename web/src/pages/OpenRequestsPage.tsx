@@ -137,6 +137,11 @@ function RequestCard({
         </dd>
       </dl>
       <RequestLabels labels={item.labels} title={false} />
+      {session?.role === "station" ? (
+        <p>
+          <a href={paths.request(item.request_id)}>{strings.passes.link}</a>
+        </p>
+      ) : null}
       {session?.role === "station" && chain !== null && item.status === "funded" ? (
         <Reserve item={item} chain={chain} session={session} />
       ) : null}

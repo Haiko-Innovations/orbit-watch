@@ -113,6 +113,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   objects lit by the Sun under a dark sky, by default with the Sun at least 6° down
   (`dark_sky_deg`, `--dark-sky-deg`, `--any-light`). `orbit_watch.passes` finds each
   pass's visible part (D-57).
+- A station's visible passes for a request (step 5.7, third part, #110): `GET
+  /v1/requests/{id}/passes`, and "Your visible passes" on a request's page for a station.
+  Each pass has its rise, highest point and set over the station's place, above its
+  instrument's elevation limit, and the part lit by the Sun under a dark sky (D-58).
 
 ### Changed
 

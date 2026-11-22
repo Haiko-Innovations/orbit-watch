@@ -11,6 +11,7 @@ import {
 } from "../api";
 import type { Prepared } from "../chain/describe";
 import { RequestLabels } from "../components/Labels";
+import { Passes } from "../components/Passes";
 import { actionKey, SendFlow } from "../components/SendFlow";
 import { Loaded, MaybeLink } from "../components/Status";
 import { Verification } from "../components/Verification";
@@ -695,6 +696,12 @@ export function RequestPage({
             ) : null}
             {document !== null && record.report_sha256 ? (
               <Verification sha={record.report_sha256} />
+            ) : null}
+            {session.role === "station" &&
+            (record.status === "open" ||
+              record.status === "funded" ||
+              (record.status === "reserved" && record.reserved_by === session.party)) ? (
+              <Passes requestId={record.request_id} />
             ) : null}
             <h2>{s.terms}</h2>
             <dl className="details">

@@ -3166,3 +3166,37 @@ Accepted · 2026-11-22 (with the pull request that implements the second part of
   - The Sun measurement's sunlight part follows SIM-CUBESAT-A's new orbit. It now
     differs from Skyfield's `is_sunlit` 7 times in 60,480 samples, each for at most
     10 seconds and all at the shadow's edge, instead of once.
+
+### D-58 A station's visible passes for a request
+
+Accepted · 2026-11-22 (with the pull request that finishes step 5.7). It carries out
+P5-12's pass list.
+
+- **`GET /v1/requests/{id}/passes`** lists the request's object's passes over the station
+  in the request's window, with `orbit_watch.passes` (D-57). For each pass it gives the
+  rise, the highest point and the set, and the visible part: its start, highest point
+  and end, lit by the Sun under a dark sky, −6° by default. It also gives the elevation
+  limit and dark sky it used, the place it used, and the reference orbit's label (D-52).
+- **The station's own place and instrument.** The passes are over the station profile's
+  place, rounded to about a kilometre unless the observer chose `exact` (D-54). They are
+  above the instrument's elevation limit, `min_elevation_deg` in the profile. P5-12 spoke
+  of the request's elevation limit, but a request has none: its requirements are about
+  the observations, not the sky. A station without a profile is asked to register one
+  (`no_profile`).
+- **For the requests a station may observe:** a request that invites observers, open or
+  funded, and one the station reserved. Anything else is `unknown_request`, as if it
+  were not there. Only stations ask.
+- **The orbit is the one a simulation of the request would use.** For the service's own
+  objects it is the service's own catalogue. For a real object it is the stored set
+  nearest the window, or `no_reference_orbit` without one within 7 days (D-50).
+- **At most a week.** A longer window is listed for its first seven days, and
+  `window_cut` says so, so that one call stays short.
+- **The observer's view**: a request's page shows a station "Your visible passes" as a
+  table while the request is open, funded or reserved by it. Each row has the rise, the
+  highest point with its elevation, the set, and the visible part or why there is none.
+  Each open request links to it for a station.
+
+With this, step 5.7 is done:
+- the Sun's error against JPL's DE421 is measured and recorded (D-56);
+- the committed simulated examples are regenerated and their changes explained (D-57);
+- the pass list is tested, in the API and end to end.
