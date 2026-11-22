@@ -11,7 +11,8 @@ is dark. This page is about the Sun and what follows from it: the simulator obse
 what a station can see (issue
 [#7](https://github.com/Haiko-Innovations/orbit-watch/issues/7),
 [D-57](decisions.md#d-57-the-simulator-observes-only-what-a-station-can-see)), and a
-station's visible passes come in the last part of step 5.7.
+station sees its visible passes for a request
+([D-58](decisions.md#d-58-a-stations-visible-passes-for-a-request)).
 
 ## The Sun's place
 
@@ -84,3 +85,11 @@ station could never see them. Their ascending node is now 315° further east (ri
 ascension 330° instead of 15° at the epoch), so they cross the equator at about 19:30.
 Their evening passes, at about 15:45 and 17:20 UTC, are then lit under a dark sky.
 Nothing else in their orbits changed.
+
+## A station's visible passes
+
+`GET /v1/requests/{id}/passes` lists, for a station, the passes of a request's object over
+the station's profile place in the request's window, above its instrument's elevation
+limit, and the visible part of each. A request's page shows them to a station as "Your
+visible passes", while the request is open, funded or reserved by it. A window longer
+than a week is listed for its first seven days.

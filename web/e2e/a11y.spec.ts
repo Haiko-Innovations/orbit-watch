@@ -63,6 +63,12 @@ function views(browser: Browser): View[] {
       party: STATION,
     },
     {
+      name: "A request's visible passes, for a station",
+      path: "/#/requests/SIM-REQ-3001",
+      heading: /SIMULATED/,
+      party: STATION,
+    },
+    {
       name: "Open requests, for a station",
       path: "/#/requests",
       heading: "Open requests",

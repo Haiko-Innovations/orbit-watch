@@ -56,7 +56,7 @@ import logging
 import secrets
 import threading
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from importlib import resources
 from pathlib import Path
 from typing import Any
@@ -69,7 +69,7 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from orbit_watch import __version__, allowlist, backup, orbit_follower, orbits, station_place
+from orbit_watch import __version__, allowlist, backup, orbit_follower, orbits, station_place, sun
 from orbit_watch import lifecycle as lc
 from orbit_watch.api import keys, privacy, sessions
 from orbit_watch.api.limits import Limits, RateLimited, client_ip
@@ -175,6 +175,7 @@ STATUS = {
     "chain_unavailable": 503,
     "read_only": 503,
 }
+PASS_LIST_SPAN = timedelta(days=7)  # a station's pass list covers at most this (D-58)
 READ_ONLY_MESSAGE = (
     "the service is read-only for maintenance: nothing can be changed right now, but "
     "everything can be read"
@@ -1245,6 +1246,58 @@ class Api:
         )
         return 200, {"party": party, "deleted": deleted > 0}
 
+    def request_passes(self, principal, request, body, now):
+        """A station's passes of a request's object in its window, each with the part the
+        station can see: lit by the Sun under a dark sky (P5-12, D-58). Over the station's
+        profile place, above its instrument's elevation limit; the request has none. For a
+        request that invites observers, or that the station reserved."""
+        from orbit_watch.catalog import parse_catalog
+        from orbit_watch.passes import passes
+        from orbit_watch.sim.simulator import StationProfile
+
+        self._require(principal, "station")
+        request_id = request.path_params["request_id"]
+        record = self.service.records.get(request_id)
+        visible_to = (lc.Status.OPEN, lc.Status.FUNDED)
+        if record is None or not (
+            record.status in visible_to
+            or (record.status == lc.Status.RESERVED and record.reserved_by == principal.party)
+        ):
+            raise ApiError(
+                "unknown_request",
+                f"no request {request_id!r} that invites observers or that you reserved",
+            )
+        found = self._profile(principal.party)
+        if found is None:
+            raise ApiError("no_profile", "register your station profile first")
+        profile = found["profile"]
+        if found["place"] != "exact":
+            profile = privacy.rounded_station(profile, self._kilometre())
+        station = StationProfile.from_document(profile)
+        terms = record.terms
+        end = min(terms.window_end, terms.window_start + PASS_LIST_SPAN)
+        catalogue = self.service.simulation_catalog(terms.target_norad_id, terms.window_start, end)
+        found_passes = passes(
+            parse_catalog(catalogue),
+            terms.target_norad_id,
+            station.station,
+            terms.window_start,
+            end,
+            station.min_elevation_deg,
+        )
+        return {
+            "request_id": request_id,
+            "station": principal.party,
+            "window_start": format_utc(terms.window_start),
+            "window_end": format_utc(end),
+            "window_cut": end < terms.window_end,
+            "min_elevation_deg": station.min_elevation_deg,
+            "dark_sky_deg": sun.DARK_SKY_SUN_ELEVATION_DEG,
+            "place": found["place"],
+            "reference_orbit": self.service.labels(request_id)["reference_orbit"],
+            "passes": [found_pass.public() for found_pass in found_passes],
+        }
+
     def simulate_observations(self, principal, request, body, now):
         """SIMULATED observations of a reserved request's target, made with the station's
         own profile, for it to deliver like any file (no state changes here). Only for a
@@ -1877,6 +1930,11 @@ def create_app(
             "/v1/stations/{party}/profile",
             change(api.delete_station_profile),
             methods=["DELETE"],
+        ),
+        Route(
+            "/v1/requests/{request_id}/passes",
+            read(api.request_passes),
+            methods=["GET"],
         ),
         Route(
             "/v1/requests/{request_id}/simulate",

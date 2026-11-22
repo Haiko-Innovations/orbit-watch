@@ -8,6 +8,25 @@ export const strings = {
   simulatedNote:
     "SIMULATED and real data side by side: every object, reference orbit and observation says which it is.",
   simulated: "SIMULATED",
+  passes: {
+    title: "Your visible passes",
+    intro: (elevation: number, darkSky: number) =>
+      `The object's passes over your station's place in the request's window, above your instrument's elevation limit of ${elevation}°. You can see it where the Sun lights it and your sky is dark, with the Sun at least ${-darkSky}° below the horizon.`,
+    rise: "Rises (UTC)",
+    highestHeading: "Highest",
+    set: "Sets",
+    visibleHeading: "You can see it",
+    highest: (time: string, elevation: number) => `${time}, ${elevation.toFixed(0)}°`,
+    visiblePart: (from: string, to: string, elevation: number, at: string) =>
+      `${from}–${to}, highest ${elevation.toFixed(0)}° at ${at}`,
+    notVisible: "not visible: in the Earth's shadow or in daylight",
+    none: "The object does not pass above your elevation limit in the window.",
+    noneVisible: "None of these passes is visible from your station.",
+    noProfile: "Register your station to see its passes:",
+    stationLink: "Your station",
+    cut: (end: string) => `Listed up to ${end}, the window's first week.`,
+    link: "Your visible passes",
+  },
   labels: {
     title: "What this is",
     object: "Object",
