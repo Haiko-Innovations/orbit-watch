@@ -2,6 +2,7 @@ import { useCallback, useId, useState } from "react";
 import {
   ApiError,
   type ChainInfo,
+  getBytes,
   getJson,
   postJson,
   type RequestDocument,
@@ -9,10 +10,12 @@ import {
   type Session,
 } from "../api";
 import type { Prepared } from "../chain/describe";
+import { LabelList } from "../components/Labels";
 import { actionKey, SendFlow } from "../components/SendFlow";
 import { Loaded } from "../components/Status";
 import { Verification } from "../components/Verification";
 import { formatUtc, shortHex } from "../format";
+import { fileLines, type LabelLine } from "../labels";
 import { paths } from "../router";
 import { strings } from "../strings";
 import { useResource } from "../useResource";
@@ -23,6 +26,8 @@ const s = strings.task;
 interface TaskData {
   task: ReviewTask | null;
   request: RequestDocument | null;
+  /** What the files say each part is (decision D-52). */
+  lines?: LabelLine[];
 }
 
 async function sha256Text(text: string): Promise<string> {
@@ -166,14 +171,18 @@ export function TaskPage({
     const task = (await loadTasks()).find((item) => item.task_id === id) ?? null;
     if (task === null) return { task, request: null };
     const request = await getJson<RequestDocument>(`/v1/files/${task.request_sha256}`);
-    return { task, request };
+    const [observations, report] = await Promise.all([
+      getBytes(`/v1/files/${task.observations_sha256}`).catch(() => null),
+      getJson<Parameters<typeof fileLines>[2]>(`/v1/files/${task.report_sha256}`).catch(() => null),
+    ]);
+    return { task, request, lines: fileLines(request, observations, report) };
   }, [id]);
   const [loaded, reload] = useResource(load);
   return (
     <>
       <h1 tabIndex={-1}>{s.title}</h1>
       <Loaded resource={loaded} reload={reload}>
-        {({ task, request }) =>
+        {({ task, request, lines }) =>
           task === null || request === null ? (
             <p>
               {s.notFound} <a href={paths.tasks}>{s.back}</a>
@@ -205,6 +214,7 @@ export function TaskPage({
                   {formatUtc(request.window.start)} – {formatUtc(request.window.end)}
                 </dd>
               </dl>
+              <LabelList lines={lines ?? []} />
               <h2>{s.challenge}</h2>
               <p>{task.challenge_reason}</p>
               <h2>{s.files}</h2>

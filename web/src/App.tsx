@@ -52,14 +52,18 @@ const titles: Record<Route["page"], string> = {
   quality: strings.quality.title,
   privacy: strings.footer.privacy,
   terms: strings.footer.terms,
+  "data-sources": strings.footer.dataSources,
   "not-found": strings.notFound.title,
 };
 
-/** A page's title; the privacy notice and the terms have their own. */
+/** The privacy notice, the terms and the data sources: Markdown files, without the service. */
+function isLegal(route: Route): route is { page: "privacy" | "terms" | "data-sources" } {
+  return route.page === "privacy" || route.page === "terms" || route.page === "data-sources";
+}
+
+/** A page's title; the privacy notice, the terms and the data sources have their own. */
 function pageTitle(route: Route): string {
-  return route.page === "privacy" || route.page === "terms"
-    ? legalTitle(route.page)
-    : titles[route.page];
+  return isLegal(route) ? legalTitle(route.page) : titles[route.page];
 }
 
 /** What makes a page another page, for the title and the focus. */
@@ -184,7 +188,7 @@ export function App() {
       <main ref={main} id="main">
         {route.page === "not-found" ? (
           <NotFoundPage />
-        ) : route.page === "privacy" || route.page === "terms" ? (
+        ) : isLegal(route) ? (
           // Without the service and without signing in (decision P4-09).
           <LegalPage document={route.page} />
         ) : (
@@ -267,6 +271,7 @@ export function App() {
         <nav aria-label={strings.footer.legal} className="legal-links">
           <a href={paths.privacy}>{strings.footer.privacy}</a>
           <a href={paths.terms}>{strings.footer.terms}</a>
+          <a href={paths.dataSources}>{strings.footer.dataSources}</a>
         </nav>
       </footer>
     </>

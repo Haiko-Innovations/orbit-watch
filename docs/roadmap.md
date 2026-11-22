@@ -33,7 +33,9 @@ with public reasons ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)). 
 their stored element sets
 ([D-50](decisions.md#d-50-simulated-stations-on-real-objects)); in the second, an
 administrator creates replays of published observations, which a replay station
-delivers ([D-51](decisions.md#d-51-replays)).
+delivers ([D-51](decisions.md#d-51-replays)); in the first half of the third, every page
+labels objects, reference orbits and observations by their source
+([D-52](decisions.md#d-52-labels-by-source-on-every-page)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at

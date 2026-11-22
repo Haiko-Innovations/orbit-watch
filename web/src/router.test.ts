@@ -35,6 +35,7 @@ describe("parseHash", () => {
     expect(parseHash("#/admin/keys")).toEqual({ page: "not-found" });
     expect(parseHash(paths.privacy)).toEqual({ page: "privacy" });
     expect(parseHash(paths.terms)).toEqual({ page: "terms" });
+    expect(parseHash(paths.dataSources)).toEqual({ page: "data-sources" });
     expect(parseHash("#/terms/fi")).toEqual({ page: "not-found" });
     expect(parseHash("#main")).toEqual({ page: "not-found" });
   });

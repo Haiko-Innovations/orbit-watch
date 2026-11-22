@@ -1,5 +1,5 @@
-// The privacy notice and the terms of use are Markdown files in docs/legal (phase 4,
-// step 4.4), so that the same text is read on GitHub and in the application. This reads the
+// The privacy notice, the terms of use and the data sources are Markdown files in docs/legal
+// (phase 4, step 4.4; D-52), so that the same text is read on GitHub and in the application. This reads the
 // small part of Markdown they use, into blocks the page renders as React elements: never
 // as HTML. Anything else is refused, so a new construct fails the unit tests instead of
 // showing up as stray characters.
@@ -13,7 +13,8 @@ export type Inline =
 export type Block =
   | { kind: "heading"; level: 1 | 2 | 3; content: Inline[] }
   | { kind: "paragraph"; content: Inline[] }
-  | { kind: "list"; ordered: boolean; items: Inline[][] };
+  | { kind: "list"; ordered: boolean; items: Inline[][] }
+  | { kind: "quote"; content: Inline[] };
 
 export class MarkdownError extends Error {}
 
@@ -21,6 +22,7 @@ const HEADING = /^(#{1,3}) (.+)$/;
 const BULLET = /^- (.+)$/;
 const NUMBERED = /^\d{1,2}\. (.+)$/;
 const CONTINUATION = /^ {2,3}(\S.*)$/;
+const QUOTE = /^> (.+)$/;
 const INLINE = /\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)\)/g;
 const SAFE_HREF = /^(https:\/\/|mailto:|#\/)/;
 
@@ -54,6 +56,7 @@ export function parseMarkdown(source: string): Block[] {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
   let paragraph: string[] = [];
   let list: { ordered: boolean; items: string[] } | null = null;
+  let quote: string[] = [];
 
   const flush = (where: string) => {
     if (paragraph.length) {
@@ -64,6 +67,10 @@ export function parseMarkdown(source: string): Block[] {
       const items = list.items.map((item) => inline(item, where));
       blocks.push({ kind: "list", ordered: list.ordered, items });
       list = null;
+    }
+    if (quote.length) {
+      blocks.push({ kind: "quote", content: inline(quote.join(" "), where) });
+      quote = [];
     }
   };
 
@@ -78,7 +85,13 @@ export function parseMarkdown(source: string): Block[] {
     const bullet = BULLET.exec(line);
     const numbered = NUMBERED.exec(line);
     const continued = CONTINUATION.exec(line);
-    if (heading?.[1] && heading[2]) {
+    const quoted = QUOTE.exec(line);
+    if (quoted?.[1]) {
+      if (paragraph.length || list) flush(where);
+      quote.push(quoted[1]);
+    } else if (quote.length) {
+      throw new MarkdownError(`${where}: a quote ends with an empty line: ${line}`);
+    } else if (heading?.[1] && heading[2]) {
       flush(where);
       const level = heading[1].length as 1 | 2 | 3;
       blocks.push({ kind: "heading", level, content: inline(heading[2], where) });

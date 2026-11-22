@@ -245,6 +245,9 @@ def test_a_replay_settles_and_pays_its_replay_station(world):
     assert fetched["source"] == "satchecker" and fetched["norad_id"] == 99015
     assert "get-nearest" in world["stand_in"].urls()[-1]
 
+    before = service.labels("REPLAY-0001")["reference_orbit"]
+    assert before["source"] == "satchecker" and before["final"] is False
+
     other = deliver(world, "REPLAY-0001", published(seed=8))
     assert other.json()["error"]["code"] == "not_the_replayed_file"
     delivered = deliver(world, "REPLAY-0001", data)
@@ -254,6 +257,16 @@ def test_a_replay_settles_and_pays_its_replay_station(world):
     report = json.loads(service.files[service.deliveries["REPLAY-0001"].report_sha256])
     assert report["simulated_input"] is False and "notice" not in report
     assert report["reference_orbit"]["source"]["kept_from"] == "satchecker"
+
+    # Nothing here is SIMULATED, and the observations are a replay with their credits.
+    labels = delivered.json()["summary"]["labels"]
+    assert labels["request_simulated"] is False and labels["object"]["simulated"] is False
+    assert labels["reference_orbit"]["source"] == "satchecker"
+    assert labels["reference_orbit"]["final"] is True
+    assert labels["observations"]["kind"] == "replayed"
+    assert labels["observations"]["station"] == STATION
+    assert labels["replay"]["observers"] == [EXAMPLE_ORCID]
+    assert labels["replay"]["licence"] == "CC-BY-4.0"
 
     clock.now = T0 + timedelta(days=2)
     world["api"].follow_once()

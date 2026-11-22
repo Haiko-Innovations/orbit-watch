@@ -2924,3 +2924,58 @@ Accepted · 2026-11-22 (with the pull request that implements the second part of
   file and the request name the source, the observers and the licence. Adding them to
   the report would be a new method version, which every request's terms name. That is
   not worth it for a field that the two files already carry.
+
+### D-52 Labels by source on every page
+
+Accepted · 2026-11-22 (with the pull request that implements the first half of the third
+part of step 5.5). It carries out P5-09's labels and P5-13's public page.
+
+- **The third part in two pull requests.** This one adds the labels, in the API and on
+  every page, the data sources page and the terms of use. The next one adds a real
+  object and a replay to the local stack, and tests their labels end to end; then step
+  5.5 is done.
+- **The service says what each part is.** `labels` in a request's summary, and in
+  `GET /v1/requests`, `GET /v1/public/open-requests` and the administrator's overview,
+  gives:
+  - whether the request is SIMULATED;
+  - its object: SIMULATED or real, and why it is on the allow-list;
+  - its reference orbit: CelesTrak, SatChecker, uploaded by hand or the service's own
+    catalogue, with its epoch and SHA-256. Once a report names the set, the label is
+    that set (`final`). Before that, it is the stored set nearest the window, which may
+    still change;
+  - its observations, once delivered: SIMULATED, replayed or a station's own, and the
+    station that delivered them;
+  - a replay's source, licence and observers.
+
+  SIMULATED is said of what is simulated, and of nothing else. A real object observed by
+  simulated stations is a real object with a real orbit and SIMULATED observations.
+- **The web application shows them** on every page that shows objects, reference orbits
+  or observations. A request's page and the open requests show all of them. The lists of
+  requests (yours, a station's, the administrator's) tag each request: SIMULATED, a real
+  object, a replay. The new-request page says what each object on the list is.
+- **A review task labels its files, not its request.** A task names no request, so that
+  real and calibration tasks look alike (D-23), and the service gives it no labels. The
+  task's page reads them from the files it shows: the request document, the observation
+  file and the report.
+- **The station quality meter's page** already says SIMULATED of SIMULATED input, from the
+  meter's report. It shows no request and no reference orbit of the service, so it gets
+  no other label.
+- **The testnet label** on every page now says that SIMULATED and real data run side by
+  side, and that every object, reference orbit and observation says which it is. It no
+  longer says that all data is SIMULATED, which stopped being true once production fetched
+  real objects (D-49).
+- **The terms of use** said the same, and are corrected, version of 22 November 2026:
+  - the data is SIMULATED and real side by side;
+  - the allow-list holds the service's SIMULATED objects and real objects from public
+    catalogues.
+- **A data sources page** (`#/data-sources`, the Markdown file `docs/legal/data-sources.md`)
+  credits CelesTrak, SatChecker and SCORE. It gives the acknowledgements that SatChecker
+  and SCORE ask for, and the statement that SCORE asks for on "any publication,
+  presentation, website or web service that uses SCORE data" (P5-13). It is linked from
+  every page and from the terms of use.
+
+  The Markdown reader of `docs/legal` learns quotes for these statements, and still
+  refuses anything else it does not read.
+- **Before the first replay on the public service** (step 5.8), the privacy notice and the
+  data inventory must name the observers' ORCID iDs that replays publish. Step 5.6
+  changes both anyway.

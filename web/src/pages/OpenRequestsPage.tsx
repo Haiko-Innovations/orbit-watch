@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { type ChainInfo, getJson, type OpenRequest, postJson, type Session } from "../api";
 import type { Prepared } from "../chain/describe";
+import { LabelTags, RequestLabels } from "../components/Labels";
 import { actionKey, SendFlow } from "../components/SendFlow";
 import { Loaded } from "../components/Status";
 import { formatAmount, formatUtc } from "../format";
@@ -97,7 +98,11 @@ function RequestCard({
     <article className="card" aria-labelledby={titleId}>
       <header className="card-header">
         <h2 id={titleId}>{request.title ?? item.request_id}</h2>
-        {item.simulated ? <span className="badge">{strings.simulated}</span> : null}
+        {item.labels ? (
+          <LabelTags labels={item.labels} />
+        ) : item.simulated ? (
+          <span className="badge">{strings.simulated}</span>
+        ) : null}
       </header>
       <p className="card-meta">
         <code>{item.request_id}</code> ·{" "}
@@ -131,6 +136,7 @@ function RequestCard({
           <code>{item.requester}</code>
         </dd>
       </dl>
+      <RequestLabels labels={item.labels} title={false} />
       {session?.role === "station" && chain !== null && item.status === "funded" ? (
         <Reserve item={item} chain={chain} session={session} />
       ) : null}

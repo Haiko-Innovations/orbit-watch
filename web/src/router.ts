@@ -22,7 +22,7 @@ export type Route =
     }
   | { page: "request"; id: string }
   | { page: "task"; id: string }
-  | { page: "privacy" | "terms" };
+  | { page: "privacy" | "terms" | "data-sources" };
 
 export const paths = {
   network: "#/",
@@ -39,6 +39,7 @@ export const paths = {
   quality: "#/quality",
   privacy: "#/privacy",
   terms: "#/terms",
+  dataSources: "#/data-sources",
   task: (id: string) => `#/tasks/${encodeURIComponent(id)}`,
   request: (id: string) => `#/requests/${encodeURIComponent(id)}`,
 } as const;
@@ -77,6 +78,8 @@ export function parseHash(hash: string): Route {
       return { page: "privacy" };
     case "/terms":
       return { page: "terms" };
+    case "/data-sources":
+      return { page: "data-sources" };
     default: {
       const decoded = decodeURIComponent(path);
       const request = REQUEST_ID.exec(decoded);

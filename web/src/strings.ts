@@ -5,8 +5,41 @@ export const strings = {
   appName: "Orbit Watch",
   tagline: "Request, deliver and verify satellite observations.",
   testnetOnly: "Testnet only, no real value",
-  simulatedNote: "All stations, observations, requests and reviewers here are SIMULATED.",
+  simulatedNote:
+    "SIMULATED and real data side by side: every object, reference orbit and observation says which it is.",
   simulated: "SIMULATED",
+  labels: {
+    title: "What this is",
+    object: "Object",
+    objectSimulated: "a SIMULATED object of the service's own catalogue",
+    objectReal: "a real object",
+    objectOffList: "a real object, no longer on the allow-list",
+    objectFromGroups: (groups: string[]) =>
+      `a real object, in CelesTrak's ${groups.length === 1 ? "group" : "groups"} ${groups.join(", ")}`,
+    objectAdded: (reason: string) => `a real object, added by an administrator: ${reason}`,
+    orbit: "Reference orbit",
+    orbitNone: "not fetched yet; the service fetches it before the window",
+    orbitText: (source: string, epoch: string) => `${source}, epoch ${epoch}`,
+    orbitSoFar: "(the nearest so far; the verification report names the one it uses)",
+    ownCatalogue: "the service's own catalogue",
+    observations: "Observations",
+    awaitedSimulated: "SIMULATED observations, not delivered yet",
+    awaitedReal: "real observations, not delivered yet",
+    simulatedBy: (station: string) => `SIMULATED, delivered by ${station}`,
+    stationBy: (station: string) => `delivered by ${station}`,
+    replayed: (source: string, licence: string) =>
+      `replayed: published in ${source} under ${licence} by`,
+    published: (source: string, licence: string) => `published in ${source} under ${licence} by`,
+    simulatedFile: "SIMULATED, as the file says",
+    stationFile: "a station's own, as the file says",
+    replay: "Replay",
+    replayWaits: (station: string) =>
+      `the replay station ${station} delivers them; it is not their observer`,
+    replayBy: (station: string) =>
+      `delivered by the replay station ${station}, which is not their observer`,
+    realObjectTag: "Real object",
+    replayTag: "Replay",
+  },
   readOnly:
     "The service is read-only for maintenance: you can look around and sign in, but nothing can be changed right now.",
   nav: {
@@ -633,8 +666,9 @@ export const strings = {
   footer: {
     source: "Source code",
     licence: "Code Apache 2.0, data CC BY 4.0",
-    legal: "Privacy and terms",
+    legal: "Privacy, terms and data sources",
     privacy: "Privacy notice",
     terms: "Terms of use",
+    dataSources: "Data sources",
   },
 } as const;

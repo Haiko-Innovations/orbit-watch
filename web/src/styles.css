@@ -266,6 +266,21 @@ h2 {
   color: var(--muted);
 }
 
+.tag {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.label-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: 6px;
+}
+
 .badge {
   padding: 2px 8px;
   border: 1px solid var(--notice-line);
@@ -326,6 +341,13 @@ button {
 /* The privacy notice and the terms of use (step 4.4): text to read, in a readable measure. */
 .legal {
   max-width: 70ch;
+}
+
+.legal blockquote {
+  margin: 12px 0;
+  padding: 4px 16px;
+  border-left: 4px solid var(--line);
+  color: var(--muted);
 }
 
 main > h2 {

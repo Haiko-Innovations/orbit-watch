@@ -1,13 +1,13 @@
 # Terms of use
 
-Orbit Watch public testnet service · version of 16 November 2026
+Orbit Watch public testnet service · version of 22 November 2026
 
 These terms apply when you use the Orbit Watch public testnet service and its web application. The service is provided by **Haiko Innovations Oy**, a Finnish company. By signing up, or by using the service, you accept these terms. The [privacy notice](#/privacy) says what the service keeps about you.
 
 ## A sandbox on a test network
 
 - **Testnet only.** The service runs on Base Sepolia, a public test blockchain. Its tokens, testnet ETH and testnet USDC, have **no value**, and nothing in the service can be exchanged for money. Never send real assets to any address you see here.
-- **SIMULATED data.** Every station, observation, reference orbit, target and reviewer that comes with the service is SIMULATED. Use the service to try out how requests, deliveries, verification and settlement work, not to obtain or sell real observations.
+- **SIMULATED and real data.** The service carries SIMULATED data and real data side by side, and every object, reference orbit and observation says which it is. The stations' instruments, the reviewers and the service's own objects are SIMULATED. Real objects and their reference orbits come from public sources, and replays deliver observations that their observers published; the [data sources](#/data-sources) page names them. Use the service to try out how requests, deliveries, verification and settlement work, not to obtain or sell real observations.
 - **An experiment.** The service is a prototype for testing an open-source project. It may change, lose data, be reset or stop at any time, without notice.
 
 ## Your wallet
@@ -16,7 +16,7 @@ You sign in by signing a message with your own wallet, which sends no transactio
 
 ## What you may do
 
-- Requests may only target the objects that the service's allow-list names, which are SIMULATED and civilian. Do not use the service, or anything you learn from it, to track military or other sensitive objects, or to follow or locate people.
+- Requests may only target the civilian objects that the service's allow-list names: its own SIMULATED objects, and real objects from public catalogues, each with the reason it is there. Do not use the service, or anything you learn from it, to track military or other sensitive objects, or to follow or locate people.
 - Deliver only files you made or have the right to deliver, and put no one's personal data in them, or in titles, names or reasons.
 - Do not attack the service or its users, try to get around its limits or its security, load it more than its limits allow, impersonate anyone, or use it for anything unlawful.
 
