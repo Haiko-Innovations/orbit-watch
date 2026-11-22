@@ -178,6 +178,16 @@ verification method ([real-data-validation.md](real-data-validation.md)).
 SCORE also gives SatChecker's predicted position for each observation. Orbit Watch does
 not use it: it computes its own from the element set the manifest names.
 
+## The Sun: a formula, measured against JPL's DE421
+
+The Sun's place comes from the US Naval Observatory's
+[approximate solar coordinates](https://aa.usno.navy.mil/faq/sun_approx), a formula, not
+a data file ([visibility.md](visibility.md),
+[D-56](decisions.md#d-56-the-suns-place-from-a-short-formula)). To measure it once,
+`orbit-watch measure-sun --fetch` fetches JPL's DE421 (`de421.bsp`, 1900 to 2050, 17 MB)
+through Skyfield's loader into the cache, outside the repository. The service, the tests
+and CI never fetch it.
+
 ## Observation formats
 
 - IOD: [satobs.org/position/IODformat.html](http://www.satobs.org/position/IODformat.html)

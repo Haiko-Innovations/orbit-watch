@@ -399,6 +399,29 @@ def cmd_fetch_orbits(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_measure_sun(args: argparse.Namespace) -> int:
+    from orbit_watch import orbit_cache, sun_check
+
+    root = Path(args.root)
+    cache_dir = Path(args.cache) if args.cache else orbit_cache.default_cache_dir()
+    try:
+        eph = sun_check.load_ephemeris(cache_dir, args.fetch)
+    except FileNotFoundError as error:
+        _err(str(error))
+        return EXIT_USAGE
+    catalog = (Path(__file__).parent / "data" / "catalog.json").read_bytes()
+    results = sun_check.measure(eph, catalog)
+    target = root / "validation/sun/results.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    write_text(target, dumps_pretty(results, sort_keys=False))
+    span = results["direction"]["1900-2049"]["error_arcsec"]
+    print(
+        f"The Sun's direction against {sun_check.EPHEMERIS}, 1900 to 2049: median "
+        f'{span["median"]}", at most {span["max"]}". Written to {target}'
+    )
+    return EXIT_OK
+
+
 def cmd_measure_method(args: argparse.Namespace) -> int:
     from orbit_watch import orbit_cache, validation
     from orbit_watch.canonical import dumps_pretty
@@ -1233,6 +1256,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     measure.add_argument("-v", "--verbose", action="store_true", help="name each track")
     measure.set_defaults(handler=cmd_measure_method)
+
+    measure_sun = commands.add_parser(
+        "measure-sun",
+        help="measure the Sun formula of orbit_watch.sun against JPL's DE421",
+        description="Measure the US Naval Observatory's approximate solar coordinates, as "
+        "the service computes them for visibility, against JPL's DE421 through Skyfield: "
+        "the Sun's direction, its elevation at a station, and a satellite's sunlight. "
+        "Writes validation/sun/results.json. DE421 (17 MB) is fetched into the cache only "
+        "with --fetch. Docs: visibility.md",
+    )
+    measure_sun.add_argument(
+        "--root", default="..", help="the repository's root directory (default: ..)"
+    )
+    measure_sun.add_argument(
+        "--cache", help="cache directory (default: $ORBIT_WATCH_CACHE or ~/.cache/orbit-watch)"
+    )
+    measure_sun.add_argument(
+        "--fetch", action="store_true", help="fetch de421.bsp into the cache if it is not there"
+    )
+    measure_sun.set_defaults(handler=cmd_measure_sun)
 
     allowlist = commands.add_parser(
         "allowlist",
