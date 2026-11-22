@@ -30,6 +30,7 @@ reports outlive the software that made them:
 | Verification report format | `report_format_version` | 1.1 |
 | Station quality meter method and report | `METHOD_VERSION`, `report_format_version` in `quality.py` | 1.1.0, 1.0 |
 | Measurement on real data, and its known answers | `RESULTS_FORMAT_VERSION` in `validation.py`, `format_version` in `known-answers.json` | 1.0, 1.0 |
+| The Sun formula's measurement | `format_version` in `validation/sun/results.json` (`sun_check.py`) | 1.0 |
 
 Rules:
 

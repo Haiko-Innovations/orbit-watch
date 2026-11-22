@@ -3093,3 +3093,34 @@ With this, step 5.6 is done:
 - a delivery from another place is refused;
 - changing the choice is tested;
 - the notice's version date is updated.
+
+### D-56 The Sun's place from a short formula
+
+Accepted · 2026-11-22 (with the pull request that implements the first part of step
+5.7). It carries out P5-12's Sun and records its measurement.
+
+- **Step 5.7 in three parts:**
+  1. the Sun in the core, measured against a JPL ephemeris (this decision);
+  2. the simulator observes only objects the Sun lights under a dark sky (#7), and the
+     committed simulated examples are regenerated, with their changes explained;
+  3. a station's visible passes for a request, in the API and the observer's view.
+- **The US Naval Observatory's formula** (`orbit_watch.sun`), read on 2026-11-22 on its
+  page, gives the Sun's right ascension and declination of date. Skyfield's precession
+  and nutation matrix turns them into the ICRS axes of its positions. Its Earth rotation
+  gives a station's geodetic zenith. No ephemeris file is needed.
+- **A dark sky** is the Sun at least 6° below the horizon by default
+  (`DARK_SKY_SUN_ELEVATION_DEG`). The value is a setting, used in the next parts.
+- **Sunlight** is outside a cylinder of the Earth's equatorial radius behind the Earth.
+  A cone would be more exact at the edges, but the measurement shows that the cylinder
+  is enough here.
+- **Measured once against DE421** with `orbit-watch measure-sun`, recorded in
+  `validation/sun/results.json` and [visibility.md](visibility.md):
+  - the Sun's direction is at most 55.9″ off over 1900–2049, median 13.0″;
+  - the elevation at SIM-ESPOO is at most 37.4″ off through 2026;
+  - the dark-sky decision at −6° differs in 3 of 52,560 samples;
+  - sunlight differs from Skyfield's `is_sunlit` in 1 of 60,480 samples, for at most
+    10 seconds.
+
+  DE421 is fetched only with `--fetch`, into the cache outside the repository, and
+  never in CI. A test repeats the measurement when the cache has it, as the real
+  element sets' tests do (P5-05).

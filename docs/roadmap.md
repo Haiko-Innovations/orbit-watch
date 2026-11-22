@@ -42,7 +42,10 @@ done. Step 5.6 is done, in two parts: the observer chooses how precisely the sta
 published
 ([D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)), and
 the profile is the station's place for every format
-([D-55](decisions.md#d-55-the-profile-is-the-stations-place-for-every-format)).
+([D-55](decisions.md#d-55-the-profile-is-the-stations-place-for-every-format)). Step 5.7
+is in three parts; in the first, the core computes the Sun's place from a short formula,
+measured against JPL's DE421 ([visibility.md](visibility.md),
+[D-56](decisions.md#d-56-the-suns-place-from-a-short-formula)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at

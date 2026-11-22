@@ -104,6 +104,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   delivery is verified at the profile's place, which is kept and published with it as its
   `station_place` file (migration 0014). The public service needs a profile to deliver
   (`profile_required`); replays are exempt (D-55).
+- The Sun's place for visibility (step 5.7, first part, #110): `orbit_watch.sun` computes
+  the Sun's direction, its elevation at a station, a dark sky and whether a satellite is
+  sunlit, from the US Naval Observatory's short formula and without an ephemeris file.
+  `orbit-watch measure-sun` measured it against JPL's DE421: at most 55.9″ off over
+  1900–2049 (`validation/sun/results.json`, docs/visibility.md, D-56).
 
 ### Changed
 
