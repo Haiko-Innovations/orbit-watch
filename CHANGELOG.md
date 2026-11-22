@@ -161,6 +161,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Fixed
 
+- A published replay's attribution named its replay station as the observer. It now names
+  the observers by their ORCID iDs, the source and the licence, and the replay station as
+  the one that replayed them (P5-10, D-51); found on the first replay on Base Sepolia.
+
 - A request whose verification report is of format 1.0 (methods 1.0.0 and 2.0.0) broke
   its labels (D-52): the report names its reference orbit without the set's SHA-256. The
   public page of production's first settled request, and the administrator's overview,
