@@ -23,7 +23,8 @@ reports outlive the software that made them:
 | Thing | Where | Current |
 |---|---|---|
 | Observation set format | `format_version` in the document, schema file name | 1.0, and 1.1 with `source.origin` |
-| Request, delivery, target policy, station profile, sites formats | same | 1.0 |
+| Request format | `format_version` in the document, schema file name | 1.0, and 1.1 with a replay's `replay` block |
+| Delivery, target policy, station profile, sites formats | same | 1.0 |
 | Reference-orbit manifest format | `format_version` in the document (`orbit_cache.py`) | 1.0 |
 | Verification method | `METHOD_VERSION` in `verify/engine.py`, in every report | 2.1.0 |
 | Verification report format | `report_format_version` | 1.1 |

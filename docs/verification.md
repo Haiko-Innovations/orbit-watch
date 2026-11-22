@@ -24,7 +24,7 @@ Current method: **`orbit-watch-automated-verification` 2.1.0**
 | Input | Option | Notes |
 |---|---|---|
 | Delivery | positional | A delivery manifest (`orbit-watch/delivery`, with the SHA-256 of the observation file) or an observation file (JSON, IOD, TDM). |
-| Request | `--request` | `orbit-watch/request`: target, window, minimum number of observations, maximum declared uncertainties, accepted angle types. |
+| Request | `--request` | `orbit-watch/request`: target, window, minimum number of observations, maximum declared uncertainties, accepted angle types. Format 1.1 adds a replay's `replay` block ([D-51](decisions.md#d-51-replays)), which verification does not read. |
 | Reference orbits | `--catalog` | GP element sets in OMM form: CelesTrak `FORMAT=csv` or `FORMAT=JSON`, or the Orbit Watch wrapper used for simulated objects and for past sets from SatChecker ([data-sources.md](data-sources.md)). It may hold several sets of one object. |
 | Target policy | `--policy` | `orbit-watch/target-policy`: the allow-list. Everything not on it is refused. |
 | Earlier deliveries | `--previous` (repeatable) | For duplicate and resubmission detection. |

@@ -75,6 +75,13 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   observe the object along its stored element set nearest the window. Without one they
   answer `no_reference_orbit` until the follower has fetched it. The web application
   asks with a box that is not ticked in advance (D-50).
+- Replays (step 5.5, second part, #108): request format 1.1 adds a `replay` block that
+  names the published observation file by its SHA-256, the replay station, and the
+  file's source, licence and observers. An administrator creates a replay for a
+  requester (`POST /v1/admin/replays`, `orbit-watch admin replay`), with a window that
+  has ended. Only its replay station reserves and delivers it, only that file, and only
+  once the service keeps SatChecker's set near the window. The place is kept as
+  published, and the testnet reward goes to the replay station (D-51).
 
 ### Changed
 

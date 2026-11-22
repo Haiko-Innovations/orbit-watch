@@ -15,6 +15,10 @@ VERSIONED_SCHEMA_FILES = {
         "1.0": "observation-set-1.0.schema.json",
         "1.1": "observation-set-1.1.schema.json",
     },
+    "request": {
+        "1.0": "request-1.0.schema.json",
+        "1.1": "request-1.1.schema.json",
+    },
 }
 
 SCHEMA_FILES = {

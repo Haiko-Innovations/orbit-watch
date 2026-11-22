@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from orbit_watch.catalog import SOURCE_KEY, CatalogError, parse_catalog, record_sha256
+from orbit_watch.timeutil import parse_utc
 
 SOURCES = ("celestrak", "satchecker", "uploaded")
 SOURCE_NAMES = {
@@ -43,6 +45,14 @@ class StoredSet:
     fetched_at: str
     uploaded_by: str | None
     record: dict[str, Any]
+
+    @property
+    def epoch_time(self) -> datetime | None:
+        """The epoch as a time in UTC, or None if it cannot be read."""
+        try:
+            return parse_utc(self.epoch if self.epoch.endswith("Z") else self.epoch + "Z")
+        except ValueError:
+            return None
 
     def public(self) -> dict[str, Any]:
         """What anyone may see of the set: its name, never its elements."""

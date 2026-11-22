@@ -496,6 +496,37 @@ def cmd_admin_disallow(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_admin_replay(args: argparse.Namespace) -> int:
+    """A replay request for a published observation file (P5-10, D-51)."""
+    from datetime import UTC, datetime, timedelta
+
+    from orbit_watch.replay import replay_request
+    from orbit_watch.timeutil import format_utc
+
+    data = Path(args.file).read_bytes()
+    document = json.loads(replay_request(data, args.request_id, args.station))
+    deadline = args.delivery_deadline or format_utc(
+        datetime.now(UTC).replace(microsecond=0) + timedelta(days=args.deadline_days)
+    )
+    terms: dict[str, Any] = {"delivery_deadline": deadline}
+    for name in ("reservation_hours", "challenge_period_hours", "review_hours", "embargo_days"):
+        value = getattr(args, name)
+        if value is not None:
+            terms[name] = value
+    body = {"requester": args.requester, "request": document, "terms": terms}
+    view = _post(args, "/v1/admin/replays", body).json()
+    replay = document["replay"]
+    _print(
+        args,
+        view,
+        f"{describe_request(view)}\n"
+        f"A replay for {args.requester} to publish and fund, delivered by {replay['station']}: "
+        f"{document['title']}, observers {', '.join(replay['observers'])}. The follower "
+        "fetches SatChecker's element set nearest its window once it is open.",
+    )
+    return 0
+
+
 def cmd_balance(args: argparse.Namespace) -> int:
     result = _client(args).get(f"/v1/balances/{args.party}")
     if "points" in result:
@@ -796,6 +827,28 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
     )
     disallow.add_argument("--norad-id", type=int, required=True, help="its catalogue number")
     disallow.set_defaults(handler=cmd_admin_disallow)
+    replay = sub.add_parser(
+        "replay",
+        parents=[common],
+        help="create a replay request for a published observation file, for a requester to "
+        "publish and fund (docs/operations.md#replays)",
+    )
+    replay.add_argument("file", help="an observation file whose source.origin names its source")
+    replay.add_argument("--request-id", required=True, help="the new request's ID")
+    replay.add_argument("--requester", required=True, help="the requester, requester:<name>")
+    replay.add_argument("--station", required=True, help="the replay station, station:<name>")
+    replay.add_argument("--delivery-deadline", help="UTC, YYYY-MM-DDThh:mm:ssZ")
+    replay.add_argument(
+        "--deadline-days",
+        type=float,
+        default=7.0,
+        help="without --delivery-deadline: this many days from now (default 7)",
+    )
+    replay.add_argument("--reservation-hours", type=float)
+    replay.add_argument("--challenge-period-hours", type=float)
+    replay.add_argument("--review-hours", type=float)
+    replay.add_argument("--embargo-days", type=int)
+    replay.set_defaults(handler=cmd_admin_replay)
 
     public = commands.add_parser("public", help="published requests and files (no key needed)")
     sub = public.add_subparsers(dest="public_command", metavar="command")
