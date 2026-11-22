@@ -3054,3 +3054,42 @@ Accepted · 2026-11-22 (with the pull request that implements the first part of 
     and in its files (D-52).
 
   The data inventory lists the choice and the replays' tables.
+
+### D-55 The profile is the station's place for every format
+
+Accepted · 2026-11-22 (with the pull request that finishes step 5.6). It carries out
+P5-11's last point: a station is verified with the place it publishes, and that place is
+its profile's, as precisely as its observer chose (D-54).
+
+- **A JSON delivery names its profile's place.** Its station's latitude, longitude and
+  height must be the profile's, or the delivery is refused before anything is kept or
+  asked of the chain (`wrong_place`, 422). The message names both places. With
+  `kilometre` the profile is at two decimals, so a more precise file is from another
+  place. This replaces the refusal of files more precise than two decimals (P4-09,
+  `too_precise`). A profile saved before the choice is used at two decimals.
+- **An IOD or CCSDS TDM delivery is placed at its profile.** Such a file names only a
+  station number or a `PARTICIPANT_1`. The service writes a sites document that places
+  that station at the profile's place, without the station's name, and verifies the
+  delivery with it instead of the service's own sites file. The document is kept with
+  the delivery and published with the request's files as `station_place` (migration
+  0014), so that anyone can repeat the verification. On a chain it is kept with the
+  upload until the chain's event arrives. A delivery names one station, its own. An IOD
+  file whose number differs from the profile's IOD number is refused (`wrong_place`).
+  So is a file that names several stations.
+- **The public service needs a profile to deliver** (`profile_required`, 409). Without
+  `--station-decimals`, as in the local tools and most tests, a station without a profile
+  delivers as before, and a station with one follows these rules. The rules change no
+  report and no method: the place is an input, as before.
+- **A replay delivers its published file as it is** (D-51): its place was published with
+  it, by its observer, and verification needs it. The rules do not apply to it.
+- **The local stack** saves SIM-ESPOO's profile to about a kilometre, at the place of its
+  datasets, after the seeded deliveries.
+- **The privacy notice** says that the profile's place goes with every delivery: in the
+  file, or for IOD and TDM files, in the station place published with them. It is still
+  the version of 22 November 2026, the day it changed (D-54).
+
+With this, step 5.6 is done:
+- a station cannot be saved without the choice;
+- a delivery from another place is refused;
+- changing the choice is tested;
+- the notice's version date is updated.

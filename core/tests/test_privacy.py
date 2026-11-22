@@ -12,7 +12,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from helpers import packaged
 from starlette.testclient import TestClient
-from test_api import ACCEPTABLE, STATION, Client, funded_request, new_key, world  # noqa: F401
+from test_api import ACCEPTABLE, ROOT, STATION, Client, funded_request, new_key, world  # noqa: F401
 
 from orbit_watch.api import create_app, privacy
 from orbit_watch.canonical import sha256_bytes
@@ -90,28 +90,29 @@ def test_an_exact_place_is_kept_as_given(world):  # noqa: F811
     assert saved["profile"] == profile and saved["place"] == "exact" and saved["place_chosen"]
 
 
-def test_a_more_precise_delivery_is_refused_and_changes_nothing(world):  # noqa: F811
+def test_a_delivery_needs_its_profile_and_comes_from_its_place(world):  # noqa: F811
+    """The profile is the station's place for every delivery (P5-11, D-55)."""
     _, station = funded_request(world)  # reserved by SIM-ESPOO
     client = public(world)
     path = "/v1/requests/SIM-REQ-0001/deliveries"
+    headers = {"Content-SHA256": sha256_bytes(ACCEPTABLE)}
     assert json.loads(ACCEPTABLE)["station"]["latitude_deg"] == 60.205
-    refused = client.call(
-        "POST",
-        path,
-        station,
-        content=ACCEPTABLE,
-        headers={"Content-SHA256": sha256_bytes(ACCEPTABLE)},
-    )
+    refused = client.call("POST", path, station, content=ACCEPTABLE, headers=headers)
+    assert refused.status_code == 409
+    assert refused.json()["error"]["code"] == "profile_required"
+
+    # To about a kilometre: the file's place, to a metre, is another place.
+    assert put(client, station, template(), "p1").status_code == 200
+    refused = client.call("POST", path, station, content=ACCEPTABLE, headers=headers)
     assert refused.status_code == 422
     error = refused.json()["error"]
-    assert error["code"] == "too_precise"
-    assert "2 decimals" in error["message"] and "latitude_deg" in error["message"]
+    assert error["code"] == "wrong_place"
+    assert "latitude 60.205" in error["message"] and "latitude 60.2," in error["message"]
     record = client.call("GET", "/v1/requests/SIM-REQ-0001", station).json()["record"]
     assert record["status"] == "reserved"
     assert sha256_bytes(ACCEPTABLE) not in world["service"].files  # not even kept
 
-    # Observations simulated with the station's profile, kept to two decimals, pass.
-    assert put(client, station, template(), "p1").status_code == 200
+    # Observations simulated with the station's profile are from its place, and pass.
     made = client.call("POST", "/v1/requests/SIM-REQ-0001/simulate", station).json()
     body = made["observations"].encode("utf-8")
     place = json.loads(body)["station"]
@@ -124,6 +125,37 @@ def test_a_more_precise_delivery_is_refused_and_changes_nothing(world):  # noqa:
     )
     assert delivered.status_code == 200, delivered.text
     assert delivered.json()["summary"]["automated_verdict"] == "pass"
+    assert world["service"].deliveries["SIM-REQ-0001"].sites_sha256 is None  # JSON names it
+
+
+def test_an_iod_delivery_is_verified_at_its_profiles_place(world):  # noqa: F811
+    """An IOD file names only a station number: its profile places it, and that place is
+    kept and published with the delivery (D-55)."""
+    _, station = funded_request(world)
+    client = public(world)
+    profile = template()  # SIM-ESPOO at 60.205, 24.655, IOD station 9901
+    assert put(client, station, profile, "p1", "exact").status_code == 200
+    data = (ROOT / "examples/formats/observation-set.iod").read_bytes()
+    delivered = client.call(
+        "POST",
+        "/v1/requests/SIM-REQ-0001/deliveries?format=iod",
+        station,
+        content=data,
+        headers={"Content-SHA256": sha256_bytes(data)},
+    )
+    assert delivered.status_code == 200, delivered.text
+    service = world["service"]
+    kept = service.deliveries["SIM-REQ-0001"]
+    (site,) = json.loads(service.files[kept.sites_sha256])["sites"]
+    assert site == {
+        "id": "SIM-ESPOO",
+        "iod_station_number": 9901,
+        "latitude_deg": 60.205,
+        "longitude_deg": 24.655,
+        "altitude_m": 40.0,
+    }
+    roles = dict(service.request_files("SIM-REQ-0001"))
+    assert roles["station_place"] == kept.sites_sha256  # published with the request's files
 
 
 def test_a_profile_saved_before_the_choice_stays_at_a_kilometre(world):  # noqa: F811
@@ -147,7 +179,7 @@ def test_a_profile_saved_before_the_choice_stays_at_a_kilometre(world):  # noqa:
         content=ACCEPTABLE,
         headers={"Content-SHA256": sha256_bytes(ACCEPTABLE)},
     )
-    assert refused.json()["error"]["code"] == "too_precise"
+    assert refused.json()["error"]["code"] == "wrong_place"  # its place is rounded
 
 
 # ---------------------------------------------------------------- the observer's choice (D-54)
@@ -184,29 +216,12 @@ def test_the_observer_changes_the_choice_for_later_deliveries(world):  # noqa: F
     path = "/v1/requests/SIM-REQ-0001/deliveries"
     headers = {"Content-SHA256": sha256_bytes(ACCEPTABLE)}
     refused = client.call("POST", path, station, content=ACCEPTABLE, headers=headers)
-    assert refused.json()["error"]["code"] == "too_precise"
+    assert refused.json()["error"]["code"] == "wrong_place"
 
     # Exact again, with the place the observer gives: its files may name it exactly.
     assert put(client, station, template(), "c3", "exact").json()["place"] == "exact"
     delivered = client.call("POST", path, station, content=ACCEPTABLE, headers=headers)
     assert delivered.status_code == 200, delivered.text
-
-
-@pytest.mark.parametrize(
-    ("place", "refused"),
-    [
-        ({"latitude_deg": 60.2, "longitude_deg": 24.66}, False),
-        ({"latitude_deg": 60, "longitude_deg": -24}, False),
-        ({"latitude_deg": 60.21, "longitude_deg": 24.655}, True),
-        ({"latitude_deg": 60.2051, "longitude_deg": 24.66}, True),
-        ({"latitude_deg": "60.20537", "longitude_deg": 24.66}, False),  # not a number: schema
-    ],
-)
-def test_which_files_are_too_precise(place, refused):
-    body = json.dumps({"station": {"id": "SIM-X", "altitude_m": 1.234, **place}}).encode()
-    assert (privacy.too_precise(body, 2) is not None) is refused
-    assert privacy.too_precise(b"not json", 2) is None  # verification says what is wrong
-    assert privacy.too_precise(b"[1, 2]", 2) is None
 
 
 # ---------------------------------------------------------------- deleting a profile

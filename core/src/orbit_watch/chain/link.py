@@ -397,9 +397,12 @@ class ChainLink:
         observations: bytes,
         now: datetime,
         observations_format: str | None,
+        sites: bytes | None = None,
     ) -> Prepared | None:
         """Keep the file and prepare ``deliver`` with its SHA-256. If the station already
-        delivered this file on chain, verification runs at once and nothing is to sign."""
+        delivered this file on chain, verification runs at once and nothing is to sign.
+        ``sites`` places an IOD or TDM delivery's station at its profile's place (D-55), kept
+        with the upload for when the chain's event arrives."""
         record = self.service._record(request_id)
         digest = sha256_bytes(observations)
         current = lc.advance(record, now)
@@ -412,10 +415,12 @@ class ChainLink:
             self._check(record, lc.Deliver(now, station, digest))
         sender = self._wallet_required(station)
         self.service._store(observations)
+        sites_sha256 = None if sites is None else self.service._store(sites)
         self.db.execute(
-            "INSERT INTO chain_uploads (request_id, sha256, station, format) VALUES (?, ?, ?, ?) "
-            "ON CONFLICT (request_id, sha256) DO UPDATE SET format = excluded.format",
-            (request_id, digest, station, observations_format),
+            "INSERT INTO chain_uploads (request_id, sha256, station, format, sites_sha256) "
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT (request_id, sha256) DO UPDATE SET "
+            "format = excluded.format, sites_sha256 = excluded.sites_sha256",
+            (request_id, digest, station, observations_format, sites_sha256),
         )
         if delivered_already:
             self.follow_up()
@@ -900,6 +905,7 @@ class ChainLink:
                 rows[0]["station"],
                 self.service.files[rows[0]["sha256"]],
                 rows[0]["format"],
+                rows[0]["sites_sha256"],
             )
         method, _, version = record.terms.verification_method.rpartition(" ")
         observer = self.address_of(record.observer or "")

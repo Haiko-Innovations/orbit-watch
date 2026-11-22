@@ -38,9 +38,11 @@ reference orbits and observations by their source
 ([D-52](decisions.md#d-52-labels-by-source-on-every-page)), and the local stack runs a
 stand-in for a real object and a replay beside the SIMULATED requests
 ([D-53](decisions.md#d-53-a-stand-in-for-a-real-object-in-the-local-stack)). Step 5.5 is
-done. Step 5.6 is in two parts; in the first, the observer chooses how precisely the
-station's place is published
-([D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)).
+done. Step 5.6 is done, in two parts: the observer chooses how precisely the station's place is
+published
+([D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)), and
+the profile is the station's place for every format
+([D-55](decisions.md#d-55-the-profile-is-the-stations-place-for-every-format)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at
@@ -296,7 +298,7 @@ approved on 2026-11-21. In short:
 | ✅ **5.3 The method measured on real data** ([#106](https://github.com/Haiko-Innovations/orbit-watch/issues/106)) | Method 2.0.0 run over the committed set and a larger set fetched politely: residuals, pass rates, the limit's terms, the reference orbit's age, injected faults, the cost of rounding a station's place; real tracks in the known-answer datasets. | `docs/real-data-validation.md` gives the numbers, reproducible with one command; the method's checks and parameters are unchanged. |
 | ✅ **5.4 Reference orbits and real objects in the service** ([#107](https://github.com/Haiko-Innovations/orbit-watch/issues/107)) | Element sets in PostgreSQL; the follower fetches each open request's object from CelesTrak at most once per update, and SatChecker's sets for replays; it stops at the first answer that is not 200, and a health endpoint reports the stop to the uptime check; uploads by hand; real objects on the allow-list. | A delivery is verified against the nearest stored set, named in its report; an answer that is not 200 stops fetching and fails the health endpoint; tested against a local stand-in, with no outside call in CI. |
 | ✅ **5.5 Real and simulated side by side, and replays** ([#108](https://github.com/Haiko-Innovations/orbit-watch/issues/108)) | Labels by source on objects, reference orbits and observations; simulated stations on real objects; replay requests by an administrator, delivered by a replay station under the observers' names. | In the local stack a request for a real object and a SIMULATED one run side by side, and a replay settles; the labels tested end to end on every page. |
-| **5.6 The station's place** ([#109](https://github.com/Haiko-Innovations/orbit-watch/issues/109)) | The observer's choice, exact or about a kilometre, with nothing chosen in advance and changeable later; existing stations stay rounded; the profile as the place for IOD, TDM and JSON; the privacy notice and the data inventory. | A station cannot be saved without the choice; a delivery from another place is refused; changing the choice tested; the notice's version date updated. |
+| ✅ **5.6 The station's place** ([#109](https://github.com/Haiko-Innovations/orbit-watch/issues/109)) | The observer's choice, exact or about a kilometre, with nothing chosen in advance and changeable later; existing stations stay rounded; the profile as the place for IOD, TDM and JSON; the privacy notice and the data inventory. | A station cannot be saved without the choice; a delivery from another place is refused; changing the choice tested; the notice's version date updated. |
 | **5.7 Visibility** ([#110](https://github.com/Haiko-Innovations/orbit-watch/issues/110)) | The Sun from a short formula in the core; the simulator observes only objects the Sun lights, under a dark sky ([#7](https://github.com/Haiko-Innovations/orbit-watch/issues/7)); a station's visible passes for a request, in the API and the observer's view. | The Sun's error against a JPL ephemeris measured and recorded; the committed simulated examples regenerated and their changes explained; the pass list tested. |
 | **5.8 Real data end to end and phase 5 summary** ([#111](https://github.com/Haiko-Innovations/orbit-watch/issues/111)) | On the public service, with the testnet keystores ([D-24](decisions.md#d-24-the-base-sepolia-deployment)): a replay of real SCORE observations, and a request for a real object observed by simulated stations against CelesTrak's orbit; the phase 5 summary. | The phase 5 completion criteria below are met; release 0.6.0. |
 

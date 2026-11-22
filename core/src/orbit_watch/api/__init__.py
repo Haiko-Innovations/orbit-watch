@@ -69,7 +69,7 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from orbit_watch import __version__, allowlist, backup, orbit_follower, orbits
+from orbit_watch import __version__, allowlist, backup, orbit_follower, orbits, station_place
 from orbit_watch import lifecycle as lc
 from orbit_watch.api import keys, privacy, sessions
 from orbit_watch.api.limits import Limits, RateLimited, client_ip
@@ -126,6 +126,7 @@ STATUS = {
     "unknown_wallet": 404,
     "no_profile": 404,
     "no_reference_orbit": 409,
+    "profile_required": 409,
     "real_request": 409,
     "not_reserved_by_you": 409,
     "party_taken": 409,
@@ -792,23 +793,46 @@ class Api:
         fmt = request.query_params.get("format")
         if fmt not in (None, "json", "iod", "tdm"):
             raise ApiError("invalid_format", "format must be json, iod or tdm")
-        if self.service.replay_of(request_id) is not None:
-            # A replay delivers a published file as it is: its place was published with it,
-            # and verification needs it (D-51).
-            self.service.check_delivery(request_id, principal.party, body)
-        elif self.station_decimals is not None and fmt in (None, "json"):
-            found = self._profile(principal.party)
-            if found is None or found["place"] != "exact":  # the station's own choice (D-54)
-                problem = privacy.too_precise(body, self.station_decimals)
-                if problem:
-                    raise ApiError("too_precise", problem)
+        sites = self._station_place(request_id, principal.party, body, fmt)
         if self.service.on_chain(request_id):
-            prepared = self.chain.prepare_delivery(request_id, principal.party, body, now, fmt)
+            prepared = self.chain.prepare_delivery(
+                request_id, principal.party, body, now, fmt, sites
+            )
             if prepared is not None:
                 return self._signing(prepared)
             return 200, self._record_view(request_id)
-        self.service.deliver(request_id, principal.party, body, now, observations_format=fmt)
+        self.service.deliver(
+            request_id, principal.party, body, now, observations_format=fmt, sites=sites
+        )
         return 200, self._record_view(request_id)
+
+    def _station_place(
+        self, request_id: str, station: str, body: bytes, fmt: str | None
+    ) -> bytes | None:
+        """The station profile is the station's place for every format (P5-11, D-55): a
+        JSON file must name its place, and an IOD or TDM file is placed there by the sites
+        document returned. The public service needs a profile; without its setting, a
+        station without one delivers as before. A replay delivers a published file as it
+        is: its place was published with it, and verification needs it (D-51)."""
+        if self.service.replay_of(request_id) is not None:
+            self.service.check_delivery(request_id, station, body)
+            return None
+        found = self._profile(station)
+        if found is None:
+            if self.station_decimals is not None:
+                raise ApiError(
+                    "profile_required",
+                    'register your station\'s profile first, on the page "Your station": '
+                    "it is your station's place for every delivery",
+                )
+            return None
+        profile = found["profile"]
+        if found["place"] != "exact":  # a profile saved before the choice: to a kilometre
+            profile = privacy.rounded_station(profile, self._kilometre())
+        try:
+            return station_place.sites_for(profile, body, fmt)
+        except station_place.PlaceError as error:
+            raise ApiError(error.code, str(error)) from None
 
     def challenge(self, principal, request, body, now, key):
         self._require(principal, "requester", "station")

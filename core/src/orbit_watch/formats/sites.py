@@ -27,10 +27,15 @@ class Sites:
 
     @classmethod
     def load(cls, path: str | Path) -> Sites:
-        document = json.loads(Path(path).read_text(encoding="utf-8"))
+        return cls.parse(Path(path).read_bytes(), str(path))
+
+    @classmethod
+    def parse(cls, data: bytes, name: str = "document") -> Sites:
+        """A sites document, such as one a delivery was verified with (D-55)."""
+        document = json.loads(data.decode("utf-8"))
         problems = validate(document, "sites")
         if problems:
-            raise FormatError(f"invalid sites file {path}", problems)
+            raise FormatError(f"invalid sites file {name}", problems)
         stations = [
             Station.from_document({k: v for k, v in s.items() if k != "simulated"})
             for s in document["sites"]

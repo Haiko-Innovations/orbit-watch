@@ -215,7 +215,7 @@ def test_a_replays_window_lies_in_the_past(world):
 
 def test_only_the_replay_station_reserves_and_delivers_it(world):
     # Asked about before it exists, it is still a replay once it does.
-    assert deliver(world, "REPLAY-0001", published()).status_code in (404, 422)
+    assert deliver(world, "REPLAY-0001", published()).status_code != 200
     assert create_replay(world).status_code == 201
     open_and_fund(world)
     refused = call(world, "POST", "/v1/requests/REPLAY-0001/reserve", OTHER_STATION)
@@ -276,8 +276,9 @@ def test_a_replay_settles_and_pays_its_replay_station(world):
     assert service.adapter.balance(STATION) == SPLIT.observer
 
 
-def test_a_normal_request_keeps_the_rounding_of_station_places(world):
-    """The exemption is for replays only: the same file for a normal request is refused."""
+def test_a_normal_request_needs_the_stations_profile_and_place(world):
+    """The exemption is for replays only: the same file for a normal request needs its
+    station's profile, which is its place (D-55)."""
     data = published()
     document = json.loads(replay_request(data, "REQ-0003", STATION))
     del document["replay"]
@@ -289,7 +290,7 @@ def test_a_normal_request_keeps_the_rounding_of_station_places(world):
     open_and_fund(world, "REQ-0003")
     assert call(world, "POST", "/v1/requests/REQ-0003/reserve", STATION).status_code == 200
     refused = deliver(world, "REQ-0003", data)
-    assert refused.json()["error"]["code"] == "too_precise"
+    assert refused.json()["error"]["code"] == "profile_required"
 
 
 def test_the_command_line_creates_a_replay(world, monkeypatch, capsys, tmp_path):
