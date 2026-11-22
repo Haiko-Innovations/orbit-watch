@@ -246,6 +246,10 @@ export const strings = {
     titleField: "Title",
     target: "Target",
     targetHint: "Only objects on the service's allow-list can be requested.",
+    simulatedTarget: "A SIMULATED object: the request is SIMULATED too.",
+    simulatedObservations: "SIMULATED observations",
+    simulatedObservationsHint:
+      "A real object. Tick this if simulated stations may observe it along its real orbit: the request and its observations are then SIMULATED. Leave it unticked to ask for real observations.",
     windowStart: "Observation window starts (UTC)",
     windowEnd: "Observation window ends (UTC)",
     deadline: "Delivery deadline (UTC)",
@@ -387,6 +391,8 @@ export const strings = {
     simulateNote:
       "No telescope? The service simulates SIMULATED observations of this target with your station's profile.",
     noProfile: "Register your station first to simulate observations.",
+    realRequest:
+      "This request asks for real observations of a real object, so SIMULATED ones cannot fulfil it. Deliver your station's own observations.",
     chosen: (name: string, size: number) => `${name}, ${size} bytes`,
     sha: "SHA-256",
     simulatedFile: "This file says it is SIMULATED.",

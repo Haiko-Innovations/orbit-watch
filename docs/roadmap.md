@@ -28,7 +28,10 @@ parts: the service keeps real element sets and verifies against the nearest
 from CelesTrak and SatChecker, and stops and alerts at the first answer that is not 200
 ([D-48](decisions.md#d-48-the-follower-fetches-reference-orbits)); real objects come
 onto the allow-list from CelesTrak's civilian groups and an administrator's additions
-with public reasons ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)).
+with public reasons ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)). Step
+5.5 is in three parts; in the first, simulated stations observe real objects along
+their stored element sets
+([D-50](decisions.md#d-50-simulated-stations-on-real-objects)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at

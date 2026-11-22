@@ -593,9 +593,9 @@ async function loadSimulatorInputs(): Promise<SimulatorInputs> {
     getJson<{ targets: Target[] }>("/v1/public/targets"),
     getJson<{ datasets: DemoDataset[] }>("/v1/admin/demo-datasets"),
   ]);
-  // Simulated stations observe the service's own objects (decision D-49).
-  const own = targets.targets.filter((target) => (target.source ?? "service") === "service");
-  return { templates: templates.templates, targets: own, demo: demo.datasets };
+  // Simulated stations observe any object on the list; a real one along its stored element
+  // set, which the follower fetches for a request (decision D-50).
+  return { templates: templates.templates, targets: targets.targets, demo: demo.datasets };
 }
 
 function SimulatorForm({ templates, targets }: Omit<SimulatorInputs, "demo">) {
@@ -665,6 +665,7 @@ function SimulatorForm({ templates, targets }: Omit<SimulatorInputs, "demo">) {
             {targets.map((item) => (
               <option key={item.norad_id} value={item.norad_id}>
                 {item.name ?? item.norad_id} ({item.norad_id})
+                {item.simulated ? `, ${strings.simulated}` : ""}
               </option>
             ))}
           </select>

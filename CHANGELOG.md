@@ -70,6 +70,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   `orbit-watch admin allow`) and takes it back (`orbit-watch admin disallow`); the name
   patterns apply to both. `GET /v1/public/targets` says of each object whether it is
   SIMULATED and why it is on the list (D-49).
+- Simulated stations on real objects (step 5.5, first part, #108): a request for a real
+  object may be SIMULATED, and a station's simulator and the administrator's then
+  observe the object along its stored element set nearest the window. Without one they
+  answer `no_reference_orbit` until the follower has fetched it. The web application
+  asks with a box that is not ticked in advance (D-50).
 
 ### Changed
 
@@ -78,6 +83,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   for a real object is verified against the real objects of the list, so that its report
   does not say SIMULATED. The web application marks a request SIMULATED when its target
   is, and simulated stations observe only the service's own objects (D-49).
+- A real request for a SIMULATED object is refused when it is made (`simulated_target`),
+  and a station's simulator refuses a real request (`real_request`): SIMULATED
+  observations cannot fulfil it. On a real request's page the web application shows no
+  simulate button and says why (D-50).
 
 - Verification method 2.1.0 and report format 1.1: when the catalogue holds
   several element sets of the object, the residuals use the set nearest the

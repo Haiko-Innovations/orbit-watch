@@ -125,6 +125,8 @@ STATUS = {
     "wrong_origin": 403,
     "unknown_wallet": 404,
     "no_profile": 404,
+    "no_reference_orbit": 409,
+    "real_request": 409,
     "not_reserved_by_you": 409,
     "party_taken": 409,
     "forbidden_role": 403,
@@ -1170,8 +1172,10 @@ class Api:
 
     def simulate_observations(self, principal, request, body, now):
         """SIMULATED observations of a reserved request's target, made with the station's
-        own profile, for it to deliver like any file (no state changes here)."""
+        own profile, for it to deliver like any file (no state changes here). Only for a
+        SIMULATED request: SIMULATED observations cannot fulfil a real one (D-50)."""
         from orbit_watch.catalog import parse_catalog
+        from orbit_watch.documents import Request as RequestDocument
         from orbit_watch.formats import owjson
         from orbit_watch.sim.simulator import StationProfile, simulate
 
@@ -1182,6 +1186,12 @@ class Api:
             raise ApiError("unknown_request", f"no request {request_id!r}")
         if record.status != lc.Status.RESERVED or record.reserved_by != principal.party:
             raise ApiError("not_reserved_by_you", f"{request_id} is not reserved by you")
+        if not RequestDocument.parse(self.service.request_documents[request_id]).simulated:
+            raise ApiError(
+                "real_request",
+                f"{request_id} asks for real observations, and SIMULATED ones cannot fulfil "
+                "it. Deliver your station's own observations",
+            )
         found = self._profile(principal.party)
         if found is None:
             raise ApiError("no_profile", "register your station profile first")
@@ -1189,8 +1199,11 @@ class Api:
         profile = found["profile"]
         if self.station_decimals is not None:  # saved before the service rounded them
             profile = privacy.rounded_station(profile, self.station_decimals)
+        catalogue = self.service.simulation_catalog(
+            terms.target_norad_id, terms.window_start, terms.window_end
+        )
         observations = simulate(
-            parse_catalog(self.service.context.catalog),
+            parse_catalog(catalogue),
             terms.target_norad_id,
             StationProfile.from_document(profile),
             terms.window_start,
@@ -1418,7 +1431,8 @@ class Api:
 
     def admin_simulate(self, principal, request, body, now):
         """SIMULATED observations by a built-in station profile of an allowed target in a
-        window (``orbit-watch simulate``); nothing is kept."""
+        window (``orbit-watch simulate``); nothing is kept. A real object is observed along
+        its stored element set nearest the window (D-50)."""
         from orbit_watch.catalog import parse_catalog
         from orbit_watch.formats import owjson
         from orbit_watch.sim.simulator import builtin_profiles, load_profile, simulate
@@ -1431,21 +1445,18 @@ class Api:
         norad_id = _field(document, "norad_id", int)
         if norad_id not in self.service.targets():
             raise ApiError("unknown_target", f"{norad_id} is not an allowed target")
-        if norad_id not in parse_catalog(self.service.context.catalog).sets:
-            raise ApiError(
-                "unknown_target", f"{norad_id} has no orbit in the service's own catalogue"
-            )
         start = _utc_field(document, "start")
         end = _utc_field(document, "end")
         if not start < end or (end - start).total_seconds() > 3 * 24 * 3600:
             raise ApiError("invalid_window", "the window must end after it starts, within 3 days")
+        catalogue = self.service.simulation_catalog(norad_id, start, end)
         passes = document.get("max_passes", 2)
         if not isinstance(passes, int) or isinstance(passes, bool):
             raise ApiError("invalid_body", "max_passes must be a whole number")
         if not 1 <= passes <= MAX_SIMULATED_PASSES:
             raise ApiError("invalid_body", f"max_passes must be 1 to {MAX_SIMULATED_PASSES}")
         observations = simulate(
-            parse_catalog(self.service.context.catalog),
+            parse_catalog(catalogue),
             norad_id,
             load_profile(profile),
             start,

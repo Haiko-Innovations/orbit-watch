@@ -452,19 +452,3 @@ def test_a_delivery_for_a_real_object_does_not_say_simulated(world):
     checks = {check["id"]: check for check in report["checks"]}
     assert checks["target_allowed"]["result"] == "pass"
     assert report["simulated_input"] is False
-
-
-def test_simulated_stations_observe_only_the_services_own_objects(world):
-    fetch_all_groups(world)
-    response = post(
-        world,
-        "/v1/admin/simulate",
-        {
-            "profile": "sim-cmos-gps",
-            "norad_id": 99015,
-            "start": "2026-11-01T15:00:00Z",
-            "end": "2026-11-02T03:00:00Z",
-        },
-    )
-    assert response.status_code == 404
-    assert "own catalogue" in response.json()["error"]["message"]
