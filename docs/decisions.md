@@ -2838,3 +2838,44 @@ Accepted · 2026-11-21 (with the pull request that implements the third part of 
   also keep an object that has moved to `military`.
 - **Production turns fetching on** with `ORBIT_WATCH_FETCH_ORBITS=1`, once this is
   merged and deployed. The first two runs of the follower fetch the six groups.
+
+### D-50 Simulated stations on real objects
+
+Accepted · 2026-11-22 (with the pull request that implements the first part of step
+5.5). It carries out P5-09's "Simulated stations may observe real objects".
+
+- **Step 5.5 in three parts**, one pull request each:
+  1. simulated stations on real objects (this decision);
+  2. replays, created by an administrator and delivered by a replay station under the
+     observers' names (P5-10);
+  3. labels by source on every page, tested end to end, and in the local stack a
+     request for a real object and a SIMULATED one side by side, and a replay settled.
+- **A request for a real object may be SIMULATED.** The requester decides:
+  - a real request asks for real observations;
+  - a SIMULATED one lets simulated stations observe the real object, as a
+    demonstration.
+
+  The web application asks with a box that is not ticked in advance, so a request for a
+  real object is SIMULATED only when the requester says so. A request for a SIMULATED
+  object must be SIMULATED, and is refused otherwise when it is made
+  (`simulated_target`): nobody can make real observations of an object that does not
+  exist.
+- **Along the stored set nearest the window.** A station's simulator
+  (`POST /v1/requests/{id}/simulate`) and the administrator's
+  (`POST /v1/admin/simulate`) observe a real object along one stored element set: the
+  one whose epoch is nearest the middle of the window. Verification later picks the set
+  nearest the middle of the observations (P5-04). With the follower's sets that is
+  normally the same set.
+
+  Without a stored set, or with none within the method's 7-day age limit, simulation is
+  refused (`no_reference_orbit`, 409). The follower fetches the set from a day before
+  the window starts (D-48), so the station tries again later. The service's own objects
+  keep its own catalogue, as before.
+- **A real request takes no SIMULATED observations.** A station's simulator refuses it
+  (`real_request`, 409). On such a request's page, the web application shows no
+  simulate button and says why. Verification already fails SIMULATED observations
+  delivered for a real request (`simulation_label`).
+- **Labelled.** The observations and the report of such a delivery say SIMULATED
+  (`simulated_input`). The report names the real set by its source, epoch and SHA-256
+  (P5-04), never the set itself (D-06). Labels by source on every page are the third
+  part.

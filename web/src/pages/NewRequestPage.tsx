@@ -15,9 +15,19 @@ export interface Targets {
   simulated: boolean;
 }
 
-/** A request is SIMULATED when its target is (decision P5-09). */
-export function requestSimulated(target: Target, targets: Targets): boolean {
+/** Whether a target is SIMULATED (decision P5-09). */
+export function targetSimulated(target: Target, targets: Targets): boolean {
   return target.simulated ?? targets.simulated;
+}
+
+/** A request is SIMULATED when its target is, or when the requester lets simulated
+ * stations observe a real object (decision D-50). */
+export function requestSimulated(
+  target: Target,
+  targets: Targets,
+  simulatedObservations: boolean,
+): boolean {
+  return targetSimulated(target, targets) || simulatedObservations;
 }
 
 async function loadTargets(): Promise<Targets> {
@@ -75,6 +85,7 @@ function RequestForm({ targets }: { targets: Targets }) {
     maxTime: "0.1",
     radec: true,
     azel: true,
+    simulatedObservations: false,
     reservationHours: "72",
     challengeHours: "24",
     reviewHours: "48",
@@ -82,6 +93,8 @@ function RequestForm({ targets }: { targets: Targets }) {
   });
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const observationsHint = useId();
+  const chosen = targets.targets.find((item) => String(item.norad_id) === form.target);
   const set =
     (name: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm({
@@ -128,7 +141,7 @@ function RequestForm({ targets }: { targets: Targets }) {
     const document = {
       format: "orbit-watch/request",
       format_version: "1.0",
-      simulated: requestSimulated(target, targets),
+      simulated: requestSimulated(target, targets, form.simulatedObservations),
       request_id: form.requestId,
       title: form.title.trim(),
       target: { norad_id: target.norad_id, ...(target.name ? { name: target.name } : {}) },
@@ -189,6 +202,26 @@ function RequestForm({ targets }: { targets: Targets }) {
           </select>
         )}
       </Field>
+      {chosen && targetSimulated(chosen, targets) ? (
+        <p className="muted">
+          <span className="badge">{strings.simulated}</span> {s.simulatedTarget}
+        </p>
+      ) : chosen ? (
+        <div className="field">
+          <label className="choice">
+            <input
+              type="checkbox"
+              checked={form.simulatedObservations}
+              onChange={set("simulatedObservations")}
+              aria-describedby={observationsHint}
+            />{" "}
+            {s.simulatedObservations}
+          </label>
+          <p id={observationsHint} className="muted">
+            {s.simulatedObservationsHint}
+          </p>
+        </div>
+      ) : null}
       <div className="field-row">
         <Field label={s.windowStart}>
           {(id) => (

@@ -32,7 +32,7 @@ What it has so far:
 | Your account | `#/account` | the signed-in party, its role and wallet, when the session ends; signing out, here or everywhere; the wallet's balance and the credit waiting in the escrow, with a withdrawal; the party's transactions with their status |
 
 | Your requests | `#/my-requests` | a requester's requests |
-| New request | `#/new-request` | a form for a draft request: target from the allow-list, window, deadline, requirements, time limits |
+| New request | `#/new-request` | a form for a draft request: target from the allow-list, window, deadline, requirements, time limits; for a real object, a box, not ticked in advance, to let simulated stations observe it, which makes the request SIMULATED ([D-50](decisions.md#d-50-simulated-stations-on-real-objects)) |
 | A request | `#/requests/<id>` | its status and progress, terms, files, payments and chain events; for its requester: publish, fund (the deposit and its split first), cancel, challenge a passed result |
 
 | Your station | `#/station` | a station's profile: a SIMULATED instrument with the station's own name and place, kept to about a kilometre; only the station sees it, and it can delete it |
@@ -40,7 +40,8 @@ What it has so far:
 
 On Open requests a signed-in station reserves a funded request. On the
 request's page the station that reserved it delivers: it chooses a file, or
-has the service simulate SIMULATED observations with its profile; the page
+has the service simulate SIMULATED observations with its profile, which only a
+SIMULATED request takes; the page
 computes the file's SHA-256, and the transaction flow checks that the chain
 records exactly that. The request's parties see why the automated
 verification passed or failed, check by check; an observer may challenge a

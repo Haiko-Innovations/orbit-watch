@@ -375,9 +375,12 @@ interface Chosen {
 
 function DeliveryForm({
   requestId,
+  simulated,
   onPrepared,
 }: {
   requestId: string;
+  /** Whether the request is SIMULATED: only then can the station simulate (decision D-50). */
+  simulated: boolean;
   onPrepared: (prepared: Prepared, sha256: string) => void;
 }) {
   const d = strings.delivery;
@@ -445,12 +448,21 @@ function DeliveryForm({
           }}
         />
       </div>
-      <p>
-        <button type="button" className="secondary" disabled={busy} onClick={() => void simulate()}>
-          {d.simulate}
-        </button>{" "}
-        <span className="muted">{d.simulateNote}</span>
-      </p>
+      {simulated ? (
+        <p>
+          <button
+            type="button"
+            className="secondary"
+            disabled={busy}
+            onClick={() => void simulate()}
+          >
+            {d.simulate}
+          </button>{" "}
+          <span className="muted">{d.simulateNote}</span>
+        </p>
+      ) : (
+        <p className="muted">{d.realRequest}</p>
+      )}
       {chosen ? (
         <div aria-live="polite">
           <p>
@@ -497,11 +509,13 @@ function DeliveryForm({
 
 function ObserverActions({
   view,
+  simulated,
   chain,
   session,
   reload,
 }: {
   view: RequestView;
+  simulated: boolean;
   chain: ChainInfo;
   session: Session;
   reload: () => void;
@@ -529,6 +543,7 @@ function ObserverActions({
     return (
       <DeliveryForm
         requestId={id}
+        simulated={simulated}
         onPrepared={(next, sha256) => setPrepared({ prepared: next, sha256 })}
       />
     );
@@ -666,7 +681,13 @@ export function RequestPage({
               <RequesterActions view={view} chain={chain} session={session} reload={reload} />
             ) : null}
             {record.reserved_by === session.party || record.observer === session.party ? (
-              <ObserverActions view={view} chain={chain} session={session} reload={reload} />
+              <ObserverActions
+                view={view}
+                simulated={document?.simulated !== false}
+                chain={chain}
+                session={session}
+                reload={reload}
+              />
             ) : null}
             {document !== null && record.report_sha256 ? (
               <Verification sha={record.report_sha256} />

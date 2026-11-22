@@ -49,7 +49,7 @@ from orbit_watch.reviewers import ReviewerError, ReviewerRegistry
 from orbit_watch.settlement import SettlementAdapter, SettlementError, settlement_plan
 from orbit_watch.storage import Storage, StoredFiles
 from orbit_watch.timeutil import format_utc
-from orbit_watch.verify.engine import UsageError, VerificationInput, verify
+from orbit_watch.verify.engine import PARAMETERS, UsageError, VerificationInput, verify
 
 VERIFIER = "system:verifier"
 PLATFORM = "platform:orbit-watch"
@@ -341,11 +341,18 @@ class RequestService:
         request_id = parsed_terms.request_id
         if request_id in self.records:
             raise ServiceError("duplicate_request", f"request {request_id} already exists")
-        if parsed_terms.target_norad_id not in self.targets():
+        target = self.targets().get(parsed_terms.target_norad_id)
+        if target is None:
             raise ServiceError(
                 "target_not_allowed",
                 f"object {parsed_terms.target_norad_id} is not on the allow-list: requests may "
                 "target only the civilian objects on it",
+            )
+        if target.simulated and not Request.parse(request_bytes).simulated:
+            raise ServiceError(
+                "simulated_target",
+                f"object {target.norad_id} is SIMULATED, so a request for it must be marked as "
+                "SIMULATED too",
             )
         self.request_documents[request_id] = request_bytes
         self._store(request_bytes)
@@ -472,6 +479,41 @@ class RequestService:
         own orbits, and nothing real is fetched or kept for them."""
         base = parse_catalog(self.context.catalog)
         return set(base.sets) if base.simulated else set()
+
+    def simulation_catalog(self, norad_id: int, start: datetime, end: datetime) -> bytes:
+        """The catalogue that a simulated station observes an object with (D-50). For the
+        service's own objects it is the service's own catalogue, as before. For a real
+        object it is the stored element set nearest the middle of the window, alone, so that
+        the SIMULATED observations follow the set that verification picks for them."""
+        stored = self.element_sets.get(norad_id, [])
+        if not stored:
+            if norad_id in parse_catalog(self.context.catalog).sets:
+                return self.context.catalog
+            raise ServiceError(
+                "no_reference_orbit",
+                f"object {norad_id} has no element set yet. The follower fetches it from "
+                "CelesTrak from a day before a request's window starts; try again later",
+            )
+        middle = start + (end - start) / 2
+        nearest = parse_catalog(self.catalog_for([norad_id])).nearest(norad_id, middle)
+        if abs(nearest.epoch - middle) > timedelta(days=PARAMETERS["max_reference_age_days"]):
+            raise ServiceError(
+                "no_reference_orbit",
+                f"object {norad_id} has no element set within "
+                f"{PARAMETERS['max_reference_age_days']:g} days of the window; the nearest is "
+                f"from {format_utc(nearest.epoch)}",
+            )
+        document = {
+            "format": "orbit-watch/gp-catalog",
+            "format_version": "1.0",
+            "simulated": False,
+            "description": (
+                "A real element set that the service keeps, for SIMULATED observations of a "
+                "real object. Not for redistribution."
+            ),
+            "records": [nearest.record],
+        }
+        return dumps_pretty(document, sort_keys=False).encode("utf-8")
 
     def catalog_for(self, norad_ids: list[int]) -> bytes:
         """The catalogue that verifies these objects (step 5.4, D-47). Without stored sets
