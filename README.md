@@ -131,7 +131,9 @@ orbit-watch allowlist build --include cubesat.csv --exclude military.csv -o allo
 
 The builder also drops names that match conservative military and intelligence
 patterns. Classified objects have no public orbit, so they can never be on the
-list.
+list. The public service builds its list the same way, from CelesTrak's small
+civilian groups once a day, plus objects an administrator adds with a public
+reason ([operations.md](docs/operations.md#the-allow-list)).
 
 ## Contribute
 

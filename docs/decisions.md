@@ -2787,3 +2787,54 @@ CelesTrak's [usage policy](https://celestrak.org/usage-policy.php) was read agai
 does not say that a repeated download of unchanged data gets a 403, as
 [data-sources.md](data-sources.md) said; that is corrected. A 403 is "usually sent in
 response to abusive behavior".
+
+### D-49 Real objects on the allow-list
+
+Accepted · 2026-11-21 (with the pull request that implements the third part of step
+5.4). It carries out P5-08 in the service.
+
+- **The list.** Requests may target the objects of:
+  - the service's own list, the SIMULATED objects, as before;
+  - CelesTrak's groups `science`, `education`, `amateur` and `cubesat`;
+  - an administrator's additions.
+
+  It leaves out the objects of the groups `military` and `radar`, and those whose names
+  match the patterns of `orbit-watch allowlist build`. The patterns apply to the name a
+  group or an administrator gives, and to the names of the object's stored element sets.
+  The group names are those of
+  [CelesTrak's index of GP data](https://celestrak.org/NORAD/elements/), read on
+  2026-11-21. `radar` is excluded because radar calibration objects are often run by
+  armed forces; a civilian object wrongly left out is a small loss.
+- **Fetched once a day.** The follower fetches each group at most once a day, CSV with
+  gzip, with the requests that the objects of open requests leave in a run (D-48). The
+  excluded groups come first, and the included groups count only once both excluded
+  groups have been fetched, so that an object of both is never allowed in between. A
+  group's answer stops CelesTrak like an object's, and after a stop the group may be
+  asked for again two hours later, once a person has resumed. The service keeps each
+  group's objects and names, with the time and the SHA-256 of the answer (migration
+  0012), not its element sets.
+- **An administrator's additions.** `POST /v1/admin/allowlist`, or `orbit-watch admin
+  allow`, adds an object with its name and a reason, after the administrator has checked
+  its owner in the satellite catalogue. The reason and the time are public; the
+  administrator is recorded but not shown. An addition is refused for a name that
+  matches a pattern, an object of an excluded group, a SIMULATED object, and one on the
+  service's own list. `orbit-watch admin disallow` takes it back.
+- **Labelled.** `GET /v1/public/targets` gives each object `simulated` and `source`:
+  `service`, `celestrak` with its groups, or `administrator` with its reason. Its
+  `simulated` is true only when every object is SIMULATED.
+- **Refused when made.** A request for an object not on the list is refused when it is
+  made (`target_not_allowed`), not only at delivery, so that the service never publishes
+  a request for an object it does not allow.
+- **Verified against the real list.** A delivery for a real object is verified against a
+  target policy of the real objects only, which names the groups' answers by their
+  SHA-256. Its report then does not say SIMULATED (P5-09). Every other delivery uses the
+  service's own list, as before.
+- **The web application** marks a request SIMULATED when its target is. Simulated
+  stations observe only the objects of the service's own catalogue; observing real
+  objects with them is step 5.5.
+- **An object that leaves the groups** leaves the list at the group's next fetch, and a
+  delivery for it then fails the target check. If that happens to an open request, an
+  administrator can add it back with a reason. Keeping such objects by themselves would
+  also keep an object that has moved to `military`.
+- **Production turns fetching on** with `ORBIT_WATCH_FETCH_ORBITS=1`, once this is
+  merged and deployed. The first two runs of the follower fetch the six groups.

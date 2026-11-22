@@ -175,15 +175,51 @@ the element sets that open requests for real objects need
 - from SatChecker, the set nearest the middle of a window that has ended, such as a
   replay's, once.
 
-It asks for at most three objects per run, two seconds apart, and only for objects on the
-allow-list that are not SIMULATED. Its answer lists what it asked for and kept, under
-`reference_orbits`.
+It makes at most three requests per run, two seconds apart, and asks only for objects on
+the allow-list that are not SIMULATED. With the requests left over, it fetches CelesTrak's
+groups for the allow-list, each at most once a day ([below](#the-allow-list)). Its answer
+lists what it asked for and kept, under `reference_orbits`.
 
 **At the first answer that is not 200 with the object's sets, or no answer at all, the
 follower stops asking that source** and waits for a person, as CelesTrak's usage policy
 asks. `GET /v1/health/reference-orbits` then answers `503`, and the hourly uptime check
 opens an alert issue. What to do is in the
 [runbook](#fetching-reference-orbits-stopped).
+
+## The allow-list
+
+Requests may target only the civilian objects on the allow-list
+([D-05](decisions.md#d-05-civilian-objects-only-through-an-allow-list),
+[D-49](decisions.md#d-49-real-objects-on-the-allow-list)). A request for any other
+object is refused when it is made. `GET /v1/public/targets` lists the objects, each with
+why it is there. The list is made of:
+- the service's own list, the SIMULATED objects;
+- the objects of CelesTrak's groups `science`, `education`, `amateur` and `cubesat`,
+  which the follower fetches at most once a day while fetching is on;
+- the objects an administrator added, each with a public reason.
+
+From these it takes away the objects of CelesTrak's groups `military` and `radar`, and
+those whose names match the patterns for military, intelligence and government security
+payloads, in `orbit_watch.allowlist`. The patterns also apply to the names of an
+object's stored element sets. The included groups count only once both excluded groups
+have been fetched.
+
+An object of a large group, such as `starlink`, is never fetched with its group. An
+administrator adds it after checking its owner in the satellite catalogue (SATCAT). The
+reason is shown publicly:
+
+```sh
+orbit-watch admin allow --norad-id 12345 --name "ITS NAME" --reason "Operated by a university for Earth observation." --api https://orbit-watch-tan.vercel.app --key "$(cat admin.key)"
+orbit-watch admin disallow --norad-id 12345 --api https://orbit-watch-tan.vercel.app --key "$(cat admin.key)"
+```
+
+An object that matches a name pattern or is in an excluded group is refused, and so is a
+SIMULATED object. `disallow` takes back an addition. An object of the groups stays on the
+list.
+
+When an object leaves the groups, it leaves the list at the group's next fetch, and a
+delivery for it then fails the target check. If that happens to an open request, an
+administrator can add the object back with a reason.
 
 ## Runbooks
 
@@ -204,14 +240,18 @@ opens an alert issue. What to do is in the
 ### Fetching reference orbits stopped
 
 `GET /v1/health/reference-orbits` says which source stopped, when, for which object, with
-the answer's HTTP status and its first words. Deliveries for objects that already have a
-set are still verified; others come out inconclusive until a set is kept.
+the answer's HTTP status and its first words. When it names no object, CelesTrak stopped
+at one of the allow-list's groups, and its reason holds the group's URL. Deliveries for
+objects that already have a set are still verified; others come out inconclusive until a
+set is kept. The allow-list keeps the groups as last fetched.
 
 1. **Read the answer** as CelesTrak's [usage policy](https://celestrak.org/usage-policy.php)
    reads it:
    - `404`: the object has no public data. The object is listed under
      `objects_without_public_data` and is not asked for again. If it should be followed,
-     upload a set by hand.
+     upload a set by hand. For a group, CelesTrak has renamed or removed it: correct
+     `orbit_watch.allowlist` by pull request before resuming, or the group is asked for
+     again two hours later.
    - `500` or `503`: the source is overloaded. The follower waits at least 15 minutes
      (`not_before`), even once resumed.
    - `403`: CelesTrak refused the service. Read its message before going on. If it blocks

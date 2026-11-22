@@ -204,6 +204,13 @@ export async function currentSession(fetcher: typeof fetch = fetch): Promise<Ses
 export interface Target {
   norad_id: number;
   name: string | null;
+  /** Whether the object is SIMULATED; older services say so for the whole list only. */
+  simulated?: boolean;
+  /** Why it is on the allow-list (decision D-49). */
+  source?: "service" | "celestrak" | "administrator";
+  groups?: string[];
+  reason?: string;
+  added_at?: string;
 }
 
 export interface RequestListItem {

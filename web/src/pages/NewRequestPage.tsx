@@ -10,9 +10,14 @@ import { useResource } from "../useResource";
 const s = strings.newRequest;
 const REQUEST_ID = /^[A-Za-z0-9._-]{1,64}$/;
 
-interface Targets {
+export interface Targets {
   targets: Target[];
   simulated: boolean;
+}
+
+/** A request is SIMULATED when its target is (decision P5-09). */
+export function requestSimulated(target: Target, targets: Targets): boolean {
+  return target.simulated ?? targets.simulated;
 }
 
 async function loadTargets(): Promise<Targets> {
@@ -123,7 +128,7 @@ function RequestForm({ targets }: { targets: Targets }) {
     const document = {
       format: "orbit-watch/request",
       format_version: "1.0",
-      simulated: targets.simulated,
+      simulated: requestSimulated(target, targets),
       request_id: form.requestId,
       title: form.title.trim(),
       target: { norad_id: target.norad_id, ...(target.name ? { name: target.name } : {}) },

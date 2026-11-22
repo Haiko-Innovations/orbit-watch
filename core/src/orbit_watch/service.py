@@ -37,9 +37,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any
 
+from orbit_watch import allowlist, orbits
 from orbit_watch import calibration as cal
 from orbit_watch import lifecycle as lc
-from orbit_watch import orbits
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.catalog import parse_catalog
 from orbit_watch.documents import Request
@@ -123,6 +123,12 @@ class RequestService:
     calibration_tasks: dict[str, cal.CalibrationTask] = field(default_factory=dict)
     # Real element sets the service verifies against, by object (step 5.4, D-47).
     element_sets: dict[int, list[orbits.StoredSet]] = field(default_factory=dict)
+    # Real objects on the allow-list (step 5.4, D-49): CelesTrak's groups as last fetched,
+    # each {"fetched_at", "sha256", "members": {catalogue number: name}}, and an
+    # administrator's additions, each {"name", "reason", "added_at", "added_by"}.
+    allowlist_groups: dict[str, dict[str, Any]] = field(default_factory=dict)
+    allowlist_additions: dict[int, dict[str, Any]] = field(default_factory=dict)
+    _targets: dict[int, allowlist.Target] | None = field(default=None, repr=False)
     storage: Storage | None = None
     # The testnet chain (step 2.6): an orbit_watch.chain.link.ChainLink, or None.
     chain: Any = None
@@ -236,6 +242,26 @@ class RequestService:
         for row in db.query("SELECT * FROM element_sets ORDER BY norad_id, epoch, sha256"):
             stored = orbits.StoredSet.from_row(row)
             self.element_sets.setdefault(stored.norad_id, []).append(stored)
+        self.allowlist_groups = {
+            row["group_name"]: {
+                "fetched_at": row["fetched_at"],
+                "sha256": row["sha256"],
+                "members": {int(n): name for n, name in json.loads(row["members_json"])},
+            }
+            for row in db.query(
+                "SELECT * FROM allowlist_groups WHERE members_json IS NOT NULL ORDER BY group_name"
+            )
+        }
+        self.allowlist_additions = {
+            int(row["norad_id"]): {
+                "name": row["name"],
+                "reason": row["reason"],
+                "added_at": row["added_at"],
+                "added_by": row["added_by"],
+            }
+            for row in db.query("SELECT * FROM allowlist_additions ORDER BY norad_id")
+        }
+        self._targets = None
         reload = getattr(self.adapter, "reload", None)
         if reload is not None:
             reload()
@@ -315,6 +341,12 @@ class RequestService:
         request_id = parsed_terms.request_id
         if request_id in self.records:
             raise ServiceError("duplicate_request", f"request {request_id} already exists")
+        if parsed_terms.target_norad_id not in self.targets():
+            raise ServiceError(
+                "target_not_allowed",
+                f"object {parsed_terms.target_norad_id} is not on the allow-list: requests may "
+                "target only the civilian objects on it",
+            )
         self.request_documents[request_id] = request_bytes
         self._store(request_bytes)
         return self._save_record(lc.create(parsed_terms, now))
@@ -413,7 +445,7 @@ class RequestService:
                     observations=observations,
                     observations_format=observations_format,
                     catalog=self.catalog_for([] if norad_id is None else [norad_id]),
-                    policy=self.context.policy,
+                    policy=self.policy_for(norad_id),
                     previous=previous,
                     declared_sha256=observations_sha256,
                     sites=self.context.sites,
@@ -501,12 +533,149 @@ class RequestService:
                 )
             self.element_sets.setdefault(stored.norad_id, []).append(stored)
             self.element_sets[stored.norad_id].sort(key=lambda s: (s.epoch, s.sha256))
+        if new:
+            self._targets = None  # the name patterns apply to the sets' names too
         return new, already
 
     def reference_orbits(self, norad_id: int | None = None) -> list[dict[str, Any]]:
         """The names of the kept element sets, never their elements (P5-05)."""
         objects = [norad_id] if norad_id is not None else sorted(self.element_sets)
         return [s.public() for norad in objects for s in self.element_sets.get(norad, [])]
+
+    # ------------------------------------------------------------------ allow-list
+
+    def targets(self) -> dict[int, allowlist.Target]:
+        """The objects requests may target, and why (D-05, P5-08, D-49): the service's own
+        list, CelesTrak's civilian groups and an administrator's additions, minus the
+        excluded groups and the name patterns, which apply to the names of the stored
+        element sets too."""
+        if self._targets is None:
+            names = {
+                norad: [str(s.record.get("OBJECT_NAME") or "") for s in sets]
+                for norad, sets in self.element_sets.items()
+            }
+            self._targets = allowlist.combine(
+                self.context.policy,
+                {group: info["members"] for group, info in self.allowlist_groups.items()},
+                self.allowlist_additions,
+                names,
+            )
+        return self._targets
+
+    def policy_for(self, norad_id: int | None) -> bytes:
+        """The allow-list that verifies a delivery for this object. For a real object it
+        holds only the real objects, so that its report does not say SIMULATED (P5-09); for
+        any other object it is the service's own list, as before."""
+        target = self.targets().get(norad_id) if norad_id is not None else None
+        if target is None or target.source == "service":
+            return self.context.policy
+        built_from: list[dict[str, Any]] = [
+            {
+                "role": "include" if group in allowlist.INCLUDED_GROUPS else "exclude",
+                "group": group,
+                "source": "CelesTrak",
+                "fetched_at": info["fetched_at"],
+                "sha256": info["sha256"],
+                "records": len(info["members"]),
+            }
+            for group, info in self.allowlist_groups.items()
+            if group in allowlist.GROUPS
+        ]
+        if self.allowlist_additions:
+            built_from.append({"role": "administrator", "records": len(self.allowlist_additions)})
+        real = [t for t in self.targets().values() if not t.simulated]
+        document = {
+            "format": "orbit-watch/target-policy",
+            "format_version": "1.0",
+            "simulated": False,
+            "description": (
+                f"The service's real objects: {len(real)} from CelesTrak's groups "
+                f"{', '.join(allowlist.INCLUDED_GROUPS)} and an administrator's additions, "
+                f"minus the groups {', '.join(allowlist.EXCLUDED_GROUPS)} and the name "
+                "patterns (decision D-49)."
+            ),
+            "built_from": built_from,
+            "allow": [
+                {"norad_id": t.norad_id, **({"name": t.name} if t.name else {})} for t in real
+            ],
+        }
+        return dumps_pretty(document, sort_keys=False).encode("utf-8")
+
+    @_atomic
+    def keep_group(self, group: str, body: bytes, now: datetime) -> int:
+        """Keep the objects of a CelesTrak group that the follower fetched; returns how many
+        it holds. Its element sets are not kept: the follower fetches those of a request's
+        object when it needs them."""
+        if group not in allowlist.GROUPS:
+            raise ServiceError("unknown_group", f"{group!r} is not one of the list's groups")
+        catalog = parse_catalog(body)
+        members = {norad: catalog.name(norad) for norad in sorted(catalog.records)}
+        info = {"fetched_at": format_utc(now), "sha256": sha256_bytes(body), "members": members}
+        if self.storage is not None:
+            self.storage.db.execute(
+                "UPDATE allowlist_groups SET fetched_at = ?, sha256 = ?, members_json = ? "
+                "WHERE group_name = ?",
+                (info["fetched_at"], info["sha256"], json.dumps(sorted(members.items())), group),
+            )
+        self.allowlist_groups[group] = info
+        self._targets = None
+        return len(members)
+
+    @_atomic
+    def allow_object(
+        self, norad_id: int, name: str, reason: str, by: str, now: datetime
+    ) -> allowlist.Target:
+        """An administrator adds a real object to the list, after checking its owner in the
+        satellite catalogue; the reason is public (P5-08). The name patterns and the
+        excluded groups still apply."""
+        name, reason = name.strip(), reason.strip()
+        if not name or len(name) > 200:
+            raise ServiceError("invalid_name", "the name must have 1 to 200 characters")
+        if not reason or len(reason) > 500:
+            raise ServiceError("invalid_reason", "the reason must have 1 to 500 characters")
+        target = self.targets().get(norad_id)
+        if target is not None and target.source == "service":
+            raise ServiceError("already_allowed", f"object {norad_id} is on the service's own list")
+        if norad_id in self.simulated_objects():
+            raise ServiceError("simulated_object", f"object {norad_id} is SIMULATED")
+        names = [name] + [
+            str(s.record.get("OBJECT_NAME") or "") for s in self.element_sets.get(norad_id, [])
+        ]
+        if any(allowlist.excluded_name(n) for n in names):
+            raise ServiceError(
+                "excluded_name",
+                f"the name of object {norad_id} matches the patterns for military, intelligence "
+                "and government security payloads",
+            )
+        for group in allowlist.EXCLUDED_GROUPS:
+            if norad_id in self.allowlist_groups.get(group, {}).get("members", {}):
+                raise ServiceError(
+                    "excluded_group", f"object {norad_id} is in CelesTrak's group {group}"
+                )
+        added = {"name": name, "reason": reason, "added_at": format_utc(now), "added_by": by}
+        if self.storage is not None:
+            self.storage.db.execute(
+                "INSERT INTO allowlist_additions (norad_id, name, reason, added_at, added_by) "
+                "VALUES (?, ?, ?, ?, ?) ON CONFLICT (norad_id) DO UPDATE SET name = "
+                "excluded.name, reason = excluded.reason, added_at = excluded.added_at, "
+                "added_by = excluded.added_by",
+                (norad_id, name, reason, added["added_at"], by),
+            )
+        self.allowlist_additions[norad_id] = added
+        self._targets = None
+        return self.targets()[norad_id]
+
+    @_atomic
+    def disallow_object(self, norad_id: int) -> None:
+        """An administrator takes back an addition. An object of the groups stays."""
+        if norad_id not in self.allowlist_additions:
+            raise ServiceError("unknown_target", f"object {norad_id} is not an addition")
+        if self.storage is not None:
+            self.storage.db.execute(
+                "DELETE FROM allowlist_additions WHERE norad_id = ?", (norad_id,)
+            )
+        del self.allowlist_additions[norad_id]
+        self._targets = None
 
     # ------------------------------------------------------------------ challenges
 
