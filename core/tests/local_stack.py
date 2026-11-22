@@ -18,12 +18,18 @@ One command starts, on this machine only:
   LOCAL TEST keys and registered wallets, and worthless TestUSD for the requester;
 * six SIMULATED requests: five funded (four open for observers), one opened but not funded;
 * one SIMULATED request that ran its course: SIM-ESPOO delivered good observations, nobody
-  challenged, and the escrow credited the station 1 TESTUSD and the requester 0.3 back,
+  challenged, and the escrow credited the station 1 TESTUSD and the requester 0.3 back
+  (and as much again from the replay below),
   for them to withdraw. Seeding it moves the chain's clock to 2026-11-02 05:01 UTC;
 * SIM-REQ-3006 in review: SIM-ESPOO delivered good observations, the requester challenged
   them, and the escrow chose three reviewers, who have their tasks;
 * fresh SIMULATED good observations of SIM-CUBESAT-A by SIM-ESPOO, never delivered yet,
-  in ``datasets/`` (the service refuses data delivered before).
+  in ``datasets/`` (the service refuses data delivered before);
+* a stand-in for a real object (tests/stand_ins.py, decision D-53), on the allow-list with
+  an element set uploaded by hand, all made up: SIM-REQ-3010, a SIMULATED request for it that
+  SIM-ESPOO fulfilled with SIMULATED observations along its orbit, in its challenge period;
+  REQ-3011, a real request for it, funded and open; and REPLAY-3020, a replay of made-up
+  "published" observations of it, which station:LOCAL-REPLAY delivered and which settled.
 
     cd contracts && forge build
     cd ../web && npm run build
@@ -59,13 +65,22 @@ from anvil import LOCAL_TIMELOCK_DELAY, SAFE_SIGNERS, SAFE_THRESHOLD, Deployment
 from chain_world import GENESIS, PLATFORM, REGISTRY, REVIEWERS, VERIFIER
 from helpers import catalog_bytes, policy_bytes
 from postgres import SERVER_VARIABLE, Container, docker_available, drop_schema, new_schema
+from stand_ins import (
+    STAND_IN,
+    STAND_IN_NAME,
+    STAND_IN_REASON,
+    published_observations,
+    stand_in_catalogue,
+    stand_in_observations,
+)
 
 from orbit_watch.api.privacy import STATION_DECIMALS
+from orbit_watch.canonical import dumps_pretty
 from orbit_watch.catalog import parse_catalog
 from orbit_watch.sim.phase1_demo import ESPOO, KUOPIO, OULU, REQUESTER, TAMPERE, _deliveries
 from orbit_watch.sim.phase1_demo import _packaged as packaged
 from orbit_watch.sim.phase1_demo import _request_bytes as request_bytes
-from orbit_watch.sim.scenarios import TARGET, _sim_json, _window
+from orbit_watch.sim.scenarios import REQUEST, TARGET, _sim_json, _window
 from orbit_watch.sim.simulator import load_profile
 from orbit_watch.timeutil import parse_utc
 
@@ -89,6 +104,15 @@ ADMIN = "admin:local"
 FRESH_SEEDS = (201, 202)  # SIM-ESPOO's good observations for tests, unlike the seeded ones
 IN_REVIEW = "SIM-REQ-3006"
 IN_REVIEW_SEED = 203
+# A stand-in for a real object, and its replay (step 5.5, decision D-53): all made up.
+REPLAY_STATION = "station:LOCAL-REPLAY"
+REAL_OBJECT_REQUESTS = [  # request id, title, SIMULATED
+    ("SIM-REQ-3010", "Track the stand-in for a real object with simulated stations", True),
+    ("REQ-3011", "Real observations of the stand-in for a real object", False),
+]
+OBSERVED_STAND_IN = "SIM-REQ-3010"  # SIM-ESPOO delivers SIMULATED observations of it
+REPLAY = "REPLAY-3020"
+STAND_IN_SEED = 204
 
 
 class StackError(RuntimeError):
@@ -140,7 +164,7 @@ class LocalStack:
         self.directory = directory
         self.datasets: list[str] = []
         self.in_review: dict = {}
-        self.parties = [REQUESTER, *STATIONS, *REVIEWERS]
+        self.parties = [REQUESTER, *STATIONS, REPLAY_STATION, *REVIEWERS]
         self.deployment = Deployment(
             GENESIS,
             reviewers=REVIEWERS,
@@ -339,6 +363,96 @@ class LocalStack:
                     sign=True,
                 )
 
+    def seed_real_object(self) -> None:
+        """A stand-in for a real object, made up (tests/stand_ins.py, D-53): on the allow-list
+        with a public reason, its element set uploaded by hand; a SIMULATED request for it,
+        reserved by SIM-ESPOO, and a real request for it, both funded; and a replay of made-up
+        published observations of it, delivered by the replay station before its window's
+        reference orbit went stale."""
+        documents = self.directory / "requests"
+        self.cli(
+            ADMIN,
+            "admin",
+            "allow",
+            "--norad-id",
+            str(STAND_IN),
+            "--name",
+            STAND_IN_NAME,
+            "--reason",
+            STAND_IN_REASON,
+        )
+        catalogue = documents / "stand-in-element-set.json"
+        catalogue.write_bytes(stand_in_catalogue())
+        self.cli(ADMIN, "admin", "upload-orbits", str(catalogue))
+        for request_id, title, simulated in REAL_OBJECT_REQUESTS:
+            document = documents / f"{request_id}.json"
+            document.write_bytes(
+                dumps_pretty(
+                    dict(
+                        REQUEST,
+                        request_id=request_id,
+                        title=f"SIMULATED: {title}" if simulated else title,
+                        simulated=simulated,
+                        target={"norad_id": STAND_IN, "name": STAND_IN_NAME},
+                    ),
+                    sort_keys=False,
+                ).encode("utf-8")
+            )
+            self.cli(
+                REQUESTER,
+                "request",
+                "create",
+                str(document),
+                "--delivery-deadline",
+                DELIVERY_DEADLINE,
+            )
+            self.cli(REQUESTER, "request", "open", request_id)
+            self.cli(
+                REQUESTER,
+                "request",
+                "fund",
+                request_id,
+                "--observer",
+                "1",
+                "--reviewer",
+                "0.1",
+                sign=True,
+            )
+        self.cli(ESPOO, "reserve", OBSERVED_STAND_IN, sign=True)
+
+        published = documents / f"{REPLAY}.published.json"
+        published.write_bytes(published_observations())
+        self.cli(
+            ADMIN,
+            "admin",
+            "replay",
+            str(published),
+            "--request-id",
+            REPLAY,
+            "--requester",
+            REQUESTER,
+            "--station",
+            REPLAY_STATION,
+            "--delivery-deadline",
+            DELIVERY_DEADLINE,
+            "--challenge-period-hours",
+            "1",
+        )
+        self.cli(REQUESTER, "request", "open", REPLAY)
+        self.cli(
+            REQUESTER,
+            "request",
+            "fund",
+            REPLAY,
+            "--observer",
+            "1",
+            "--reviewer",
+            "0.1",
+            sign=True,
+        )
+        self.cli(REPLAY_STATION, "reserve", REPLAY, sign=True)
+        self.cli(REPLAY_STATION, "submit", str(published), "--request", REPLAY, sign=True)
+
     def travel(self, when: str) -> None:
         """Move the local chain's clock forward (only a local chain can)."""
         self.service.chain.chain.travel_to(int(parse_utc(when).timestamp()))
@@ -378,11 +492,23 @@ class LocalStack:
         good = _deliveries(parse_catalog(packaged("catalog.json")))["SIM-REQ-1001"]
         observations.write_bytes(good)
         self.cli(ESPOO, "submit", str(observations), "--request", request_id, sign=True)
+        # SIM-ESPOO's SIMULATED observations of the stand-in for a real object, along its
+        # uploaded element set (D-50).
+        stand_in = documents / f"{OBSERVED_STAND_IN}.observations.json"
+        start, end = _window()
+        stand_in.write_bytes(
+            stand_in_observations(self.espoo_profile(), start, end, seed=STAND_IN_SEED)
+        )
+        self.cli(ESPOO, "submit", str(stand_in), "--request", OBSERVED_STAND_IN, sign=True)
         self.travel(AFTER_CHALLENGE)
         self.cli(ADMIN, "admin", "tick")
-        settled = json.loads(self.cli(REQUESTER, "request", "show", request_id))
-        if settled["summary"]["outcome"] != "accepted":
-            raise StackError(f"{request_id} was not accepted: {settled['summary']}")
+        for settled_id in (request_id, REPLAY):
+            settled = json.loads(self.cli(REQUESTER, "request", "show", settled_id))
+            if settled["summary"]["outcome"] != "accepted":
+                raise StackError(f"{settled_id} was not accepted: {settled['summary']}")
+        observed = json.loads(self.cli(REQUESTER, "request", "show", OBSERVED_STAND_IN))
+        if observed["summary"]["automated_verdict"] != "pass":
+            raise StackError(f"{OBSERVED_STAND_IN} did not pass: {observed['summary']}")
 
     @staticmethod
     def espoo_profile():
@@ -465,7 +591,10 @@ class LocalStack:
 
     def describe(self) -> dict:
         return {
-            "notice": "LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.",
+            "notice": (
+                "LOCAL Anvil test chain, no real value. All data and parties are SIMULATED, "
+                "but for a made-up stand-in for a real object and its replay."
+            ),
             "api": self.api,
             "web": self.api + "/",
             "origins": self.origins,
@@ -516,6 +645,10 @@ class LocalStack:
             "datasets": {ESPOO: self.datasets},
             "wrong_target": {ESPOO: str(self.wrong_target)},
             "in_review": self.in_review,
+            "stand_in": {"norad_id": STAND_IN, "name": STAND_IN_NAME},
+            "real_object_requests": [request_id for request_id, _, _ in REAL_OBJECT_REQUESTS],
+            "observed_stand_in": OBSERVED_STAND_IN,
+            "replay": {"request_id": REPLAY, "station": REPLAY_STATION},
         }
 
     def stop(self) -> None:
@@ -589,6 +722,7 @@ def main(argv: list[str] | None = None) -> int:
         signal.signal(sig, lambda *_: stopped.set())
     try:
         stack.seed()
+        stack.seed_real_object()
         stack.seed_settled()
         stack.in_review = stack.seed_in_review()
         stack.datasets = stack.write_datasets()
@@ -598,7 +732,10 @@ def main(argv: list[str] | None = None) -> int:
             stack.app.state.api.station_decimals = STATION_DECIMALS
         info = directory / "local-stack.json"
         info.write_text(json.dumps(stack.describe(), indent=2) + "\n", encoding="utf-8")
-        print("LOCAL Anvil test chain, no real value. All data and parties are SIMULATED.")
+        print(
+            "LOCAL Anvil test chain, no real value. All data and parties are SIMULATED, but "
+            "for a made-up stand-in for a real object and its replay."
+        )
         print(f"API: {stack.api}/v1/   chain: {stack.rpc}   PostgreSQL schema: {stack.schema}")
         if args.image:
             print(f"Served by the container image {args.image}")

@@ -168,7 +168,8 @@ page asks the wallet to add it. `local-stack.json` lists every SIMULATED
 party's test key, which you can import into a wallet used only for testing.
 Never send real funds to these public keys. The stack seeds SIM-REQ-3000, a
 request that ran its course: station:SIM-ESPOO can withdraw 1 TESTUSD and the
-requester 0.3 TESTUSD.
+requester 0.3 TESTUSD. The replay REPLAY-3020 settles too, so station:LOCAL-REPLAY can
+withdraw 1 TESTUSD, and the requester gets back as much again.
 
 ## Run it
 
@@ -186,9 +187,13 @@ cd ../core && uv run python tests/local_stack.py --web ../web/dist
 
 Then open <http://127.0.0.1:8787/>. The local stack is a LOCAL Anvil chain
 with Base Sepolia's EAS code and fresh Orbit Watch contracts, the service on
-it with its PostgreSQL, SIMULATED parties (a requester, four stations, the reviewers, an
-administrator) with registered wallets, and SIMULATED requests in every
-state the views need. As on Base Sepolia, a timelock owns the reviewer
+it with its PostgreSQL, SIMULATED parties (a requester, four stations, a replay station,
+the reviewers, an administrator) with registered wallets, and SIMULATED requests in every
+state the views need. Beside them it has a made-up stand-in for a real object, 339990, on
+the allow-list with an uploaded orbit. There is a SIMULATED request for the stand-in that
+SIM-ESPOO fulfilled, a real request for it that is open, and a replay of made-up "published"
+observations of it that settled
+([D-53](decisions.md#d-53-a-stand-in-for-a-real-object-in-the-local-stack)). As on Base Sepolia, a timelock owns the reviewer
 registry and a Safe of three LOCAL TEST signers proposes to it; the local
 timelock waits 60 seconds. Its clock starts at 2026-11-01 12:00 UTC. It writes `local-stack.json` with every
 party's API key, address and keystore; the keys are public test keys that

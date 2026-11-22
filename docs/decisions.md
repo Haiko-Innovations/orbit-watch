@@ -2979,3 +2979,39 @@ part of step 5.5). It carries out P5-09's labels and P5-13's public page.
 - **Before the first replay on the public service** (step 5.8), the privacy notice and the
   data inventory must name the observers' ORCID iDs that replays publish. Step 5.6
   changes both anyway.
+
+### D-53 A stand-in for a real object in the local stack
+
+Accepted · 2026-11-22 (with the pull request that finishes step 5.5). The local stack, and
+the end-to-end tests on it, show a real object and a replay beside the SIMULATED requests.
+There are no real data in them:
+- No test in CI calls an outside service (P5-15), so the stack fetches nothing.
+- No real element set is committed (D-06, P5-05).
+
+So the stack uses made-up stand-ins (`core/tests/stand_ins.py`):
+- **A stand-in for a real object**, 339990 "LOCAL STAND-IN 339990". An administrator adds it
+  to the allow-list with the reason "LOCAL TEST: stands in for a real object in the local
+  stack; its orbit is made up." Its element set is SIM-CUBESAT-A's elements under its
+  number, uploaded by hand, so it is labelled as uploaded. The number comes after the
+  SIMULATED objects', so that they stay first on the list. SGP4 reads numbers up to 339999,
+  and no catalogue will reach this one for decades.
+- **SIM-REQ-3010**, a SIMULATED request for the stand-in. SIM-ESPOO fulfils it with
+  SIMULATED observations along the stand-in's orbit (D-50), and it waits in its challenge
+  period.
+- **REQ-3011**, a real request for the stand-in. It is funded and open beside the
+  SIMULATED ones.
+- **REPLAY-3020**, a replay of observations "published" by a made-up observer at a made-up
+  source. It credits ORCID's documented example iD of a fictitious researcher,
+  0000-0002-1825-0097. `station:LOCAL-REPLAY` delivers it, and it settles (D-51).
+
+The labels call the stand-in a real object, which is what it stands in for. Its reason on
+the list says that it is made up, and so do the stack's notice and the files. Real data run
+end to end on the public service in step 5.8. The off-chain test `test_stand_ins.py` seeds
+the same stand-ins without a chain, so a mistake in them shows up before the end-to-end
+tests run.
+
+With this, step 5.5 is done:
+- in the local stack a request for a real object and a SIMULATED one run side by side;
+- a replay settles;
+- the labels are tested end to end on every page that shows objects, reference orbits or
+  observations.
