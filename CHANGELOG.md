@@ -109,6 +109,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   sunlit, from the US Naval Observatory's short formula and without an ephemeris file.
   `orbit-watch measure-sun` measured it against JPL's DE421: at most 55.9″ off over
   1900–2049 (`validation/sun/results.json`, docs/visibility.md, D-56).
+- The simulator observes only what a station can see (step 5.7, second part, #110, #7):
+  objects lit by the Sun under a dark sky, by default with the Sun at least 6° down
+  (`dark_sky_deg`, `--dark-sky-deg`, `--any-light`). `orbit_watch.passes` finds each
+  pass's visible part (D-57).
 
 ### Changed
 
@@ -129,6 +133,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   iDs; the data inventory lists both (D-54).
 - `too_precise` is gone: a file more precise than its station's profile is from another
   place, `wrong_place` (D-55).
+- The SIMULATED sun-synchronous objects cross the equator at about 19:30 local time
+  instead of 22:40 (right ascension of the ascending node 330° instead of 15°), so that
+  over Finland in November their evening passes are lit under a dark sky. The committed
+  simulated examples and the phase 1 demo are regenerated; every verdict and outcome is
+  the same (D-57).
 
 - Verification method 2.1.0 and report format 1.1: when the catalogue holds
   several element sets of the object, the residuals use the set nearest the

@@ -135,9 +135,13 @@ def cmd_simulate(args: argparse.Namespace) -> int:
         seed=args.seed,
         observed_id=args.observed,
         max_passes=args.max_passes,
+        dark_sky_deg=None if args.any_light else args.dark_sky_deg,
     )
     if not observation_set.observations:
-        _err("no observations: the object does not pass above the elevation limit in the window")
+        _err(
+            "no observations: the object has no pass above the elevation limit in the window "
+            "where it is sunlit under a dark sky (--any-light observes it lit or not)"
+        )
         return EXIT_FAILED
     target = Path(args.output)
     fmt = _output_format(target, args.output_format)
@@ -1098,6 +1102,18 @@ def build_parser() -> argparse.ArgumentParser:
     simulate.add_argument("--end", required=True, help="window end, UTC")
     simulate.add_argument("--seed", type=int, default=1, help="random seed (default 1)")
     simulate.add_argument("--max-passes", type=int, help="use at most this many passes")
+    simulate.add_argument(
+        "--dark-sky-deg",
+        type=float,
+        default=-6.0,
+        help="observe only where the object is sunlit and the Sun is at or below this "
+        "elevation (default -6, the end of civil twilight; docs/visibility.md)",
+    )
+    simulate.add_argument(
+        "--any-light",
+        action="store_true",
+        help="observe around every culmination, lit or not, as before step 5.7",
+    )
     simulate.add_argument(
         "--catalog",
         help="GP catalogue (CelesTrak JSON/CSV); default: the built-in SIMULATED catalogue",

@@ -31,13 +31,13 @@
   },
   "inputs": {
     "request_sha256": "ed503008700f8f6be8bd0c9dfc0c9083c247dd9d74c85406c4e9569483df203a",
-    "observations_sha256": "10239ccd2ccbd542b5ee76de3f2e67ce3a1693a8c0d13273e9ced7a74f48df9a",
+    "observations_sha256": "bc3b9bfaa3a823f613edd167a7fab342f19cc39f9c78d1a366c37ed0542a8e71",
     "observations_format": "json",
-    "declared_sha256": "10239ccd2ccbd542b5ee76de3f2e67ce3a1693a8c0d13273e9ced7a74f48df9a",
-    "reference_catalog_sha256": "2924282be9c9c79af1c034f43da75502d043a9c04185ba700903abe7b5790d5c",
+    "declared_sha256": "bc3b9bfaa3a823f613edd167a7fab342f19cc39f9c78d1a366c37ed0542a8e71",
+    "reference_catalog_sha256": "6643a1965f3d5eb23524269de8152feca149addaba771bfe34d8ffbc5cdd67e0",
     "target_policy_sha256": "866f9d582d155fab0810417a7644573501fa282b3bdc93ffc22b15ed96434f95",
     "previous_deliveries_sha256": [
-      "5b50018f41e7e86c4340d19e9c008d9eab644a64586601fabcdab67084c4f468"
+      "850382276da850d48f6f93900d69009486bc260935d6cfa42ef9fddae5a078b2"
     ]
   },
   "request": {
@@ -54,7 +54,7 @@
     "object_name": "SIM-CUBESAT-A (SIMULATED)",
     "epoch": "2026-11-01T00:00:00.000000",
     "element_set_no": "999",
-    "element_set_sha256": "b5b289e7f60495b657f0e863e7366d5753a8abca7027939a65e3f5cc9db0e8ec",
+    "element_set_sha256": "1a0ebaf10c0a02de2ddcc53118987c4c436b3ac083d9ffbd8920101d5403bcd8",
     "selection": "the newest in the catalogue (no observations were read)",
     "element_sets_in_catalogue": 1,
     "propagator": "SGP4 (sgp4 library via Skyfield)"

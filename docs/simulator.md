@@ -12,9 +12,13 @@ orbit-watch simulate --target 339001 --profile sim-cmos-gps \
 ## How it works
 
 1. Finds the passes of the object above the profile's elevation limit
-   (Skyfield `find_events`, SGP4 on the GP element set).
-2. Places `points_per_pass` observations `cadence_s` apart around each
-   culmination.
+   (Skyfield `find_events`, SGP4 on the GP element set), and the part of each
+   that the station can see: the object lit by the Sun, the station's sky dark,
+   with the Sun at least 6° below the horizon (`orbit_watch.passes`,
+   [visibility.md](visibility.md), [D-57](decisions.md#d-57-the-simulator-observes-only-what-a-station-can-see)).
+   Passes without a visible part are left out.
+2. Places `points_per_pass` observations `cadence_s` apart around the highest
+   point of each pass's visible part, and keeps only those that fall within it.
 3. For each observation: drops it with `dropout_probability`, adds timing noise
    (`time_noise_s`) and the station clock offset (`clock_offset_s`, positive =
    the station clock runs ahead of UTC), computes the true direction and adds
@@ -25,9 +29,13 @@ Randomness comes from `random.Random(seed)` with a Box-Muller transform built
 on `random()`, whose sequence Python guarantees across versions: the same
 seed gives the same observations.
 
-Not modelled yet (good first issues): illumination (sunlit object, dark sky),
-weather, atmospheric refraction, aberration, light travel time and
-star-catalogue errors.
+`simulate(..., dark_sky_deg=-6.0)` is the default; another limit sets a lighter
+or darker sky, and `dark_sky_deg=None` observes around every culmination, lit or
+not, as the simulator did before step 5.7. The command line's `--dark-sky-deg`
+does the same, with `--any-light` for the old way.
+
+Not modelled yet (good first issues): weather, atmospheric refraction,
+aberration, light travel time and star-catalogue errors.
 
 ## Station profiles
 
@@ -64,7 +72,10 @@ in use in 2026.
 
 `orbit-watch demo` builds one delivery per scenario for the request "observe
 SIM-CUBESAT-A on the night of 1–2 November 2026" (15:00–03:00 UTC, evening and
-night in Finland) and verifies each. The committed output is in
+night in Finland) and verifies each. The simulated objects cross the equator
+northwards at about 19:30 local time, so their two evening passes, at about 15:45
+and 17:20 UTC, are lit under a dark sky; their later passes are in the Earth's
+shadow. The committed output is in
 [`examples/simulated/`](../examples/simulated).
 
 | Dataset | Built how | Expected |

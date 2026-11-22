@@ -7,7 +7,7 @@ from orbit_watch.model import Observation, Station
 from orbit_watch.timeutil import add_seconds, parse_utc
 
 STATION = Station("SIM-X", 60.205, 24.655, 40.0)
-T0 = parse_utc("2026-11-01T18:55:04Z")  # SIM-CUBESAT-A culminates for this station
+T0 = parse_utc("2026-11-01T17:19:00Z")  # SIM-CUBESAT-A culminates for this station
 
 
 def observations_from_prediction(satellite, shift_s=0.0, angle_type="radec", frame="ICRF"):

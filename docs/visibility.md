@@ -7,9 +7,11 @@ decisions [P5-12](decisions.md#p5-12-visibility) and
 [`sun_check.py`](../core/src/orbit_watch/sun_check.py).
 
 An optical observer sees a satellite only when the Sun lights it and the observer's sky
-is dark. This page is about the Sun. The simulator's use of it (issue
-[#7](https://github.com/Haiko-Innovations/orbit-watch/issues/7)) and a station's visible
-passes come in the next parts of step 5.7.
+is dark. This page is about the Sun and what follows from it: the simulator observes only
+what a station can see (issue
+[#7](https://github.com/Haiko-Innovations/orbit-watch/issues/7),
+[D-57](decisions.md#d-57-the-simulator-observes-only-what-a-station-can-see)), and a
+station's visible passes come in the last part of step 5.7.
 
 ## The Sun's place
 
@@ -58,10 +60,27 @@ cache, `core/tests/test_sun.py` repeats the measurement and compares.
   whether the sky at SIM-ESPOO was dark in 3 of 52,560 samples, each within seconds of
   the moment the Sun crossed the limit.
 - **Sunlight:** every 10 seconds for a week of SIM-CUBESAT-A's orbit from 2026-11-01,
-  60,480 samples with 211 entries into and exits from the shadow, the formula with the
-  cylinder disagreed with Skyfield's `is_sunlit` and DE421 once, for at most 10 seconds.
+  60,480 samples with 212 entries into and exits from the shadow, the formula with the
+  cylinder disagreed with Skyfield's `is_sunlit` and DE421 7 times, each for at most
+  10 seconds, all at the shadow's edge. (Before step 5.7's second part moved the
+  SIMULATED orbits to cross the equator in the evening, it was once in 211.)
 
 An error of an arcminute in the Sun's direction moves the edge of the Earth's shadow, at
 a satellite 7,000 km from the Earth's centre, by about 2 km, a fraction of a second of its
 flight. It moves the end of twilight by seconds, or by minutes near midsummer far north,
 where the Sun's elevation changes slowly. Neither changes which passes a station can see.
+
+## Passes, and what the simulator sees
+
+`orbit_watch.passes` finds an object's passes over a station above an elevation limit,
+and samples each every 10 seconds for its visible part: lit, under a dark sky. The
+simulator centres its observations on the highest point of each visible part and keeps
+only those within it. A pass without a visible part gives none.
+
+The SIMULATED objects of the bundled catalogue are sun-synchronous. Until step 5.7 they
+crossed the equator northwards at about 22:40 local time. Over Finland in November that
+put every pass at about 22:30, in the Earth's shadow, or at about 10:30, in daylight: a
+station could never see them. Their ascending node is now 315° further east (right
+ascension 330° instead of 15° at the epoch), so they cross the equator at about 19:30.
+Their evening passes, at about 15:45 and 17:20 UTC, are then lit under a dark sky.
+Nothing else in their orbits changed.

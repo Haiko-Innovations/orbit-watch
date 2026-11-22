@@ -25,11 +25,12 @@ from datetime import datetime
 from importlib import resources
 from pathlib import Path
 
-from orbit_watch import __version__
+from orbit_watch import __version__, sun
 from orbit_watch.catalog import Catalog, timescale
 from orbit_watch.formats.owjson import FormatError
 from orbit_watch.geometry import predict, topos
 from orbit_watch.model import Observation, ObservationSet, Station, Target
+from orbit_watch.passes import passes as visible_passes
 from orbit_watch.schema import validate
 from orbit_watch.timeutil import add_seconds
 
@@ -149,6 +150,7 @@ def simulate(
     max_passes: int | None = None,
     time_shift_s: float = 0.0,
     notes: str | None = None,
+    dark_sky_deg: float | None = sun.DARK_SKY_SUN_ELEVATION_DEG,
 ) -> ObservationSet:
     """Simulate one station observing an object.
 
@@ -157,12 +159,32 @@ def simulate(
     actually generated, which lets tests build wrong-target deliveries.
     ``time_shift_s`` moves every observation in time after pass selection
     (used to build deliveries that miss the requested window).
+
+    The station sees the object only where the Sun lights it and the station's sky is dark,
+    with the Sun at or below ``dark_sky_deg`` (step 5.7, issue #7, D-57): observations
+    centre on the highest point of each pass's visible part, and fall only within it. With
+    ``dark_sky_deg`` None it observes around every culmination, lit or not, as before.
     """
     observed_id = target_id if observed_id is None else observed_id
     rng = DeterministicRandom(seed)
-    passes = culminations(
-        catalog, observed_id, profile.station, start, end, profile.min_elevation_deg
-    )
+    if dark_sky_deg is None:
+        passes = culminations(
+            catalog, observed_id, profile.station, start, end, profile.min_elevation_deg
+        )
+    else:
+        passes = [
+            found.visible_peak
+            for found in visible_passes(
+                catalog,
+                observed_id,
+                profile.station,
+                start,
+                end,
+                profile.min_elevation_deg,
+                dark_sky_deg,
+            )
+            if found.visible_peak is not None
+        ]
     if max_passes is not None:
         passes = passes[:max_passes]
     candidates: list[datetime] = []
@@ -192,9 +214,15 @@ def simulate(
             profile.angle_type,
             profile.frame,
         )
+        seen = [True] * len(draws)
+        if dark_sky_deg is not None:  # only where the object is lit and the sky dark
+            ts = timescale()
+            when = ts.from_datetimes([d[1] for d in draws])
+            lit = sun.sunlit(catalog.satellite(observed_id).at(when).position.km, when)
+            seen = list(lit & sun.dark(profile.station, when, dark_sky_deg))
         for index, (label, _true, dropped, noise_1, noise_2) in enumerate(draws):
             elevation = float(truth.elevation_deg[index])
-            if dropped or elevation < profile.min_elevation_deg:
+            if dropped or not seen[index] or elevation < profile.min_elevation_deg:
                 continue
             a1 = float(truth.angle_1_deg[index])
             a2 = float(truth.angle_2_deg[index])

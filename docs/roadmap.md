@@ -45,7 +45,9 @@ the profile is the station's place for every format
 ([D-55](decisions.md#d-55-the-profile-is-the-stations-place-for-every-format)). Step 5.7
 is in three parts; in the first, the core computes the Sun's place from a short formula,
 measured against JPL's DE421 ([visibility.md](visibility.md),
-[D-56](decisions.md#d-56-the-suns-place-from-a-short-formula)).
+[D-56](decisions.md#d-56-the-suns-place-from-a-short-formula)); in the second, the
+simulator observes only what a station can see
+([D-57](decisions.md#d-57-the-simulator-observes-only-what-a-station-can-see)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at
