@@ -59,8 +59,7 @@ test("the lists of requests tag each one", async ({ browser }) => {
 
 test("a review task labels its files, without naming its request", async ({ browser }) => {
   const reviewer =
-    (stackInfo() as unknown as { in_review: { reviewers: string[] } }).in_review.reviewers[0] ??
-    "";
+    (stackInfo() as unknown as { in_review: { reviewers: string[] } }).in_review.reviewers[0] ?? "";
   const page = await signedIn(browser, reviewer);
   const tasks = (await asParty(page.request, reviewer, "GET", "/v1/tasks")).json.tasks as {
     task_id: string;
