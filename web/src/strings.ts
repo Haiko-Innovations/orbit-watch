@@ -394,7 +394,19 @@ export const strings = {
     invalid: "Check the fields: latitude −90 to 90, longitude −180 to 180, and a name.",
     stationId: "Station ID",
     precision:
-      "The service keeps your station's place to two decimals of a degree, about a kilometre, and refuses observation files with more precise station coordinates.",
+      "The service keeps and publishes this place exactly or to about a kilometre (two decimals of a degree), as you choose below.",
+    placeLegend: "How precisely is your station's place published?",
+    placeNote:
+      "Verification needs a precise place: rounding to about a kilometre can move a satellite's predicted position by a few arcminutes, and the station is verified with the place it publishes. But a station may be someone's home, and what you deliver is published. You can change this at any time, for later deliveries; files already delivered keep the place they were delivered with, since the blockchain names them.",
+    placeKilometre:
+      "To about a kilometre: the service keeps the place to two decimals of a degree, and refuses files with more precise station coordinates.",
+    placeExact:
+      "Exactly, as you give it: your files may name the exact place, and it is published.",
+    placeRequired: "Choose how precisely your station's place is published.",
+    placeShown: "Place published",
+    placeIsExact: "exactly",
+    placeIsKilometre: "to about a kilometre",
+    placeUnchosen: "to about a kilometre, until you choose",
     privacy: "Privacy notice",
     remove: "Delete the profile",
     removeConfirm:

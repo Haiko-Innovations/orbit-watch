@@ -39,18 +39,20 @@ def test_a_station_keeps_its_own_profile(world):  # noqa: F811
     path = f"/v1/stations/{STATION}/profile"
     assert client.call("GET", path, station).json()["error"]["code"] == "no_profile"
 
-    broken = put(client, path, station, {"profile": {"format": "nonsense"}})
+    broken = put(client, path, station, {"profile": {"format": "nonsense"}, "place": "exact"})
     assert broken.json()["error"]["code"] == "invalid_profile"
-    someone_else = put(client, path, station, {"profile": template("sim-azel-mount")})
+    someone_else = put(
+        client, path, station, {"profile": template("sim-azel-mount"), "place": "exact"}
+    )
     assert someone_else.json()["error"]["code"] == "wrong_station"  # its id is SIM-KUOPIO
 
     profile = template()  # SIM-ESPOO
-    saved = put(client, path, station, {"profile": profile})
+    saved = put(client, path, station, {"profile": profile, "place": "exact"})
     assert saved.status_code == 200, saved.text
     assert client.call("GET", path, station).json()["profile"] == profile
     # The coordinates are personal data: other stations do not see them, admins do.
     assert client.call("GET", path, other).json()["error"]["code"] == "not_yourself"
-    assert put(client, path, other, {"profile": profile}).status_code == 403
+    assert put(client, path, other, {"profile": profile, "place": "exact"}).status_code == 403
     assert client.call("GET", path, world["admin"]).status_code == 200
 
 
@@ -59,7 +61,12 @@ def test_simulated_observations_for_the_own_reservation_pass_verification(world)
     _, station = funded_request(world, "SIM-REQ-0001")  # reserved by SIM-ESPOO
     simulate = "/v1/requests/SIM-REQ-0001/simulate"
     assert client.call("POST", simulate, station).json()["error"]["code"] == "no_profile"
-    put(client, f"/v1/stations/{STATION}/profile", station, {"profile": template()})
+    put(
+        client,
+        f"/v1/stations/{STATION}/profile",
+        station,
+        {"profile": template(), "place": "exact"},
+    )
 
     made = client.call("POST", simulate, station).json()
     assert made["simulated"] is True and made["format"] == "json"

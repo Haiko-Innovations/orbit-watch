@@ -797,9 +797,11 @@ class Api:
             # and verification needs it (D-51).
             self.service.check_delivery(request_id, principal.party, body)
         elif self.station_decimals is not None and fmt in (None, "json"):
-            problem = privacy.too_precise(body, self.station_decimals)
-            if problem:
-                raise ApiError("too_precise", problem)
+            found = self._profile(principal.party)
+            if found is None or found["place"] != "exact":  # the station's own choice (D-54)
+                problem = privacy.too_precise(body, self.station_decimals)
+                if problem:
+                    raise ApiError("too_precise", problem)
         if self.service.on_chain(request_id):
             prepared = self.chain.prepare_delivery(request_id, principal.party, body, now, fmt)
             if prepared is not None:
@@ -1149,6 +1151,9 @@ class Api:
         return party
 
     def _profile(self, party: str) -> dict[str, Any] | None:
+        """A station's profile, and how precisely its place is published (D-54): ``place``
+        is "exact" or "kilometre", and ``place_chosen`` is false for a profile saved before
+        the choice existed, which stays at about a kilometre until its owner chooses."""
         rows = self.db.query("SELECT * FROM station_profiles WHERE party = ?", (party,))
         if not rows:
             return None
@@ -1156,7 +1161,15 @@ class Api:
             "party": party,
             "profile": json.loads(rows[0]["profile_json"]),
             "updated_at": rows[0]["updated_at"],
+            "place": rows[0]["place"] or "kilometre",
+            "place_chosen": rows[0]["place"] is not None,
         }
+
+    def _kilometre(self) -> int:
+        """The decimals of "about a kilometre": the service's setting, or two."""
+        if self.station_decimals is None:
+            return privacy.STATION_DECIMALS
+        return self.station_decimals
 
     def get_station_profile(self, principal, request, body, now):
         party = self._own_station(principal, request)
@@ -1168,20 +1181,30 @@ class Api:
     def put_station_profile(self, principal, request, body, now, key):
         self._require(principal, "station")
         party = self._own_station(principal, request)
-        document = _field(_json(body), "profile", dict)
+        given = _json(body)
+        document = _field(given, "profile", dict)
+        place = given.get("place")
+        if place not in privacy.PLACES:
+            # The observer chooses, and nothing is chosen in advance (P5-11, D-54).
+            raise ApiError(
+                "place_required",
+                'choose how precisely the station\'s place is published: "exact", or '
+                '"kilometre" for about a kilometre',
+            )
         problems = validate(document, "station-profile")
         if problems:
             raise ApiError("invalid_profile", "; ".join(problems[:5]))
         name = party.split(":", 1)[1]
         if document["station"]["id"] != name:
             raise ApiError("wrong_station", f"the profile's station id must be {name}")
-        if self.station_decimals is not None:
-            document = privacy.rounded_station(document, self.station_decimals)
+        if place == "kilometre":
+            document = privacy.rounded_station(document, self._kilometre())
         self.db.execute(
-            "INSERT INTO station_profiles (party, profile_json, updated_at) VALUES (?, ?, ?) "
+            "INSERT INTO station_profiles (party, profile_json, updated_at, place) "
+            "VALUES (?, ?, ?, ?) "
             "ON CONFLICT (party) DO UPDATE SET profile_json = excluded.profile_json, "
-            "updated_at = excluded.updated_at",
-            (party, dumps_pretty(document, sort_keys=False), format_utc(now)),
+            "updated_at = excluded.updated_at, place = excluded.place",
+            (party, dumps_pretty(document, sort_keys=False), format_utc(now), place),
         )
         return 200, self._profile(party)
 
@@ -1225,8 +1248,8 @@ class Api:
             raise ApiError("no_profile", "register your station profile first")
         terms = record.terms
         profile = found["profile"]
-        if self.station_decimals is not None:  # saved before the service rounded them
-            profile = privacy.rounded_station(profile, self.station_decimals)
+        if found["place"] != "exact" and self.station_decimals is not None:
+            profile = privacy.rounded_station(profile, self.station_decimals)  # saved earlier
         catalogue = self.service.simulation_catalog(
             terms.target_norad_id, terms.window_start, terms.window_end
         )

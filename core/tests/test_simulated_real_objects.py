@@ -27,7 +27,9 @@ def station_profile(world):  # noqa: F811
     """The station's own profile: the SIMULATED template whose station is SIM-ESPOO."""
     response = world["client"].put(
         PROFILE,
-        content=json.dumps({"profile": json.loads(packaged("stations/sim-cmos-gps.json"))}),
+        content=json.dumps(
+            {"profile": json.loads(packaged("stations/sim-cmos-gps.json")), "place": "exact"}
+        ),
         headers={"Authorization": f"Bearer {world['station']}", "Idempotency-Key": "profile"},
     )
     assert response.status_code == 200, response.text

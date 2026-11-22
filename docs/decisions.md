@@ -3015,3 +3015,42 @@ With this, step 5.5 is done:
 - a replay settles;
 - the labels are tested end to end on every page that shows objects, reference orbits or
   observations.
+
+### D-54 The observer chooses how precisely the place is published
+
+Accepted · 2026-11-22 (with the pull request that implements the first part of step
+5.6). It carries out the choice of P5-11.
+
+- **Step 5.6 in two parts:**
+  1. the choice, its change, the privacy notice and the data inventory (this decision);
+  2. the profile as the station's place for every format: IOD and CCSDS TDM deliveries
+     take their station's place from it, and a JSON delivery from another place is
+     refused.
+- **The choice is part of saving a profile.** `PUT /v1/stations/{party}/profile` takes
+  `"place": "exact"` or `"place": "kilometre"` beside the profile, and refuses a profile
+  without one (`place_required`). The station's page asks with two choices, neither
+  selected in advance. Before the observer chooses, the page says three things: that
+  verification needs a precise place; that a station may be someone's home; and that
+  files already delivered keep the place they were delivered with. With `kilometre` the
+  coordinates are kept to two decimals of a degree. With `exact` they are kept as given.
+  The choice is kept with the profile (migration 0013).
+- **It can be changed at any time**, for later deliveries. Choosing `kilometre` again
+  drops the exact place from the service. Choosing `exact` again needs the exact place
+  given again, since the service no longer has it. Files already delivered are not
+  touched: their SHA-256 is on the chain.
+- **Existing profiles stay at about a kilometre** until their owner chooses. A profile
+  saved before this step has no choice. `GET` reports it as `kilometre` with
+  `place_chosen: false`, and the page selects nothing for it. The service rounds its
+  SIMULATED observations as before.
+- **Deliveries follow the choice.** The public service's refusal of station coordinates
+  more precise than two decimals (P4-09) applies to a station that chose `kilometre`,
+  that has not chosen, or that has no profile. A station that chose `exact` may deliver
+  files that name its exact place. A replay delivers its file as published (D-51).
+  Step 5.6's second part replaces this rule with the profile as the place.
+- **The privacy notice** is version of 22 November 2026:
+  - the station's profile and its files are kept exactly or to about a kilometre, as the
+    observer chooses, and the choice can be changed;
+  - replays publish their observers' ORCID iDs, source and licence on each replay's page
+    and in its files (D-52).
+
+  The data inventory lists the choice and the replays' tables.

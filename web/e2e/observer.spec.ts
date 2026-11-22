@@ -65,9 +65,11 @@ test("a new station registers its profile, simulates observations and they pass"
   await page.getByLabel("Latitude (degrees, north positive)").fill("60.98");
   await page.getByLabel("Longitude (degrees, east positive)").fill("25.66");
   await page.getByLabel("Altitude (metres)").fill("100");
+  await page.getByLabel("Exactly, as you give it").check();
   await page.getByRole("button", { name: "Save the profile" }).click();
   await expect(page.getByRole("status")).toContainText("Saved.");
   await expect(page.locator("dl.details")).toContainText("SIM-OBS-TEST");
+  await expect(page.locator("dl.details")).toContainText("Place publishedexactly");
 
   // A new wallet has no ETH for fees yet: the page says so, and nothing is sent.
   await page.getByRole("link", { name: "Open requests" }).click();
@@ -100,7 +102,9 @@ test("a new station registers its profile, simulates observations and they pass"
   await expect(page.getByRole("link", { name: /first manoeuvre/ })).toBeVisible();
 });
 
-test("a station's place is kept to a kilometre, and it deletes its profile", async ({ page }) => {
+test("a station chooses how precisely its place is published, and deletes its profile", async ({
+  page,
+}) => {
   await installTestWallet(page, generatePrivateKey());
   await page.goto("/#/sign-in");
   await page.getByRole("button", { name: "Test wallet (LOCAL keys)" }).click();
@@ -115,13 +119,38 @@ test("a station's place is kept to a kilometre, and it deletes its profile", asy
   await page.getByLabel("Station name").fill("Simulated station near Kuopio");
   await latitude.fill("62.89237");
   await page.getByLabel("Longitude (degrees, east positive)").fill("27.67814");
+  // Nothing is chosen in advance, and the profile is not saved without a choice (P5-11).
+  const kilometre = page.getByLabel("To about a kilometre");
+  const exact = page.getByLabel("Exactly, as you give it");
+  await expect(kilometre).not.toBeChecked();
+  await expect(exact).not.toBeChecked();
+  await expect(page.getByRole("group", { name: /How precisely/ })).toHaveAccessibleDescription(
+    /keep the place they were delivered with/,
+  );
+  await page.getByRole("button", { name: "Save the profile" }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Choose how precisely your station's place is published.",
+  );
+  await kilometre.check();
   await page.getByRole("button", { name: "Save the profile" }).click();
   await expect(page.getByRole("status")).toContainText("Saved.");
   const details = page.locator("dl.details");
   await expect(details).toContainText("62.89");
   await expect(details).toContainText("27.68");
   await expect(details).not.toContainText("62.892");
+  await expect(details).toContainText("Place publishedto about a kilometre");
   await audit(page);
+
+  // The choice changes for later deliveries: exactly, with the exact place given again.
+  await latitude.fill("62.89237");
+  await page.getByLabel("Longitude (degrees, east positive)").fill("27.67814");
+  await exact.check();
+  await page.getByRole("button", { name: "Save the profile" }).click();
+  await expect(details).toContainText("62.89237");
+  await expect(details).toContainText("Place publishedexactly");
+  await kilometre.check();
+  await page.getByRole("button", { name: "Save the profile" }).click();
+  await expect(details).not.toContainText("62.892");
 
   await page.getByRole("button", { name: "Delete the profile" }).click();
   await expect(page.getByRole("group", { name: /Delete your station's profile/ })).toBeVisible();

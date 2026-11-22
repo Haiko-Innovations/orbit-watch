@@ -1,6 +1,6 @@
 # Privacy notice
 
-Orbit Watch public testnet service · version of 21 November 2026
+Orbit Watch public testnet service · version of 22 November 2026
 
 This notice says what personal data the Orbit Watch service keeps, why, for how long and who else handles it. It covers the public testnet service and its web application. Orbit Watch is open source: the code that does all of this is public, and the [data inventory](https://github.com/Haiko-Innovations/orbit-watch/blob/main/docs/personal-data.md) lists every table and log in detail.
 
@@ -14,8 +14,8 @@ The service keeps as little as it can. There are no analytics, no trackers, no a
 
 - **Your account.** The name you choose when you sign up, such as `station:SIM-HELSINKI`, which is public, and your wallet address, which is public on the blockchain anyway. The service also keeps the message you signed to sign up and its signature, which show that the wallet is yours.
 - **Signing in.** The message your wallet signs to sign in, with your address, this site's address and its times. The service keeps it for an hour after it expires. Your session: your account, your address, this site's address and when the session started and ends. The session is deleted when you sign out or when it ends after at most 12 hours.
-- **Your station's profile, if you run a station.** Its name, its place, its height and the SIMULATED instrument it uses. The place is kept to two decimals of a degree, which is about a kilometre: a station may be someone's home. Only you and the administrators see the profile, and you can delete it on the page "Your station".
-- **What you do in the service.** Your requests and their titles, the observation files you deliver, the verification reports, and the reasons you give when you challenge a result or review a delivery. An observation file names your station's place, to the same two decimals; the service refuses files that are more precise. The parties of a request and the administrators see these. When a request is settled and its embargo of at most 30 days has passed, its request, observations and report are published for anyone under the CC BY 4.0 licence.
+- **Your station's profile, if you run a station.** Its name, its place, its height and the SIMULATED instrument it uses. You choose how precisely the place is kept and published: exactly, or to two decimals of a degree, which is about a kilometre. Nothing is chosen in advance, because a station may be someone's home. You can change the choice at any time, for later deliveries; a profile saved before 22 November 2026 stays at about a kilometre until you choose. Only you and the administrators see the profile, and you can delete it on the page "Your station".
+- **What you do in the service.** Your requests and their titles, the observation files you deliver, the verification reports, and the reasons you give when you challenge a result or review a delivery. An observation file names your station's place, as precisely as you chose; with about a kilometre, the service refuses files that are more precise. Files you have already delivered keep the place they were delivered with, since the blockchain names them by their SHA-256. The parties of a request and the administrators see these. When a request is settled and its embargo of at most 30 days has passed, its request, observations and report are published for anyone under the CC BY 4.0 licence.
 - **Your transactions.** The hashes and status of the transactions you report to the service. The transactions themselves are on the blockchain.
 - **Copies of answers.** When you change something, the service keeps a copy of its answer for 24 hours, so that if your browser asks again, the change is not made twice.
 - **IP addresses.** The service does not store your IP address. To keep anyone from overloading it, it counts calls per address, and for that it keeps only a keyed hash of the address. Each count is deleted when its time window ends, within an hour. The service writes no IP address to its own logs. Our hosting provider handles your IP address to deliver the pages and to protect the service from attacks, and its logs are kept for at most 30 days.
@@ -29,13 +29,13 @@ The service runs on Base Sepolia, a public test blockchain. What you do there wi
 
 ## Observations that others have published
 
-Orbit Watch's public repository also holds real observations of satellites that observers published themselves in SCORE, the IAU's Satellite Constellation Observation Repository, under the CC BY 4.0 licence. Replays of such observations through the service will hold them too. We did not get these data from the observers themselves, so this section says what the law asks us to tell them (GDPR article 14).
+Orbit Watch's public repository also holds real observations of satellites that observers published themselves in SCORE, the IAU's Satellite Constellation Observation Repository, under the CC BY 4.0 licence. Replays of such observations through the service hold them too, and publish the observers' ORCID iDs, the source and the licence on each replay's page and in its files. We did not get these data from the observers themselves, so this section says what the law asks us to tell them (GDPR article 14).
 
 - **What.** For each observation: its time, the position measured, the uncertainties, the instrument, the observer's place as published in SCORE, SCORE's ID of the observation, and the observers' ORCID iDs, which name the people who made it.
 - **From where.** [SCORE](https://score.cps.iau.org), where the observers published them for anyone to use under CC BY 4.0: a publicly accessible source.
 - **Why, and on what basis.** To measure and show how Orbit Watch's verification works on real observations, and to credit the observers as the licence asks. The legal basis is our legitimate interest in a verification method that is tested on real data and open to review (article 6(1)(f)). The place is kept as published, because verification needs the exact place.
-- **Who sees it.** Anyone: the repository is public, as SCORE is.
-- **How long.** As long as the examples and the validation set that hold them are in the repository. If an observer asks, their observations are removed from the next version of the repository and from the service. Copies others have made, and the repository's history, stay.
+- **Who sees it.** Anyone: the repository is public, as SCORE is, and so is a replay once it is settled.
+- **How long.** As long as the examples and the validation set that hold them are in the repository, and, for a replay, while the service runs. If an observer asks, their observations are removed from the next version of the repository and from the service. Copies others have made, and the repository's history, stay.
 
 The observers have the same rights as everyone else, below. They can also ask SCORE about what they published there.
 

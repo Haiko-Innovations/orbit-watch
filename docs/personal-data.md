@@ -22,9 +22,13 @@ notice and its version date in the same pull request.
 - **Public by design, said plainly.** Party names, wallet addresses and, once
   published, a request's files are public. What is on the chain cannot be
   deleted.
-- **A station is not an address.** A station may be someone's home. The public
-  service keeps station coordinates to two decimals of a degree: 1.1 km of
-  latitude, and 0.55 km of longitude at 60° north.
+- **A station is not an address.** A station may be someone's home. Its observer
+  chooses whether the public service keeps and publishes its place exactly or to
+  two decimals of a degree, 1.1 km of latitude and 0.55 km of longitude at 60°
+  north, with nothing chosen in advance (P5-11,
+  [D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)).
+  A profile saved before the choice existed stays at two decimals until its owner
+  chooses.
 - **Deleted when no longer needed.** `api/privacy.py`'s `sweep` deletes what has
   expired; the follower runs it (every 15 minutes on the public service,
   [P4-06](decisions.md#p4-06-the-service-runs-on-its-own)) and so does
@@ -43,9 +47,9 @@ Legal bases (GDPR article 6(1)): **b**, the contract, that is the terms of use;
 | Sign-in message: address, origin, nonce, times, the name to sign up | `signin_challenges` | the service only | an hour after it expires (it expires after 5 minutes) | `sweep` | b |
 | Session: SHA-256 of the cookie, party, role, address, origin, times | `sessions` | the party (`GET /v1/session`) | until signed out, at most 12 hours | `DELETE /v1/session`, `DELETE /v1/sessions`, `sweep` | b |
 | Session cookie `__Host-ow_session` over HTTPS (`Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`); `ow_session` over plain http on a developer's machine | the browser | that browser | at most 12 hours | signing out, its expiry | b; no consent needed ([D-37](decisions.md#d-37-personal-data-in-the-service)) |
-| Station profile: name, place to two decimals, height, SIMULATED instrument | `station_profiles` | the station, administrators | until deleted | `DELETE /v1/stations/{party}/profile` (the station or an administrator) | b |
+| Station profile: name, place exactly or to two decimals as the station chooses (`place`, [D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)), height, SIMULATED instrument | `station_profiles` | the station, administrators | until deleted | `DELETE /v1/stations/{party}/profile` (the station or an administrator) | b |
 | Request documents, with their titles | `files`, `requests` | the parties, administrators; anyone once published | while the service runs | an administrator, on request | b, f |
-| Observation files, naming the station's place to two decimals | `files`, `deliveries`, `chain_uploads` | the parties, administrators; anyone once published | while the service runs | an administrator, on request | b, f |
+| Observation files, naming the station's place as precisely as it chose | `files`, `deliveries`, `chain_uploads` | the parties, administrators; anyone once published | while the service runs | an administrator, on request | b, f |
 | Verification reports | `files`, `deliveries` | as above | while the service runs | as above | b, f |
 | Reasons for challenges and reviews | `chain_texts`, `requests.record_json`; their SHA-256 on the chain | the parties, administrators; anyone once published (`GET /v1/requests/{id}` hides them from other parties since step 4.7) | while the service runs | an administrator, on request; never the hash on the chain | b, f |
 | Reported transactions: hash, party, status, error | `transactions` | the party, administrators | while the service runs | an administrator, on request | b |
@@ -68,13 +72,14 @@ Phase 5, step 5.2 ([P5-06](decisions.md#p5-06-real-observations-from-score),
 observations that observers published themselves in SCORE under CC BY 4.0, in
 [`examples/real/`](../examples/real) and, since step 5.3
 ([D-46](decisions.md#d-46-the-method-measured-on-real-data)), in the validation set
-[`validation/real/`](../validation/real). Replays through the service (step 5.5) will
-hold the same kind of data.
+[`validation/real/`](../validation/real). Replays through the service (step 5.5,
+[D-51](decisions.md#d-51-replays)) hold the same kind of data.
 
 | Data | Where | Who sees it | Kept | Deleted by | Basis |
 |---|---|---|---|---|---|
 | Observers' ORCID iDs, the observer's place as published in SCORE, instrument, observation times and positions, SCORE's observation IDs | `examples/real/observations/`, `examples/real/CREDITS.md`, the quality reports in `examples/real/quality/` | public, as in SCORE | as long as the example is in the repository | a maintainer, on request: removed from the next version; the repository's history and others' copies stay | f |
 | The same, for the validation set | `validation/real/observations/`, `validation/real/CREDITS.md` | public, as in SCORE | as long as the set is in the repository | a maintainer, on request, as above | f |
+| The same, replayed through the service: the observation file, and the replay request naming the source, the licence and the observers' ORCID iDs | `files`, `deliveries`, `requests` | the parties, administrators; anyone once the replay is settled | while the service runs | an administrator, on request | f |
 | Station IDs (a hash of the place, instrument and observers) and file names, with each track's results | `validation/real/results.json`, `validation/real/known-answers.json`, the tables of [real-data-validation.md](real-data-validation.md) | public | as long as the set is in the repository | a maintainer, on request, as above | f |
 
 **GDPR article 14**, for data not obtained from the person, was read on 2026-11-21
@@ -134,8 +139,11 @@ Answers are due within a month (GDPR article 12(3)).
 
 ## Tests
 
-- `core/tests/test_privacy.py`: profiles rounded to two decimals; more precise
-  deliveries refused, and nothing kept of them; observations simulated with a
+- `core/tests/test_privacy.py`: no profile saved without the choice of exact or
+  about a kilometre; profiles rounded to two decimals when the station chose so, and
+  kept exactly when it chose so; changing the choice; a profile saved before the
+  choice stays rounded; more precise deliveries refused unless the station chose
+  exact, and nothing kept of them; observations simulated with a
   profile pass; deleting a profile (the station, an administrator, nobody else)
   and its idempotency copies; idempotency for 24 hours; the sweep and what it
   leaves; signing out everywhere; the follower and sign-ins sweeping; the

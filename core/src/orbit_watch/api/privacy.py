@@ -3,12 +3,14 @@
 The data inventory is ``docs/personal-data.md``; the privacy notice tells people what this
 module does. Two things live here:
 
-* **Station coordinates to about a kilometre.** A station may be someone's home, and what
-  a station delivers is published (decision D-17). With ``station_decimals`` set, as
-  ``orbit-watch serve`` sets it by default, the service keeps a station profile's
-  coordinates to that many decimals of a degree, and refuses a delivered file whose station
-  coordinates are more precise: a file is kept as it was delivered, since its SHA-256 is
-  what the chain and the attestations name. Two decimals are 1.1 km of latitude.
+* **Station coordinates exactly or to about a kilometre, as the observer chooses** (P5-11,
+  D-54). A station may be someone's home, and what a station delivers is published
+  (decision D-17). The observer chooses "exact" or "kilometre" when saving the profile,
+  with nothing chosen in advance; "kilometre" keeps the coordinates to two decimals of a
+  degree, 1.1 km of latitude. With ``station_decimals`` set, as ``orbit-watch serve`` sets
+  it by default, the service refuses a delivered file whose station coordinates are more
+  precise than that, unless its station chose "exact": a file is kept as it was delivered,
+  since its SHA-256 is what the chain and the attestations name.
 * **Retention.** ``sweep`` deletes what the service no longer needs: ended and expired
   sign-in sessions, used-up sign-in messages, the limits' counts once their window has
   passed and idempotency records after a day. The follower runs it, and so does every
@@ -26,6 +28,8 @@ from orbit_watch.storage import Database
 from orbit_watch.timeutil import format_utc
 
 STATION_DECIMALS = 2  # the public service's precision: about a kilometre
+# How precisely a station's place is published, as its observer chooses (P5-11, D-54).
+PLACES = ("exact", "kilometre")
 # How long an Idempotency-Key is remembered: a retry within it is answered from the record.
 IDEMPOTENCY_LIFETIME = timedelta(hours=24)
 # How long a sign-in message is kept after it expires (5 minutes after it was written), so

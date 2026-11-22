@@ -101,8 +101,8 @@ call.
 | `POST /v1/admin/demo-datasets/{name}` | admin | | one demo dataset, made afresh: `{file_name, format, observations, sha256, expected_verdict, expected_failures, simulated}` |
 | `POST /v1/admin/simulate` | admin | `{"profile": "sim-cmos-gps", "norad_id": 339001, "start": "…", "end": "…", "max_passes": 2}` | SIMULATED observations by a built-in station profile of an allowed target, in a window of at most three days; a real object along its stored element set nearest the middle of the window, refused with `no_reference_orbit` (409) without one within 7 days ([D-50](decisions.md#d-50-simulated-stations-on-real-objects)); changes nothing |
 | `GET /v1/public/station-templates` | none | | the built-in SIMULATED station profiles, as starting points ([D-30](decisions.md#d-30-the-observers-view)) |
-| `GET /v1/stations/{party}/profile` | that station, admin | | the station's profile |
-| `PUT /v1/stations/{party}/profile` | that station | `{"profile": <station profile>}` | register or replace the profile; its station ID is the party's own name; `serve` keeps its coordinates to two decimals ([personal data](#personal-data)) |
+| `GET /v1/stations/{party}/profile` | that station, admin | | the station's profile: `{party, profile, updated_at, place, place_chosen}`, where `place` is `exact` or `kilometre`, and `place_chosen` is false for a profile saved before the choice existed, kept to about a kilometre ([D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)) |
+| `PUT /v1/stations/{party}/profile` | that station | `{"profile": <station profile>, "place": "exact" or "kilometre"}` | register or replace the profile; its station ID is the party's own name; `place` is the observer's choice of how precisely its place is kept and published, with nothing chosen in advance (`place_required` without it), and `kilometre` keeps the coordinates to two decimals ([personal data](#personal-data)) |
 | `DELETE /v1/stations/{party}/profile` | that station, admin | | delete the profile: `{"party", "deleted": true}`, or `false` if there was none |
 | `POST /v1/requests/{id}/simulate` | the station that reserved it, with a profile | | SIMULATED observations of the request's target in its window, made with the station's profile: `{file_name, format, observations, sha256, simulated}`; only for a SIMULATED request (`real_request`, 409, otherwise); a real object along its stored element set nearest the window, `no_reference_orbit` (409) until the follower has fetched one ([D-50](decisions.md#d-50-simulated-stations-on-real-objects)); changes nothing |
 | `GET /v1/public/targets` | none | | the allow-list: the objects requests may target ([D-29](decisions.md#d-29-the-requesters-view), [D-49](decisions.md#d-49-real-objects-on-the-allow-list)). Each has `norad_id`, `name`, `simulated` and `source`: `service` (the service's own list), `celestrak` with its `groups`, or `administrator` with its `reason` and `added_at`. `simulated` is true when every target is; `groups` says when each of CelesTrak's groups was last fetched and how many objects it held |
@@ -396,11 +396,13 @@ inventory of every table and log is [personal-data.md](personal-data.md), and
 the web application shows the [privacy notice](legal/privacy-notice.md) and the
 [terms of use](legal/terms-of-use.md).
 
-- **Station coordinates to about a kilometre.** `orbit-watch serve` rounds a
-  station profile's latitude and longitude to two decimals of a degree, and
-  refuses a delivered Orbit Watch JSON file whose station coordinates are more
-  precise, with `422 too_precise`; the file is kept as delivered, since its
-  SHA-256 is what the chain names. `--station-decimals N` (or
+- **Station coordinates exactly or to about a kilometre.** The observer chooses
+  when saving the profile ([D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)).
+  With `kilometre`, the profile's latitude and longitude are kept to two decimals of
+  a degree, and `orbit-watch serve` refuses a delivered Orbit Watch JSON file whose
+  station coordinates are more precise, with `422 too_precise`. With `exact`, the
+  place is kept as given and the station's files may name it exactly. A file is kept
+  as delivered, since its SHA-256 is what the chain names. `--station-decimals N` (or
   `ORBIT_WATCH_STATION_DECIMALS`) sets another precision, `off` none. IOD and
   CCSDS TDM files name a station that the service's own sites file places.
   `create_app` applies no precision unless `station_decimals` is given.
