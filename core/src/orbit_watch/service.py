@@ -102,6 +102,8 @@ class Delivered:
     observations_format: str | None
     report_sha256: str
     verdict: str
+    # The sites document an IOD or TDM delivery was verified at: its station's profile (D-55).
+    sites_sha256: str | None = None
 
 
 @dataclass
@@ -161,7 +163,8 @@ class RequestService:
         if self.storage is not None:
             self.storage.db.execute(
                 "INSERT INTO deliveries (request_id, station, observations_sha256, "
-                "observations_format, report_sha256, verdict) VALUES (?, ?, ?, ?, ?, ?)",
+                "observations_format, report_sha256, verdict, sites_sha256) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     delivered.request_id,
                     delivered.station,
@@ -169,6 +172,7 @@ class RequestService:
                     delivered.observations_format,
                     delivered.report_sha256,
                     delivered.verdict,
+                    delivered.sites_sha256,
                 ),
             )
 
@@ -225,6 +229,7 @@ class RequestService:
                 row["observations_format"],
                 row["report_sha256"],
                 row["verdict"],
+                row["sites_sha256"],
             )
             for row in db.query("SELECT * FROM deliveries ORDER BY request_id")
         }
@@ -479,12 +484,20 @@ class RequestService:
         observations: bytes,
         now: datetime,
         observations_format: str | None = None,
+        sites: bytes | None = None,
     ) -> RequestRecord:
-        """Accept a delivery and run automated verification at once."""
+        """Accept a delivery and run automated verification at once. ``sites`` places an
+        IOD or TDM delivery's station at its profile's place (D-55)."""
         self.check_delivery(request_id, station, observations)
         observations_sha256 = sha256_bytes(observations)
         self._apply(request_id, lc.Deliver(now, station, observations_sha256))
-        delivered = self._verify(request_id, station, observations, observations_format)
+        delivered = self._verify(
+            request_id,
+            station,
+            observations,
+            observations_format,
+            None if sites is None else self._store(sites),
+        )
         self.adapter.attest(
             request_id,
             VERIFIER,
@@ -510,8 +523,11 @@ class RequestService:
         station: str,
         observations: bytes,
         observations_format: str | None,
+        sites_sha256: str | None = None,
     ) -> Delivered:
-        """Keep a delivered file, run automated verification and keep its report."""
+        """Keep a delivered file, run automated verification and keep its report. With
+        ``sites_sha256`` the station is placed by that stored sites document, its profile's
+        place (D-55); otherwise by the service's own sites file."""
         observations_sha256 = self._store(observations)
         try:
             norad_id = Request.parse(self.request_documents[request_id]).norad_id
@@ -531,7 +547,11 @@ class RequestService:
                     policy=self.policy_for(norad_id),
                     previous=previous,
                     declared_sha256=observations_sha256,
-                    sites=self.context.sites,
+                    sites=(
+                        self.context.sites
+                        if sites_sha256 is None
+                        else Sites.parse(self.files[sites_sha256])
+                    ),
                 )
             )
         except UsageError as error:  # a configuration problem, not the station's fault
@@ -544,6 +564,7 @@ class RequestService:
             observations_format,
             self._store(report_bytes),
             report["verdict"],
+            sites_sha256,
         )
         self._save_delivery(delivered)
         return delivered
@@ -985,6 +1006,8 @@ class RequestService:
                 ("observations", delivered.observations_sha256),
                 ("report", delivered.report_sha256),
             ]
+            if delivered.sites_sha256 is not None:
+                files.append(("station_place", delivered.sites_sha256))  # D-55
         return files
 
     def publication(self, request_id: str, now: datetime) -> dict[str, Any]:

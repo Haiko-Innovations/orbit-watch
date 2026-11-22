@@ -99,6 +99,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   is not saved without the choice, and it can be changed for later deliveries. Profiles
   saved before stay at about a kilometre until their owner chooses (migration 0013).
   A station that chose exact may deliver files with its exact place (D-54).
+- The profile is the station's place for every format (step 5.6, second part, #109): a
+  JSON delivery from another place is refused (`wrong_place`), and an IOD or CCSDS TDM
+  delivery is verified at the profile's place, which is kept and published with it as its
+  `station_place` file (migration 0014). The public service needs a profile to deliver
+  (`profile_required`); replays are exempt (D-55).
 
 ### Changed
 
@@ -117,6 +122,8 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 - The privacy notice (version of 22 November 2026) says that the station's place is kept
   as precisely as its observer chooses, and that replays publish their observers' ORCID
   iDs; the data inventory lists both (D-54).
+- `too_precise` is gone: a file more precise than its station's profile is from another
+  place, `wrong_place` (D-55).
 
 - Verification method 2.1.0 and report format 1.1: when the catalogue holds
   several element sets of the object, the residuals use the set nearest the

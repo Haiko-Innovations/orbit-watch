@@ -363,6 +363,7 @@ export const strings = {
     requestFile: "Request document",
     observations: "Observations",
     report: "Verification report",
+    stationPlace: "The station's place (the IOD or TDM file names only its station)",
     payments: "Payments",
     paidOut: (party: string, amount: string, reason: string) => `${party}: ${amount} (${reason})`,
     reasons: {

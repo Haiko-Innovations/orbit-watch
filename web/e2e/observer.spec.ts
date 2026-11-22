@@ -174,11 +174,12 @@ test("a station delivers its own file, sees why it failed, and challenges", asyn
   await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
 
   await reserve(page, "SIM-REQ-3005");
-  // The example file places SIM-ESPOO to a metre: the service keeps a kilometre (step 4.4).
+  // The example file places SIM-ESPOO to a metre, and its profile is to about a kilometre:
+  // the profile is the station's place for every delivery (D-55).
   await page.getByLabel("Observation file").setInputFiles(PRECISE_FILE);
   await page.getByRole("button", { name: "Prepare the delivery" }).click();
   await expect(page.getByRole("alert")).toContainText(
-    "this service keeps station coordinates to 2 decimals of a degree",
+    "The profile is your station's place for every delivery",
   );
   const wrongTarget = wrongTargetPath("station:SIM-ESPOO");
   await page.getByLabel("Observation file").setInputFiles(wrongTarget);

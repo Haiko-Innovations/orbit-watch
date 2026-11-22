@@ -24,7 +24,8 @@ One command starts, on this machine only:
 * SIM-REQ-3006 in review: SIM-ESPOO delivered good observations, the requester challenged
   them, and the escrow chose three reviewers, who have their tasks;
 * fresh SIMULATED good observations of SIM-CUBESAT-A by SIM-ESPOO, never delivered yet,
-  in ``datasets/`` (the service refuses data delivered before);
+  in ``datasets/`` (the service refuses data delivered before), at the place of SIM-ESPOO's
+  profile, which it saves last, to about a kilometre (D-55);
 * a stand-in for a real object (tests/stand_ins.py, decision D-53), on the allow-list with
   an element set uploaded by hand, all made up: SIM-REQ-3010, a SIMULATED request for it that
   SIM-ESPOO fulfilled with SIMULATED observations along its orbit, in its challenge period;
@@ -576,6 +577,26 @@ class LocalStack:
             "delivery_sha256": record["delivery_sha256"],
         }
 
+    def seed_profiles(self) -> None:
+        """SIM-ESPOO's profile, at its place to about a kilometre: the profile is a station's
+        place for every delivery (D-55), and the stack's datasets are at that place. Saved
+        after the seeded deliveries, whose phase 1 files place SIM-ESPOO to a metre."""
+        profile = json.loads(packaged("stations/sim-cmos-gps.json"))
+        body = json.dumps({"profile": profile, "place": "kilometre"}).encode("utf-8")
+        request = urllib.request.Request(
+            f"{self.api}/v1/stations/{ESPOO}/profile",
+            data=body,
+            method="PUT",
+            headers={
+                "Authorization": f"Bearer {self.keys[ESPOO]}",
+                "Content-Type": "application/json",
+                "Idempotency-Key": f"stack-profile-{uuid.uuid4().hex}",
+            },
+        )
+        with urllib.request.urlopen(request, timeout=10) as reply:
+            if reply.status != 200:
+                raise StackError(f"{ESPOO}'s profile was not saved: {reply.status}")
+
     def write_datasets(self) -> list[str]:
         """Good observations that pass verification and were never delivered."""
         folder = self.directory / "datasets"
@@ -726,6 +747,7 @@ def main(argv: list[str] | None = None) -> int:
         stack.seed_settled()
         stack.in_review = stack.seed_in_review()
         stack.datasets = stack.write_datasets()
+        stack.seed_profiles()
         if args.image:
             stack.serve_from_image()  # `orbit-watch serve`: its defaults apply
         else:

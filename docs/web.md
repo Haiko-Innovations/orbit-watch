@@ -42,7 +42,9 @@ What it has so far:
 On Open requests a signed-in station reserves a funded request. On the
 request's page the station that reserved it delivers: it chooses a file, or
 has the service simulate SIMULATED observations with its profile, which only a
-SIMULATED request takes; the page
+SIMULATED request takes. The profile is the station's place for every delivery: a file
+from another place is refused, and an IOD or TDM file's place is listed with the request's
+files ([D-55](decisions.md#d-55-the-profile-is-the-stations-place-for-every-format)); the page
 computes the file's SHA-256, and the transaction flow checks that the chain
 records exactly that. The request's parties see why the automated
 verification passed or failed, check by check; an observer may challenge a

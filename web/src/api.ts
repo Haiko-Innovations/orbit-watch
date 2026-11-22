@@ -303,7 +303,13 @@ export interface RequestView {
     outcome: string | null;
     outcome_reason: string | null;
   };
-  publication: { state: string; public_from: string | null; licence: string };
+  publication: {
+    state: string;
+    public_from: string | null;
+    licence: string;
+    /** The request's files by role, such as an IOD or TDM delivery's station place (D-55). */
+    files?: { role: string; sha256: string }[];
+  };
   chain?: { on_chain: boolean; status: string | null; events: ChainEvent[] };
 }
 

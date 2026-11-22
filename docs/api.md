@@ -78,7 +78,7 @@ call.
 | `POST /v1/requests/{id}/fund` | requester | `{"observer": 100, "reviewer": 10, "platform_fee": 0}` | lock the reward split and deposit the points |
 | `POST /v1/requests/{id}/cancel` | requester | | cancel before a reservation |
 | `POST /v1/requests/{id}/reserve` | station | | reserve the request |
-| `POST /v1/requests/{id}/deliveries?format=json\|iod\|tdm` | station | the observation file as is | deliver and verify at once; an optional `Content-SHA256` header must match the body |
+| `POST /v1/requests/{id}/deliveries?format=json\|iod\|tdm` | station | the observation file as is | deliver and verify at once; an optional `Content-SHA256` header must match the body. The station's profile is its place: a JSON file must name it (`wrong_place`), and an IOD or TDM file is verified at it, with a sites document published as the request's `station_place` file; `serve` needs a profile (`profile_required`, 409); a replay is exempt ([D-55](decisions.md#d-55-the-profile-is-the-stations-place-for-every-format)) |
 | `POST /v1/requests/{id}/challenge` | requester, station | `{"reason": "…"}` | challenge the automated result |
 | `GET /v1/requests/{id}/report` | the request's parties, admin; anyone once published | | the automated verification report |
 | `GET /v1/files/{sha256}` | the file's request parties (or calibration reviewer), admin; anyone once published | | a stored file |
@@ -399,13 +399,15 @@ the web application shows the [privacy notice](legal/privacy-notice.md) and the
 - **Station coordinates exactly or to about a kilometre.** The observer chooses
   when saving the profile ([D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)).
   With `kilometre`, the profile's latitude and longitude are kept to two decimals of
-  a degree, and `orbit-watch serve` refuses a delivered Orbit Watch JSON file whose
-  station coordinates are more precise, with `422 too_precise`. With `exact`, the
-  place is kept as given and the station's files may name it exactly. A file is kept
-  as delivered, since its SHA-256 is what the chain names. `--station-decimals N` (or
-  `ORBIT_WATCH_STATION_DECIMALS`) sets another precision, `off` none. IOD and
-  CCSDS TDM files name a station that the service's own sites file places.
-  `create_app` applies no precision unless `station_decimals` is given.
+  a degree; with `exact`, as given. The profile is then the station's place for every
+  delivery ([D-55](decisions.md#d-55-the-profile-is-the-stations-place-for-every-format)):
+  an Orbit Watch JSON file from another place is refused with `422 wrong_place`, and an
+  IOD or CCSDS TDM file is verified at the profile's place, which is published with it.
+  A file is kept as delivered, since its SHA-256 is what the chain names. `--station-decimals N` (or
+  `ORBIT_WATCH_STATION_DECIMALS`) sets another precision of "about a kilometre",
+  and `off` lets a station without a profile deliver, its IOD and TDM files placed
+  by the service's own sites file. `create_app` does the same unless
+  `station_decimals` is given.
 - **Deleting.** A station deletes its profile with
   `DELETE /v1/stations/{party}/profile`, which also deletes the copies of its
   answers that the idempotency records keep. A party ends its sessions with
@@ -428,7 +430,7 @@ stable; the HTTP status follows from the code:
 | 404 | `unknown_request`, `unknown_task`, `no_report`, `unknown_file`, `unknown_transaction`, `not_on_chain` |
 | 409 | `forbidden_in_status`, `already_voted`, `duplicate_request`, `key_reused`; on a chain `no_wallet`, `wallet_already_set`, `address_taken`, `already_on_chain`, `insufficient_balance`, `nothing_to_withdraw`, `points_not_used`, `sign_on_chain`, `transaction_pending` |
 | 413 | `too_large` (bodies over 4,000,000 bytes, [step 4.3](#limits-against-abuse)) |
-| 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers`, `too_precise` ([personal data](#personal-data)) |
+| 422 | everything else, for example `invalid_body`, `idempotency_key_required`, `hash_mismatch`, `reason_required`, `insufficient_points`, `not_enough_reviewers`, `wrong_place` ([personal data](#personal-data)) |
 | 429 | `rate_limited`, with `Retry-After` in seconds ([limits](#limits-against-abuse)) |
 | 503 | `verification_unavailable`, `chain_unavailable`, `read_only` ([read-only mode](#read-only-mode-and-backups)) |
 

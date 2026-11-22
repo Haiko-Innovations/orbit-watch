@@ -49,7 +49,7 @@ Legal bases (GDPR article 6(1)): **b**, the contract, that is the terms of use;
 | Session cookie `__Host-ow_session` over HTTPS (`Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`); `ow_session` over plain http on a developer's machine | the browser | that browser | at most 12 hours | signing out, its expiry | b; no consent needed ([D-37](decisions.md#d-37-personal-data-in-the-service)) |
 | Station profile: name, place exactly or to two decimals as the station chooses (`place`, [D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)), height, SIMULATED instrument | `station_profiles` | the station, administrators | until deleted | `DELETE /v1/stations/{party}/profile` (the station or an administrator) | b |
 | Request documents, with their titles | `files`, `requests` | the parties, administrators; anyone once published | while the service runs | an administrator, on request | b, f |
-| Observation files, naming the station's place as precisely as it chose | `files`, `deliveries`, `chain_uploads` | the parties, administrators; anyone once published | while the service runs | an administrator, on request | b, f |
+| Observation files, naming the station's place as precisely as it chose; for IOD and CCSDS TDM files, a sites document with the profile's place, without the station's name ([D-55](decisions.md#d-55-the-profile-is-the-stations-place-for-every-format)) | `files`, `deliveries` (`sites_sha256`), `chain_uploads` | the parties, administrators; anyone once published | while the service runs | an administrator, on request | b, f |
 | Verification reports | `files`, `deliveries` | as above | while the service runs | as above | b, f |
 | Reasons for challenges and reviews | `chain_texts`, `requests.record_json`; their SHA-256 on the chain | the parties, administrators; anyone once published (`GET /v1/requests/{id}` hides them from other parties since step 4.7) | while the service runs | an administrator, on request; never the hash on the chain | b, f |
 | Reported transactions: hash, party, status, error | `transactions` | the party, administrators | while the service runs | an administrator, on request | b |
@@ -142,8 +142,10 @@ Answers are due within a month (GDPR article 12(3)).
 - `core/tests/test_privacy.py`: no profile saved without the choice of exact or
   about a kilometre; profiles rounded to two decimals when the station chose so, and
   kept exactly when it chose so; changing the choice; a profile saved before the
-  choice stays rounded; more precise deliveries refused unless the station chose
-  exact, and nothing kept of them; observations simulated with a
+  choice stays rounded; a delivery needs the profile and comes from its place, and
+  nothing is kept of one from another place; an IOD delivery is placed at the
+  profile, and that place is published with it (`test_station_place.py` for the
+  rule itself); observations simulated with a
   profile pass; deleting a profile (the station, an administrator, nobody else)
   and its idempotency copies; idempotency for 24 hours; the sweep and what it
   leaves; signing out everywhere; the follower and sign-ins sweeping; the

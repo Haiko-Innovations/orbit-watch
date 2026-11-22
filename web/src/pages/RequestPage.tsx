@@ -568,6 +568,7 @@ function ObserverActions({
 function Files({ view }: { view: RequestView }) {
   const record = view.record;
   const id = record.request_id;
+  const place = view.publication.files?.find((file) => file.role === "station_place");
   const files = [
     { label: s.requestFile, sha: record.terms.request_sha256, name: `${id}-request.json` },
     record.delivery_sha256
@@ -576,6 +577,7 @@ function Files({ view }: { view: RequestView }) {
     record.report_sha256
       ? { label: s.report, sha: record.report_sha256, name: `${id}-report.json` }
       : null,
+    place ? { label: s.stationPlace, sha: place.sha256, name: `${id}-station-place.json` } : null,
   ].filter((file) => file !== null);
   return (
     <>

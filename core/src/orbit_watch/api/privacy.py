@@ -7,10 +7,10 @@ module does. Two things live here:
   D-54). A station may be someone's home, and what a station delivers is published
   (decision D-17). The observer chooses "exact" or "kilometre" when saving the profile,
   with nothing chosen in advance; "kilometre" keeps the coordinates to two decimals of a
-  degree, 1.1 km of latitude. With ``station_decimals`` set, as ``orbit-watch serve`` sets
-  it by default, the service refuses a delivered file whose station coordinates are more
-  precise than that, unless its station chose "exact": a file is kept as it was delivered,
-  since its SHA-256 is what the chain and the attestations name.
+  degree, 1.1 km of latitude. The profile is then the station's place for every delivery
+  (``orbit_watch.station_place``, D-55): a file is kept as it was delivered, since its
+  SHA-256 is what the chain and the attestations name, so a file from another place is
+  refused rather than changed.
 * **Retention.** ``sweep`` deletes what the service no longer needs: ended and expired
   sign-in sessions, used-up sign-in messages, the limits' counts once their window has
   passed and idempotency records after a day. The follower runs it, and so does every
@@ -20,7 +20,6 @@ module does. Two things live here:
 from __future__ import annotations
 
 import copy
-import json
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -48,34 +47,6 @@ def rounded_station(profile: dict[str, Any], decimals: int) -> dict[str, Any]:
             if isinstance(value, int | float) and not isinstance(value, bool):
                 station[name] = round(float(value), decimals)
     return rounded
-
-
-def _more_precise(value: Any, decimals: int) -> bool:
-    if not isinstance(value, int | float) or isinstance(value, bool):
-        return False
-    return round(float(value), decimals) != float(value)
-
-
-def too_precise(body: bytes, decimals: int) -> str | None:
-    """Why a delivered file may not be kept, or None. Only an Orbit Watch JSON observation
-    set names its station's coordinates; IOD and CCSDS TDM files name a station that the
-    service's own sites file places."""
-    try:
-        document = json.loads(body.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError):
-        return None  # not JSON: verification says what is wrong with it
-    station = document.get("station") if isinstance(document, dict) else None
-    if not isinstance(station, dict):
-        return None
-    if not any(
-        _more_precise(station.get(name), decimals) for name in ("latitude_deg", "longitude_deg")
-    ):
-        return None
-    return (
-        f"this service keeps station coordinates to {decimals} decimals of a degree (about a "
-        f"kilometre), and the file's are more precise: round the station's latitude_deg and "
-        f"longitude_deg to {decimals} decimals before you deliver it"
-    )
 
 
 def sweep(db: Database, now: datetime) -> dict[str, int]:
