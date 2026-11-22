@@ -89,6 +89,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   every page that shows requests, and a review task's page reads them from its files. A
   data sources page credits CelesTrak, SatChecker and SCORE with the statements they ask
   for (D-52).
+- The local stack has a made-up stand-in for a real object beside its SIMULATED requests
+  (step 5.5, third part, second half, #108). It is on the allow-list with an uploaded
+  orbit, with a SIMULATED request for it that a simulated station fulfilled, a real request
+  that is open, and a replay of made-up published observations that settled. The
+  end-to-end tests check their labels on every page (D-53).
 
 ### Changed
 
