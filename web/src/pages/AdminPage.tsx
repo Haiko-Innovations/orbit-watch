@@ -15,6 +15,7 @@ import {
   type TimelockOperation,
 } from "../api";
 import { DownloadLink } from "../components/Download";
+import { LabelTags } from "../components/Labels";
 import { actionKey } from "../components/SendFlow";
 import { Loaded, MaybeLink } from "../components/Status";
 import { addressLink, formatAmount, formatUtc, shortHex, utcFromInput } from "../format";
@@ -108,6 +109,7 @@ function RequestsTable({ overview }: { overview: AdminOverview }) {
               <tr key={item.request_id}>
                 <td>
                   <code>{item.request_id}</code>
+                  <LabelTags labels={item.labels} />
                   <br />
                   <span className="muted">{item.title ?? item.requester}</span>
                 </td>

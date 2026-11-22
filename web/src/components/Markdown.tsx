@@ -51,6 +51,14 @@ export function Markdown({ blocks }: { blocks: Block[] }) {
             <Parts parts={block.content} />
           </p>
         );
+      case "quote":
+        return (
+          <blockquote key={key}>
+            <p>
+              <Parts parts={block.content} />
+            </p>
+          </blockquote>
+        );
       case "list": {
         const items = block.items.map((item, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: a fixed document, never reordered

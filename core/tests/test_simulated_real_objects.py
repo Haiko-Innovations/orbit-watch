@@ -94,6 +94,20 @@ def test_a_simulated_station_observes_a_real_object(world):  # noqa: F811
     assert reference["source"]["kept_from"] == "celestrak"
     assert reference["epoch"].startswith("2026-11-01T00:00:00")
 
+    # Each part says what it is (P5-09, D-52): a real object and orbit, SIMULATED
+    # observations, and so a SIMULATED request.
+    labels = service.labels(rid)
+    assert labels["request_simulated"] is True
+    assert labels["object"]["simulated"] is False and labels["object"]["source"] == "celestrak"
+    assert labels["object"]["groups"] == ["science"]
+    assert labels["reference_orbit"]["source"] == "celestrak"
+    assert labels["reference_orbit"]["simulated"] is False and labels["reference_orbit"]["final"]
+    assert labels["observations"] == {
+        "kind": "simulated",
+        "station": STATION,
+        "sha256": service.deliveries[rid].observations_sha256,
+    }
+
 
 def test_a_real_request_takes_no_simulated_observations(world):  # noqa: F811
     fetch_all_groups(world)

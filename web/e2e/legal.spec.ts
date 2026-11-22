@@ -27,11 +27,15 @@ test("the notice and the terms need no service at all", async ({ page }) => {
   await expect(page.locator("article.legal")).toContainText("no value");
 });
 
-test("every page links to both, and the links lead there", async ({ page }) => {
+test("every page links to them, and the links lead there", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Network" })).toBeVisible();
-  const legal = page.getByRole("navigation", { name: "Privacy and terms" });
-  await expect(legal.getByRole("link")).toHaveText(["Privacy notice", "Terms of use"]);
+  const legal = page.getByRole("navigation", { name: "Privacy, terms and data sources" });
+  await expect(legal.getByRole("link")).toHaveText([
+    "Privacy notice",
+    "Terms of use",
+    "Data sources",
+  ]);
 
   await legal.getByRole("link", { name: "Privacy notice" }).click();
   await expect(page).toHaveURL(/#\/privacy$/);
@@ -40,6 +44,19 @@ test("every page links to both, and the links lead there", async ({ page }) => {
   await page.locator("article.legal").getByRole("link", { name: "terms of use" }).click();
   await expect(page).toHaveURL(/#\/terms$/);
   await expect(page.getByRole("heading", { level: 1, name: "Terms of use" })).toBeFocused();
+});
+
+test("the data sources credit their sources, without the service", async ({ page }) => {
+  await page.route("**/v1/**", (route) => route.abort());
+  await page.goto("/#/terms");
+  await page.locator("article.legal").getByRole("link", { name: "data sources" }).click();
+  await expect(page).toHaveURL(/#\/data-sources$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Data sources" })).toBeFocused();
+  await expect(page).toHaveTitle("Data sources · Orbit Watch");
+  const article = page.locator("article.legal");
+  await expect(article).toContainText("CelesTrak");
+  await expect(article.locator("blockquote")).toHaveCount(3); // SatChecker's and SCORE's
+  await expect(article).toContainText("SCORE is hosted at the NSF NOIRLab");
 });
 
 test("the old addresses of translations are not found", async ({ page }) => {

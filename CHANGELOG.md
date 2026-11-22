@@ -82,6 +82,13 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   has ended. Only its replay station reserves and delivers it, only that file, and only
   once the service keeps SatChecker's set near the window. The place is kept as
   published, and the testnet reward goes to the replay station (D-51).
+- Labels by source (step 5.5, third part, first half, #108): `labels` in request summaries,
+  request lists, open requests and the administrator's overview say whether the request is
+  SIMULATED, what its object is and why it is on the list, where its reference orbit comes
+  from with its epoch, and whose its observations are. The web application shows them on
+  every page that shows requests, and a review task's page reads them from its files. A
+  data sources page credits CelesTrak, SatChecker and SCORE with the statements they ask
+  for (D-52).
 
 ### Changed
 
@@ -94,6 +101,9 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   and a station's simulator refuses a real request (`real_request`): SIMULATED
   observations cannot fulfil it. On a real request's page the web application shows no
   simulate button and says why (D-50).
+- The testnet label and the terms of use (version of 22 November 2026) no longer say that
+  all data is SIMULATED: SIMULATED and real data run side by side, and each says which it
+  is (D-52).
 
 - Verification method 2.1.0 and report format 1.1: when the catalogue holds
   several element sets of the object, the residuals use the set nearest the

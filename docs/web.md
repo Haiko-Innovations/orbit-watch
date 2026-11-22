@@ -16,7 +16,8 @@ Accessibility: [accessibility.md](accessibility.md).
 
 > **Testnet only, no real value.** The web application runs locally
 > ([P3-10](decisions.md#p3-10-no-public-deployment-in-phase-3)). Every page
-> says which chain it is on and that all data is SIMULATED.
+> says which chain it is on, and that SIMULATED and real data run side by side
+> ([D-52](decisions.md#d-52-labels-by-source-on-every-page)).
 
 One single-page application in TypeScript and React, built with Vite. The
 Python service serves its build on the API's own origin, so the browser talks
@@ -55,9 +56,17 @@ failed result.
 | Administration | `#/admin` | administrators only: every request with its status, delivery and payments; errors, transactions and the event log; `tick`; the reviewer registry, the timelock's operations and the data for the Safe; the simulator and the demo datasets |
 
 | Privacy notice | `#/privacy` | public: what the service keeps about people, why and for how long ([`docs/legal`](legal), [personal-data.md](personal-data.md)) |
-| Terms of use | `#/terms` | public: testnet only, SIMULATED data, what may be done, the CC BY 4.0 publication, no warranty |
+| Terms of use | `#/terms` | public: testnet only, SIMULATED and real data side by side, what may be done, the CC BY 4.0 publication, no warranty |
+| Data sources | `#/data-sources` | public: where the real data comes from, CelesTrak, SatChecker and SCORE, with the acknowledgements and the statement they ask for ([D-52](decisions.md#d-52-labels-by-source-on-every-page)) |
 
-Every page's footer links to the privacy notice and the terms. Those pages are the Markdown files in `docs/legal`, read by a small
+Every page's footer links to the privacy notice, the terms and the data sources.
+
+Every page that shows objects, reference orbits or observations says what each is, by its
+source: a SIMULATED or real object and why it is on the allow-list, the reference orbit's
+source and epoch, and SIMULATED, replayed or a station's own observations, with a replay's
+source, licence and observers. A request's page and the open requests show these labels in
+full; the lists of requests tag each request; a review task's page reads them from its files
+([D-52](decisions.md#d-52-labels-by-source-on-every-page)). Those pages are the Markdown files in `docs/legal`, read by a small
 reader of the part of Markdown they use (`web/src/legal/markdown.ts`), and need
 neither the service nor signing in. The public pages need no sign-in. The administrator view uses the API only,
 and the API checks every call's role, so the view can do nothing the API

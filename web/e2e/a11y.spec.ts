@@ -46,6 +46,7 @@ function views(browser: Browser): View[] {
     { name: "Page not found", path: "/#/nowhere", heading: "Page not found" },
     { name: "Privacy notice", path: "/#/privacy", heading: "Privacy notice" },
     { name: "Terms of use", path: "/#/terms", heading: "Terms of use" },
+    { name: "Data sources", path: "/#/data-sources", heading: "Data sources" },
     { name: "Your account", path: "/#/account", heading: "Your account", party: REQUESTER },
     { name: "Your requests", path: "/#/my-requests", heading: "Your requests", party: REQUESTER },
     { name: "New request", path: "/#/new-request", heading: "New request", party: REQUESTER },
@@ -105,11 +106,11 @@ async function open(browser: Browser, view: View): Promise<Page> {
   await page.goto(path);
   await expect(page.getByRole("heading", { level: 1, name: view.heading })).toBeVisible();
   await expect(page.getByText("Loading…")).toHaveCount(0);
-  // Every page links to the privacy notice and the terms (step 4.4).
+  // Every page links to the privacy notice, the terms (step 4.4) and the data sources (D-52).
   const legal = page
     .getByRole("contentinfo")
-    .getByRole("navigation", { name: "Privacy and terms" });
-  await expect(legal.getByRole("link")).toHaveCount(2);
+    .getByRole("navigation", { name: "Privacy, terms and data sources" });
+  await expect(legal.getByRole("link")).toHaveCount(3);
   return page;
 }
 

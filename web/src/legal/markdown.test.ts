@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import sources from "../../../docs/legal/data-sources.md?raw";
 import privacy from "../../../docs/legal/privacy-notice.md?raw";
 import terms from "../../../docs/legal/terms-of-use.md?raw";
 import { type Block, inline, MarkdownError, parseMarkdown, title } from "./markdown";
@@ -61,7 +62,8 @@ describe("parseMarkdown", () => {
     for (const source of [
       "<p>html</p>",
       "| a | b |",
-      "> quote",
+      ">quote without a space",
+      "> a quote\nthat runs on",
       "#### four",
       "    indented code",
       "* star list",
@@ -76,7 +78,21 @@ describe("parseMarkdown", () => {
   });
 });
 
-const documents = { "privacy notice": privacy, "terms of use": terms } as const;
+describe("quotes", () => {
+  it("read a statement that a source asks for, over several lines", () => {
+    expect(parseMarkdown("Text:\n\n> One line\n> and the next.\n\nAfter.")).toEqual<Block[]>([
+      { kind: "paragraph", content: [{ kind: "text", text: "Text:" }] },
+      { kind: "quote", content: [{ kind: "text", text: "One line and the next." }] },
+      { kind: "paragraph", content: [{ kind: "text", text: "After." }] },
+    ]);
+  });
+});
+
+const documents = {
+  "privacy notice": privacy,
+  "terms of use": terms,
+  "data sources": sources,
+} as const;
 
 describe.each(Object.entries(documents))("the %s", (_, source) => {
   it("reads, with one title", () => {
@@ -92,7 +108,9 @@ describe.each(Object.entries(documents))("the %s", (_, source) => {
         .map((part) => (part.kind === "link" ? part.href : "")),
     );
     expect(hrefs.length).toBeGreaterThan(0);
-    for (const href of hrefs) expect(href).toMatch(/^(https:\/\/|mailto:|#\/(privacy|terms))/);
+    for (const href of hrefs) {
+      expect(href).toMatch(/^(https:\/\/|mailto:|#\/(privacy|terms|data-sources))/);
+    }
   });
 });
 
@@ -103,5 +121,23 @@ describe("the privacy notice", () => {
     expect(privacy).toContain("section 205 of the Finnish Act on Electronic Communications");
     expect(privacy).toContain("two decimals of a degree");
     expect(privacy).toContain("its logs are kept for at most 30 days");
+  });
+});
+
+describe("the data sources", () => {
+  it("credit CelesTrak, SatChecker and SCORE with the statements they ask for", () => {
+    expect(sources).toContain("CelesTrak");
+    expect(sources).toContain("SatChecker is hosted at the NSF NOIRLab");
+    expect(sources).toContain("SCORE is hosted at the NSF NOIRLab");
+    expect(sources).toContain(
+      "do not necessarily reflect the views of the NSF NOIRLab, the SKAO, the IAU",
+    );
+    expect(sources).toContain("Creative Commons Attribution 4.0");
+  });
+
+  it("are linked from the terms of use, which no longer call everything SIMULATED", () => {
+    expect(terms).toContain("(#/data-sources)");
+    expect(terms).toContain("SIMULATED data and real data side by side");
+    expect(terms).not.toContain("which are SIMULATED and civilian");
   });
 });

@@ -132,6 +132,7 @@ def test_the_request_list_names_requesters_and_titles(world):  # noqa: F811
     document = dict(REQUEST, request_id="SIM-REQ-0004", title="SIMULATED: a title")
     client.call("POST", "/v1/requests", requester, {"request": document})
     [listed] = client.call("GET", "/v1/requests", requester).json()["requests"]
+    labels = listed.pop("labels")
     assert listed == {
         "request_id": "SIM-REQ-0004",
         "requester": REQUESTER,
@@ -141,3 +142,10 @@ def test_the_request_list_names_requesters_and_titles(world):  # noqa: F811
         "status": "draft",
         "outcome": None,
     }
+    # What each part is (P5-09, D-52): all SIMULATED here, nothing delivered yet.
+    assert labels["request_simulated"] is True
+    assert labels["object"]["simulated"] is True and labels["object"]["source"] == "service"
+    assert labels["reference_orbit"]["source"] == "service"
+    assert labels["reference_orbit"]["simulated"] is True
+    assert labels["reference_orbit"]["final"] is False
+    assert labels["observations"] is None and labels["replay"] is None

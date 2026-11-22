@@ -3,6 +3,7 @@ import { ApiError, getJson, postJson, type Target } from "../api";
 import { actionKey } from "../components/SendFlow";
 import { Loaded } from "../components/Status";
 import { inputFromUtc, utcFromInput } from "../format";
+import { objectText } from "../labels";
 import { paths } from "../router";
 import { strings } from "../strings";
 import { useResource } from "../useResource";
@@ -208,6 +209,17 @@ function RequestForm({ targets }: { targets: Targets }) {
         </p>
       ) : chosen ? (
         <div className="field">
+          <p className="muted" data-testid="target-source">
+            {objectText({
+              norad_id: chosen.norad_id,
+              name: chosen.name,
+              simulated: false,
+              source: chosen.source ?? null,
+              groups: chosen.groups,
+              reason: chosen.reason,
+              on_list: true,
+            })}
+          </p>
           <label className="choice">
             <input
               type="checkbox"

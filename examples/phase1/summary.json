@@ -31,6 +31,30 @@
             ]
           },
           "reference": "ledger:22"
+        },
+        "labels": {
+          "request_simulated": true,
+          "object": {
+            "norad_id": 339001,
+            "name": "SIM-CUBESAT-A (SIMULATED)",
+            "simulated": true,
+            "source": "service",
+            "on_list": true
+          },
+          "reference_orbit": {
+            "source": "service",
+            "source_name": "the service's own catalogue",
+            "simulated": true,
+            "epoch": "2026-11-01T00:00:00.000000",
+            "element_set_sha256": "b5b289e7f60495b657f0e863e7366d5753a8abca7027939a65e3f5cc9db0e8ec",
+            "final": true
+          },
+          "observations": {
+            "kind": "simulated",
+            "station": "station:SIM-ESPOO",
+            "sha256": "70490cba5e7e2474ebe71f1b0dbccf6d6f947a8d7dc93aa00d8a62567bbf6f3d"
+          },
+          "replay": null
         }
       },
       "publication": {
@@ -120,6 +144,30 @@
             ]
           },
           "reference": "ledger:19"
+        },
+        "labels": {
+          "request_simulated": true,
+          "object": {
+            "norad_id": 339001,
+            "name": "SIM-CUBESAT-A (SIMULATED)",
+            "simulated": true,
+            "source": "service",
+            "on_list": true
+          },
+          "reference_orbit": {
+            "source": "service",
+            "source_name": "the service's own catalogue",
+            "simulated": true,
+            "epoch": "2026-11-01T00:00:00.000000",
+            "element_set_sha256": "b5b289e7f60495b657f0e863e7366d5753a8abca7027939a65e3f5cc9db0e8ec",
+            "final": true
+          },
+          "observations": {
+            "kind": "simulated",
+            "station": "station:SIM-ESPOO",
+            "sha256": "da63a0ae428c598cd8c6f2c303db98325e81e195128ea5b05ee8db3804fb58d1"
+          },
+          "replay": null
         }
       },
       "publication": {
@@ -177,6 +225,30 @@
             ]
           },
           "reference": "ledger:23"
+        },
+        "labels": {
+          "request_simulated": true,
+          "object": {
+            "norad_id": 339001,
+            "name": "SIM-CUBESAT-A (SIMULATED)",
+            "simulated": true,
+            "source": "service",
+            "on_list": true
+          },
+          "reference_orbit": {
+            "source": "service",
+            "source_name": "the service's own catalogue",
+            "simulated": true,
+            "epoch": "2026-11-01T00:00:00.000000",
+            "element_set_sha256": "b5b289e7f60495b657f0e863e7366d5753a8abca7027939a65e3f5cc9db0e8ec",
+            "final": true
+          },
+          "observations": {
+            "kind": "simulated",
+            "station": "station:SIM-OULU",
+            "sha256": "2a353b86c6a01a36c5343005588a9ae75d366034429ce2d71be2e47df9237d14"
+          },
+          "replay": null
         }
       },
       "publication": {
@@ -248,6 +320,30 @@
             ]
           },
           "reference": "ledger:24"
+        },
+        "labels": {
+          "request_simulated": true,
+          "object": {
+            "norad_id": 339001,
+            "name": "SIM-CUBESAT-A (SIMULATED)",
+            "simulated": true,
+            "source": "service",
+            "on_list": true
+          },
+          "reference_orbit": {
+            "source": "service",
+            "source_name": "the service's own catalogue",
+            "simulated": true,
+            "epoch": "2026-11-01T00:00:00.000000",
+            "element_set_sha256": "b5b289e7f60495b657f0e863e7366d5753a8abca7027939a65e3f5cc9db0e8ec",
+            "final": true
+          },
+          "observations": {
+            "kind": "simulated",
+            "station": "station:SIM-KUOPIO",
+            "sha256": "93fb35ed9f8fe413fdc3bb21791f438341a05a565873b853aa56bc012766d764"
+          },
+          "replay": null
         }
       },
       "publication": {
@@ -305,6 +401,26 @@
             ]
           },
           "reference": "ledger:21"
+        },
+        "labels": {
+          "request_simulated": true,
+          "object": {
+            "norad_id": 339001,
+            "name": "SIM-CUBESAT-A (SIMULATED)",
+            "simulated": true,
+            "source": "service",
+            "on_list": true
+          },
+          "reference_orbit": {
+            "source": "service",
+            "source_name": "the service's own catalogue",
+            "simulated": true,
+            "epoch": "2026-11-01T00:00:00.000000",
+            "element_set_sha256": "b5b289e7f60495b657f0e863e7366d5753a8abca7027939a65e3f5cc9db0e8ec",
+            "final": false
+          },
+          "observations": null,
+          "replay": null
         }
       },
       "publication": {

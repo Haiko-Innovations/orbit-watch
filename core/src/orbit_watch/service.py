@@ -43,7 +43,7 @@ from orbit_watch import lifecycle as lc
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.catalog import parse_catalog
 from orbit_watch.documents import Replay, Request
-from orbit_watch.formats import FormatError, Sites
+from orbit_watch.formats import FormatError, Sites, detect_format, load_observation_sets
 from orbit_watch.lifecycle import RequestRecord, Status, TransitionError
 from orbit_watch.reviewers import ReviewerError, ReviewerRegistry
 from orbit_watch.settlement import SettlementAdapter, SettlementError, settlement_plan
@@ -130,6 +130,7 @@ class RequestService:
     allowlist_additions: dict[int, dict[str, Any]] = field(default_factory=dict)
     _targets: dict[int, allowlist.Target] | None = field(default=None, repr=False)
     _replays: dict[str, Replay | None] = field(default_factory=dict, repr=False)
+    _simulated_files: dict[str, bool] = field(default_factory=dict, repr=False)
     storage: Storage | None = None
     # The testnet chain (step 2.6): an orbit_watch.chain.link.ChainLink, or None.
     chain: Any = None
@@ -1047,6 +1048,7 @@ class RequestService:
                     "status": str(record.status),
                     "requester": record.requester,
                     "request": document,
+                    "labels": self.labels(request_id),
                     "request_sha256": terms.request_sha256,
                     "terms": {
                         "target_norad_id": terms.target_norad_id,
@@ -1132,7 +1134,107 @@ class RequestService:
             "reviewers": list(record.reviewers),
             "votes": [[r, a] for r, a in record.votes],
             "settlement": self.settlements.get(request_id),
+            "labels": self.labels(request_id),
         }
+
+    # ------------------------------------------------------------------ labels (P5-09)
+
+    def labels(self, request_id: str) -> dict[str, Any]:
+        """What each part of a request is, by its source (P5-09, D-52): the request, its
+        object, its reference orbit and its observations. SIMULATED is said of what is
+        simulated, and only of that."""
+        document = Request.parse(self.request_documents[request_id])
+        return {
+            "request_simulated": document.simulated,
+            "object": self._object_label(document),
+            "reference_orbit": self._reference_label(request_id, document),
+            "observations": self._observations_label(request_id),
+            "replay": None if document.replay is None else document.replay.public(),
+        }
+
+    def _object_label(self, document: Request) -> dict[str, Any]:
+        norad = document.norad_id
+        target = self.targets().get(norad)
+        if target is not None:
+            label = target.public()
+            label["on_list"] = True
+            return label
+        # No longer on the list (an object can leave CelesTrak's groups): what it is.
+        return {
+            "norad_id": norad,
+            "name": document.target_name,
+            "simulated": norad in self.simulated_objects(),
+            "source": None,
+            "on_list": False,
+        }
+
+    def _reference_label(self, request_id: str, document: Request) -> dict[str, Any] | None:
+        """The set the report named, once there is one; before that, the stored set nearest
+        the window, which may still change, or the service's own record of the object."""
+        delivered = self.deliveries.get(request_id)
+        if delivered is not None:
+            report = json.loads(self.files[delivered.report_sha256])
+            block = report.get("reference_orbit")
+            if isinstance(block, dict):
+                kept = (block.get("source") or {}).get("kept_from")
+                return self._orbit(kept, block["epoch"], block["element_set_sha256"], final=True)
+            return None
+        middle = document.window_start + (document.window_end - document.window_start) / 2
+        stored = [s for s in self.element_sets.get(document.norad_id, []) if s.epoch_time]
+        if stored:
+            nearest = min(stored, key=lambda s: (abs(s.epoch_time - middle), s.epoch, s.sha256))
+            return self._orbit(nearest.source, nearest.epoch, nearest.sha256, final=False)
+        base = parse_catalog(self.context.catalog)
+        if document.norad_id in base.sets:
+            nearest_set = base.nearest(document.norad_id, middle)
+            return self._orbit(
+                None, str(nearest_set.record.get("EPOCH")), nearest_set.sha256, final=False
+            )
+        return None
+
+    def _orbit(self, kept: str | None, epoch: str, sha256: str, *, final: bool) -> dict[str, Any]:
+        """A reference orbit's label: a stored set by its source, or else the service's own
+        catalogue, which is SIMULATED when the catalogue is."""
+        if kept in orbits.SOURCE_NAMES:
+            source, name, simulated = kept, orbits.SOURCE_NAMES[kept], False
+        else:
+            source = "service"
+            name = "the service's own catalogue"
+            simulated = parse_catalog(self.context.catalog).simulated
+        return {
+            "source": source,
+            "source_name": name,
+            "simulated": simulated,
+            "epoch": epoch,
+            "element_set_sha256": sha256,
+            "final": final,
+        }
+
+    def _observations_label(self, request_id: str) -> dict[str, Any] | None:
+        delivered = self.deliveries.get(request_id)
+        if delivered is None:
+            return None
+        if self.replay_of(request_id) is not None:
+            kind = "replayed"
+        else:
+            kind = "simulated" if self._file_simulated(delivered) else "station"
+        return {"kind": kind, "station": delivered.station, "sha256": delivered.observations_sha256}
+
+    def _file_simulated(self, delivered: Delivered) -> bool:
+        """Whether a delivered file says it is SIMULATED; kept, since files never change."""
+        sha256 = delivered.observations_sha256
+        if sha256 not in self._simulated_files:
+            data = self.files[sha256]
+            try:
+                fmt = delivered.observations_format or detect_format("", data)
+                loaded = load_observation_sets(
+                    "delivery", data=data, input_format=fmt, sites=self.context.sites
+                )
+                found = any(observed.simulated for observed in loaded.sets)
+            except (FormatError, ValueError):
+                found = False  # unreadable: verification failed it, and it says nothing
+            self._simulated_files[sha256] = found
+        return self._simulated_files[sha256]
 
 
 def open_service(

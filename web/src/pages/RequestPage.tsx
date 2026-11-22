@@ -10,6 +10,7 @@ import {
   type Session,
 } from "../api";
 import type { Prepared } from "../chain/describe";
+import { RequestLabels } from "../components/Labels";
 import { actionKey, SendFlow } from "../components/SendFlow";
 import { Loaded, MaybeLink } from "../components/Status";
 import { Verification } from "../components/Verification";
@@ -677,6 +678,7 @@ export function RequestPage({
               {record.outcome ? ` · ${s.outcome(record.outcome)}` : ""}
             </p>
             <Progress view={view} />
+            <RequestLabels labels={view.summary.labels} />
             {mine ? (
               <RequesterActions view={view} chain={chain} session={session} reload={reload} />
             ) : null}

@@ -71,9 +71,9 @@ call.
 | `GET /v1/health/reference-orbits` | none | | whether the follower fetches reference orbits: `503` with `"status": "stopped"` when it has stopped asking a source and waits for a person, `200` with `"ok"`, or `"off"` when the service does not fetch; per source the time, object, HTTP status and reason of a stop, and the objects without public data ([fetching reference orbits](#fetching-reference-orbits)) |
 | `GET`, `POST /v1/internal/follow` | the follower's secret | | run the follower once: `{changed, sent, followed_at}`, on a chain also `synced_block`; `404` when the service has no follower secret |
 | `GET /v1/internal/backup` | the backup token | | an encrypted backup of the database, streamed ([backups](#read-only-mode-and-backups)); `404` when the service has no backup token |
-| `GET /v1/requests` | any | | all requests with requester, title, reserving station, observer, status and outcome |
+| `GET /v1/requests` | any | | all requests with requester, title, reserving station, observer, status, outcome and `labels` |
 | `POST /v1/requests` | requester | `{"request": <request document>, "terms": {…}}` | create a request in draft; `terms` may set `delivery_deadline`, `reservation_hours`, `challenge_period_hours`, `review_hours`, `verification_timeout_hours`, `embargo_days`; a target not on the allow-list is refused with `target_not_allowed` ([D-49](decisions.md#d-49-real-objects-on-the-allow-list)), a real request for a SIMULATED object with `simulated_target`, and a replay request with `replay_admin_only` (403: an administrator creates replays); a request for a real object may be SIMULATED, for simulated stations to observe it ([D-50](decisions.md#d-50-simulated-stations-on-real-objects)) |
-| `GET /v1/requests/{id}` | any | | summary and full lifecycle record; the reasons people wrote (`challenge_reason`, `vote_reasons`) only for the request's parties and administrators, or once it is published, and otherwise `"reasons_hidden": true` |
+| `GET /v1/requests/{id}` | any | | summary, with its `labels`, and full lifecycle record; the reasons people wrote (`challenge_reason`, `vote_reasons`) only for the request's parties and administrators, or once it is published, and otherwise `"reasons_hidden": true` |
 | `POST /v1/requests/{id}/open` | requester | | publish; freezes the terms |
 | `POST /v1/requests/{id}/fund` | requester | `{"observer": 100, "reviewer": 10, "platform_fee": 0}` | lock the reward split and deposit the points |
 | `POST /v1/requests/{id}/cancel` | requester | | cancel before a reservation |
@@ -107,7 +107,7 @@ call.
 | `POST /v1/requests/{id}/simulate` | the station that reserved it, with a profile | | SIMULATED observations of the request's target in its window, made with the station's profile: `{file_name, format, observations, sha256, simulated}`; only for a SIMULATED request (`real_request`, 409, otherwise); a real object along its stored element set nearest the window, `no_reference_orbit` (409) until the follower has fetched one ([D-50](decisions.md#d-50-simulated-stations-on-real-objects)); changes nothing |
 | `GET /v1/public/targets` | none | | the allow-list: the objects requests may target ([D-29](decisions.md#d-29-the-requesters-view), [D-49](decisions.md#d-49-real-objects-on-the-allow-list)). Each has `norad_id`, `name`, `simulated` and `source`: `service` (the service's own list), `celestrak` with its `groups`, or `administrator` with its `reason` and `added_at`. `simulated` is true when every target is; `groups` says when each of CelesTrak's groups was last fetched and how many objects it held |
 | `GET /v1/public/reference-orbits` | none | | the real element sets the service keeps, by name only: object, epoch, source and SHA-256, never the elements (`?norad_id=` for one object; [P5-05](decisions.md#p5-05-orbit-data-stays-out-of-the-repository)) |
-| `GET /v1/public/open-requests` | none | | requests that invite observers: opened or funded, not reserved, with their request document, terms and reward split ([D-26](decisions.md#d-26-open-requests-are-public)) |
+| `GET /v1/public/open-requests` | none | | requests that invite observers: opened or funded, not reserved, with their request document, `labels`, terms and reward split ([D-26](decisions.md#d-26-open-requests-are-public)) |
 | `GET /v1/public/requests` | none | | published requests ([data-publication.md](data-publication.md)) |
 | `GET /v1/public/requests/{id}` | none | | one published request |
 | `GET /v1/public/files/{sha256}` | none | | a published file, with its licence in a `Link` header |
@@ -118,6 +118,31 @@ Deadlines move on and finished requests are settled by [the
 follower](#the-follower), or when an admin calls `tick`. Calls on a request
 already take its passed deadlines into account: for example, a delivery after
 the reservation lapsed is refused.
+
+
+### Labels
+
+A request's `labels` say what each of its parts is, by its source
+([P5-09](decisions.md#p5-09-real-and-simulated-side-by-side),
+[D-52](decisions.md#d-52-labels-by-source-on-every-page)):
+
+```json
+{
+  "request_simulated": true,
+  "object": {"norad_id": 99015, "name": "…", "simulated": false, "source": "celestrak", "groups": ["science"], "on_list": true},
+  "reference_orbit": {"source": "celestrak", "source_name": "CelesTrak", "simulated": false, "epoch": "…", "element_set_sha256": "…", "final": true},
+  "observations": {"kind": "simulated", "station": "station:…", "sha256": "…"},
+  "replay": null
+}
+```
+
+`object.source` is `service`, `celestrak` or `administrator` (with `reason` and
+`added_at`), as in `GET /v1/public/targets`; `on_list` is false for an object that has
+left the list. `reference_orbit.source` is `celestrak`, `satchecker`, `uploaded` or
+`service` (the service's own catalogue). It is the set the report named once there is a
+report (`final`), and before that the stored set nearest the window, or `null` if there is
+none yet. `observations` is `null` until a delivery, and its `kind` is `simulated`,
+`replayed` or `station`. `replay` is a replay's block from its request document (D-51).
 
 ## The follower
 

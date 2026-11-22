@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { getJson, type RequestListItem, type Session } from "../api";
+import { LabelTags } from "../components/Labels";
 import { Loaded } from "../components/Status";
 import { paths } from "../router";
 import { strings } from "../strings";
@@ -31,6 +32,7 @@ export function MyRequestsPage({ session }: { session: Session }) {
               {items.map((item) => (
                 <li key={item.request_id}>
                   <a href={paths.request(item.request_id)}>{item.title ?? item.request_id}</a>
+                  <LabelTags labels={item.labels} />
                   <span className="muted">
                     <code>{item.request_id}</code> ·{" "}
                     {strings.request.status[item.status] ?? item.status}

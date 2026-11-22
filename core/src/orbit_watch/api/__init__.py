@@ -832,6 +832,7 @@ class Api:
                     "observer": record.observer,
                     "status": str(record.status),
                     "outcome": None if record.outcome is None else str(record.outcome),
+                    "labels": self.service.labels(rid),
                 }
                 for rid, record in sorted(self.service.records.items())
             ]
@@ -1379,6 +1380,7 @@ class Api:
                     "votes": summary["votes"],
                     "on_chain": self.service.on_chain(rid),
                     "settlement": summary["settlement"],
+                    "labels": summary["labels"],
                 }
             )
         view: dict[str, Any] = {"now": format_utc(now), "requests": requests, "counts": counts}

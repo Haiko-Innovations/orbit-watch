@@ -1,6 +1,8 @@
 // The documented HTTP API of the service, on the page's own origin (decisions D-25, P3-06).
 // The app uses nothing else.
 
+import type { Labels } from "./labels";
+
 export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
@@ -107,6 +109,25 @@ async function call<T>(path: string, init: RequestInit, fetcher: typeof fetch): 
   return body as T;
 }
 
+/** GET a file's bytes as they are, such as an observation file in IOD or TDM. */
+export async function getBytes(path: string, fetcher: typeof fetch = fetch): Promise<Uint8Array> {
+  let response: Response;
+  try {
+    response = await fetcher(path, { method: "GET", credentials: "same-origin" });
+  } catch (error) {
+    throw new ApiError("unreachable", `The service could not be reached (${String(error)}).`, 0);
+  }
+  if (!response.ok) {
+    const detail = errorOf(await response.json().catch(() => null));
+    throw new ApiError(
+      detail?.code ?? "http_error",
+      detail?.message ?? `The service answered ${response.status}.`,
+      response.status,
+    );
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
 function errorOf(body: unknown): { code: string; message: string } | null {
   if (typeof body !== "object" || body === null || !("error" in body)) return null;
   const error = (body as { error: unknown }).error;
@@ -150,6 +171,8 @@ export interface RequestDocument {
   request_id: string;
   title?: string;
   simulated?: boolean;
+  /** A replay's published observations and who delivers them (format 1.1, D-51). */
+  replay?: Labels["replay"];
   target: { norad_id: number; name?: string };
   window: { start: string; end: string };
   requirements?: {
@@ -177,6 +200,7 @@ export interface OpenRequest {
   };
   split: { observer: number; reviewer: number; platform_fee: number } | null;
   simulated: boolean;
+  labels?: Labels;
 }
 
 /** The chain the service runs on, or null when it runs with the points ledger. */
@@ -221,6 +245,8 @@ export interface RequestListItem {
   observer: string | null;
   status: string;
   outcome: string | null;
+  /** What each part is (decision D-52); older services leave it out. */
+  labels?: Labels;
 }
 
 export interface Payout {
@@ -248,6 +274,7 @@ export interface RequestView {
     reviewers: string[];
     votes: [string, boolean][];
     settlement: { plan: { outcome: string; deposit: number; payouts: Payout[] } } | null;
+    labels?: Labels;
   };
   record: {
     request_id: string;
@@ -382,6 +409,7 @@ export interface AdminRequest {
   votes: [string, boolean][];
   on_chain: boolean;
   settlement: { plan: { outcome: string; deposit: number; payouts: Payout[] } } | null;
+  labels?: Labels;
 }
 
 /** GET /v1/admin/overview. */
