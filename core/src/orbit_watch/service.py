@@ -1198,9 +1198,12 @@ class RequestService:
         if delivered is not None:
             report = json.loads(self.files[delivered.report_sha256])
             block = report.get("reference_orbit")
-            if isinstance(block, dict):
+            if isinstance(block, dict) and block.get("epoch"):
+                # Reports of format 1.0 (method 1.0.0 and 2.0.0) name no set's SHA-256.
                 kept = (block.get("source") or {}).get("kept_from")
-                return self._orbit(kept, block["epoch"], block["element_set_sha256"], final=True)
+                return self._orbit(
+                    kept, str(block["epoch"]), block.get("element_set_sha256"), final=True
+                )
             return None
         middle = document.window_start + (document.window_end - document.window_start) / 2
         stored = [s for s in self.element_sets.get(document.norad_id, []) if s.epoch_time]
@@ -1215,7 +1218,9 @@ class RequestService:
             )
         return None
 
-    def _orbit(self, kept: str | None, epoch: str, sha256: str, *, final: bool) -> dict[str, Any]:
+    def _orbit(
+        self, kept: str | None, epoch: str, sha256: str | None, *, final: bool
+    ) -> dict[str, Any]:
         """A reference orbit's label: a stored set by its source, or else the service's own
         catalogue, which is SIMULATED when the catalogue is."""
         if kept in orbits.SOURCE_NAMES:
