@@ -161,6 +161,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Fixed
 
+- A request whose verification report is of format 1.0 (methods 1.0.0 and 2.0.0) broke
+  its labels (D-52): the report names its reference orbit without the set's SHA-256. The
+  public page of production's first settled request, and the administrator's overview,
+  answered 500 since the labels came; the label now has no SHA-256 for such a report.
+
 - `convert-score` no longer splits a track where a phone's place jumps for one
   observation: such an observation is left out, counted and noted in the file. Before,
   two pieces of a track could get the same file name, and one overwrote the other; the
