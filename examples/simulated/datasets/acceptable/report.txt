@@ -22,6 +22,6 @@ PASS: all 10 applicable checks passed.
   PASS  No duplicates or resubmissions
         No repeated observations in the file and no overlap with 0 earlier deliveries.
   PASS  Residuals against the public reference orbit
-        16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 8.5″ against a typical limit of 20.09′.
+        16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 8.6″ against a typical limit of 20.33′.
 
 Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.

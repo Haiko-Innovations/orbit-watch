@@ -3124,3 +3124,45 @@ Accepted · 2026-11-22 (with the pull request that implements the first part of 
   DE421 is fetched only with `--fetch`, into the cache outside the repository, and
   never in CI. A test repeats the measurement when the cache has it, as the real
   element sets' tests do (P5-05).
+
+### D-57 The simulator observes only what a station can see
+
+Accepted · 2026-11-22 (with the pull request that implements the second part of step
+5.7). It carries out P5-12's simulator and closes issue
+[#7](https://github.com/Haiko-Innovations/orbit-watch/issues/7).
+
+- **Visible passes** (`orbit_watch.passes`). A pass runs from rise to set above an
+  elevation limit. Its visible part is where the object is sunlit and the station's sky
+  is dark (D-56), sampled every 10 seconds. Step 5.7's third part lists these passes for
+  a request.
+- **The simulator observes only there.** Its observations centre on the highest point of
+  each pass's visible part, and those outside the visible part are left out. A pass
+  without one gives none. The dark sky is a setting of the simulator, `dark_sky_deg`,
+  −6° by default, and `None` keeps the old way. The command line has `--dark-sky-deg` and
+  `--any-light`. It is not a field of the station profile: that would be a new profile
+  format, and no observer needs it yet. Issue #7 asked for a profile field; this records
+  why it is not one.
+- **The SIMULATED orbits move to the evening.** The bundled catalogue's sun-synchronous
+  objects crossed the equator northwards at about 22:40 local time. Over Finland in
+  November, their passes fell at about 22:30, in the Earth's shadow, or at about 10:30,
+  in daylight. No station could ever see them, and the simulator would have given no
+  observations at all.
+
+  Their right ascension of the ascending node is now 330° instead of 15° (SIM-ROCKET-BODY
+  330.2° instead of 15.2°), so they cross the equator at about 19:30. Their two evening
+  passes in the demo's window, at about 15:45 and 17:20 UTC, are lit under a dark sky at
+  each of the four simulated stations. Nothing else in the orbits changed. The service's
+  own catalogue changes with them; reports already published keep the catalogue they
+  name by its SHA-256.
+- **The committed simulated examples are regenerated**, with these changes:
+  - `examples/simulated`: the observations moved from about 18:54 and 20:29 UTC to
+    about 15:44 and 17:19 UTC. Each dataset has as many observations as before, except
+    `too_imprecise`, which has 7 instead of 10: SIM-OULU's binoculars now see two of
+    their three passes. All six datasets keep their verdicts and their failing checks.
+  - `examples/phase1`: the five requests keep their outcomes: accepted, rejected twice,
+    disputed and expired.
+  - The quality meter's example is regenerated. The transcripts of phases 2 and 3 are
+    records of runs on Base Sepolia, and stay as they were.
+  - The Sun measurement's sunlight part follows SIM-CUBESAT-A's new orbit. It now
+    differs from Skyfield's `is_sunlit` 7 times in 60,480 samples, each for at most
+    10 seconds and all at the shadow's edge, instead of once.

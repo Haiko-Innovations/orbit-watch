@@ -22,6 +22,6 @@ FAIL: 1 check(s) failed: residuals against the public reference orbit.
   PASS  No duplicates or resubmissions
         No repeated observations in the file and no overlap with 1 earlier delivery.
   FAIL  Residuals against the public reference orbit
-        Only 0 of 16 observations (0%) lie within their limits (needed 80%). Median residual 3.93° against a typical limit of 19.85′. The residuals lie mostly along the track: the object is on average 7.88 s behind the prediction. That points to a different object in a similar orbit or to a timing error.
+        Only 0 of 16 observations (0%) lie within their limits (needed 80%). Median residual 3.94° against a typical limit of 20.11′. The residuals lie mostly along the track: the object is on average 7.86 s behind the prediction. That points to a different object in a similar orbit or to a timing error.
 
 Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.

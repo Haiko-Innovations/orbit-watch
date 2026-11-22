@@ -44,9 +44,9 @@
     "object": "339001 SIM-CUBESAT-A (SIMULATED)",
     "samples": 60480,
     "step_s": 10,
-    "sunlit_fraction": 0.6361,
-    "disagreements": 1,
+    "sunlit_fraction": 0.8674,
+    "disagreements": 7,
     "longest_disagreement_s": 10,
-    "transitions": 211
+    "transitions": 212
   }
 }
