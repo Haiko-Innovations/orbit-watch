@@ -65,7 +65,7 @@ test("a new station registers its profile, simulates observations and they pass"
   await page.getByLabel("Latitude (degrees, north positive)").fill("60.98");
   await page.getByLabel("Longitude (degrees, east positive)").fill("25.66");
   await page.getByLabel("Altitude (metres)").fill("100");
-  await page.getByLabel(/^Exactly, as you give it/).check();
+  await page.getByLabel("Exactly, as you give it").check();
   await page.getByRole("button", { name: "Save the profile" }).click();
   await expect(page.getByRole("status")).toContainText("Saved.");
   await expect(page.locator("dl.details")).toContainText("SIM-OBS-TEST");
@@ -120,8 +120,8 @@ test("a station chooses how precisely its place is published, and deletes its pr
   await latitude.fill("62.89237");
   await page.getByLabel("Longitude (degrees, east positive)").fill("27.67814");
   // Nothing is chosen in advance, and the profile is not saved without a choice (P5-11).
-  const kilometre = page.getByLabel(/^To about a kilometre/);
-  const exact = page.getByLabel(/^Exactly, as you give it/);
+  const kilometre = page.getByLabel("To about a kilometre");
+  const exact = page.getByLabel("Exactly, as you give it");
   await expect(kilometre).not.toBeChecked();
   await expect(exact).not.toBeChecked();
   await expect(page.getByRole("group", { name: /How precisely/ })).toHaveAccessibleDescription(
