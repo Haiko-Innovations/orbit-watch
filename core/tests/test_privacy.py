@@ -46,8 +46,10 @@ def template():
     return json.loads(packaged("stations/sim-cmos-gps.json"))  # SIM-ESPOO, 60.205, 24.655
 
 
-def put(client, key, profile, idem):
-    return client.call("PUT", PROFILE, key, {"profile": profile}, headers={"Idempotency-Key": idem})
+def put(client, key, profile, idem, place="kilometre"):
+    """Save a profile; its observer chooses how precisely its place is published (D-54)."""
+    body = {"profile": profile, "place": place}
+    return client.call("PUT", PROFILE, key, body, headers={"Idempotency-Key": idem})
 
 
 def delete(client, key, idem, path=PROFILE):
@@ -77,11 +79,15 @@ def test_a_profile_is_kept_to_two_decimals(world):  # noqa: F811
     )
 
 
-def test_without_the_setting_a_profile_is_kept_as_given(world):  # noqa: F811
-    """The local tools and the tests keep coordinates as they are (create_app's default)."""
+def test_an_exact_place_is_kept_as_given(world):  # noqa: F811
+    """With "exact" chosen, the coordinates are kept as they are, with the setting or
+    without it (create_app's default)."""
     station = new_key(world, STATION, "station")
     profile = template()
-    assert put(world["client"], station, profile, "p1").json()["profile"] == profile
+    assert put(world["client"], station, profile, "p1", "exact").json()["profile"] == profile
+    profile["station"]["latitude_deg"] = 60.20537
+    saved = put(public(world), station, profile, "p2", "exact").json()
+    assert saved["profile"] == profile and saved["place"] == "exact" and saved["place_chosen"]
 
 
 def test_a_more_precise_delivery_is_refused_and_changes_nothing(world):  # noqa: F811
@@ -120,12 +126,70 @@ def test_a_more_precise_delivery_is_refused_and_changes_nothing(world):  # noqa:
     assert delivered.json()["summary"]["automated_verdict"] == "pass"
 
 
-def test_a_profile_saved_before_the_setting_simulates_to_two_decimals(world):  # noqa: F811
+def test_a_profile_saved_before_the_choice_stays_at_a_kilometre(world):  # noqa: F811
+    """A profile saved before the choice existed, at 60.205: about a kilometre until its
+    owner chooses (D-54)."""
     _, station = funded_request(world)
-    assert put(world["client"], station, template(), "p1").status_code == 200  # 60.205
-    made = public(world).call("POST", "/v1/requests/SIM-REQ-0001/simulate", station).json()
+    world["service"].storage.db.execute(
+        "INSERT INTO station_profiles (party, profile_json, updated_at) VALUES (?, ?, ?)",
+        (STATION, json.dumps(template()), "2026-11-16T09:00:00Z"),
+    )
+    client = public(world)
+    kept = client.call("GET", PROFILE, station).json()
+    assert (kept["place"], kept["place_chosen"]) == ("kilometre", False)
+    made = client.call("POST", "/v1/requests/SIM-REQ-0001/simulate", station).json()
     place = json.loads(made["observations"])["station"]
     assert place["latitude_deg"] == round(60.205, 2)
+    refused = client.call(
+        "POST",
+        "/v1/requests/SIM-REQ-0001/deliveries",
+        station,
+        content=ACCEPTABLE,
+        headers={"Content-SHA256": sha256_bytes(ACCEPTABLE)},
+    )
+    assert refused.json()["error"]["code"] == "too_precise"
+
+
+# ---------------------------------------------------------------- the observer's choice (D-54)
+
+
+@pytest.mark.parametrize("place", [None, "", "precise", "Exact", True])
+def test_a_profile_is_not_saved_without_the_choice(world, place):  # noqa: F811
+    station = new_key(world, STATION, "station")
+    body = {"profile": template()} if place is None else {"profile": template(), "place": place}
+    refused = public(world).call(
+        "PUT", PROFILE, station, body, headers={"Idempotency-Key": f"none-{place}"}
+    )
+    assert refused.status_code == 422
+    assert refused.json()["error"]["code"] == "place_required"
+    assert not world["service"].storage.db.query("SELECT * FROM station_profiles")
+
+
+def test_the_observer_changes_the_choice_for_later_deliveries(world):  # noqa: F811
+    _, station = funded_request(world)  # reserved by SIM-ESPOO
+    client = public(world)
+    precise = template()
+    precise["station"]["latitude_deg"] = 60.20537
+    exact = put(client, station, precise, "c1", "exact").json()
+    assert exact["profile"]["station"]["latitude_deg"] == 60.20537
+
+    # Rounded again: the exact place is gone from the service.
+    rounded = put(client, station, precise, "c2", "kilometre").json()
+    assert (rounded["place"], rounded["profile"]["station"]["latitude_deg"]) == (
+        "kilometre",
+        60.21,
+    )
+    stored = world["service"].storage.db.query("SELECT profile_json, place FROM station_profiles")
+    assert "60.20537" not in stored[0]["profile_json"] and stored[0]["place"] == "kilometre"
+    path = "/v1/requests/SIM-REQ-0001/deliveries"
+    headers = {"Content-SHA256": sha256_bytes(ACCEPTABLE)}
+    refused = client.call("POST", path, station, content=ACCEPTABLE, headers=headers)
+    assert refused.json()["error"]["code"] == "too_precise"
+
+    # Exact again, with the place the observer gives: its files may name it exactly.
+    assert put(client, station, template(), "c3", "exact").json()["place"] == "exact"
+    delivered = client.call("POST", path, station, content=ACCEPTABLE, headers=headers)
+    assert delivered.status_code == 200, delivered.text
 
 
 @pytest.mark.parametrize(

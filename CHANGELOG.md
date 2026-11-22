@@ -94,6 +94,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   orbit, with a SIMULATED request for it that a simulated station fulfilled, a real request
   that is open, and a replay of made-up published observations that settled. The
   end-to-end tests check their labels on every page (D-53).
+- The observer chooses how precisely the station's place is published (step 5.6, first
+  part, #109): exactly, or to about a kilometre. Neither is selected in advance, a profile
+  is not saved without the choice, and it can be changed for later deliveries. Profiles
+  saved before stay at about a kilometre until their owner chooses (migration 0013).
+  A station that chose exact may deliver files with its exact place (D-54).
 
 ### Changed
 
@@ -109,6 +114,9 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 - The testnet label and the terms of use (version of 22 November 2026) no longer say that
   all data is SIMULATED: SIMULATED and real data run side by side, and each says which it
   is (D-52).
+- The privacy notice (version of 22 November 2026) says that the station's place is kept
+  as precisely as its observer chooses, and that replays publish their observers' ORCID
+  iDs; the data inventory lists both (D-54).
 
 - Verification method 2.1.0 and report format 1.1: when the catalogue holds
   several element sets of the object, the residuals use the set nearest the

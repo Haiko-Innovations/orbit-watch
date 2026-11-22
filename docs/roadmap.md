@@ -38,7 +38,9 @@ reference orbits and observations by their source
 ([D-52](decisions.md#d-52-labels-by-source-on-every-page)), and the local stack runs a
 stand-in for a real object and a replay beside the SIMULATED requests
 ([D-53](decisions.md#d-53-a-stand-in-for-a-real-object-in-the-local-stack)). Step 5.5 is
-done.
+done. Step 5.6 is in two parts; in the first, the observer chooses how precisely the
+station's place is published
+([D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)).
 
 **Phase 4 is done** and released as version 0.5.0: the public testnet
 service. The service and the web application run at

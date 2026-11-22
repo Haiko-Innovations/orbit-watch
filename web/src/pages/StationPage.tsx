@@ -8,9 +8,26 @@ import { useResource } from "../useResource";
 
 const s = strings.station;
 
+/** How precisely the station's place is published, as its observer chose (decision D-54). */
+export type Place = "exact" | "kilometre";
+
+/** A saved profile with its observer's choice; `chosen` is false for a profile saved before
+ * the choice existed, which stays at about a kilometre until its owner chooses. */
+export interface SavedProfile {
+  profile: StationProfile;
+  place: Place;
+  chosen: boolean;
+}
+
 interface StationData {
   templates: StationProfile[];
-  current: StationProfile | null;
+  current: SavedProfile | null;
+}
+
+/** What the station's page says of the place it publishes. */
+export function placeText(saved: SavedProfile): string {
+  if (!saved.chosen) return s.placeUnchosen;
+  return saved.place === "exact" ? s.placeIsExact : s.placeIsKilometre;
 }
 
 /** The profile a station saves: a SIMULATED template, with the station's own name and place. */
@@ -45,10 +62,12 @@ function ProfileForm({
 }: {
   session: Session;
   templates: StationProfile[];
-  current: StationProfile | null;
-  onSaved: (profile: StationProfile) => void;
+  current: SavedProfile | null;
+  onSaved: (saved: SavedProfile) => void;
 }) {
   const ids = {
+    place: useId(),
+    placeNote: useId(),
     template: useId(),
     name: useId(),
     lat: useId(),
@@ -58,9 +77,11 @@ function ProfileForm({
     precision: useId(),
   };
   const first = templates[0];
-  const startFrom = templates.find((t) => current?.id.endsWith(t.id)) ?? first;
+  const startFrom = templates.find((t) => current?.profile.id.endsWith(t.id)) ?? first;
   const [templateId, setTemplateId] = useState(startFrom?.id ?? "");
-  const base = current?.station ?? startFrom?.station;
+  const base = current?.profile.station ?? startFrom?.station;
+  // Nothing is chosen in advance: only the observer's own earlier choice (P5-11).
+  const [place, setPlace] = useState<Place | "">(current?.chosen ? current.place : "");
   const [name, setName] = useState(String(base?.name ?? ""));
   const [latitude, setLatitude] = useState(String(base?.latitude_deg ?? ""));
   const [longitude, setLongitude] = useState(String(base?.longitude_deg ?? ""));
@@ -83,7 +104,7 @@ function ProfileForm({
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    const place = {
+    const where = {
       name: name.trim(),
       latitude: Number(latitude),
       longitude: Number(longitude),
@@ -91,24 +112,28 @@ function ProfileForm({
     };
     if (
       !template ||
-      !place.name ||
-      !(Math.abs(place.latitude) <= 90) ||
-      !(Math.abs(place.longitude) <= 180) ||
-      !Number.isFinite(place.altitude)
+      !where.name ||
+      !(Math.abs(where.latitude) <= 90) ||
+      !(Math.abs(where.longitude) <= 180) ||
+      !Number.isFinite(where.altitude)
     ) {
       setMessage({ ok: false, text: s.invalid });
+      return;
+    }
+    if (place === "") {
+      setMessage({ ok: false, text: s.placeRequired });
       return;
     }
     setBusy(true);
     setMessage(null);
     try {
-      const saved = await putJson<{ profile: StationProfile }>(
+      const saved = await putJson<{ profile: StationProfile; place: Place; place_chosen: boolean }>(
         `/v1/stations/${encodeURIComponent(session.party)}/profile`,
-        { profile: stationProfile(template, session.party, place) },
+        { profile: stationProfile(template, session.party, where), place },
         actionKey(),
       );
       setMessage({ ok: true, text: s.saved });
-      onSaved(saved.profile);
+      onSaved({ profile: saved.profile, place: saved.place, chosen: saved.place_chosen });
     } catch (error) {
       setMessage({ ok: false, text: error instanceof ApiError ? error.message : String(error) });
     } finally {
@@ -179,6 +204,32 @@ function ProfileForm({
       <p id={ids.precision} className="muted">
         {s.precision} <a href={paths.privacy}>{s.privacy}</a>
       </p>
+      <fieldset aria-describedby={ids.placeNote}>
+        <legend>{s.placeLegend}</legend>
+        <p id={ids.placeNote} className="muted">
+          {s.placeNote}
+        </p>
+        <label className="choice">
+          <input
+            type="radio"
+            name={ids.place}
+            value="kilometre"
+            checked={place === "kilometre"}
+            onChange={() => setPlace("kilometre")}
+          />{" "}
+          {s.placeKilometre}
+        </label>
+        <label className="choice">
+          <input
+            type="radio"
+            name={ids.place}
+            value="exact"
+            checked={place === "exact"}
+            onChange={() => setPlace("exact")}
+          />{" "}
+          {s.placeExact}
+        </label>
+      </fieldset>
       {message ? (
         <p className={message.ok ? "ok" : "problem"} role={message.ok ? "status" : "alert"}>
           {message.text}
@@ -247,10 +298,19 @@ export function StationPage({ session }: { session: Session }) {
       "/v1/public/station-templates",
     );
     try {
-      const own = await getJson<{ profile: StationProfile }>(
-        `/v1/stations/${encodeURIComponent(session.party)}/profile`,
-      );
-      return { templates, current: own.profile };
+      const own = await getJson<{
+        profile: StationProfile;
+        place?: Place;
+        place_chosen?: boolean;
+      }>(`/v1/stations/${encodeURIComponent(session.party)}/profile`);
+      return {
+        templates,
+        current: {
+          profile: own.profile,
+          place: own.place ?? "kilometre",
+          chosen: own.place_chosen ?? false,
+        },
+      };
     } catch (error) {
       if (error instanceof ApiError && error.code === "no_profile")
         return { templates, current: null };
@@ -259,7 +319,7 @@ export function StationPage({ session }: { session: Session }) {
   }, [session.party]);
   const [loaded, reload] = useResource(load);
   // A saved profile shows at once, without reloading the form (which keeps its message).
-  const [saved, setSaved] = useState<StationProfile | null>(null);
+  const [saved, setSaved] = useState<SavedProfile | null>(null);
   const [removed, setRemoved] = useState(false);
   // A deleted profile starts the form anew; a saved one keeps it (and its message).
   const [generation, setGeneration] = useState(0);
@@ -281,16 +341,18 @@ export function StationPage({ session }: { session: Session }) {
                 <dl className="details">
                   <dt>{s.stationId}</dt>
                   <dd>
-                    <code>{current.station.id}</code>
+                    <code>{current.profile.station.id}</code>
                   </dd>
                   <dt>{s.name}</dt>
-                  <dd>{current.station.name}</dd>
+                  <dd>{current.profile.station.name}</dd>
                   <dt>{s.latitude}</dt>
-                  <dd>{current.station.latitude_deg}</dd>
+                  <dd>{current.profile.station.latitude_deg}</dd>
                   <dt>{s.longitude}</dt>
-                  <dd>{current.station.longitude_deg}</dd>
+                  <dd>{current.profile.station.longitude_deg}</dd>
+                  <dt>{s.placeShown}</dt>
+                  <dd>{placeText(current)}</dd>
                   <dt>{s.instrument}</dt>
-                  <dd>{current.description}</dd>
+                  <dd>{current.profile.description}</dd>
                 </dl>
               ) : (
                 <p>{s.none}</p>
@@ -300,9 +362,9 @@ export function StationPage({ session }: { session: Session }) {
                 session={session}
                 templates={templates}
                 current={current}
-                onSaved={(profile) => {
+                onSaved={(next) => {
                   setRemoved(false);
-                  setSaved(profile);
+                  setSaved(next);
                 }}
               />
               {current ? (

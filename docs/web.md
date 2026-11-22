@@ -36,7 +36,7 @@ What it has so far:
 | New request | `#/new-request` | a form for a draft request: target from the allow-list, window, deadline, requirements, time limits; for a real object, a box, not ticked in advance, to let simulated stations observe it, which makes the request SIMULATED ([D-50](decisions.md#d-50-simulated-stations-on-real-objects)) |
 | A request | `#/requests/<id>` | its status and progress, terms, files, payments and chain events; for its requester: publish, fund (the deposit and its split first), cancel, challenge a passed result |
 
-| Your station | `#/station` | a station's profile: a SIMULATED instrument with the station's own name and place, kept to about a kilometre; only the station sees it, and it can delete it |
+| Your station | `#/station` | a station's profile: a SIMULATED instrument with the station's own name and place, kept and published exactly or to about a kilometre as the observer chooses, with neither selected in advance, and changeable for later deliveries ([D-54](decisions.md#d-54-the-observer-chooses-how-precisely-the-place-is-published)); only the station sees it, and it can delete it |
 | Your observations | `#/my-observations` | the requests a station reserved or delivered |
 
 On Open requests a signed-in station reserves a funded request. On the

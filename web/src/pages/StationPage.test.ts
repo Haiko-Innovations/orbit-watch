@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { StationProfile } from "../api";
-import { stationProfile } from "./StationPage";
+import { placeText, stationProfile } from "./StationPage";
 
 const template: StationProfile = {
   format: "orbit-watch/station-profile",
@@ -42,5 +42,16 @@ describe("stationProfile", () => {
       altitude_m: 110,
     });
     expect(profile.id).toBe("sim-obs-test-sim-cmos-gps");
+  });
+});
+
+describe("placeText", () => {
+  it("says how precisely the place is published, and that an old profile has not chosen", () => {
+    const profile = template;
+    expect(placeText({ profile, place: "exact", chosen: true })).toBe("exactly");
+    expect(placeText({ profile, place: "kilometre", chosen: true })).toBe("to about a kilometre");
+    expect(placeText({ profile, place: "kilometre", chosen: false })).toBe(
+      "to about a kilometre, until you choose",
+    );
   });
 });
