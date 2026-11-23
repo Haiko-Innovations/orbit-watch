@@ -24,20 +24,20 @@
     ]
   },
   "software": {
-    "orbit-watch": "0.6.0",
+    "orbit-watch": "0.7.0.dev0",
     "skyfield": "1.55",
     "sgp4": "2.27",
     "numpy": "2.5.4"
   },
   "inputs": {
     "request_sha256": "ed503008700f8f6be8bd0c9dfc0c9083c247dd9d74c85406c4e9569483df203a",
-    "observations_sha256": "6de37f9eafc01392e866454803816605827ff333cc95ad95b341dfceb1653bb0",
+    "observations_sha256": "395a70a077610cc213dd8f505b45c74444cc5450f91104a75ff0d5fba065ddbf",
     "observations_format": "json",
-    "declared_sha256": "6de37f9eafc01392e866454803816605827ff333cc95ad95b341dfceb1653bb0",
+    "declared_sha256": "395a70a077610cc213dd8f505b45c74444cc5450f91104a75ff0d5fba065ddbf",
     "reference_catalog_sha256": "6643a1965f3d5eb23524269de8152feca149addaba771bfe34d8ffbc5cdd67e0",
     "target_policy_sha256": "866f9d582d155fab0810417a7644573501fa282b3bdc93ffc22b15ed96434f95",
     "previous_deliveries_sha256": [
-      "22fede04660db0224c5bb23eab974b9593255949ab3c9ca68aab786fe622cdf1"
+      "fdfd10f073a098ea86c482fe020c45da6c7ed105dea0bef6f413a1334c6876d4"
     ]
   },
   "request": {
