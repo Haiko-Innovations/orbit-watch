@@ -3200,3 +3200,259 @@ With this, step 5.7 is done:
 - the Sun's error against JPL's DE421 is measured and recorded (D-56);
 - the committed simulated examples are regenerated and their changes explained (D-57);
 - the pass list is tested, in the API and end to end.
+
+## Phase 6 decisions
+
+P6-01 to P6-12 were proposed for the
+[roadmap](roadmap.md#phase-6-more-precise-reference-orbits-and-identification-target-version-070)'s
+phase 6, more precise reference orbits and identification, in
+[#137](https://github.com/Haiko-Innovations/orbit-watch/issues/137), and approved by
+the maintainer on 2026-11-23, after a look at the data the same day:
+- **Public data for an orbit determination of our own is thin.** SCORE held 42,686
+  observations of 3,353 objects. Dense positional data came from two observers: a
+  video camera, with 24,463 observations of ACS 3 in September–December 2024, and a
+  phone whose times run 1.3–1.9 s late. Its 100 most recent observations were all
+  the phone's. Windows of a few days in which two or more stations saw the same
+  object were a handful: two for SPACEMOBILE-002 within three days, two for
+  SPACEMOBILE-006 within seven, none for the others looked at.
+- **More precise orbits exist already.** CelesTrak's supplemental GP (SupGP) is
+  fitted to operators' own orbits, to about 0.15–0.3 km for Starlink. For AST
+  SpaceMobile's 13 satellites, CelesTrak's standard GP lay 0.15 to 31.6 km from
+  SupGP over the next six hours.
+- **Few of our objects have them.** Of the 204 real objects on the allow-list, 6 had
+  SupGP: the ISS, CryoSat-2, Swarm A, B and C, and PELICAN-1.
+
+So phase 6 first uses the precise orbits that exist, then measures and adds an
+orbit determination of its own, and then identifies closely spaced objects. Code
+waits for nothing outside the repository, as in phase 5 (P5-14).
+
+Facts were checked on 2026-11-23; the sources are listed under each decision.
+Versions are chosen, and checked, when they are used.
+
+### P6-01 More precise reference orbits, and identification, with test money
+
+Accepted · 2026-11-23. Phase 6 makes the reference orbit more precise, and uses it
+to identify objects:
+- **operators' own orbits**, through CelesTrak's SupGP, where an operator publishes
+  them;
+- **an orbit determination of our own**, from accepted deliveries;
+- **identification** of an object among one launch's objects.
+
+Everything else stays as it is: Base Sepolia only, testnet USDC, the simulated
+objects and stations labelled SIMULATED, and real data from public sources.
+
+Not in phase 6:
+- real money, and bonds for reservations, challenges or reviewers;
+- the community network ([decentralisation.md](decentralisation.md));
+- the web application's redesign
+  ([#97](https://github.com/Haiko-Innovations/orbit-watch/issues/97)): a step adds
+  only the labels and views it needs;
+- asking observers or anyone else for data (P6-10).
+
+### P6-02 Measure first, again
+
+Accepted · 2026-11-23. As P5-07, the method changes only after a measurement.
+Step 6.1 measures how far CelesTrak's GP sets are from operators' orbits:
+- **the truth** is a fresh SupGP set fitted to an operator's orbit (P6-03), for a
+  sample of objects from the small SupGP sources;
+- **the GP sets** are SatChecker's past sets of the same objects, of different ages,
+  one request at a time (P5-03). SupGP keeps no history, and SatChecker keeps GP
+  only ("celestrak" or "spacetrack" as its data source);
+- **the comparison** propagates both over the six hours after the SupGP epoch, and
+  reports the distance along track, cross track and radially, by orbit class,
+  source and the GP set's age.
+
+It also repeats the first look at SCORE's coverage for orbit determination. The
+results go to a page in `docs/`, reproducible with one command from a cache outside
+the repository. No element set is committed (P5-05).
+
+Sources: CelesTrak's
+[SupGP comparisons](https://celestrak.org/NORAD/elements/supplemental/) (the AST
+SpaceMobile table of 2026-11-23 15:25 UTC);
+[SatChecker's response fields](https://satchecker.readthedocs.io/en/latest/api_response.html).
+
+### P6-03 Operators' orbits from CelesTrak's SupGP
+
+Accepted · 2026-11-23. CelesTrak's supplemental GP is "derived directly from
+owner/operator-supplied orbital data". Its sources include SpaceX's public
+Starlink ephemerides; OneWeb's, Kuiper's and AST SpaceMobile's ephemerides on
+Space-Track, "with permission" of each; Planet's; NASA's ISS ephemeris; and the
+laser-ranging predictions (CPF). Each set has a `DATA_SOURCE`, such as `AST-E`
+or `CPF`.
+- **One object at a time**, by catalogue number, as CSV with gzip. CelesTrak's
+  usage policy (updated 2026-11-16) asks for "a 2-hour minimum" for SupGP, as for
+  GP. Only the objects of open requests are fetched, and the first answer that is
+  not 200 stops fetching and tells a person, as D-48.
+- **The set for a window.** "SupGP data is fitted from the current epoch forward,
+  as opposed to GP data where that is fit to past observations." An object may
+  have several sets, for example from several laser-ranging prediction centres or
+  the ISS's 6-hour segments. Verification uses an operator-derived set whose epoch
+  is the latest at or before the window, and otherwise GP as now.
+- **Which sources count** as an operator's orbit is chosen in step 6.2 from the
+  measurement: ephemerides and state vectors (`-E`, `-SV`, `CPF`), not almanacs or
+  legacy TLEs.
+- **Replays** keep SatChecker's GP, since SupGP keeps no history.
+- **Nothing is committed** (D-06, P5-05). The report names the set's source,
+  `DATA_SOURCE`, epoch and SHA-256, and the labels say "operator's orbit via
+  CelesTrak".
+
+Sources: [How to Perform SupGP Queries](https://celestrak.org/NORAD/documentation/sup-gp-queries.php)
+(updated 2026-05-26); [SupGP data](https://celestrak.org/NORAD/elements/supplemental/);
+[usage policy](https://celestrak.org/usage-policy.php).
+
+### P6-04 Objects whose operators publish their orbits
+
+Accepted · 2026-11-23. An operator that publishes its satellites' orbits for
+everyone is open about them. So D-05's allow-list gains the objects of these
+SupGP sources: **Starlink, OneWeb, Kuiper, AST SpaceMobile, Planet, the ISS and
+the laser-ranging satellites**. GPS and GLONASS stay off: armed forces run them.
+D-05's name patterns still apply to every object.
+- **The small sources** are read once a day, as D-49's groups.
+- **Starlink's list is large**, and CelesTrak limits large lists, so it is not
+  downloaded. An administrator adds a Starlink object by its catalogue number after
+  one SupGP query shows an operator's orbit for it, with a public reason, as D-49.
+
+### P6-05 Method 3.0.0: the orbit term by source and age
+
+Accepted · 2026-11-23. Today's limit assumes that every reference orbit is 5 km off
+(D-08), and accepts sets up to 7 days old. Step 5.3 found both wrong for low orbits
+([D-46](#d-46-the-method-measured-on-real-data)):
+- the 5 km was 97 % of a good video camera's limit;
+- a clock half a second wrong passed in 33 of 35 low-orbit tracks;
+- sets about 3 days old already rejected good tracks.
+
+Method 3.0.0 gives the orbit term by the orbit's source, its age and the orbit
+class, with the values step 6.1 measures. An operator's orbit gets a small term, a
+GP set's term grows with its age, and a fitted orbit's comes from its covariance
+(P6-07). The 7-day limit is replaced by these terms. This is a major version,
+since pass/fail parameters change (releasing.md). Reports name their method, and
+earlier reports keep theirs.
+
+Even 0.2 km is about 80″ seen from 500 km, so the check is still not one of
+arcseconds. It becomes able to catch clock errors of a tenth of a second in low
+orbits, which is what the quality meter needs to tell an observer.
+
+### P6-06 Orbit determination in the core
+
+Accepted · 2026-11-23. The core fits an orbit to observations: batch least squares
+of SGP4's mean elements and B*, starting from a reference orbit.
+- **No new dependency.** numpy, and the sgp4 library in use (2.27, whose `Satrec`
+  is initialised from elements with `sgp4init`). Orekit (Apache 2.0, Java) and
+  Find_Orb (GPL, C++) do this too, but would bring a JVM or a C++ build into a
+  Python core. Orekit's TLE orbit determination improved a GNSS case from about a
+  kilometre to about a hundred metres.
+- **Deterministic**: fixed iteration and stopping rules and rounded output, so that
+  a fit can be repeated byte for byte. It has a method version of its own.
+- **Its result**: an element set in OMM form with its covariance and residuals,
+  named by the SHA-256 of its inputs. `orbit-watch fit-orbit` makes one.
+- **Measured** on simulated networks of stations, where the true orbit is known.
+  Also on SCORE's real nights from the video camera, of ACS 3 and PELICAN 3001: a
+  fit of the earlier nights predicts the next night, compared with the GP set
+  available then.
+- **Its limit, stated**: a short arc seen from one place leaves the range poorly
+  known, and a fit to one station's tracks absorbs that station's constant clock
+  error into the orbit. Only another station, or an operator's orbit, shows such
+  an error.
+
+Sources: [Orekit's TLE orbit determination, SDC8](https://conference.sdo.esoc.esa.int/proceedings/sdc8/paper/10/SDC8-paper10.pdf);
+[Find_Orb](https://github.com/Bill-Gray/find_orb/);
+[∂SGP4, arXiv 2402.04830](https://arxiv.org/pdf/2402.04830).
+
+### P6-07 A fitted orbit as a reference, and Space-Track's terms first
+
+Accepted · 2026-11-23. The service may verify a delivery against an orbit fitted
+from **other** accepted deliveries of the same object:
+- never from the delivery under verification;
+- only when the fitted orbit's uncertainty at the window is smaller than the term
+  of the operator's orbit or the GP set (P6-05);
+- the report names the fitted orbit and its inputs by SHA-256, and the labels say
+  "fitted by Orbit Watch";
+- the follower refits when new deliveries are accepted.
+
+A fit starts from a GP or SupGP set. So **Space-Track's user agreement is read
+before any fitted orbit's elements are published**
+([#114](https://github.com/Haiko-Innovations/orbit-watch/issues/114)); this
+follow-up moves before step 6.5. If reading it needs an account, the maintainer
+reads it. Until then fitted orbits are stored and named, and their elements are not
+published.
+
+### P6-08 Identification among one launch's objects
+
+Accepted · 2026-11-23. Objects released together are hard to tell apart for weeks,
+and some are never identified
+([NASA](https://www.nasa.gov/smallsat-institute/sst-soa/identification-and-tracking-systems/)).
+The core compares a track with each candidate:
+- **the candidates** are the objects of one launch, by international designator,
+  from GP and SupGP. While they exist, these include the deployment state vectors
+  that SpaceX gives for its rideshares (`Transporter-SV`, `Bandwagon-SV`);
+- **the comparison** is by residuals and by the along-track time offset;
+- **the result** is "identified" only when the best candidate passes and the next
+  fails by a margin that step 6.6 measures. It is "ambiguous" when more than one
+  fits, and "none" when none does;
+- **a launch with any object off the allow-list is refused**, so that a civilian
+  object is never named in place of an excluded one (D-05).
+
+The result is evidence, not the catalogue's identification, and the report says
+so. Measured on simulated deployments, where the truth is known, and on real SCORE
+tracks of known objects, treated as unknown among their launch mates.
+
+### P6-09 Identification requests in the service
+
+Accepted · 2026-11-23.
+- **The request**: format 1.2 adds an optional `identify` block naming the launch.
+- **The life cycle**: reservation, delivery, challenge and settlement are as now. A
+  delivery passes when its track fits at least one candidate.
+- **The report**: a new minor report format adds the ranking and the result.
+- **Where it shows**: the API, the CLI, and only the labels and views that such a
+  request needs in the current web application.
+
+### P6-10 Public sources only, credited
+
+Accepted · 2026-11-23. As in phase 5 (P5-06, P5-13), all real data comes from
+public sources with open terms, and nobody is asked for data. SCORE's observers
+are credited by ORCID iD. The data sources page names CelesTrak's SupGP and the
+operators behind it. Talking with observers and CubeSat teams is the
+maintainer's own decision, outside the code.
+
+### P6-11 Follow-ups at the end
+
+Accepted · 2026-11-23. As P5-14: no step waits for anything outside the
+repository, and follow-ups are not completion criteria. The follow-ups known now:
+- telling SCORE that Orbit Watch uses its data
+  ([#113](https://github.com/Haiko-Innovations/orbit-watch/issues/113));
+- a real rideshare identification, once a Transporter or Bandwagon flight gives
+  deployment vectors and someone has published observations of it.
+  [NextSpaceflight](https://nextspaceflight.com/launches/details/7612) listed
+  Transporter-19 no earlier than February 2027 on 2026-11-23.
+
+[#114](https://github.com/Haiko-Innovations/orbit-watch/issues/114) is no longer at
+the end: it comes before fitted orbits are published (P6-07).
+
+### P6-12 Phase 6 completion criteria
+
+Accepted · 2026-11-23. Phase 6 is done when:
+
+1. How far GP sets are from operators' orbits is measured and published by source,
+   orbit class and age, reproducible with one command; no element set is committed.
+2. The service verifies a delivery against an operator's orbit when the object has
+   one, against CelesTrak's GP otherwise, and against SatChecker's GP for replays.
+   The report names the source. Fetching follows CelesTrak's rules, tested against
+   local stand-ins.
+3. Objects whose operators publish their orbits are on the allow-list by P6-04's
+   rule, and GPS and GLONASS are not; the name patterns still apply; tested.
+4. Method 3.0.0 gives the orbit term by source and age from the measurement; the
+   examples and known answers are regenerated and their changes explained;
+   earlier reports keep their versions.
+5. Orbit determination in the core is deterministic, measured on simulated
+   networks against the truth and on real tracks by predicting the next night,
+   and reproducible with one command.
+6. A fitted orbit is a reference only when it is more precise, and never from the
+   delivery under verification; tested. Fitted elements are published only after
+   Space-Track's user agreement is read.
+7. Identification ranks a launch's candidates and says "identified" only with a
+   measured margin; a launch with an excluded object is refused; tested.
+8. Identification requests run through the API, the CLI and the views they need,
+   labelled; tested end to end.
+9. On the public service, a request verified against an operator's orbit, one
+   verified against a fitted orbit, and an identification request have each
+   settled on Base Sepolia. Every CI check passes; release 0.7.0.
