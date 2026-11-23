@@ -65,7 +65,12 @@ the one nearest a given time, without an account
 - `GET https://satchecker.cps.iau.org/tools/get-nearest-tle/?id=<catalogue number>&id_type=catalog&epoch=<Julian date>`,
   for the past: TLEs "remain the record for historical dates";
 - `get-nearest-omm/` with the same parameters, for OMM data, which SatChecker
-  keeps going forward.
+  keeps going forward;
+- `get-omm-data/?id=<catalogue number>&id_type=catalog&start_date_jd=<Julian date>&end_date_jd=<Julian date>`,
+  every OMM of one object in a period. Each record names its `data_source`
+  (`celestrak` or `spacetrack`) and when SatChecker collected it
+  (`date_collected`), so it shows which sets were available at a given time.
+  Read on 2026-11-23.
 
 Its [notes](https://satchecker.readthedocs.io/en/latest/notes.html) say that
 "Public Space-Track TLEs for LEO satellites are often off by several
@@ -76,6 +81,11 @@ set nearest a time, in one request with no retries, and writes it as an Orbit
 Watch catalogue. A TLE is converted to OMM form with sgp4's exporter, which
 gives the same orbit to a few millimetres. The record's `source` names
 SatChecker's endpoint, its `data_source` and `date_collected`, and the TLE.
+
+`orbit-watch fetch-satchecker --catnr N --start T --end T -o sets.json` asks for every
+OMM of one object in a period of at most 31 days, in one request with no retries
+([D-59](decisions.md#d-59-operators-orbits-and-past-sets-over-a-period)). A set that both
+CelesTrak and Space-Track gave appears once, with the earlier collection time.
 
 The service's follower asks SatChecker the same way for a request whose window has
 ended, such as a replay: the set nearest the middle of the window, once, and only when
@@ -92,6 +102,43 @@ in this material are those of the author(s) and do not necessarily reflect the
 views of the NSF, IAU, NSF NOIRLab, SKAO, ESO, or any host or member
 institution of the IAU CPS."
 ([acknowledgements](https://satchecker.readthedocs.io/en/latest/acknowledgements.html))
+
+## Operators' orbits: CelesTrak's supplemental GP
+
+CelesTrak's [supplemental GP](https://celestrak.org/NORAD/elements/supplemental/)
+(SupGP) element sets are "derived directly from owner/operator-supplied orbital data"
+([P6-03](decisions.md#p6-03-operators-orbits-from-celestraks-supgp)). Read on
+2026-11-23:
+- **Sources.** SpaceX's public Starlink ephemerides; OneWeb's, Kuiper's, AST
+  SpaceMobile's, Iridium's, SES's, Telesat's, Orbcomm's and EUMETSAT's on Space-Track,
+  each "with permission" of the operator; Planet's; NASA's ISS ephemeris and China's
+  space station's, in 6-hour segments; GPS and GLONASS data; Intelsat's; and the
+  laser-ranging predictions (CPF) of the ILRS prediction centres. On 2024-12-26,
+  CelesTrak counted SupGP for 75 % of the active satellites with GP data.
+- **Queries** ([documentation](https://celestrak.org/NORAD/documentation/sup-gp-queries.php),
+  updated 2026-05-26): `https://celestrak.org/NORAD/elements/supplemental/sup-gp.php?{CATNR|INTDES|SOURCE|NAME|SPECIAL|FILE}=value&FORMAT=csv`.
+  CSV is the default since 2026-05-09.
+- **Fields.** The OMM fields, `RMS`, the root mean square of CelesTrak's fit to the
+  operator's data in kilometres, and `DATA_SOURCE`, such as `AST-E`, `CPF`, `ISS-E`,
+  `GPS-A` or `Transporter-SV`. One object may have several sets: several prediction
+  centres, or the ISS's segments over two weeks.
+- **Forward, and no history.** "SupGP data is fitted from the current epoch forward, as
+  opposed to GP data where that is fit to past observations." CelesTrak keeps only the
+  current sets, and SatChecker keeps GP only.
+- **Usage policy** ([updated 2026-11-16](https://celestrak.org/usage-policy.php)): "For
+  SupGP data, which updates on different schedules for different constellations,
+  please use a 2-hour minimum, as well", in CSV. The Starlink list is one of the large
+  ones whose limits CelesTrak enforces.
+
+`orbit-watch fetch-supgp --catnr N -o sup.csv`, or `--source AST-E`, makes one request
+with gzip and no retries, and does not download the same file again within two hours
+unless `--force` is given. It refuses an answer whose sets do not name their
+`DATA_SOURCE`, and stops at the first answer that is not 200 with what the policy asks
+next, as `fetch-gp` does. An operator's orbit is a set whose `DATA_SOURCE` ends in `-E`
+(ephemeris), `-RE` (rapid ephemeris) or `-SV` (state vectors), or is `CPF`. Almanacs
+(`-A`), 11-parameter data (`-11P`) and TLEs passed on as they came (`-TLE`) are not
+([D-59](decisions.md#d-59-operators-orbits-and-past-sets-over-a-period)). No SupGP set
+is committed ([P5-05](decisions.md#p5-05-orbit-data-stays-out-of-the-repository)).
 
 ## Real orbits in examples and tests: manifests and the cache
 

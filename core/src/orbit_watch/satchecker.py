@@ -6,7 +6,10 @@ Space-Track and CelesTrak and gives the one nearest a given time, without an acc
 read 2026-11-20):
 
 * ``get-nearest-tle`` for the past, since TLEs "remain the record for historical dates";
-* ``get-nearest-omm`` where OMM data exists.
+* ``get-nearest-omm`` where OMM data exists;
+* ``get-omm-data`` for every OMM of one object in a period, with when SatChecker collected each
+  and from where ("celestrak" or "spacetrack"): the GP sets that were available at a time
+  (decision P6-02, read 2026-11-23).
 
 This module makes one request per call and never retries. A caller that makes several
 requests waits ``PAUSE_S`` between them and stops at the first answer that is not 200
@@ -42,6 +45,7 @@ SERVICE = "IAU CPS SatChecker"
 KINDS = ("tle", "omm")
 PAUSE_S = 2.0  # between two requests to SatChecker
 MAX_BYTES = 1024 * 1024
+MAX_PERIOD_DAYS = 31  # one request for a month of one object's sets at most
 UNIX_EPOCH_JD = 2440587.5
 
 
@@ -83,6 +87,18 @@ def omm_sha256(elements: dict[str, Any]) -> str:
     return sha256_bytes(dumps_compact(elements).encode("utf-8"))
 
 
+def history_url(norad_id: int, start: datetime, end: datetime) -> str:
+    query = urllib.parse.urlencode(
+        {
+            "id": str(norad_id),
+            "id_type": "catalog",
+            "start_date_jd": f"{julian_date(start):.8f}",
+            "end_date_jd": f"{julian_date(end):.8f}",
+        }
+    )
+    return f"{BASE_URL}get-omm-data/?{query}"
+
+
 def download_nearest(
     norad_id: int,
     when: datetime,
@@ -92,7 +108,11 @@ def download_nearest(
 ) -> bytes:
     """One request for the element set of ``norad_id`` nearest ``when``, never retried; the
     answer's body if it is 200. Raises ``SatCheckerError`` otherwise."""
-    url = nearest_url(kind, norad_id, when)
+    return download(nearest_url(kind, norad_id, when), opener=opener)
+
+
+def download(url: str, *, opener: Callable = urllib.request.urlopen) -> bytes:
+    """One request to SatChecker, never retried; the answer's body if it is 200."""
     request = urllib.request.Request(
         url,
         headers={
@@ -174,18 +194,28 @@ def parse_answer(body: bytes, norad_id: int, kind: str, *, endpoint: str) -> Nea
         source["tle_line1"], source["tle_line2"] = line1, line2
         digest = tle_sha256(line1, line2)
     elif kind == "omm":
-        elements = item.get("orbital_elements")
-        if not isinstance(elements, dict):
-            raise SatCheckerError(f"SatChecker's OMM for {norad_id} has no orbital elements")
-        missing = [f for f in REQUIRED_OMM_FIELDS if f not in elements]
-        if missing:
-            raise SatCheckerError(
-                f"SatChecker's OMM for {norad_id} lacks OMM field(s): {', '.join(missing)}"
-            )
-        record = dict(elements)
-        digest = omm_sha256(elements)
+        record, digest = _omm_elements(item, norad_id)
     else:
         raise ValueError(f"kind must be one of {', '.join(KINDS)}")
+    _check_object(record, norad_id)
+    source["original_sha256"] = digest
+    record[SOURCE_KEY] = source
+    return NearestSet(norad_id, kind, body, record, digest, str(record["EPOCH"]))
+
+
+def _omm_elements(item: dict[str, Any], norad_id: int) -> tuple[dict[str, Any], str]:
+    elements = item.get("orbital_elements")
+    if not isinstance(elements, dict):
+        raise SatCheckerError(f"SatChecker's OMM for {norad_id} has no orbital elements")
+    missing = [f for f in REQUIRED_OMM_FIELDS if f not in elements]
+    if missing:
+        raise SatCheckerError(
+            f"SatChecker's OMM for {norad_id} lacks OMM field(s): {', '.join(missing)}"
+        )
+    return dict(elements), omm_sha256(elements)
+
+
+def _check_object(record: dict[str, Any], norad_id: int) -> None:
     try:
         delivered = int(record["NORAD_CAT_ID"])
     except (TypeError, ValueError):
@@ -194,6 +224,56 @@ def parse_answer(body: bytes, norad_id: int, kind: str, *, endpoint: str) -> Nea
         raise SatCheckerError(
             f"SatChecker returned an element set of object {delivered}, not {norad_id}"
         )
-    source["original_sha256"] = digest
-    record[SOURCE_KEY] = source
-    return NearestSet(norad_id, kind, body, record, digest, str(record["EPOCH"]))
+
+
+def fetch_history(
+    norad_id: int,
+    start: datetime,
+    end: datetime,
+    *,
+    opener: Callable = urllib.request.urlopen,
+) -> list[NearestSet]:
+    """Every OMM that SatChecker keeps of ``norad_id`` with an epoch from ``start`` to ``end``:
+    one request, never retried. Sets that CelesTrak and Space-Track both gave appear once, with
+    the earlier collection time. Oldest epoch first."""
+    if end <= start:
+        raise ValueError("the period must end after it starts")
+    if (end - start).total_seconds() > MAX_PERIOD_DAYS * 86400:
+        raise ValueError(f"ask for at most {MAX_PERIOD_DAYS} days at a time")
+    body = download(history_url(norad_id, start, end), opener=opener)
+    try:
+        return parse_history(body, norad_id)
+    except SatCheckerError as exc:
+        exc.status = 200
+        raise
+
+
+def parse_history(body: bytes, norad_id: int) -> list[NearestSet]:
+    """Read a ``get-omm-data`` answer: ``{"count", "data": [...], "source", "version"}``."""
+    try:
+        document = json.loads(body.decode("utf-8"))
+        items = document["data"]
+        version = str(document.get("version", ""))
+    except (ValueError, UnicodeDecodeError, LookupError, TypeError):
+        raise SatCheckerError(
+            f"SatChecker's answer is not the expected JSON: {body[:200]!r}"
+        ) from None
+    if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
+        raise SatCheckerError(f"SatChecker's answer for {norad_id} has no list of element sets")
+    kept: dict[str, NearestSet] = {}
+    for item in items:
+        record, digest = _omm_elements(item, norad_id)
+        _check_object(record, norad_id)
+        collected = str(item.get("date_collected", ""))
+        if digest in kept and kept[digest].record[SOURCE_KEY]["date_collected"] <= collected:
+            continue
+        record[SOURCE_KEY] = {
+            "service": SERVICE,
+            "version": version,
+            "endpoint": "get-omm-data",
+            "data_source": str(item.get("data_source", "")),
+            "date_collected": collected,
+            "original_sha256": digest,
+        }
+        kept[digest] = NearestSet(norad_id, "omm", b"", record, digest, str(record["EPOCH"]))
+    return sorted(kept.values(), key=lambda s: (s.epoch, s.sha256))
