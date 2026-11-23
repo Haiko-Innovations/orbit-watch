@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { freshObservations } from "./stack";
+
+// The package's version, which the service reports in every page's footer.
+const pyproject = readFileSync(new URL("../../core/pyproject.toml", import.meta.url), "utf8");
+const VERSION = /^version = "([^"]+)"$/m.exec(pyproject)?.[1] ?? "no version in pyproject.toml";
 
 // The public pages, against the local stack (phase 3, steps 3.1 and 3.7). Everything is
 // LOCAL and SIMULATED, on a chain of no value. None of them needs signing in.
@@ -42,7 +47,7 @@ test("the network page shows the local chain and its contracts", async ({ page }
   await expect(details).toContainText("31337");
   await expect(details).toContainText("TESTUSD");
   await expect(details).toContainText("none (local chain)");
-  await expect(page.getByRole("contentinfo")).toContainText("0.6.0.dev0");
+  await expect(page.getByRole("contentinfo")).toContainText(`Orbit Watch ${VERSION} ·`);
 });
 
 test("open requests list the funded and the unfunded SIMULATED requests", async ({ page }) => {
