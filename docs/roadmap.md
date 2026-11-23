@@ -8,9 +8,14 @@ plan is in [plan.md](plan.md); decisions and their reasons are in
 
 Every pull request that finishes a roadmap step also updates this page.
 
-## Status (2026-11-21)
+## Status (2026-11-23)
 
-**Phase 5 has started**: real orbits and real observations on the testnet.
+**Phase 5 is done** and released as version 0.6.0: real orbits and real observations
+on the testnet, beside the simulated ones. On the public service, a replay of real
+SCORE observations and a request for a real object with simulated observations both
+settled on Base Sepolia. See the [phase 5 summary](phase-5-summary.md).
+
+How phase 5 went, step by step: real orbits and real observations on the testnet.
 Its decisions P5-01 to P5-15 were approved on 2026-11-21
 ([#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103)). Step 5.1
 is done: catalogues with several element sets per object, verification against
@@ -307,7 +312,7 @@ approved on 2026-11-21. In short:
 | ✅ **5.5 Real and simulated side by side, and replays** ([#108](https://github.com/Haiko-Innovations/orbit-watch/issues/108)) | Labels by source on objects, reference orbits and observations; simulated stations on real objects; replay requests by an administrator, delivered by a replay station under the observers' names. | In the local stack a request for a real object and a SIMULATED one run side by side, and a replay settles; the labels tested end to end on every page. |
 | ✅ **5.6 The station's place** ([#109](https://github.com/Haiko-Innovations/orbit-watch/issues/109)) | The observer's choice, exact or about a kilometre, with nothing chosen in advance and changeable later; existing stations stay rounded; the profile as the place for IOD, TDM and JSON; the privacy notice and the data inventory. | A station cannot be saved without the choice; a delivery from another place is refused; changing the choice tested; the notice's version date updated. |
 | ✅ **5.7 Visibility** ([#110](https://github.com/Haiko-Innovations/orbit-watch/issues/110)) | The Sun from a short formula in the core; the simulator observes only objects the Sun lights, under a dark sky ([#7](https://github.com/Haiko-Innovations/orbit-watch/issues/7)); a station's visible passes for a request, in the API and the observer's view. | The Sun's error against a JPL ephemeris measured and recorded; the committed simulated examples regenerated and their changes explained; the pass list tested. |
-| **5.8 Real data end to end and phase 5 summary** ([#111](https://github.com/Haiko-Innovations/orbit-watch/issues/111)) | On the public service, with the testnet keystores ([D-24](decisions.md#d-24-the-base-sepolia-deployment)): a replay of real SCORE observations, and a request for a real object observed by simulated stations against CelesTrak's orbit; the phase 5 summary. | The phase 5 completion criteria below are met; release 0.6.0. |
+| ✅ **5.8 Real data end to end and phase 5 summary** ([#111](https://github.com/Haiko-Innovations/orbit-watch/issues/111)) | On the public service, with the testnet keystores ([D-24](decisions.md#d-24-the-base-sepolia-deployment)): a replay of real SCORE observations, and a request for a real object observed by simulated stations against CelesTrak's orbit; the phase 5 summary. | The phase 5 completion criteria below are met; release 0.6.0. |
 
 **Follow-ups at the end of phase 5** ([P5-14](decisions.md#p5-14-follow-ups-at-the-end-not-in-the-way)):
 work that needs the maintainer or someone outside the repository. No step
