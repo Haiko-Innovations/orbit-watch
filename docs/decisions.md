@@ -3456,3 +3456,39 @@ Accepted · 2026-11-23. Phase 6 is done when:
 9. On the public service, a request verified against an operator's orbit, one
    verified against a fitted orbit, and an identification request have each
    settled on Base Sepolia. Every CI check passes; release 0.7.0.
+
+### D-59 Operators' orbits and past sets over a period
+
+Accepted · 2026-11-23. Step 6.1 measures how far GP sets are from operators' orbits
+(P6-02). Its first part gives the core what the measurement fetches. Fetching SupGP
+comes here rather than in step 6.2, which puts it into the service.
+
+- **`orbit-watch fetch-supgp`** (`orbit_watch.supgp`) asks CelesTrak for one object's
+  SupGP sets, or one source's, as P6-03 says:
+  - one request, CSV with gzip, never retried;
+  - not again within two hours, which CelesTrak's usage policy asks for SupGP as for GP;
+  - the first answer that is not 200 stops it, with what the policy asks next.
+
+  The CelesTrak download and the two-hour rule are shared with `fetch-gp`.
+- **Each set keeps its `RMS` and `DATA_SOURCE`.** They are columns of CelesTrak's CSV and
+  stay in the record as fetched; SGP4 ignores them. An answer whose sets do not name a
+  `DATA_SOURCE` is refused.
+- **An operator's orbit** is a set whose `DATA_SOURCE` ends in `-E`, `-RE` or `-SV`, or
+  is `CPF`: fitted to an ephemeris, state vectors or laser-ranging predictions. Almanacs
+  (`-A`), 11-parameter data (`-11P`) and TLEs passed on as they came (`-TLE`) are not
+  (`is_operator_orbit`). P6-03 left this choice to step 6.2. It is made here, from
+  CelesTrak's list of sources, because the measurement needs it. Step 6.2 may revise it
+  with the numbers.
+- **`orbit-watch fetch-satchecker --start T --end T`** asks SatChecker's `get-omm-data`
+  for every OMM of one object in a period:
+  - one request, never retried, at most 31 days;
+  - each set keeps its `data_source` and `date_collected`, so the measurement can take
+    only the sets that were available at a time;
+  - a set that CelesTrak and Space-Track both gave appears once, with the earlier
+    collection time.
+
+  `--near` works as before.
+
+Tested against local stand-ins (`test_supgp.py`); no test calls CelesTrak or SatChecker.
+The second part measures, and publishes the numbers.
+

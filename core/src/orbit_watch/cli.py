@@ -327,6 +327,30 @@ def cmd_fetch_gp(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+SUPGP_CREDIT = (
+    "Source: CelesTrak's supplemental GP (https://celestrak.org/NORAD/elements/supplemental/), "
+    "derived from owner/operator-supplied orbital data. Please follow the CelesTrak usage "
+    "policy: https://celestrak.org/usage-policy.php"
+)
+
+
+def cmd_fetch_supgp(args: argparse.Namespace) -> int:
+    from orbit_watch.fetch import FetchError
+    from orbit_watch.supgp import fetch_supgp
+
+    queries = [(k, v) for k, v in (("CATNR", args.catnr), ("SOURCE", args.source)) if v]
+    if len(queries) != 1:
+        raise FormatError("give exactly one of --catnr or --source")
+    key, value = queries[0]
+    try:
+        print(fetch_supgp(key, value, Path(args.output), force=args.force))
+    except FetchError as exc:
+        _err(str(exc))
+        return EXIT_FAILED
+    print(SUPGP_CREDIT)
+    return EXIT_OK
+
+
 SATCHECKER_CREDIT = (
     "Source: the IAU CPS's SatChecker (https://satchecker.cps.iau.org), element sets from "
     'Space-Track and CelesTrak. "This research made use of data and/or services provided by '
@@ -342,11 +366,15 @@ def cmd_fetch_satchecker(args: argparse.Namespace) -> int:
     from orbit_watch.satchecker import fetch_nearest
     from orbit_watch.timeutil import parse_utc
 
+    norad_id = parse_catalog_number(args.catnr)
+    if args.near is None:
+        return _fetch_satchecker_period(args, norad_id)
+    if args.start or args.end:
+        raise FormatError("give either --near, or --start and --end")
     try:
         when = parse_utc(args.near)
     except ValueError as exc:
         raise FormatError(f"--near: {exc}") from None
-    norad_id = parse_catalog_number(args.catnr)
     try:
         nearest = fetch_nearest(norad_id, when, kind="omm" if args.omm else "tle")
     except FetchError as exc:
@@ -376,6 +404,46 @@ def cmd_fetch_satchecker(args: argparse.Namespace) -> int:
             print(f"named it in {path}, and kept SatChecker's answer in {cache_dir}")
         else:
             print(f"{path} already names it")
+    print(SATCHECKER_CREDIT)
+    return EXIT_OK
+
+
+def _fetch_satchecker_period(args: argparse.Namespace, norad_id: int) -> int:
+    from orbit_watch.fetch import FetchError
+    from orbit_watch.satchecker import fetch_history
+    from orbit_watch.timeutil import parse_utc
+
+    if not (args.start and args.end):
+        raise FormatError("give either --near, or --start and --end")
+    if args.manifest or args.omm:
+        raise FormatError("--manifest and --omm go with --near; a period gives OMM data only")
+    try:
+        start, end = parse_utc(args.start), parse_utc(args.end)
+    except ValueError as exc:
+        raise FormatError(f"--start/--end: {exc}") from None
+    try:
+        sets = fetch_history(norad_id, start, end)
+    except ValueError as exc:
+        raise FormatError(str(exc)) from None
+    except FetchError as exc:
+        _err(str(exc))
+        return EXIT_FAILED
+    if not sets:
+        _err(f"SatChecker keeps no element set of {norad_id} from {args.start} to {args.end}")
+        return EXIT_FAILED
+    document = {
+        "format": "orbit-watch/gp-catalog",
+        "format_version": "1.0",
+        "simulated": False,
+        "description": "Real element sets from the IAU CPS's SatChecker, with when each was "
+        "collected. Not for redistribution (decision D-06).",
+        "records": [s.record for s in sets],
+    }
+    write_text(args.output, dumps_pretty(document, sort_keys=False))
+    print(
+        f"wrote {args.output}: object {norad_id}, {len(sets)} element set(s), "
+        f"epochs {sets[0].epoch} to {sets[-1].epoch}"
+    )
     print(SATCHECKER_CREDIT)
     return EXIT_OK
 
@@ -1176,18 +1244,37 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fetch.set_defaults(handler=cmd_fetch_gp)
 
+    supgp = commands.add_parser(
+        "fetch-supgp",
+        help="download operators' orbits from CelesTrak's supplemental GP (one request)",
+        description="Download supplemental GP element sets (SupGP) in OMM CSV form from "
+        "CelesTrak, compressed: sets fitted to owners' and operators' own orbital data, each "
+        "with its DATA_SOURCE and the RMS of the fit. Makes exactly one request, never retries, "
+        "and does not download the same file again within two hours, as CelesTrak's usage "
+        "policy asks. SupGP keeps no history.",
+    )
+    supgp.add_argument("--catnr", help="catalogue number")
+    supgp.add_argument("--source", help="a SupGP data source, e.g. AST-E, Planet-E or CPF")
+    supgp.add_argument("-o", "--output", required=True, help="output file (.csv)")
+    supgp.add_argument(
+        "--force", action="store_true", help="download even if the file is younger than two hours"
+    )
+    supgp.set_defaults(handler=cmd_fetch_supgp)
+
     past = commands.add_parser(
         "fetch-satchecker",
-        help="download the past element set nearest a time from the IAU CPS's SatChecker",
+        help="download past element sets from the IAU CPS's SatChecker",
         description="Download the element set of one object nearest a given time from the "
         "IAU CPS's SatChecker (one request, no retries), for observations from the past. "
         "TLEs are converted to OMM form. With --manifest, the set is also named in a "
-        "reference-orbit manifest and SatChecker's answer kept in the cache.",
+        "reference-orbit manifest and SatChecker's answer kept in the cache. With --start "
+        "and --end instead of --near, every OMM of the object in that period, at most 31 "
+        "days, with when SatChecker collected each.",
     )
     past.add_argument("--catnr", required=True, help="catalogue number")
-    past.add_argument(
-        "--near", required=True, help="the time, UTC (YYYY-MM-DDThh:mm:ssZ), e.g. mid-track"
-    )
+    past.add_argument("--near", help="the time, UTC (YYYY-MM-DDThh:mm:ssZ), e.g. mid-track")
+    past.add_argument("--start", help="with --end: a period's start, UTC")
+    past.add_argument("--end", help="with --start: a period's end, UTC")
     past.add_argument(
         "--omm", action="store_true", help="ask for an OMM instead of a TLE (newer data only)"
     )

@@ -14,6 +14,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   in eight steps (6.1 to 6.8, #138 to #145) with completion criteria in
   `docs/roadmap.md`, and the decisions P6-01 to P6-12 in `docs/decisions.md`,
   approved on 2026-11-23 (#137).
+- `orbit-watch fetch-supgp`: operators' own orbits from CelesTrak's supplemental GP,
+  one object or one source at a time, with each set's `DATA_SOURCE` and the `RMS` of
+  CelesTrak's fit, at most once in two hours (step 6.1, D-59).
+- `orbit-watch fetch-satchecker --start --end`: every past OMM of one object over a
+  period of at most 31 days, with when SatChecker collected each (step 6.1, D-59).
 
 ## [0.6.0] - 2026-11-23
 

@@ -61,7 +61,7 @@ def advice(status: int) -> str:
         )
     if status == 404:
         return (
-            "CelesTrak has no GP data for this query; do not ask for it again, since every 404 "
+            "CelesTrak has no data for this query; do not ask for it again, since every 404 "
             "counts towards its error limit"
         )
     if status == 403:
@@ -92,7 +92,13 @@ def read_body(response, limit: int) -> bytes:
 def download_gp(key: str, value: str, *, opener: Callable = urllib.request.urlopen) -> bytes:
     """One request for GP data (OMM CSV), never retried; the answer's body if it is 200 with
     element sets. Raises ``FetchError`` with the HTTP status, or None without an answer."""
-    url = build_url(key, value)
+    return download_omm_csv(build_url(key, value), f"GP data for {key}={value}", opener=opener)
+
+
+def download_omm_csv(url: str, what: str, *, opener: Callable = urllib.request.urlopen) -> bytes:
+    """One request to CelesTrak for element sets in OMM CSV form, never retried: GP data, or
+    supplemental GP (``orbit_watch.supgp``). The answer's body if it is 200 with element sets;
+    otherwise ``FetchError`` with the HTTP status and what the usage policy asks next."""
     request = urllib.request.Request(
         url, headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"}
     )
@@ -119,9 +125,7 @@ def download_gp(key: str, value: str, *, opener: Callable = urllib.request.urlop
         parse_catalog(body)
     except (CatalogError, ValueError, UnicodeDecodeError):
         text = body[:200].decode("utf-8", errors="replace").strip()
-        raise FetchError(
-            f"CelesTrak did not return GP data for {key}={value}: {text}", 200
-        ) from None
+        raise FetchError(f"CelesTrak did not return {what}: {text}", 200) from None
     return body
 
 
@@ -135,18 +139,40 @@ def fetch_gp(
     now: Callable[[], float] = time.time,
 ) -> str:
     """Download GP data (OMM CSV) for one query to ``output``. Returns a status message."""
-    url = build_url(key, value)
+    return save_once(
+        build_url(key, value),
+        output,
+        lambda: download_gp(key, value, opener=opener),
+        what="GP data",
+        force=force,
+        now=now,
+    )
+
+
+def save_once(
+    url: str,
+    output: Path,
+    download: Callable[[], bytes],
+    *,
+    what: str,
+    force: bool = False,
+    now: Callable[[], float] = time.time,
+) -> str:
+    """Save one CelesTrak answer to ``output``, unless the file is younger than two hours:
+    CelesTrak updates GP data every two hours and asks for "a 2-hour minimum" for SupGP."""
     if output.exists() and not force:
         age = now() - output.stat().st_mtime
         if age < UPDATE_INTERVAL_S:
             return (
-                f"{output} was downloaded {age / 60:.0f} min ago; CelesTrak updates GP data "
-                "every 2 hours, so it was not downloaded again (use --force to override)"
+                f"{output} was downloaded {age / 60:.0f} min ago; CelesTrak asks for at least "
+                f"two hours between downloads of {what}, so it was not downloaded again "
+                "(use --force to override)"
             )
-    body = download_gp(key, value, opener=opener)
+    body = download()
     catalog = parse_catalog(body)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_name(output.name + ".part")
     temporary.write_bytes(body)
     temporary.replace(output)
-    return f"wrote {output} ({len(catalog.records)} element set(s) from {url})"
+    count = sum(len(sets) for sets in catalog.sets.values())
+    return f"wrote {output} ({count} element set(s) from {url})"

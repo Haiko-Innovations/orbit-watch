@@ -13,7 +13,10 @@ Every pull request that finishes a roadmap step also updates this page.
 **Phase 6 is planned**: more precise reference orbits and identification, on the
 testnet. Its decisions P6-01 to P6-12 were approved on 2026-11-23
 ([#137](https://github.com/Haiko-Innovations/orbit-watch/issues/137)), and its first
-step measures how far CelesTrak's GP sets are from operators' own orbits.
+step measures how far CelesTrak's GP sets are from operators' own orbits. Step 6.1
+is in two parts; in the first, the core fetches operators' orbits from CelesTrak's
+SupGP and every past GP set of an object over a period from SatChecker
+([D-59](decisions.md#d-59-operators-orbits-and-past-sets-over-a-period)).
 
 **Phase 5 is done** and released as version 0.6.0: real orbits and real observations
 on the testnet, beside the simulated ones. On the public service, a replay of real
