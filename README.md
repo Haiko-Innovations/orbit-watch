@@ -23,7 +23,7 @@ meter that tells them how accurate their station is.
 > **Simulated data is always labelled as simulated**, and automated
 > verification is a prototype, not production-ready scientific validation.
 > See the [roadmap](docs/roadmap.md), the
-> [phase 4 summary](docs/phase-4-summary.md) and the [changelog](CHANGELOG.md).
+> [phase 5 summary](docs/phase-5-summary.md) and the [changelog](CHANGELOG.md).
 
 ## Try it (three commands)
 
@@ -162,9 +162,9 @@ The full starting plan: [docs/plan.md](docs/plan.md).
   public sandbox on the testnet, still SIMULATED, at
   <https://orbit-watch-tan.vercel.app>
   ([phase 4 summary](docs/phase-4-summary.md)).
-- **Phase 5 (in progress):** real reference orbits and real published observations
-  on the testnet, beside the simulated ones; still testnet money
-  ([#103](https://github.com/Haiko-Innovations/orbit-watch/issues/103)).
+- **Phase 5 (done, 0.6.0):** real reference orbits and real published observations
+  on the testnet, beside the simulated ones, each labelled by its source; still
+  testnet money ([phase 5 summary](docs/phase-5-summary.md)).
 
 ## Open questions
 

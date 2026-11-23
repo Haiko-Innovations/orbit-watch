@@ -24,20 +24,20 @@
     ]
   },
   "software": {
-    "orbit-watch": "0.6.0.dev0",
+    "orbit-watch": "0.6.0",
     "skyfield": "1.55",
     "sgp4": "2.27",
     "numpy": "2.5.4"
   },
   "inputs": {
     "request_sha256": "ed503008700f8f6be8bd0c9dfc0c9083c247dd9d74c85406c4e9569483df203a",
-    "observations_sha256": "95cfc06e2d47189f89ed2a7dfb41fa7fbf105504e64b8b4b533827704cf14930",
+    "observations_sha256": "4009fec3da85c8a176f494a2900db60f890f2cab225e1c1f42680ce5d3da9649",
     "observations_format": "json",
-    "declared_sha256": "95cfc06e2d47189f89ed2a7dfb41fa7fbf105504e64b8b4b533827704cf14930",
+    "declared_sha256": "4009fec3da85c8a176f494a2900db60f890f2cab225e1c1f42680ce5d3da9649",
     "reference_catalog_sha256": "6643a1965f3d5eb23524269de8152feca149addaba771bfe34d8ffbc5cdd67e0",
     "target_policy_sha256": "866f9d582d155fab0810417a7644573501fa282b3bdc93ffc22b15ed96434f95",
     "previous_deliveries_sha256": [
-      "850382276da850d48f6f93900d69009486bc260935d6cfa42ef9fddae5a078b2"
+      "22fede04660db0224c5bb23eab974b9593255949ab3c9ca68aab786fe622cdf1"
     ]
   },
   "request": {
@@ -116,11 +116,11 @@
       "id": "duplicates",
       "title": "No duplicates or resubmissions",
       "result": "fail",
-      "reason": "Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 850382276da850d4...).",
+      "reason": "Duplicate or resubmitted data: 16 of 16 observations already appear in an earlier delivery (sha256 22fede04660db022...).",
       "details": {
         "internal_duplicates": 0,
         "overlap_with_earlier": {
-          "850382276da850d48f6f93900d69009486bc260935d6cfa42ef9fddae5a078b2": 16
+          "22fede04660db0224c5bb23eab974b9593255949ab3c9ca68aab786fe622cdf1": 16
         },
         "identical_earlier_files": 0
       }

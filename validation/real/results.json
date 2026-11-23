@@ -15,7 +15,7 @@
     }
   },
   "software": {
-    "orbit-watch": "0.6.0.dev0"
+    "orbit-watch": "0.6.0"
   },
   "settings": {
     "requirements": {

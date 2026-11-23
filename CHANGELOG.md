@@ -8,7 +8,18 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-23
+
+Phase 5: real orbits and real observations on the testnet, beside the simulated ones
+([phase 5 summary](docs/phase-5-summary.md)).
+
 ### Added
+
+- Real data end to end on Base Sepolia (step 5.8, #111). On the public service, a replay
+  of 108 real observations of PELICAN-1 from SCORE and a request for the real object
+  CUBESAT XI-IV (CO-57) with SIMULATED observations both settled, with the testnet
+  keystores. The phase 5 summary records them and the completion criteria, and that
+  CelesTrak and SatChecker answered every request.
 
 - Phase 5 plan: real orbits and real observations on the testnet, in eight
   steps (5.1 to 5.8) with completion criteria in `docs/roadmap.md`, and the
@@ -702,7 +713,8 @@ is simulated and labelled as such.
 - Apache 2.0 licence, Contributor Covenant 3.0, contributing guide and README in
   English and Finnish, issue templates, roadmap, decision log and release process.
 
-[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.5.0...HEAD
+[unreleased]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Haiko-Innovations/orbit-watch/compare/v0.2.0...v0.3.0
