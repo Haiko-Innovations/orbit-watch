@@ -3492,3 +3492,53 @@ comes here rather than in step 6.2, which puts it into the service.
 Tested against local stand-ins (`test_supgp.py`); no test calls CelesTrak or SatChecker.
 The second part measures, and publishes the numbers.
 
+### D-60 Reference orbits measured against operators' orbits
+
+Accepted · 2026-11-23. Step 6.1's second part measures, as P6-02 asks, how far
+CelesTrak's GP sets are from operators' own orbits
+([reference-orbit-accuracy.md](reference-orbit-accuracy.md)).
+
+- **`orbit-watch measure-reference-orbits`** (`orbit_watch.reference_accuracy`):
+  - With `--fetch` it fetches one run into the cache. That is one SupGP download for
+    each of `AST-E`, `CPF`, `ISS-E`, `Kuiper-E`, `OneWeb-E` and `Planet-E`, and one
+    SatChecker request per chosen object, two seconds apart. It does not start within
+    two hours of the last run. The first answer that is not 200 stops it, and an
+    incomplete run is never used.
+  - Without `--fetch` it measures the newest complete run again, byte for byte, and
+    writes `validation/reference-orbits/results.json` and the page's tables.
+  - SupGP keeps no history, so a later run measures with the sets current then.
+- **The truth** for each object is its operator-derived set with the latest epoch at or
+  before the run. Several prediction centres at one epoch give the best-fitted one.
+  Up to six objects are taken per source and orbit class, evenly by catalogue number.
+  The ISS gives its last eight segments that had begun. Starlink is left out, since
+  its list is large.
+- **The GP sets** are every OMM from SatChecker of the ten days up to the truth's epoch.
+  Each is compared with the truth over the six hours after that epoch, every minute,
+  radially, in track and across track.
+  - SatChecker kept two OneWeb sets among CelesTrak's that are the SupGP sets
+    themselves: the same epoch, and no difference. A GP set at the truth's epoch closer
+    than a metre is counted apart and left out.
+- **No element set leaves the cache.** The results name sets by epoch and SHA-256.
+- **The first run**, fetched on 2026-11-23 at 21:05 UTC, gave 44 truth sets of 43
+  objects and 2,158 comparisons. All 49 answers were 200.
+  - **Fresh sets**: the newest GP set a service would have had, 0.2 to 0.6 days old,
+    was a median 0.17 to 0.54 km off in low orbits, except AST SpaceMobile's at 1.83 km.
+  - **Ageing in low orbits**: the median grew from 0.33 km under half a day to 1.4 km
+    at one to two days, 3.2 km at two to three and 29 km at seven to ten. The 90th
+    percentile grew from 1.9 to 212 km. Nearly all of it is in track.
+  - **By object**: passive laser-ranging satellites stayed near 0.3 to 1 km for ten
+    days. Satellites that manoeuvre were tens of kilometres off within three to five
+    days.
+- **`orbit-watch score-coverage`** counts what files from `fetch-score` hold for an
+  orbit determination. It repeats the first look of 2026-11-23, which found windows
+  with two or more stations rare.
+
+The page lists five candidates for method 3.0.0, which step 6.3 decides:
+- an orbit term that grows with a GP set's age;
+- terms in track and across track kept apart;
+- a small term for operators' orbits, once a few runs show how SupGP sets age;
+- manoeuvres as the tail that no age model catches;
+- the allow-list's own objects, which these numbers bracket rather than measure.
+
+With this, step 6.1 is done.
+

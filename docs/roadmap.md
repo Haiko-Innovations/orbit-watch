@@ -16,7 +16,12 @@ testnet. Its decisions P6-01 to P6-12 were approved on 2026-11-23
 step measures how far CelesTrak's GP sets are from operators' own orbits. Step 6.1
 is in two parts; in the first, the core fetches operators' orbits from CelesTrak's
 SupGP and every past GP set of an object over a period from SatChecker
-([D-59](decisions.md#d-59-operators-orbits-and-past-sets-over-a-period)).
+([D-59](decisions.md#d-59-operators-orbits-and-past-sets-over-a-period)); in the second,
+the measurement: a fresh GP set was a median 0.17 to 0.54 km off in low orbits, but the
+error grew along the track to a median of 29 km at seven to ten days
+([reference-orbit-accuracy.md](reference-orbit-accuracy.md),
+[D-60](decisions.md#d-60-reference-orbits-measured-against-operators-orbits)). Step 6.1
+is done.
 
 **Phase 5 is done** and released as version 0.6.0: real orbits and real observations
 on the testnet, beside the simulated ones. On the public service, a replay of real
@@ -401,7 +406,7 @@ The choices behind this plan are **decisions P6-01 to P6-12** in
 
 | Step | Content | Done when |
 |---|---|---|
-| **6.1 Measure the reference orbits first** ([#138](https://github.com/Haiko-Innovations/orbit-watch/issues/138)) | GP sets of different ages from SatChecker against fresh SupGP sets fitted to operators' orbits, along track, cross track and radially, by orbit class, source and age; SCORE's coverage for orbit determination. | A page in `docs/` gives the numbers step 6.3 needs, reproducible with one command; every fetch stops at the first answer that is not 200, tested against local stand-ins. |
+| ✅ **6.1 Measure the reference orbits first** ([#138](https://github.com/Haiko-Innovations/orbit-watch/issues/138)) | GP sets of different ages from SatChecker against fresh SupGP sets fitted to operators' orbits, along track, cross track and radially, by orbit class, source and age; SCORE's coverage for orbit determination. | A page in `docs/` gives the numbers step 6.3 needs, reproducible with one command; every fetch stops at the first answer that is not 200, tested against local stand-ins. |
 | **6.2 Operators' orbits from SupGP** ([#139](https://github.com/Haiko-Innovations/orbit-watch/issues/139)) | `orbit-watch fetch-supgp`; the follower fetches an open request's object from SupGP; verification against the operator-derived set latest at or before the window; the report and labels name the source; objects whose operators publish their orbits on the allow-list; credits. | A delivery for an operator-tracked object is verified against its SupGP set, named in the report; the set's choice and the allow-list rule are tested; fetching stops and the health endpoint reports it, with no outside call in CI. |
 | **6.3 Method 3.0.0** ([#140](https://github.com/Haiko-Innovations/orbit-watch/issues/140)) | The limit's orbit term by the orbit's source, age and orbit class, from step 6.1, in place of D-08's 5 km and the 7-day limit; a major method version. | Examples, known answers and the measurement on real data regenerated and their changes explained; D-46's time shifts measured again with operators' orbits; a settled request's report unchanged. |
 | **6.4 Orbit determination in the core** ([#141](https://github.com/Haiko-Innovations/orbit-watch/issues/141)) | Batch least squares of SGP4's mean elements and B* with numpy and sgp4; deterministic, with its own method version; `orbit-watch fit-orbit`; the limit of one station's fit stated. | Reproducible byte for byte; measured on simulated networks against the truth and on SCORE's real nights by predicting the next night, reproducible with one command. |
