@@ -12,7 +12,7 @@
 # Python, as in CI) and uv 0.11.16 (as in CI). Dependabot proposes updates.
 
 # --------------------------------------------------------------------- the web application
-FROM node:26.12.1-slim@sha256:94816674c62774da0d099a947bf4613b9e1972a2733abd0d0cd80e795f8411d0 AS web
+FROM node:26.13.0-slim@sha256:5adad64f9a1fca2d51972caa65983634c8a774eb300d72b20f7f2a0f60368072 AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json web/.npmrc ./
 # Exactly the lock file; no package runs an install script (decision P3-02).
@@ -25,7 +25,7 @@ COPY web/ ./
 RUN npm run build
 
 # --------------------------------------------------------------------- the Python service
-FROM python:3.12.15-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS service
+FROM python:3.12.16-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b AS service
 COPY --from=ghcr.io/astral-sh/uv:0.11.16@sha256:440fd6477af86a2f1b38080c539f1672cd22acb1b1a47e321dba5158ab08864d /uv /uvx /bin/
 # Bytecode compiled at build time (the file system is read-only at run time); the image's
 # own Python, never a downloaded one.
@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-editable --extra api --extra evm
 
 # --------------------------------------------------------------------- the image
-FROM python:3.12.15-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
+FROM python:3.12.16-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 LABEL org.opencontainers.image.title="Orbit Watch" \
       org.opencontainers.image.description="Orbit Watch service: API, web application and follower. Testnet only, no real value." \
       org.opencontainers.image.source="https://github.com/Haiko-Innovations/orbit-watch" \
