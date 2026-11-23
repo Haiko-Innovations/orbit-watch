@@ -1028,12 +1028,25 @@ class RequestService:
         else:
             state = "embargoed"
         observer = record.observer
-        attribution = (
-            f"Observations by {observer} for {record.requester}, request {request_id}, "
-            "published through Orbit Watch"
-            if observer
-            else f"Request {request_id} by {record.requester}, published through Orbit Watch"
-        )
+        replay = self.replay_of(request_id)
+        if replay is not None:
+            # A replay names the observers who made the observations; its replay station
+            # delivered them and is never their observer (P5-10, D-51).
+            attribution = (
+                f"Observations by {', '.join(replay.observers)} (ORCID iDs), published in "
+                f"{replay.source} under {replay.licence}; replayed by "
+                f"{observer or replay.station} for {record.requester}, request {request_id}, "
+                "through Orbit Watch"
+            )
+        elif observer:
+            attribution = (
+                f"Observations by {observer} for {record.requester}, request {request_id}, "
+                "published through Orbit Watch"
+            )
+        else:
+            attribution = (
+                f"Request {request_id} by {record.requester}, published through Orbit Watch"
+            )
         return {
             "request_id": request_id,
             "state": state,

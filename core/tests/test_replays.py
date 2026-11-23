@@ -274,6 +274,16 @@ def test_a_replay_settles_and_pays_its_replay_station(world):
     assert str(record.status) == "settled" and str(record.outcome) == "accepted"
     assert record.observer == STATION  # the replay station, paid on the testnet
     assert service.adapter.balance(STATION) == SPLIT.observer
+    # Published, it names the observers, the source and the licence, and the replay
+    # station only as the one that replayed them (P5-10).
+    publication = service.publication("REPLAY-0001", clock())
+    assert publication["state"] == "published"
+    assert publication["attribution"] == (
+        f"Observations by {EXAMPLE_ORCID} (ORCID iDs), published in A MADE-UP SOURCE, for "
+        f"tests under CC-BY-4.0; replayed by {STATION} for {REQUESTER}, request REPLAY-0001, "
+        "through Orbit Watch"
+    )
+    assert not publication["attribution"].startswith(f"Observations by {STATION}")
 
 
 def test_a_normal_request_needs_the_stations_profile_and_place(world):

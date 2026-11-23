@@ -31,7 +31,10 @@ orbit-watch public get SIM-REQ-1001 --api http://127.0.0.1:8000 --download ./dat
 ```
 
 `public get --download` checks every file against its SHA-256 and writes the
-licence and attribution next to the files.
+licence and attribution next to the files. A replay's attribution names the
+observers by their ORCID iDs, the source and its licence, and the replay station
+only as the one that replayed them
+([D-51](decisions.md#d-51-replays)).
 
 | Endpoint | Returns |
 |---|---|
