@@ -8,6 +8,13 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ## [Unreleased]
 
+### Added
+
+- Phase 6 plan: more precise reference orbits and identification on the testnet,
+  in eight steps (6.1 to 6.8, #138 to #145) with completion criteria in
+  `docs/roadmap.md`, and the decisions P6-01 to P6-12 in `docs/decisions.md`,
+  approved on 2026-11-23 (#137).
+
 ## [0.6.0] - 2026-11-23
 
 Phase 5: real orbits and real observations on the testnet, beside the simulated ones

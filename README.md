@@ -165,6 +165,10 @@ The full starting plan: [docs/plan.md](docs/plan.md).
 - **Phase 5 (done, 0.6.0):** real reference orbits and real published observations
   on the testnet, beside the simulated ones, each labelled by its source; still
   testnet money ([phase 5 summary](docs/phase-5-summary.md)).
+- **Phase 6 (planned, 0.7.0):** more precise reference orbits, from operators' own
+  orbits and an orbit determination of our own, and identification of an object
+  among one launch's objects; still testnet money
+  ([#137](https://github.com/Haiko-Innovations/orbit-watch/issues/137)).
 
 ## Open questions
 
