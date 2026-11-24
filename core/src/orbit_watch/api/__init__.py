@@ -1048,10 +1048,11 @@ class Api:
         return {"requests": self.service.published(now)}
 
     def public_targets(self, request, now):
-        """The objects requests may target: the allow-list (decisions D-05 and D-49), which
-        is public. Each says whether it is SIMULATED and why it is on the list: the service's
-        own list, CelesTrak's groups, or an administrator's addition with its reason.
-        ``simulated`` is true when every target is."""
+        """The objects requests may target: the allow-list (decisions D-05, D-49 and D-62),
+        which is public. Each says whether it is SIMULATED and why it is on the list: the
+        service's own list, CelesTrak's groups and SupGP sources with its operator's orbit,
+        or an administrator's addition with its reason. ``simulated`` is true when every
+        target is."""
         targets = list(self.service.targets().values())
         groups = self.service.allowlist_groups
         return {
@@ -1059,15 +1060,19 @@ class Api:
             "simulated": bool(targets) and all(t.simulated for t in targets),
             "description": (
                 "Civilian objects only (decision D-05): the service's own list, CelesTrak's "
-                f"groups {', '.join(allowlist.INCLUDED_GROUPS)} and the objects an "
-                "administrator added with a public reason, minus CelesTrak's groups "
+                f"groups {', '.join(allowlist.INCLUDED_GROUPS)}, the objects whose operators "
+                "publish their orbits in CelesTrak's SupGP sources "
+                f"{', '.join(allowlist.OPERATOR_SOURCES)}, and the objects an administrator "
+                "added with a public reason, minus CelesTrak's groups "
                 f"{', '.join(allowlist.EXCLUDED_GROUPS)} and names that match the patterns for "
-                "military, intelligence and government security payloads (decision D-49)."
+                "military, intelligence and government security payloads, the navigation "
+                "satellites of GPS, GLONASS and BeiDou among them (decisions D-49 and D-62)."
             ),
             "groups": [
                 {
                     "group": group,
-                    "role": "include" if group in allowlist.INCLUDED_GROUPS else "exclude",
+                    "data": "supgp" if allowlist.is_operator_source(group) else "gp",
+                    "role": "include" if group in allowlist.INCLUDED else "exclude",
                     "fetched_at": groups[group]["fetched_at"] if group in groups else None,
                     "objects": len(groups[group]["members"]) if group in groups else None,
                 }
@@ -1112,18 +1117,24 @@ class Api:
         """``POST /v1/admin/allowlist``: an administrator adds a real object to the list,
         such as one of a large group that is not fetched, after checking its owner in the
         satellite catalogue (P5-08, D-49). The reason is public; the name patterns and the
-        excluded groups still apply."""
+        excluded groups still apply. ``operator_source``, such as ``SpaceX-E`` for a
+        Starlink object, says that one SupGP query has shown its operator's orbit (P6-04,
+        D-62)."""
         self._require(principal, "admin")
         document = _json(body)
         norad_id = _field(document, "norad_id", int)
         if norad_id < 1 or norad_id > 999_999_999:
             raise ApiError("invalid_body", "norad_id must be a catalogue number")
+        operator_source = document.get("operator_source")
+        if operator_source is not None and not isinstance(operator_source, str):
+            raise ApiError("invalid_body", "operator_source must be a string")
         target = self.service.allow_object(
             norad_id,
             _field(document, "name", str),
             _field(document, "reason", str),
             principal.party,
             self.wall_clock(),
+            operator_source,
         )
         return 200, target.public()
 

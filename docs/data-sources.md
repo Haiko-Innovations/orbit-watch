@@ -44,7 +44,8 @@ current official source again.
   exclude. These are the group names in the links of
   [CelesTrak's index of GP data](https://celestrak.org/NORAD/elements/), read on
   2026-11-21. Large groups, such as `active` and `starlink`, are never fetched.
-  It keeps the groups' objects and names, not their element sets.
+  It keeps the groups' objects and names, not their element sets. It also fetches
+  six SupGP sources once a day ([below](#operators-orbits-celestraks-supplemental-gp)).
 - Historical GP data is available only through a
   [request form](https://celestrak.org/NORAD/archives/request.php) (CAPTCHA,
   delivered by email, 10 requests per day).
@@ -139,6 +140,22 @@ next, as `fetch-gp` does. An operator's orbit is a set whose `DATA_SOURCE` ends 
 (`-A`), 11-parameter data (`-11P`) and TLEs passed on as they came (`-TLE`) are not
 ([D-59](decisions.md#d-59-operators-orbits-and-past-sets-over-a-period)). No SupGP set
 is committed ([P5-05](decisions.md#p5-05-orbit-data-stays-out-of-the-repository)).
+
+**On the allow-list** ([D-62](decisions.md#d-62-objects-whose-operators-publish-their-orbits-on-the-allow-list)):
+- **Six sources, once a day.** The service's follower fetches `AST-E`, `CPF`, `ISS-E`,
+  `Kuiper-E`, `OneWeb-E` and `Planet-E`, one request each, after CelesTrak's excluded
+  groups. These are the `SOURCE` values of the query documentation, read on 2026-11-24.
+  It keeps each source's objects that have an operator's orbit, by name, not their sets.
+- **Starlink** is one of the large lists, so it is not fetched. An administrator adds a
+  Starlink object one at a time, after `orbit-watch fetch-supgp --catnr N` has shown a set
+  from `SpaceX-E`, SpaceX's ephemeris.
+- **GPS and GLONASS are never fetched** (`GPS-A`, `GPS-E`, `GLONASS-RE`). The
+  laser-ranging list (`CPF`) holds GPS, GLONASS and BeiDou satellites too, and two
+  dual-use ones, PAZ and QZS-6. Name patterns leave them out.
+- **Credits.** The data is CelesTrak's, derived from what the operators publish: AST
+  SpaceMobile, Amazon Leo (formerly Project Kuiper, CelesTrak's `Kuiper-E`), Eutelsat
+  OneWeb, Planet, NASA for the ISS, the ILRS prediction centres for `CPF`, and SpaceX for
+  Starlink. The service's [data sources page](legal/data-sources.md) thanks them.
 
 ## Real orbits in examples and tests: manifests and the cache
 

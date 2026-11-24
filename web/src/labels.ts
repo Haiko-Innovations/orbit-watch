@@ -16,6 +16,8 @@ export interface Labels {
     simulated: boolean;
     source: "service" | "celestrak" | "administrator" | null;
     groups?: string[] | undefined;
+    /** CelesTrak's SupGP sources with its operator's orbit (decision D-62). */
+    operator_orbits?: string[] | undefined;
     reason?: string | undefined;
     added_at?: string | undefined;
     on_list: boolean;
@@ -59,8 +61,19 @@ export function epochText(epoch: string): string {
 export function objectText(object: Labels["object"]): string {
   if (object.simulated) return s.objectSimulated;
   if (!object.on_list) return s.objectOffList;
-  if (object.source === "celestrak") return s.objectFromGroups(object.groups ?? []);
-  if (object.source === "administrator") return s.objectAdded(object.reason ?? "");
+  const operators = object.operator_orbits ?? [];
+  const groups = object.groups ?? [];
+  if (object.source === "celestrak") {
+    if (operators.length === 0) return s.objectFromGroups(groups);
+    if (groups.length === 0) return s.objectFromOperator(operators);
+    return s.objectFromGroups(groups) + s.whoseOperator(operators);
+  }
+  if (object.source === "administrator") {
+    const reason = object.reason ?? "";
+    return operators.length > 0
+      ? s.objectAddedWithOperator(reason, operators)
+      : s.objectAdded(reason);
+  }
   return s.objectReal;
 }
 

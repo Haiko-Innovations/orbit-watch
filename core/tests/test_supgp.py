@@ -65,7 +65,8 @@ def test_the_url():
     ("data_source", "operator"),
     [
         ("AST-E", True),
-        ("Starlink-E", True),
+        ("SpaceX-E", True),
+        ("SpaceX-SV", True),
         ("ISS-E", True),
         ("GLONASS-RE", True),
         ("Transporter-SV", True),

@@ -36,6 +36,12 @@ export const strings = {
     objectFromGroups: (groups: string[]) =>
       `a real object, in CelesTrak's ${groups.length === 1 ? "group" : "groups"} ${groups.join(", ")}`,
     objectAdded: (reason: string) => `a real object, added by an administrator: ${reason}`,
+    objectFromOperator: (sources: string[]) =>
+      `a real object whose operator publishes its orbit (${sources.join(", ")}, in CelesTrak's supplemental GP)`,
+    whoseOperator: (sources: string[]) =>
+      `, whose operator publishes its orbit (${sources.join(", ")})`,
+    objectAddedWithOperator: (reason: string, sources: string[]) =>
+      `a real object whose operator publishes its orbit (${sources.join(", ")}), added by an administrator: ${reason}`,
     orbit: "Reference orbit",
     orbitNone: "not fetched yet; the service fetches it before the window",
     orbitText: (source: string, epoch: string) => `${source}, epoch ${epoch}`,

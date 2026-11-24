@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 from helpers import catalog_bytes, packaged, policy_bytes
 from starlette.testclient import TestClient
-from test_allowlist_service import GroupStandIn
+from test_allowlist_service import GroupStandIn, fetch_all_groups
 from test_orbit_follower import REQUESTER, SPLIT, STATION, T0, Clock, csv_of, made_up_record
 
 from orbit_watch import orbit_follower
@@ -93,9 +93,7 @@ def world(database):
         "stand_in": stand_in,
         "keys": made,
     }
-    world["api"].follow_once()  # CelesTrak's groups, then 99015 is on the list
-    clock.now = T0 + timedelta(minutes=15)
-    world["api"].follow_once()
+    fetch_all_groups(world)  # CelesTrak's groups and SupGP sources: 99015 is on the list
     assert 99015 in service.targets()
     yield world
     service.storage.close()

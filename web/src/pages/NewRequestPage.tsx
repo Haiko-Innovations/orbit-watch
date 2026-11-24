@@ -216,6 +216,7 @@ function RequestForm({ targets }: { targets: Targets }) {
               simulated: false,
               source: chosen.source ?? null,
               groups: chosen.groups,
+              operator_orbits: chosen.operator_orbits,
               reason: chosen.reason,
               on_list: true,
             })}

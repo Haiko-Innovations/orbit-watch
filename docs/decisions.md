@@ -3584,3 +3584,53 @@ or a day before, is from where a later one puts the satellite
 The rest of step 6.2 follows in parts: the allow-list, then the follower and
 verification.
 
+### D-62 Objects whose operators publish their orbits on the allow-list
+
+Accepted · 2026-11-24. Step 6.2's second part carries out P6-04: D-05's allow-list gains
+the objects whose operators publish their orbits.
+
+- **Six SupGP sources, read once a day** as D-49's groups: `AST-E`, `CPF`, `ISS-E`,
+  `Kuiper-E`, `OneWeb-E` and `Planet-E`.
+  - These are the `SOURCE` values of CelesTrak's
+    [query documentation](https://celestrak.org/NORAD/documentation/sup-gp-queries.php),
+    read on 2026-11-24. `Kuiper-E` is Amazon Leo's, formerly Project Kuiper.
+  - The follower makes one request for each, CSV with gzip, after the excluded groups.
+    The sources count only once the excluded groups are in, as the included groups do.
+    A source's answer stops CelesTrak as a group's does.
+  - The service keeps each source's objects that have an operator's orbit by D-59's rule,
+    with the time and the SHA-256 of the answer, not their sets. A name loses the
+    prediction centre that the laser-ranging list adds, as in "LAGEOS1 [DGF]".
+- **GPS, GLONASS and BeiDou stay off, and so do dual-use satellites.** The laser-ranging
+  list of 2026-11-24 held 104 objects. Among them were 15 GLONASS, 2 GPS and 15 BeiDou
+  satellites, and no pattern caught them. New name patterns leave them out:
+  - `^GPS`, `NAVSTAR`, `GLONASS` and `^BEIDOU`. BeiDou goes beyond what P6-04 named, by
+    D-05's rule: it was built for China's armed forces, which support its operation;
+  - `^PAZ`: Spain's Ministry of Defence owns PAZ, ordered it for its armed forces' needs,
+    and is its main customer;
+  - `^QZS-6` and `^QZS-7`: they carry the US Space Force's space domain awareness
+    sensors.
+
+  Galileo, NavIC, the other QZSS satellites and the geodetic and Earth-observing
+  satellites stay. 70 of the 104 remain, and the six sources give 1,246 objects.
+- **Starlink by an administrator.** Starlink's list is large, so it is not fetched.
+  - `orbit-watch admin allow --operator-source SpaceX-E` adds a Starlink object, after
+    `orbit-watch fetch-supgp --catnr N` has shown a set from `SpaceX-E`, SpaceX's
+    ephemeris. The reason is public, as D-49's.
+  - Only `SpaceX-E` is accepted: the other sources are read once a day, and GPS's and
+    GLONASS's never. Migration 0015 keeps the source with the addition.
+  - D-59's tests named a Starlink source `Starlink-E`, which CelesTrak does not have;
+    they now name `SpaceX-E` and `SpaceX-SV`.
+  - A name that a group or source gives an object is checked as the administrator's is,
+    so an object cannot be added under another name.
+- **Labelled.**
+  - `GET /v1/public/targets` gives such an object `operator_orbits`, and its groups
+    list gains the sources with `"data": "supgp"`.
+  - The web application says the object's operator publishes its orbit.
+  - A real object's verification policy names each source's answer by SHA-256.
+- **Credits.** The [data sources page](legal/data-sources.md) thanks CelesTrak and the
+  operators: AST SpaceMobile, Amazon Leo, Eutelsat OneWeb, Planet, NASA, the
+  International Laser Ranging Service and SpaceX.
+- **Verification is unchanged.** It still uses GP. In the third part, the follower
+  fetches an open request's object from SupGP, and verification uses its operator's
+  orbit.
+

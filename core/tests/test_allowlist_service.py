@@ -1,8 +1,10 @@
-"""Real objects on the service's allow-list (phase 5, step 5.4; decisions P5-08, D-49).
+"""Real objects on the service's allow-list (phase 5, step 5.4; decisions P5-08, D-49), and
+the objects whose operators publish their orbits (phase 6, step 6.2; P6-04, D-62).
 
 No test here calls an outside service: CelesTrak is a local stand-in whose groups hold
-made-up objects 99011 to 99017, which name no real satellite, with a SIMULATED object's
-elements. No real element set is committed (D-06).
+made-up objects 99011 to 99017, and whose SupGP sources made-up objects 99031 to 99038,
+with a SIMULATED object's elements. Only the names of the excluded ones are real
+satellites' names, to test the patterns. No real element set is committed (D-06).
 """
 
 import gzip
@@ -58,18 +60,42 @@ GROUPS = {
 }
 
 
+def sup(norad, name, data_source):
+    """A SupGP set: an OMM with CelesTrak's fit and where it came from."""
+    return {**named(norad, name), "RMS": "0.2", "DATA_SOURCE": data_source}
+
+
+SOURCES = {
+    "AST-E": [sup(99033, "TEST AST 1", "AST-E")],
+    "CPF": [
+        sup(99031, "TEST SPHERE 2 [DGF]", "CPF"),
+        sup(99016, "TEST SCHOOL [COD]", "CPF"),  # in the education group too
+        sup(99032, "GLONASS999 [COD]", "CPF"),  # a navigation system of armed forces
+        sup(99038, "PAZ [HDS]", "CPF"),  # a dual-use satellite
+    ],
+    "ISS-E": [sup(99034, "TEST STATION", "ISS-E"), sup(99034, "TEST STATION", "ISS-E")],
+    "Kuiper-E": [sup(99035, "TEST KUIPER 1", "Kuiper-E")],
+    "OneWeb-E": [sup(99036, "TEST ONEWEB 1", "OneWeb-E")],
+    "Planet-E": [sup(99037, "TEST PLANET 1", "Planet-E")],
+}
+ALLOWED = [99011, 99014, 99015, 99016, 99031, 99033, 99034, 99035, 99036, 99037]
+
+
 def members(group):
     return {r["NORAD_CAT_ID"]: r["OBJECT_NAME"] for r in GROUPS[group]}
 
 
 class GroupStandIn(StandIn):
-    """CelesTrak with the groups above too."""
+    """CelesTrak with the groups and SupGP sources above too."""
 
     def __call__(self, request, timeout):
-        if "GROUP=" in request.full_url and not self.answers:
+        url = request.full_url
+        if ("GROUP=" in url or "SOURCE=" in url) and not self.answers:
             self.calls.append(request)
-            group = request.full_url.split("GROUP=")[1].split("&")[0]
-            body = csv_of(*GROUPS[group])
+            if "GROUP=" in url:
+                body = csv_of(*GROUPS[url.split("GROUP=")[1].split("&")[0]])
+            else:
+                body = csv_of(*SOURCES[url.split("SOURCE=")[1].split("&")[0]])
             return Answer(gzip.compress(body), headers={"Content-Encoding": "gzip"})
         return super().__call__(request, timeout)
 
@@ -113,10 +139,13 @@ def follow(world):
     return world["api"].follow_once()["reference_orbits"]
 
 
+RUNS = -(-len(allowlist.GROUPS) // orbit_follower.REQUESTS_PER_RUN)  # four
+
+
 def fetch_all_groups(world):
-    follow(world)
-    at(world, minutes=15)
-    follow(world)
+    for run in range(RUNS):
+        at(world, minutes=15 * run)
+        follow(world)
 
 
 def post(world, path, body, key="admin"):
@@ -132,8 +161,9 @@ def post(world, path, body, key="admin"):
     )
 
 
-def allow(world, norad, name="TEST LARGE GROUP", reason="Its operator is a university."):
-    return post(world, "/v1/admin/allowlist", {"norad_id": norad, "name": name, "reason": reason})
+def allow(world, norad, name="TEST LARGE GROUP", reason="Its operator is a university.", **more):
+    body = {"norad_id": norad, "name": name, "reason": reason, **more}
+    return post(world, "/v1/admin/allowlist", body)
 
 
 # How the list is built ---------------------------------------------------------------------
@@ -182,6 +212,68 @@ def test_the_groups_count_only_once_the_excluded_ones_are_fetched():
     assert 99014 in targets and 99013 not in targets
 
 
+def test_the_objects_whose_operators_publish_their_orbits():
+    groups = {group: members(group) for group in GROUPS}
+    sources = {source: allowlist.operator_members(csv_of(*SOURCES[source])) for source in SOURCES}
+    assert sources["CPF"] == {
+        99016: "TEST SCHOOL",
+        99031: "TEST SPHERE 2",
+        99032: "GLONASS999",
+        99038: "PAZ",
+    }
+    targets = allowlist.combine(policy_bytes(), {**groups, **sources}, {})
+    assert sorted(t for t in targets if t < 339000) == ALLOWED
+    assert targets[99016].groups == ("education",)
+    assert targets[99016].operator_orbits == ("CPF",)
+    assert targets[99016].name == "TEST SCHOOL"  # the group's name first
+    assert targets[99034].public() == {
+        "norad_id": 99034,
+        "name": "TEST STATION",
+        "simulated": False,
+        "source": "celestrak",
+        "operator_orbits": ["ISS-E"],
+    }
+    # Like the groups, the sources count only once the excluded groups are in.
+    assert not set(allowlist.combine(policy_bytes(), sources, {})) & set(ALLOWED)
+
+
+def test_only_sets_of_an_operators_orbit_make_an_object_a_member():
+    body = csv_of(
+        sup(99033, "TEST AST 1", "AST-E"),
+        sup(99039, "TEST ALMANAC", "GPS-A"),
+        sup(99040, "TEST OLD TLE", "ISS-TLE"),
+    )
+    assert allowlist.operator_members(body) == {99033: "TEST AST 1"}
+
+
+@pytest.mark.parametrize(
+    ("name", "excluded"),
+    [
+        ("GPS BIII-6 (PRN 28)", True),
+        ("GPS082", True),
+        ("NAVSTAR 82 (USA 343)", True),
+        ("COSMOS 2569 (GLONASS-K2)", True),
+        ("GLONASS128", True),
+        ("BEIDOU-3 M1", True),
+        ("BEIDOU3M1", True),
+        ("PAZ", True),
+        ("QZS-6", True),
+        ("QZS6", True),
+        ("QZS-7", True),
+        ("GALILEO101", False),
+        ("QZS-3", False),
+        ("QZS2", False),
+        ("IRNSS1B", False),
+        ("LAGEOS1", False),
+        ("STARLINK-1234", False),
+        ("ONEWEB-0012", False),
+        ("PAZZO", False),
+    ],
+)
+def test_the_patterns_leave_out_navigation_systems_of_armed_forces_and_dual_use(name, excluded):
+    assert allowlist.excluded_name(name) is excluded
+
+
 def test_the_patterns_apply_to_the_names_of_the_stored_sets():
     additions = {99020: {"name": "TEST LARGE GROUP", "reason": "Said so.", "added_at": "x"}}
     assert 99020 in allowlist.combine(policy_bytes(), {}, additions)
@@ -214,6 +306,20 @@ def test_the_follower_fetches_the_groups_once_a_day(world):
         339002,
         339003,
     ]
+    # Then the SupGP sources of the operators that publish their orbits (P6-04, D-62).
+    at(world, minutes=30)
+    assert follow(world) == [
+        {"source": "celestrak", "group": "AST-E", "objects": 1},
+        {"source": "celestrak", "group": "CPF", "objects": 4},
+        {"source": "celestrak", "group": "ISS-E", "objects": 1},
+    ]
+    at(world, minutes=45)
+    assert [entry["group"] for entry in follow(world)] == ["Kuiper-E", "OneWeb-E", "Planet-E"]
+    assert world["stand_in"].urls()[6:] == [
+        f"https://celestrak.org/NORAD/elements/supplemental/sup-gp.php?SOURCE={source}&FORMAT=csv"
+        for source in allowlist.OPERATOR_SOURCES
+    ]
+    assert sorted(world["service"].targets()) == [*ALLOWED, 339001, 339002, 339003]
     at(world, hours=23, minutes=59)
     assert follow(world) == []
     at(world, days=1)
@@ -258,6 +364,21 @@ def test_a_group_that_does_not_answer_200_stops_celestrak(world):
     assert [entry["group"] for entry in follow(world)] == ["radar", "military", "science"]
 
 
+def test_a_supgp_source_that_does_not_answer_200_stops_celestrak(world):
+    fetch_all_groups(world)
+    for minutes in (0, 15):  # the groups again, a day later
+        at(world, days=1, minutes=minutes)
+        follow(world)
+    at(world, days=1, minutes=30)
+    world["stand_in"].answers = [http_error(403, b"Forbidden")]
+    (entry,) = follow(world)
+    assert entry["group"] == "AST-E" and "HTTP 403" in entry["stopped"]
+    response = world["client"].get("/v1/health/reference-orbits")
+    assert response.status_code == 503
+    assert "SOURCE=AST-E" in response.json()["sources"]["celestrak"]["reason"]
+    assert 99033 in world["service"].targets()  # the last answer of 200 still holds
+
+
 def test_a_group_without_gp_data_stops_celestrak(world):
     world["stand_in"].answers = [lambda request: Answer(b"No GP data found")]
     (entry,) = follow(world)
@@ -297,16 +418,35 @@ def test_the_list_says_why_each_object_is_on_it(world):
         "simulated": False,
         "source": "administrator",
         "reason": "Its operator is a university.",
-        "added_at": "2026-11-01T12:15:00.000Z",
+        "added_at": "2026-11-01T12:45:00.000Z",
     }
     assert "admin:maintainer" not in json.dumps(listed)  # who added it is not shown
     assert [g["group"] for g in listed["groups"]] == list(allowlist.GROUPS)
     assert listed["groups"][0] == {
         "group": "military",
+        "data": "gp",
         "role": "exclude",
         "fetched_at": "2026-11-01T12:00:00.000Z",
         "objects": 1,
     }
+    assert listed["groups"][-1] == {
+        "group": "Planet-E",
+        "data": "supgp",
+        "role": "include",
+        "fetched_at": "2026-11-01T12:45:00.000Z",
+        "objects": 1,
+    }
+    assert by_id[99036] == {
+        "norad_id": 99036,
+        "name": "TEST ONEWEB 1",
+        "simulated": False,
+        "source": "celestrak",
+        "operator_orbits": ["OneWeb-E"],
+    }
+    assert by_id[99016]["groups"] == ["education"]
+    assert by_id[99016]["operator_orbits"] == ["CPF"]
+    assert by_id[99031]["name"] == "TEST SPHERE 2"  # without the prediction centre
+    assert "GPS, GLONASS and BeiDou" in listed["description"]
 
 
 # An administrator's additions ------------------------------------------------------------
@@ -350,6 +490,41 @@ def test_an_addition_is_refused(world, norad, name, reason, code, status):
     assert (response.status_code, response.json()["error"]["code"]) == (status, code)
 
 
+def test_an_administrator_adds_a_starlink_object_with_spacexs_ephemeris(world):
+    fetch_all_groups(world)
+    response = allow(
+        world,
+        99050,
+        name="STARLINK-99050",
+        reason="SpaceX publishes its ephemeris; SupGP showed SpaceX-E on 2026-11-24.",
+        operator_source="SpaceX-E",
+    )
+    assert response.status_code == 200
+    assert response.json()["operator_orbits"] == ["SpaceX-E"]
+    assert world["service"].targets()[99050].source == "administrator"
+    other = open_service(world["database"], world["registry"], world["context"])
+    try:
+        assert other.targets()[99050].operator_orbits == ("SpaceX-E",)
+    finally:
+        other.storage.close()
+
+
+@pytest.mark.parametrize("source", ["OneWeb-E", "GPS-E", "GLONASS-RE", "SpaceX-A", ""])
+def test_an_addition_names_only_spacexs_ephemeris(world, source):
+    response = allow(world, 99050, name="STARLINK-99050", operator_source=source)
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "invalid_operator_source"
+    assert 99050 not in world["service"].targets()
+
+
+def test_an_addition_is_refused_for_a_name_that_a_source_gives(world):
+    fetch_all_groups(world)
+    response = allow(world, 99032, name="TEST SPHERE 3")
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "excluded_name"
+    assert "GLONASS999" in response.json()["error"]["message"]
+
+
 def test_only_an_administrator_adds_objects(world):
     response = post(
         world,
@@ -390,6 +565,12 @@ def test_the_client_commands_add_and_remove(world, monkeypatch, capsys):
     args.api, args.key = "http://test", world["admin"]
     assert cli_client.cmd_admin_disallow(args) == 0
     assert "99020: removed" in capsys.readouterr().out
+    argv = ["admin", "allow", "--norad-id", "99050", "--name", "STARLINK-99050"]
+    argv += ["--reason", "SpaceX's ephemeris.", "--operator-source", "SpaceX-E"]
+    args = build_parser().parse_args(argv)
+    args.api, args.key = "http://test", world["admin"]
+    assert cli_client.cmd_admin_allow(args) == 0
+    assert "(its operator's orbit: SpaceX-E)" in capsys.readouterr().out
 
 
 # Requests and verification ---------------------------------------------------------------
@@ -413,9 +594,11 @@ def test_a_real_object_is_verified_against_the_real_list(world):
     assert service.policy_for(None) == policy_bytes()
     real = TargetPolicy.parse(service.policy_for(99015))
     assert real.simulated is False
-    assert sorted(real.allowed) == [99011, 99014, 99015, 99016]
+    assert sorted(real.allowed) == ALLOWED
     document = json.loads(service.policy_for(99015))
     assert {entry["group"] for entry in document["built_from"]} == set(allowlist.GROUPS)
+    sources = {entry["group"]: entry["source"] for entry in document["built_from"]}
+    assert sources["OneWeb-E"] == "CelesTrak SupGP" and sources["science"] == "CelesTrak"
 
 
 def test_a_delivery_for_a_real_object_does_not_say_simulated(world):
