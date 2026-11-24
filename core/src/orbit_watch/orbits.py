@@ -8,6 +8,10 @@ its OMM fields, which is how a verification report names it.
 The sets are kept, not served (P5-05). What anyone may see of a set is its name: the
 object, the epoch, the source and the SHA-256, with which anyone can fetch the same set
 from the same source and repeat a verification.
+
+A set from CelesTrak's SupGP (step 6.2, D-63) is kept as CelesTrak's, with its
+``DATA_SOURCE``. Those of an operator's orbit are named so, but verification does not use
+them yet: it picks from the GP sets (``StoredSet.operator_orbit`` is False).
 """
 
 from __future__ import annotations
@@ -18,6 +22,7 @@ from datetime import datetime
 from typing import Any
 
 from orbit_watch.catalog import SOURCE_KEY, CatalogError, parse_catalog, record_sha256
+from orbit_watch.supgp import is_operator_orbit
 from orbit_watch.timeutil import parse_utc
 
 SOURCES = ("celestrak", "satchecker", "uploaded")
@@ -26,6 +31,7 @@ SOURCE_NAMES = {
     "satchecker": "IAU CPS SatChecker",
     "uploaded": "uploaded by an administrator",
 }
+OPERATOR_ORBIT_NAME = "the operator's orbit via CelesTrak"  # P6-03
 
 
 class OrbitError(ValueError):
@@ -47,6 +53,17 @@ class StoredSet:
     record: dict[str, Any]
 
     @property
+    def data_source(self) -> str | None:
+        """CelesTrak's ``DATA_SOURCE`` of a SupGP set, such as ``OneWeb-E``; None for GP."""
+        value = str(self.record.get("DATA_SOURCE") or "").strip()
+        return value or None
+
+    @property
+    def operator_orbit(self) -> bool:
+        """Whether the set is fitted to its operator's orbit (D-59's rule)."""
+        return self.data_source is not None and is_operator_orbit(self.data_source)
+
+    @property
     def epoch_time(self) -> datetime | None:
         """The epoch as a time in UTC, or None if it cannot be read."""
         try:
@@ -56,15 +73,20 @@ class StoredSet:
 
     def public(self) -> dict[str, Any]:
         """What anyone may see of the set: its name, never its elements."""
-        return {
+        view = {
             "norad_id": self.norad_id,
             "object_name": str(self.record.get("OBJECT_NAME") or ""),
             "epoch": self.epoch,
             "element_set_sha256": self.sha256,
             "source": self.source,
-            "source_name": SOURCE_NAMES[self.source],
+            "source_name": OPERATOR_ORBIT_NAME
+            if self.operator_orbit and self.source == "celestrak"
+            else SOURCE_NAMES[self.source],
             "fetched_at": self.fetched_at,
         }
+        if self.data_source is not None:
+            view["data_source"] = self.data_source
+        return view
 
     def row(self) -> tuple[Any, ...]:
         return (

@@ -3634,3 +3634,35 @@ the objects whose operators publish their orbits.
   fetches an open request's object from SupGP, and verification uses its operator's
   orbit.
 
+### D-63 The follower fetches operators' orbits
+
+Accepted · 2026-11-24. Step 6.2's third part comes in two. First the follower fetches and
+keeps operators' orbits. Then, after a measurement run some days after D-61's, verification
+uses them, as D-61 said.
+
+- **What is fetched.** Take an open request whose window has not ended and starts within
+  a day, for an object whose operator publishes its orbit (`operator_orbits`, D-62). For
+  it, the follower also asks CelesTrak's SupGP:
+  - for the object by its catalogue number, CSV with gzip;
+  - after the object's GP data, and at most once per two-hour update, as CelesTrak's
+    2-hour minimum for SupGP asks.
+
+  A past window, such as a replay's, keeps SatChecker's GP (P6-03).
+- **What is kept.** The sets of the operator's orbit, by D-59's rule, are kept as
+  CelesTrak's, each with its `DATA_SOURCE`, its `RMS` and the service "CelesTrak SupGP".
+  Other kinds, such as almanacs, are not kept.
+  - They are named like every set, by epoch and SHA-256.
+  - `GET /v1/public/reference-orbits` gives them `data_source`, and names them "the
+    operator's orbit via CelesTrak".
+- **It stops as for GP** (D-48). An answer that is not 200 with the object's sets, or no
+  answer, stops CelesTrak, and the health endpoint names the object and the URL.
+  - After a 404, the object is listed under `objects_without_supgp_data`. It is not asked
+    for again until an administrator says so with `ask_again`.
+  - `orbit_asks` keeps such a request with the target `supgp`, so there is no migration.
+- **Verification is unchanged**, and the method stays 2.1.0. It still picks from the GP
+  sets. The catalogue that verifies, a simulated station's orbit, the reference orbit's
+  label and a replay's check all leave the operator's sets out.
+- **Why in two.** D-61 measured operators' sets up to a day old. How old a set may be at
+  the window is chosen from a run on 2026-11-26 or later, when verification starts to
+  use them.
+

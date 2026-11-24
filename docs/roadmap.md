@@ -30,7 +30,10 @@ later one, and closer than the newest GP set of its time in 18 of 30 pairs, agai
 gains 1,246 objects whose operators publish their orbits, read once a day from six SupGP
 sources, and Starlink objects one at a time; GPS, GLONASS, BeiDou and dual-use satellites
 stay off ([D-62](decisions.md#d-62-objects-whose-operators-publish-their-orbits-on-the-allow-list)).
-The follower and verification follow.
+In its third part the follower fetches an open request's object from SupGP too, and keeps
+its operator's orbit beside the GP sets
+([D-63](decisions.md#d-63-the-follower-fetches-operators-orbits)). Verification uses it
+once a run on 2026-11-26 or later has shown how old it may be.
 
 **Phase 5 is done** and released as version 0.6.0: real orbits and real observations
 on the testnet, beside the simulated ones. On the public service, a replay of real

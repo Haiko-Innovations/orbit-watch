@@ -90,12 +90,18 @@ class GroupStandIn(StandIn):
 
     def __call__(self, request, timeout):
         url = request.full_url
-        if ("GROUP=" in url or "SOURCE=" in url) and not self.answers:
+        if ("GROUP=" in url or "sup-gp.php" in url) and not self.answers:
             self.calls.append(request)
             if "GROUP=" in url:
                 body = csv_of(*GROUPS[url.split("GROUP=")[1].split("&")[0]])
-            else:
+            elif "SOURCE=" in url:
                 body = csv_of(*SOURCES[url.split("SOURCE=")[1].split("&")[0]])
+            else:  # one object's SupGP sets, from every source that has it
+                norad = int(url.split("CATNR=")[1].split("&")[0])
+                rows = [r for rs in SOURCES.values() for r in rs if r["NORAD_CAT_ID"] == norad]
+                if not rows:
+                    return http_error(404, b"No SupGP data found")(request)
+                body = csv_of(*rows)
             return Answer(gzip.compress(body), headers={"Content-Encoding": "gzip"})
         return super().__call__(request, timeout)
 

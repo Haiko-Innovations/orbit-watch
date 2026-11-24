@@ -233,6 +233,7 @@ def test_the_follower_fetches_an_open_requests_object_from_celestrak(world):
                 },
             },
             "objects_without_public_data": [],
+            "objects_without_supgp_data": [],
         },
     )
     # A delivery is verified against it, and the report names it with its source.

@@ -172,6 +172,10 @@ the element sets that open requests for real objects need
 ([D-48](decisions.md#d-48-the-follower-fetches-reference-orbits)):
 - from CelesTrak, an object's current sets, once per two-hour update, while its request's
   window has not ended and starts within a day;
+- from CelesTrak's SupGP, the same way and after them, the current sets of the object's
+  operator's orbit when the allow-list says its operator publishes it (`operator_orbits`;
+  [D-63](decisions.md#d-63-the-follower-fetches-operators-orbits)). They are kept beside
+  the GP sets, and verification does not use them yet;
 - from SatChecker, the set nearest the middle of a window that has ended, such as a
   replay's, once.
 
@@ -284,7 +288,8 @@ set is kept. The allow-list keeps the groups as last fetched.
 1. **Read the answer** as CelesTrak's [usage policy](https://celestrak.org/usage-policy.php)
    reads it:
    - `404`: the object has no public data. The object is listed under
-     `objects_without_public_data` and is not asked for again. If it should be followed,
+     `objects_without_public_data`, or under `objects_without_supgp_data` for SupGP, and is
+     not asked for again. If it should be followed,
      upload a set by hand. For a group, CelesTrak has renamed or removed it: correct
      `orbit_watch.allowlist` by pull request before resuming, or the group is asked for
      again two hours later.
