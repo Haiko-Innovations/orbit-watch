@@ -521,7 +521,8 @@ def cmd_measure_reference_orbits(args: argparse.Namespace) -> int:
         )
         return EXIT_USAGE
     run = reference_accuracy.load_run(chosen)
-    results = reference_accuracy.measure(run)
+    earlier = reference_accuracy.earlier_runs(chosen)
+    results = reference_accuracy.measure(run, earlier)
     outputs = {
         root / "validation/reference-orbits/results.json": reference_accuracy.dumps_results(results)
     }
@@ -539,8 +540,9 @@ def cmd_measure_reference_orbits(args: argparse.Namespace) -> int:
         write_text(path, text)
     print(
         f"run {chosen.name}: {len(results['truths'])} truth set(s), "
-        f"{len(results['comparisons']['rows'])} comparison(s); {len(stale)} file(s) changed of "
-        f"{len(outputs)}"
+        f"{len(results['comparisons']['rows'])} comparison(s); "
+        f"{len(results['operator_ageing']['rows'])} pair(s) with {len(earlier)} earlier run(s); "
+        f"{len(stale)} file(s) changed of {len(outputs)}"
     )
     return EXIT_OK
 
@@ -1450,8 +1452,10 @@ def build_parser() -> argparse.ArgumentParser:
         "after each SupGP epoch: radial, in-track and cross-track, by source, orbit class and "
         "age. With --fetch, one run is first fetched into the cache: one SupGP download per "
         "source and one SatChecker request per object, at least two hours after the last "
-        "run. Without it, the newest run in the cache is measured again. Writes "
-        "validation/reference-orbits/results.json and the tables of "
+        "run. Without it, the newest run in the cache is measured again. With earlier runs "
+        "in the cache, each operator's set of an earlier run is also compared with the truth "
+        "of a later one, beside the newest GP set of the earlier run's time: how operators' "
+        "orbits age. Writes validation/reference-orbits/results.json and the tables of "
         "docs/reference-orbit-accuracy.md.",
     )
     measure_ref.add_argument(

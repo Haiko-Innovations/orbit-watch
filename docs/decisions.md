@@ -3542,3 +3542,45 @@ The page lists five candidates for method 3.0.0, which step 6.3 decides:
 
 With this, step 6.1 is done.
 
+### D-61 How operators' orbits age
+
+Accepted · 2026-11-24. Before the service uses an operator's orbit (P6-03), step 6.2
+first measures what D-60 left open: how far an operator's set, as published some hours
+or a day before, is from where a later one puts the satellite
+([reference-orbit-accuracy.md](reference-orbit-accuracy.md#how-operators-orbits-age)).
+
+- **`orbit-watch measure-reference-orbits` compares runs.** With earlier complete runs
+  in the cache, each truth of a later run is compared, as in D-60, with two sets:
+  - the operator's set of an earlier run with the latest epoch at or before the
+    truth's, which is the set the follower would choose for that time (P6-03);
+  - the newest GP set that SatChecker had collected by the earlier run.
+  The results' format is 1.1.
+- **The second run**, fetched on 2026-11-24 at 04:46 UTC, eight hours after the first,
+  gave 45 truth sets of 43 objects and 2,190 comparisons. All 49 answers were 200.
+  - Its GP tables replace the first run's on the page; D-60's numbers are the first
+    run's.
+  - They moved little, except AST SpaceMobile's newest set: a median of 0.20 km, against
+    1.83 km eight hours before. Its satellites manoeuvre, and one run is a snapshot.
+- **30 pairs of an operator's set and a later one**, with 15 sets unchanged between the
+  runs:
+  - an operator's set a few hours to a day old was a median 0.1 to 0.9 km from the
+    later one, near SupGP's own fit;
+  - it was closer than the newest GP set of its time in 18 pairs, and the GP set in 10;
+  - for the laser-ranging satellites in medium and geosynchronous orbits it was closer
+    in all seven pairs: in medium orbits a median 0.28 km against 1.86 km;
+  - in low orbits it was a draw: 11 pairs against 10, and two OneWeb ties, where
+    CelesTrak's GP set most likely came from OneWeb's own data;
+  - manoeuvres still made the tail: two of AST SpaceMobile's satellites were 14 and
+    19 km off after half a day.
+- **The ISS's ephemeris gives its segments two weeks ahead.** The second run held the
+  same segments. A first count took the earlier run's latest segment that had begun,
+  and found 2.8 km: that was a six-hour segment used beyond its six hours, which the
+  follower would not choose.
+- **What step 6.2 takes from this.** An operator's set is used as P6-03 says, and the
+  sources that count stay D-59's: ephemerides and state vectors (`-E`, `-SV`) and
+  `CPF`. Only up to a day is measured, so how old a set may be at the window is chosen
+  when verification starts to use it, after a run some days after these.
+
+The rest of step 6.2 follows in parts: the allow-list, then the follower and
+verification.
+

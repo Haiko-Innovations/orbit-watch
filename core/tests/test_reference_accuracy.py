@@ -1,5 +1,6 @@
-"""How far GP sets are from operators' orbits: the measurement of step 6.1 (P6-02, D-60).
-Every answer comes from a local stand-in, and every element set is SIMULATED.
+"""How far GP sets are from operators' orbits: the measurement of step 6.1 (P6-02, D-60),
+and how operators' orbits age between runs (step 6.2, D-61). Every answer comes from a
+local stand-in, and every element set is SIMULATED.
 """
 
 import copy
@@ -143,10 +144,22 @@ def test_a_run_is_measured_and_named_by_epochs_and_hashes(tmp_path):
     assert written.count("\n      [0, ") == 2  # one line per comparison
 
 
+TABLES = {
+    "run",
+    "sources",
+    "newest_set",
+    "by_age",
+    "leo_by_source",
+    "ageing_run",
+    "operator_by_age",
+    "operator_against_gp",
+}
+
+
 def test_the_tables_fill_the_document(tmp_path):
     results = ra.measure(ra.load_run(stand_in_run(tmp_path)))
     generated = ra.tables(results)
-    assert set(generated) == {"run", "sources", "newest_set", "by_age", "leo_by_source"}
+    assert set(generated) == TABLES
     [row] = generated["leo_by_source"].splitlines()[2:]
     cells = row.strip("| ").split(" | ")
     assert cells[0] == "`AST-E`" and len(cells) == 1 + len(ra.AGE_BINS)
@@ -155,6 +168,80 @@ def test_the_tables_fill_the_document(tmp_path):
     assert "| `AST-E` | LEO | 1 |" in generated["newest_set"]
     document = "".join(f"<!-- measured:{n} -->\nold\n<!-- /measured:{n} -->\n" for n in generated)
     assert "old" not in update_document(document, generated)
+
+
+# How operators' orbits age ----------------------------------------------------------------
+
+
+def earlier_run(tmp_path, name, fetched_at, *rows):
+    """A complete run with SupGP sets only, as an earlier run of the same cache."""
+    path = tmp_path / "reference-accuracy" / name
+    path.mkdir(parents=True)
+    (path / "supgp-AST-E.csv").write_bytes(supgp_csv(*rows))
+    run = {
+        "format": ra.RUN_FORMAT,
+        "fetched_at": fetched_at,
+        "sources": ["AST-E"],
+        "objects": [],
+        "complete": True,
+    }
+    (path / ra.RUN_FILE).write_text(json.dumps(run))
+    return path
+
+
+def test_an_operators_set_against_a_later_one_and_the_gp_set_of_its_time(tmp_path):
+    first = earlier_run(
+        tmp_path,
+        "20261101T080000Z",
+        "2026-11-01T08:00:00Z",
+        sup_row("2026-11-01T06:00:00.000000"),
+        sup_row("2026-11-01T09:00:00.000000", OBJECT_NAME="SIM [ahead]"),  # ahead, like the ISS
+        sup_row("2026-11-01T13:00:00.000000", OBJECT_NAME="SIM [after]"),  # after the truth
+    )
+    later = stand_in_run(tmp_path)
+    results = ra.measure(ra.load_run(later), ra.earlier_runs(later))
+    assert [r["directory"] for r in results["runs"]] == ["20261101T080000Z", "20261102T000000Z"]
+    [pair] = ra.ageing_rows(results)
+    assert pair["earlier_run"] == "20261101T080000Z"
+    assert pair["set_epoch"] == "2026-11-01T09:00:00.000000"  # the latest at or before 12:00
+    assert pair["age_days"] == 0.25  # to the middle of the six hours after 11-01 12:00
+    published = sup_sets(parse_catalog((first / "supgp-AST-E.csv").read_bytes()), 339001)[1]
+    assert pair["set_sha256"] == published.element_set.sha256
+    assert pair["rms_km"] == ra.compare(published.element_set, truth_set())["rms_km"]
+    # SatChecker had collected only the sets of 10-01 and 10-30 by 11-01 08:00
+    assert pair["gp_epoch"] == "2026-10-30T12:00:00.000000" and pair["gp_age_days"] == 2.125
+    [row] = results["summary"]["operator_against_gp"].values()
+    closer = pair["rms_km"] < pair["gp_rms_km"]
+    assert (row["pairs"], row["operator_closer"], row["gp_closer"]) == (1, closer, not closer)
+    generated = ra.tables(results)
+    assert f"| `AST-E` | LEO | 0{ra.DASH}0.5 | 1 | 1 |" in generated["operator_by_age"]
+    assert (
+        "1 pairs of an operator's set and a later one, 0 sets unchanged"
+        in (generated["ageing_run"])
+    )
+    written = ra.dumps_results(results)
+    assert json.loads(written) == results
+    assert written.count('\n      ["20261101T080000Z", ') == 1  # one line per pair
+
+
+def test_a_set_unchanged_between_runs_is_counted_not_compared(tmp_path):
+    earlier_run(tmp_path, "20261101T180000Z", "2026-11-01T18:00:00Z", sup_row(epoch=TRUTH_EPOCH))
+    later = stand_in_run(tmp_path)
+    results = ra.measure(ra.load_run(later), ra.earlier_runs(later))
+    assert results["operator_ageing"]["rows"] == []
+    assert results["operator_ageing"]["unchanged"] == 1
+
+
+def test_only_complete_runs_before_count_as_earlier(tmp_path):
+    first = earlier_run(tmp_path, "20261101T080000Z", "2026-11-01T08:00:00Z", sup_row())
+    broken = first.parent / "20261101T120000Z"
+    broken.mkdir()
+    (broken / ra.RUN_FILE).write_text(json.dumps({"format": ra.RUN_FORMAT, "complete": False}))
+    (first.parent / "20261101T160000Z").mkdir()  # no run.json: fetching stopped
+    later = stand_in_run(tmp_path)
+    earlier_run(tmp_path, "20261103T000000Z", "2026-11-03T00:00:00Z", sup_row())
+    assert [r.path.name for r in ra.earlier_runs(later)] == ["20261101T080000Z"]
+    assert ra.earlier_runs(first) == []
 
 
 def test_an_incomplete_run_is_not_used(tmp_path):
@@ -217,10 +304,7 @@ def test_the_first_answer_that_is_not_200_stops_the_run(tmp_path):
 def test_the_command(tmp_path, capsys):
     root = tmp_path / "repo"
     (root / "docs").mkdir(parents=True)
-    document = "".join(
-        f"<!-- measured:{n} -->\n<!-- /measured:{n} -->\n"
-        for n in ("run", "sources", "newest_set", "by_age", "leo_by_source")
-    )
+    document = "".join(f"<!-- measured:{n} -->\n<!-- /measured:{n} -->\n" for n in TABLES)
     (root / "docs/reference-orbit-accuracy.md").write_text(document)
     cache = tmp_path / "cache"
     args = ["measure-reference-orbits", "--root", str(root), "--cache", str(cache)]
@@ -228,7 +312,16 @@ def test_the_command(tmp_path, capsys):
     assert "no complete run" in capsys.readouterr().err
     stand_in_run(cache)
     assert main(args) == 0
-    assert "2 comparison(s)" in capsys.readouterr().out
+    assert "2 comparison(s); 0 pair(s) with 0 earlier run(s)" in capsys.readouterr().out
     assert main([*args, "--check"]) == 0
+    earlier_run(
+        cache,
+        "20261101T080000Z",
+        "2026-11-01T08:00:00Z",
+        sup_row("2026-11-01T06:00:00.000000"),
+    )
+    assert main([*args, "--check"]) == 1  # an earlier run changes the results
+    assert main(args) == 0
+    assert "1 pair(s) with 1 earlier run(s)" in capsys.readouterr().out
     written = json.loads((root / "validation/reference-orbits/results.json").read_text())
     assert written["run"]["directory"] == "20261102T000000Z"
