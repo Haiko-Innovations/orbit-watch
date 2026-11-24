@@ -218,6 +218,11 @@ as an observation set, format 1.1 ([observation-format.md](observation-format.md
 - `source.origin` names SCORE, the observers, SCORE's observation IDs, the licence and
   the date fetched.
 
+`orbit-watch score-coverage raw/*.json` counts what the fetched files hold of each object
+for an orbit determination: observations with a direction, tracks, stations, observers,
+and windows in which two or more stations saw it close in time
+([reference-orbit-accuracy.md](reference-orbit-accuracy.md#scores-coverage-for-orbit-determination)).
+
 Two sets are committed: the example [`examples/real/`](../examples/real), and the
 validation set [`validation/real/`](../validation/real), on which step 5.3 measures the
 verification method ([real-data-validation.md](real-data-validation.md)).

@@ -19,6 +19,14 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   CelesTrak's fit, at most once in two hours (step 6.1, D-59).
 - `orbit-watch fetch-satchecker --start --end`: every past OMM of one object over a
   period of at most 31 days, with when SatChecker collected each (step 6.1, D-59).
+- How far GP sets are from operators' orbits, measured (step 6.1, D-60):
+  `orbit-watch measure-reference-orbits` compares CelesTrak's GP sets of different ages,
+  from SatChecker, with SupGP sets fitted to operators' orbits, radially, in track and
+  across track, by source, orbit class and age. The numbers are in
+  `docs/reference-orbit-accuracy.md` and `validation/reference-orbits/results.json`,
+  measured again from the cache byte for byte.
+- `orbit-watch score-coverage`: what SCORE holds of each object for an orbit
+  determination, from files written by `fetch-score` (step 6.1).
 
 ## [0.6.0] - 2026-11-23
 

@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from orbit_watch import score
 from orbit_watch.cli import main
 from orbit_watch.formats import owjson
 from orbit_watch.schema import validate
@@ -298,3 +299,44 @@ def test_the_commands(tmp_path, monkeypatch, capsys):
     assert main(["convert-score", str(raw), *args, "--assume-angle-uncertainty", "60"]) == 0
     assert "1 track(s) from 1 station(s)" in capsys.readouterr().out
     assert len(list(out.glob("*.json"))) == 1 and "0000-0000-0000-0001" in credits.read_text()
+
+
+# Coverage for orbit determination (step 6.1) ----------------------------------------------
+
+
+def _seen(norad, when, instrument, orcid, lat=60.2, ra=10.0):
+    return {
+        "satellite_number": norad,
+        "satellite_name": "SIM-CUBESAT-A (SIMULATED)",
+        "obs_time_utc": when,
+        "obs_lat_deg": lat,
+        "obs_long_deg": 24.7,
+        "obs_alt_m": 40.0,
+        "sat_ra_deg": ra,
+        "sat_dec_deg": 20.0,
+        "instrument": instrument,
+        "obs_orc_id": [orcid],
+    }
+
+
+def test_coverage_counts_tracks_stations_and_windows():
+    def track(day, minute, instrument, orcid, n=3, **kw):
+        return [
+            _seen(339001, f"2026-11-{day:02d}T18:{minute + i:02d}:00Z", instrument, orcid, **kw)
+            for i in range(n)
+        ]
+
+    items = (
+        track(1, 0, "Camera", "0000-0000-0000-0001")
+        + track(2, 0, "Phone", "0000-0000-0000-0002")
+        + track(2, 30, "Camera", "0000-0000-0000-0001")
+        + track(20, 0, "Camera", "0000-0000-0000-0001", n=2)
+        + [{**_seen(339001, "2026-11-21T18:00:00Z", "Phone", "x"), "sat_ra_deg": None}]
+    )
+    [row] = score.coverage([{"items": items}])
+    assert row["observations"] == 12 and row["positional"] == 11
+    assert (row["tracks"], row["tracks_3_or_more"]) == (4, 3)
+    assert (row["stations"], row["observers"]) == (2, 2)
+    assert (row["first"], row["last"]) == ("2026-11-01", "2026-11-20")
+    assert row["windows"] == {"1d": 0, "3d": 1, "7d": 1}
+    assert "| 0, 1, 1 |" in score.coverage_table([row])

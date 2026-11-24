@@ -494,6 +494,57 @@ def cmd_measure_sun(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_measure_reference_orbits(args: argparse.Namespace) -> int:
+    from orbit_watch import orbit_cache, reference_accuracy, validation
+    from orbit_watch.fetch import FetchError
+
+    root = Path(args.root)
+    cache_dir = Path(args.cache) if args.cache else orbit_cache.default_cache_dir()
+    if args.fetch:
+        try:
+            path = reference_accuracy.fetch_run(cache_dir, log=print)
+        except ValueError as exc:
+            _err(str(exc))
+            return EXIT_USAGE
+        except FetchError as exc:
+            _err(f"{exc}. Stopped at the first answer that is not 200; the run is not used.")
+            return EXIT_FAILED
+        print(f"fetched a run into {path}")
+        print(SUPGP_CREDIT)
+        print(SATCHECKER_CREDIT)
+    runs = reference_accuracy.run_dirs(cache_dir)
+    chosen = Path(args.run) if args.run else (runs[-1] if runs else None)
+    if chosen is None:
+        _err(
+            f"no complete run in {cache_dir / 'reference-accuracy'}: fetch one with "
+            "orbit-watch measure-reference-orbits --fetch"
+        )
+        return EXIT_USAGE
+    run = reference_accuracy.load_run(chosen)
+    results = reference_accuracy.measure(run)
+    outputs = {
+        root / "validation/reference-orbits/results.json": reference_accuracy.dumps_results(results)
+    }
+    document = root / "docs/reference-orbit-accuracy.md"
+    outputs[document] = validation.update_document(
+        document.read_text(encoding="utf-8"), reference_accuracy.tables(results)
+    )
+    stale = [path for path, text in outputs.items() if _read_or_none(path) != text]
+    if args.check:
+        for path in stale:
+            _err(f"{path} is not what run {chosen.name} gives")
+        return EXIT_FAILED if stale else EXIT_OK
+    for path, text in outputs.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        write_text(path, text)
+    print(
+        f"run {chosen.name}: {len(results['truths'])} truth set(s), "
+        f"{len(results['comparisons']['rows'])} comparison(s); {len(stale)} file(s) changed of "
+        f"{len(outputs)}"
+    )
+    return EXIT_OK
+
+
 def cmd_measure_method(args: argparse.Namespace) -> int:
     from orbit_watch import orbit_cache, validation
     from orbit_watch.canonical import dumps_pretty
@@ -563,6 +614,25 @@ def cmd_fetch_score(args: argparse.Namespace) -> int:
     write_text(args.output, json_module.dumps(fetched, indent=1, ensure_ascii=False) + "\n")
     print(f"wrote {args.output}: {fetched['count']} observation(s) of {norad_id} from SCORE")
     print(f"Source: {score.NAME} ({score.SITE_URL}), {score.LICENCE}: credit the observers.")
+    return EXIT_OK
+
+
+def cmd_score_coverage(args: argparse.Namespace) -> int:
+    import json as json_module
+
+    from orbit_watch import score
+
+    documents = []
+    for path in args.inputs:
+        try:
+            documents.append(json_module.loads(Path(path).read_text(encoding="utf-8")))
+        except ValueError as exc:
+            raise FormatError(f"{path}: {exc}") from None
+    rows = score.coverage(documents)
+    if args.json:
+        print(dumps_pretty(rows, sort_keys=False))
+    else:
+        print(score.coverage_table(rows))
     return EXIT_OK
 
 
@@ -1296,6 +1366,18 @@ def build_parser() -> argparse.ArgumentParser:
     score_fetch.add_argument("-o", "--output", required=True, help="output file (.json)")
     score_fetch.set_defaults(handler=cmd_fetch_score)
 
+    score_cov = commands.add_parser(
+        "score-coverage",
+        help="count what SCORE holds of each object for an orbit determination",
+        description="From files written by fetch-score: for each object, its observations, "
+        "those with a direction, its tracks, stations and observers, and how many windows of "
+        "1, 3 and 7 days have tracks from two or more stations (three or more tracks with "
+        "three or more observations each). Docs: reference-orbit-accuracy.md",
+    )
+    score_cov.add_argument("inputs", nargs="+", help="files written by fetch-score")
+    score_cov.add_argument("--json", action="store_true", help="print JSON instead of a table")
+    score_cov.set_defaults(handler=cmd_score_coverage)
+
     score_convert = commands.add_parser(
         "convert-score",
         help="convert observations fetched from SCORE into Orbit Watch observation sets",
@@ -1359,6 +1441,31 @@ def build_parser() -> argparse.ArgumentParser:
     )
     measure.add_argument("-v", "--verbose", action="store_true", help="name each track")
     measure.set_defaults(handler=cmd_measure_method)
+
+    measure_ref = commands.add_parser(
+        "measure-reference-orbits",
+        help="measure how far GP sets are from operators' orbits (CelesTrak SupGP)",
+        description="Compare CelesTrak's GP sets of different ages, from SatChecker, with "
+        "CelesTrak's supplemental GP sets fitted to operators' own orbits, over the six hours "
+        "after each SupGP epoch: radial, in-track and cross-track, by source, orbit class and "
+        "age. With --fetch, one run is first fetched into the cache: one SupGP download per "
+        "source and one SatChecker request per object, at least two hours after the last "
+        "run. Without it, the newest run in the cache is measured again. Writes "
+        "validation/reference-orbits/results.json and the tables of "
+        "docs/reference-orbit-accuracy.md.",
+    )
+    measure_ref.add_argument(
+        "--root", default="..", help="the repository's root directory (default: ..)"
+    )
+    measure_ref.add_argument(
+        "--cache", help="cache directory (default: $ORBIT_WATCH_CACHE or ~/.cache/orbit-watch)"
+    )
+    measure_ref.add_argument("--fetch", action="store_true", help="fetch a new run first")
+    measure_ref.add_argument("--run", help="measure this run directory instead of the newest")
+    measure_ref.add_argument(
+        "--check", action="store_true", help="only check that the files match the run"
+    )
+    measure_ref.set_defaults(handler=cmd_measure_reference_orbits)
 
     measure_sun = commands.add_parser(
         "measure-sun",

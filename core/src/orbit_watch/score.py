@@ -25,6 +25,7 @@ member institution of the IAU CPS."
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 import math
 import time
@@ -500,4 +501,106 @@ def credits_markdown(sets: list[ObservationSet], title: str = "Credits") -> str:
         "removed from the next version of the repository.",
         "",
     ]
+    return "\n".join(lines)
+
+
+# Coverage for orbit determination (phase 6, step 6.1, P6-02) ------------------------------
+
+COVERAGE_SPANS_DAYS = (1, 3, 7)
+NO_DATE = "\u2013"  # an en dash
+
+
+def coverage(documents: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """What SCORE holds of each object for an orbit determination of our own: positional
+    observations, tracks, stations, and how often two or more stations saw it close in time.
+    ``documents`` are files written by ``fetch-score``. A station here is one instrument and
+    set of observers at one place to about a kilometre; a track is a station's run without a
+    gap longer than ``TRACK_GAP_S``. A window counts when, within the span from one track's
+    start, tracks from two or more stations include three or more with three or more
+    observations each."""
+    by_object: dict[int, list[dict[str, Any]]] = {}
+    names: dict[int, str] = {}
+    for document in documents:
+        for item in document.get("items", []):
+            norad_id = int(item["satellite_number"])
+            by_object.setdefault(norad_id, []).append(item)
+            names.setdefault(norad_id, str(item.get("satellite_name") or norad_id))
+    rows = []
+    for norad_id in sorted(by_object):
+        items = by_object[norad_id]
+        tracks = _tracks(items)
+        stations = {station for _, station, _ in tracks}
+        rows.append(
+            {
+                "norad_id": norad_id,
+                "object": names[norad_id],
+                "observations": len(items),
+                "positional": sum(n for _, _, n in tracks),
+                "tracks": len(tracks),
+                "tracks_3_or_more": sum(1 for _, _, n in tracks if n >= 3),
+                "stations": len(stations),
+                "observers": len({o for station in stations for o in station[1]}),
+                "first": format_utc(tracks[0][0])[:10] if tracks else None,
+                "last": format_utc(tracks[-1][0])[:10] if tracks else None,
+                "windows": {
+                    f"{days}d": _windows(tracks, timedelta(days=days))
+                    for days in COVERAGE_SPANS_DAYS
+                },
+            }
+        )
+    return rows
+
+
+def _tracks(items: list[dict[str, Any]]) -> list[tuple[datetime, tuple, int]]:
+    by_station: dict[tuple, list[datetime]] = {}
+    for item in items:
+        if item.get("sat_ra_deg") is None or item.get("sat_dec_deg") is None:
+            continue
+        station = (
+            str(item.get("instrument") or ""),
+            tuple(sorted(item.get("obs_orc_id") or [])),
+            round(float(item["obs_lat_deg"]), 2),
+            round(float(item["obs_long_deg"]), 2),
+        )
+        by_station.setdefault(station, []).append(parse_utc(str(item["obs_time_utc"])))
+    tracks = []
+    for station, times in by_station.items():
+        times.sort()
+        start, count = times[0], 1
+        for previous, current in itertools.pairwise(times):
+            if (current - previous).total_seconds() > TRACK_GAP_S:
+                tracks.append((start, station, count))
+                start, count = current, 0
+            count += 1
+        tracks.append((start, station, count))
+    return sorted(tracks)
+
+
+def _windows(tracks: list[tuple[datetime, tuple, int]], span: timedelta) -> int:
+    found, index = 0, 0
+    while index < len(tracks):
+        start = tracks[index][0]
+        inside = [t for t in tracks[index:] if t[0] - start <= span]
+        if len({t[1] for t in inside}) >= 2 and sum(1 for t in inside if t[2] >= 3) >= 3:
+            found += 1
+            index += len(inside)
+        else:
+            index += 1
+    return found
+
+
+def coverage_table(rows: list[dict[str, Any]]) -> str:
+    header = (
+        "| Object | Observations | With a direction | Tracks (3 or more) | Stations | "
+        "Observers | From | To | Windows of 1, 3, 7 days |"
+    )
+    lines = [header, "|" + "---|" * 9]
+    for row in rows:
+        windows = ", ".join(str(row["windows"][f"{d}d"]) for d in COVERAGE_SPANS_DAYS)
+        lines.append(
+            f"| {row['object']} ({row['norad_id']}) | {row['observations']:,} | "
+            f"{row['positional']:,} | {row['tracks']} ({row['tracks_3_or_more']}) | "
+            f"{row['stations']} | {row['observers']} | {row['first'] or NO_DATE} | "
+            f"{row['last'] or NO_DATE} | {windows} |"
+        )
     return "\n".join(lines)
