@@ -233,6 +233,8 @@ export interface Target {
   /** Why it is on the allow-list (decision D-49). */
   source?: "service" | "celestrak" | "administrator";
   groups?: string[];
+  /** CelesTrak's SupGP sources with its operator's orbit (decision D-62). */
+  operator_orbits?: string[];
   reason?: string;
   added_at?: string;
 }

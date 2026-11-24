@@ -26,8 +26,11 @@ is done.
 Step 6.2 lets verification use operators' orbits. Its first part measures how they
 age: an operator's set a few hours to a day old was a median 0.1 to 0.9 km from a
 later one, and closer than the newest GP set of its time in 18 of 30 pairs, against 10
-([D-61](decisions.md#d-61-how-operators-orbits-age)). The allow-list, the follower and
-verification follow.
+([D-61](decisions.md#d-61-how-operators-orbits-age)). In its second part the allow-list
+gains 1,246 objects whose operators publish their orbits, read once a day from six SupGP
+sources, and Starlink objects one at a time; GPS, GLONASS, BeiDou and dual-use satellites
+stay off ([D-62](decisions.md#d-62-objects-whose-operators-publish-their-orbits-on-the-allow-list)).
+The follower and verification follow.
 
 **Phase 5 is done** and released as version 0.6.0: real orbits and real observations
 on the testnet, beside the simulated ones. On the public service, a replay of real

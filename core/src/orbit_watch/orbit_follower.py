@@ -11,8 +11,9 @@ objects per run, the objects asked for least recently first, ``PAUSE_S`` apart:
   it (P5-03).
 
 Only objects on the allow-list that are not SIMULATED, in requests that are open, funded
-or reserved. With the requests left in a run, it fetches CelesTrak's groups that the
-allow-list is built from, each at most once a day (P5-08, D-49).
+or reserved. With the requests left in a run, it fetches CelesTrak's groups and SupGP
+sources that the allow-list is built from, each at most once a day (P5-08, D-49, P6-04,
+D-62). A SupGP source's answer stops CelesTrak as a group's does.
 
 **Any answer that is not 200 with the object's element sets, or no answer at all, stops
 that source.** Nothing more is fetched from it until an administrator resumes it, since
@@ -40,6 +41,7 @@ from orbit_watch import allowlist, satchecker
 from orbit_watch.catalog import SOURCE_KEY, parse_catalog
 from orbit_watch.fetch import UPDATE_INTERVAL_S, FetchError, build_url, download_gp
 from orbit_watch.lifecycle import Status
+from orbit_watch.supgp import download_supgp
 from orbit_watch.timeutil import format_utc, parse_utc
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -86,7 +88,7 @@ class Fetcher:
     opener: Callable = urllib.request.urlopen
     sleep: Callable[[float], None] = field(default=time.sleep)
     requests_per_run: int = REQUESTS_PER_RUN
-    groups: tuple[str, ...] = allowlist.GROUPS  # CelesTrak's groups for the allow-list
+    groups: tuple[str, ...] = allowlist.GROUPS  # CelesTrak's groups and SupGP sources
 
 
 def _epoch(text: str) -> datetime | None:
@@ -154,9 +156,9 @@ def _group_due(row: dict[str, Any] | None, now: datetime) -> bool:
 
 
 def _group_order(group: str, row: dict[str, Any] | None) -> tuple[bool, str]:
-    """The excluded groups first, since the included ones count only once those are in;
-    then the group asked for least recently."""
-    return group in allowlist.INCLUDED_GROUPS, row["asked_at"] if row else ""
+    """The excluded groups first, since the included groups and sources count only once
+    those are in; then the one asked for least recently."""
+    return group not in allowlist.EXCLUDED_GROUPS, row["asked_at"] if row else ""
 
 
 def _group_want(group: str) -> Want:
@@ -225,8 +227,10 @@ def claim(db: Database, want: Want, now: datetime) -> bool:
 
 
 def fetch_group(want: Want, opener: Callable) -> bytes:
-    """One request for a CelesTrak group: its GP data, CSV with gzip. Raises ``FetchError``
-    with the HTTP status, or None without an answer."""
+    """One request for a CelesTrak group's GP data, or a SupGP source's data, CSV with gzip.
+    Raises ``FetchError`` with the HTTP status, or None without an answer."""
+    if allowlist.is_operator_source(want.group):
+        return download_supgp("SOURCE", want.group, opener=opener)
     return download_gp("GROUP", want.group, opener=opener)
 
 

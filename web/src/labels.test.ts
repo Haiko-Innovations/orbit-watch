@@ -94,6 +94,27 @@ describe("labelLines", () => {
     expect(lines[2]?.text).toBe("SIMULATED, delivered by station:SIM-ESPOO");
   });
 
+  it("says when an object's operator publishes its orbit", () => {
+    const operator = (object: Partial<Labels["object"]>) =>
+      labelLines({ ...real, object: { ...real.object, ...object } })[0]?.text;
+    expect(operator({ groups: [], operator_orbits: ["OneWeb-E"] })).toBe(
+      "a real object whose operator publishes its orbit (OneWeb-E, in CelesTrak's supplemental GP)",
+    );
+    expect(operator({ groups: ["education"], operator_orbits: ["CPF"] })).toBe(
+      "a real object, in CelesTrak's group education, whose operator publishes its orbit (CPF)",
+    );
+    expect(
+      operator({
+        source: "administrator",
+        groups: [],
+        reason: "SpaceX publishes its ephemeris.",
+        operator_orbits: ["SpaceX-E"],
+      }),
+    ).toBe(
+      "a real object whose operator publishes its orbit (SpaceX-E), added by an administrator: SpaceX publishes its ephemeris.",
+    );
+  });
+
   it("names a replay's source, licence and observers, and its replay station", () => {
     const lines = labelLines(replay);
     expect(lines.every((line) => !line.simulated)).toBe(true);

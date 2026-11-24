@@ -177,7 +177,8 @@ the element sets that open requests for real objects need
 
 It makes at most three requests per run, two seconds apart, and asks only for objects on
 the allow-list that are not SIMULATED. With the requests left over, it fetches CelesTrak's
-groups for the allow-list, each at most once a day ([below](#the-allow-list)). Its answer
+groups and SupGP sources for the allow-list, each at most once a day
+([below](#the-allow-list)). Its answer
 lists what it asked for and kept, under `reference_orbits`.
 
 **At the first answer that is not 200 with the object's sets, or no answer at all, the
@@ -196,13 +197,17 @@ why it is there. The list is made of:
 - the service's own list, the SIMULATED objects;
 - the objects of CelesTrak's groups `science`, `education`, `amateur` and `cubesat`,
   which the follower fetches at most once a day while fetching is on;
+- the objects whose operators publish their orbits, from CelesTrak's SupGP sources
+  `AST-E`, `CPF`, `ISS-E`, `Kuiper-E`, `OneWeb-E` and `Planet-E`, fetched the same way
+  ([D-62](decisions.md#d-62-objects-whose-operators-publish-their-orbits-on-the-allow-list));
 - the objects an administrator added, each with a public reason.
 
 From these it takes away the objects of CelesTrak's groups `military` and `radar`, and
 those whose names match the patterns for military, intelligence and government security
-payloads, in `orbit_watch.allowlist`. The patterns also apply to the names of an
-object's stored element sets. The included groups count only once both excluded groups
-have been fetched.
+payloads, in `orbit_watch.allowlist`. The patterns leave out the navigation satellites of
+GPS, GLONASS and BeiDou, and the dual-use PAZ, QZS-6 and QZS-7, which the laser-ranging
+source holds. They also apply to the names of an object's stored element sets. The
+included groups and sources count only once both excluded groups have been fetched.
 
 An object of a large group, such as `starlink`, is never fetched with its group. An
 administrator adds it after checking its owner in the satellite catalogue (SATCAT). The
@@ -213,8 +218,17 @@ orbit-watch admin allow --norad-id 12345 --name "ITS NAME" --reason "Operated by
 orbit-watch admin disallow --norad-id 12345 --api https://orbit-watch-tan.vercel.app --key "$(cat admin.key)"
 ```
 
+A Starlink object is added the same way, after one SupGP query has shown SpaceX's
+ephemeris for it, and with `--operator-source SpaceX-E`, so that the service knows its
+operator publishes its orbit:
+
+```sh
+orbit-watch fetch-supgp --catnr 12345 -o sup.csv   # its sets should name DATA_SOURCE SpaceX-E
+orbit-watch admin allow --norad-id 12345 --name "STARLINK-1234" --reason "SpaceX publishes its ephemeris; SupGP showed SpaceX-E on 2026-11-24." --operator-source SpaceX-E --api https://orbit-watch-tan.vercel.app --key "$(cat admin.key)"
+```
+
 An object that matches a name pattern or is in an excluded group is refused, and so is a
-SIMULATED object. `disallow` takes back an addition. An object of the groups stays on the
+SIMULATED object. So is one whose name in a group or source matches a pattern. `disallow` takes back an addition. An object of the groups stays on the
 list.
 
 When an object leaves the groups, it leaves the list at the group's next fetch, and a

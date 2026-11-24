@@ -265,6 +265,7 @@ class RequestService:
                 "reason": row["reason"],
                 "added_at": row["added_at"],
                 "added_by": row["added_by"],
+                "operator_source": row["operator_source"],
             }
             for row in db.query("SELECT * FROM allowlist_additions ORDER BY norad_id")
         }
@@ -710,9 +711,9 @@ class RequestService:
             return self.context.policy
         built_from: list[dict[str, Any]] = [
             {
-                "role": "include" if group in allowlist.INCLUDED_GROUPS else "exclude",
+                "role": "include" if group in allowlist.INCLUDED else "exclude",
                 "group": group,
-                "source": "CelesTrak",
+                "source": "CelesTrak SupGP" if allowlist.is_operator_source(group) else "CelesTrak",
                 "fetched_at": info["fetched_at"],
                 "sha256": info["sha256"],
                 "records": len(info["members"]),
@@ -729,9 +730,10 @@ class RequestService:
             "simulated": False,
             "description": (
                 f"The service's real objects: {len(real)} from CelesTrak's groups "
-                f"{', '.join(allowlist.INCLUDED_GROUPS)} and an administrator's additions, "
+                f"{', '.join(allowlist.INCLUDED_GROUPS)}, its SupGP sources "
+                f"{', '.join(allowlist.OPERATOR_SOURCES)} and an administrator's additions, "
                 f"minus the groups {', '.join(allowlist.EXCLUDED_GROUPS)} and the name "
-                "patterns (decision D-49)."
+                "patterns (decisions D-49 and D-62)."
             ),
             "built_from": built_from,
             "allow": [
@@ -742,13 +744,16 @@ class RequestService:
 
     @_atomic
     def keep_group(self, group: str, body: bytes, now: datetime) -> int:
-        """Keep the objects of a CelesTrak group that the follower fetched; returns how many
-        it holds. Its element sets are not kept: the follower fetches those of a request's
-        object when it needs them."""
+        """Keep the objects of a CelesTrak group, or of a SupGP source with their operators'
+        orbits, that the follower fetched; returns how many it holds. Their element sets are
+        not kept: the follower fetches those of a request's object when it needs them."""
         if group not in allowlist.GROUPS:
             raise ServiceError("unknown_group", f"{group!r} is not one of the list's groups")
-        catalog = parse_catalog(body)
-        members = {norad: catalog.name(norad) for norad in sorted(catalog.records)}
+        if allowlist.is_operator_source(group):
+            members = allowlist.operator_members(body)
+        else:
+            catalog = parse_catalog(body)
+            members = {norad: catalog.name(norad) for norad in sorted(catalog.records)}
         info = {"fetched_at": format_utc(now), "sha256": sha256_bytes(body), "members": members}
         if self.storage is not None:
             self.storage.db.execute(
@@ -762,16 +767,31 @@ class RequestService:
 
     @_atomic
     def allow_object(
-        self, norad_id: int, name: str, reason: str, by: str, now: datetime
+        self,
+        norad_id: int,
+        name: str,
+        reason: str,
+        by: str,
+        now: datetime,
+        operator_source: str | None = None,
     ) -> allowlist.Target:
         """An administrator adds a real object to the list, after checking its owner in the
         satellite catalogue; the reason is public (P5-08). The name patterns and the
-        excluded groups still apply."""
+        excluded groups still apply. ``operator_source`` names the SupGP source with its
+        operator's orbit, such as ``SpaceX-E`` for a Starlink object, after one SupGP query
+        has shown it (P6-04, D-62)."""
         name, reason = name.strip(), reason.strip()
         if not name or len(name) > 200:
             raise ServiceError("invalid_name", "the name must have 1 to 200 characters")
         if not reason or len(reason) > 500:
             raise ServiceError("invalid_reason", "the reason must have 1 to 500 characters")
+        if operator_source is not None and operator_source not in allowlist.ADDED_OPERATOR_SOURCES:
+            raise ServiceError(
+                "invalid_operator_source",
+                "operator_source must be one of "
+                f"{', '.join(allowlist.ADDED_OPERATOR_SOURCES)}: the other SupGP sources are "
+                "read once a day",
+            )
         target = self.targets().get(norad_id)
         if target is not None and target.source == "service":
             raise ServiceError("already_allowed", f"object {norad_id} is on the service's own list")
@@ -786,19 +806,35 @@ class RequestService:
                 f"the name of object {norad_id} matches the patterns for military, intelligence "
                 "and government security payloads",
             )
+        for group in allowlist.INCLUDED:
+            group_name = self.allowlist_groups.get(group, {}).get("members", {}).get(norad_id)
+            if group_name is not None and allowlist.excluded_name(group_name):
+                raise ServiceError(
+                    "excluded_name",
+                    f"object {norad_id} is {group_name!r} in CelesTrak's {group}, a name that "
+                    "matches the patterns for military, intelligence and government security "
+                    "payloads",
+                )
         for group in allowlist.EXCLUDED_GROUPS:
             if norad_id in self.allowlist_groups.get(group, {}).get("members", {}):
                 raise ServiceError(
                     "excluded_group", f"object {norad_id} is in CelesTrak's group {group}"
                 )
-        added = {"name": name, "reason": reason, "added_at": format_utc(now), "added_by": by}
+        added = {
+            "name": name,
+            "reason": reason,
+            "added_at": format_utc(now),
+            "added_by": by,
+            "operator_source": operator_source,
+        }
         if self.storage is not None:
             self.storage.db.execute(
-                "INSERT INTO allowlist_additions (norad_id, name, reason, added_at, added_by) "
-                "VALUES (?, ?, ?, ?, ?) ON CONFLICT (norad_id) DO UPDATE SET name = "
-                "excluded.name, reason = excluded.reason, added_at = excluded.added_at, "
-                "added_by = excluded.added_by",
-                (norad_id, name, reason, added["added_at"], by),
+                "INSERT INTO allowlist_additions (norad_id, name, reason, added_at, added_by, "
+                "operator_source) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (norad_id) DO UPDATE "
+                "SET name = excluded.name, reason = excluded.reason, added_at = "
+                "excluded.added_at, added_by = excluded.added_by, operator_source = "
+                "excluded.operator_source",
+                (norad_id, name, reason, added["added_at"], by, operator_source),
             )
         self.allowlist_additions[norad_id] = added
         self._targets = None

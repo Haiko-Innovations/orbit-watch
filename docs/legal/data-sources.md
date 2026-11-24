@@ -1,6 +1,6 @@
 # Data sources
 
-Orbit Watch public testnet service · version of 22 November 2026
+Orbit Watch public testnet service · version of 24 November 2026
 
 The service carries SIMULATED data and real data side by side. Every object, reference orbit and observation says which it is, on its page and in its files. The money is testnet money of no value.
 
@@ -11,6 +11,8 @@ The service's own objects and their orbits, the instruments of the stations, the
 ## Real objects and their orbits
 
 The real objects on the allow-list come from [CelesTrak](https://celestrak.org)'s public GP data: its groups `science`, `education`, `amateur` and `cubesat`, without the objects of its groups `military` and `radar`, and without names that suggest military, intelligence or government security payloads. An administrator may add an object, and says publicly why. The current reference orbits of real objects are CelesTrak's GP data too, fetched one object at a time, as CelesTrak's usage policy asks.
+
+The allow-list also holds objects whose operators publish their orbits, from CelesTrak's [supplemental GP data](https://celestrak.org/NORAD/elements/supplemental/), which CelesTrak derives from the operators' own orbital data: AST SpaceMobile's, Amazon Leo's (formerly Project Kuiper), Eutelsat OneWeb's and Planet's satellites, NASA's International Space Station, the satellites of the International Laser Ranging Service's predictions, and Starlink satellites that an administrator adds with SpaceX's published ephemeris. The navigation satellites of GPS, GLONASS and BeiDou, and dual-use satellites, stay off the list. We thank CelesTrak and these operators for publishing their data.
 
 Past reference orbits, for replays, come from the IAU CPS's [SatChecker](https://satchecker.readthedocs.io/en/latest/), which asks for this acknowledgement:
 

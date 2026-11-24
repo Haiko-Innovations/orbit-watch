@@ -480,11 +480,15 @@ def cmd_admin_resume_orbits(args: argparse.Namespace) -> int:
 
 def cmd_admin_allow(args: argparse.Namespace) -> int:
     document = {"norad_id": args.norad_id, "name": args.name, "reason": args.reason}
+    if args.operator_source:
+        document["operator_source"] = args.operator_source
     result = _post(args, "/v1/admin/allowlist", document).json()
+    operator = result.get("operator_orbits")
     _print(
         args,
         result,
-        f"{result['norad_id']} {result['name']} is on the allow-list: {result['reason']}",
+        f"{result['norad_id']} {result['name']} is on the allow-list: {result['reason']}"
+        + (f" (its operator's orbit: {', '.join(operator)})" if operator else ""),
     )
     return 0
 
@@ -821,6 +825,11 @@ def add_commands(commands: argparse._SubParsersAction) -> None:
     allow.add_argument("--norad-id", type=int, required=True, help="its catalogue number")
     allow.add_argument("--name", required=True, help="its name in the satellite catalogue")
     allow.add_argument("--reason", required=True, help="why it may be targeted, shown publicly")
+    allow.add_argument(
+        "--operator-source",
+        help="the SupGP source with its operator's orbit, SpaceX-E for a Starlink object, "
+        "once orbit-watch fetch-supgp --catnr has shown it",
+    )
     allow.set_defaults(handler=cmd_admin_allow)
     disallow = sub.add_parser(
         "disallow", parents=[common], help="take back an addition to the allow-list"

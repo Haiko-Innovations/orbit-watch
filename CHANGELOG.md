@@ -31,6 +31,17 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   cache, `orbit-watch measure-reference-orbits` also compares each operator's set of an
   earlier run with a later run's truth, beside the newest GP set of the earlier run's
   time. The results' format is 1.1, and the page's GP tables are of the second run.
+- Objects whose operators publish their orbits on the allow-list (step 6.2, D-62): the
+  follower reads CelesTrak's SupGP sources `AST-E`, `CPF`, `ISS-E`, `Kuiper-E`,
+  `OneWeb-E` and `Planet-E` once a day, and `orbit-watch admin allow --operator-source
+  SpaceX-E` adds a Starlink object. `GET /v1/public/targets` gives them
+  `operator_orbits`, and the data sources page thanks CelesTrak and the operators.
+  Migration 0015.
+
+### Changed
+
+- New name patterns leave the navigation satellites of GPS, GLONASS and BeiDou, and the
+  dual-use PAZ, QZS-6 and QZS-7, off the allow-list (D-62).
 
 ## [0.6.0] - 2026-11-23
 
