@@ -27,6 +27,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   measured again from the cache byte for byte.
 - `orbit-watch score-coverage`: what SCORE holds of each object for an orbit
   determination, from files written by `fetch-score` (step 6.1).
+- How operators' orbits age, measured (step 6.2, D-61): with earlier runs in the
+  cache, `orbit-watch measure-reference-orbits` also compares each operator's set of an
+  earlier run with a later run's truth, beside the newest GP set of the earlier run's
+  time. The results' format is 1.1, and the page's GP tables are of the second run.
 
 ## [0.6.0] - 2026-11-23
 

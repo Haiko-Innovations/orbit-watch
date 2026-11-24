@@ -8,20 +8,26 @@ plan is in [plan.md](plan.md); decisions and their reasons are in
 
 Every pull request that finishes a roadmap step also updates this page.
 
-## Status (2026-11-23)
+## Status (2026-11-24)
 
-**Phase 6 is planned**: more precise reference orbits and identification, on the
+**Phase 6 is under way**: more precise reference orbits and identification, on the
 testnet. Its decisions P6-01 to P6-12 were approved on 2026-11-23
 ([#137](https://github.com/Haiko-Innovations/orbit-watch/issues/137)), and its first
 step measures how far CelesTrak's GP sets are from operators' own orbits. Step 6.1
 is in two parts; in the first, the core fetches operators' orbits from CelesTrak's
 SupGP and every past GP set of an object over a period from SatChecker
 ([D-59](decisions.md#d-59-operators-orbits-and-past-sets-over-a-period)); in the second,
-the measurement: a fresh GP set was a median 0.17 to 0.54 km off in low orbits, but the
-error grew along the track to a median of 29 km at seven to ten days
+the measurement. In its first run a fresh GP set was a median 0.17 to 0.54 km off in
+low orbits, but the error grew along the track to a median of 29 km at seven to ten days
 ([reference-orbit-accuracy.md](reference-orbit-accuracy.md),
 [D-60](decisions.md#d-60-reference-orbits-measured-against-operators-orbits)). Step 6.1
 is done.
+
+Step 6.2 lets verification use operators' orbits. Its first part measures how they
+age: an operator's set a few hours to a day old was a median 0.1 to 0.9 km from a
+later one, and closer than the newest GP set of its time in 18 of 30 pairs, against 10
+([D-61](decisions.md#d-61-how-operators-orbits-age)). The allow-list, the follower and
+verification follow.
 
 **Phase 5 is done** and released as version 0.6.0: real orbits and real observations
 on the testnet, beside the simulated ones. On the public service, a replay of real

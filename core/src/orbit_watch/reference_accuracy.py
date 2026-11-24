@@ -13,13 +13,19 @@
 * **the comparison**: SGP4 positions of the GP set and of the truth every ``STEP_S`` seconds
   over the ``SPAN_S`` after the truth's epoch, since "SupGP data is fitted from the current
   epoch forward". The difference is split into radial, in-track and cross-track parts in the
-  truth's frame, and the set's age is taken at the middle of the span.
+  truth's frame, and the set's age is taken at the middle of the span;
+* **how operators' orbits age** (step 6.2): with more than one run in the cache, each truth
+  of a later run is compared in the same way with the set that the object's operator had
+  published by an earlier run with the latest epoch at or before the truth's, beside the
+  newest GP set that SatChecker had collected by the earlier run. These are what the
+  follower would have had to choose between for that time (P6-03). The ISS's ephemeris
+  gives segments ahead, so its set may be one that had not begun at the earlier run.
 
 Every answer is kept, as received, in a run directory of the cache outside the repository.
 A run is used only when it is complete. Without ``--fetch`` the measurement is recomputed from
-the newest run, byte for byte. SupGP keeps no history, so nobody else can fetch the same
-sets later; a new run measures again with current ones. No element set leaves the cache: the
-results name sets by epoch and SHA-256 only (D-06, P5-05).
+the newest run and the runs before it, byte for byte. SupGP keeps no history, so nobody else
+can fetch the same sets later; a new run measures again with current ones. No element set
+leaves the cache: the results name sets by epoch and SHA-256 only (D-06, P5-05).
 """
 
 from __future__ import annotations
@@ -27,7 +33,7 @@ from __future__ import annotations
 import json
 import time
 import urllib.request
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -43,7 +49,7 @@ from orbit_watch.supgp import SupSet, download_supgp, sup_sets
 from orbit_watch.validation import orbit_class
 
 RESULTS_FORMAT = "orbit-watch/reference-orbit-accuracy"
-RESULTS_FORMAT_VERSION = "1.0"
+RESULTS_FORMAT_VERSION = "1.1"
 SOURCES = ("AST-E", "CPF", "ISS-E", "Kuiper-E", "OneWeb-E", "Planet-E")
 PER_GROUP = 6  # objects per source and orbit class
 ISS_SEGMENTS = 8
@@ -204,6 +210,19 @@ def load_run(path: Path) -> Run:
     return Run(path, _utc(document["fetched_at"]), supgp, history)
 
 
+def earlier_runs(path: Path) -> list[Run]:
+    """The complete runs beside ``path`` that were fetched before it, oldest first."""
+    found = []
+    for other in sorted(path.parent.iterdir()):
+        if other.name >= path.name or not (other / RUN_FILE).is_file():
+            continue
+        try:
+            found.append(load_run(other))
+        except ValueError:
+            continue  # an incomplete run is not used
+    return found
+
+
 def fetch_run(
     cache_dir: Path,
     *,
@@ -259,11 +278,14 @@ def fetch_run(
 # The measurement --------------------------------------------------------------------------
 
 
-def measure(run: Run) -> dict[str, Any]:
-    """Every comparison of one run, and the inputs by epoch and SHA-256."""
+def measure(run: Run, earlier: Sequence[Run] = ()) -> dict[str, Any]:
+    """Every comparison of one run, and the inputs by epoch and SHA-256. With ``earlier``
+    runs, also how operators' orbits age between the runs."""
     catalogs = {source: parse_catalog(body) for source, body in sorted(run.supgp.items())}
     truths = choose_truths(catalogs, run.fetched_at)
     histories = {n: parse_history(body, n) for n, body in sorted(run.history.items())}
+    runs = sorted([*earlier, run], key=lambda r: r.fetched_at)
+    ageing, unchanged = operator_ageing(runs)
     comparisons: list[dict[str, Any]] = []
     truth_rows: list[dict[str, Any]] = []
     skipped = same = 0
@@ -325,6 +347,7 @@ def measure(run: Run) -> dict[str, Any]:
             "step_s": STEP_S,
         },
         "run": {"fetched_at": _stamp(run.fetched_at), "directory": run.path.name},
+        "runs": [{"fetched_at": _stamp(r.fetched_at), "directory": r.path.name} for r in runs],
         "truths": truth_rows,
         "comparisons": {
             "columns": list(COLUMNS),
@@ -332,7 +355,12 @@ def measure(run: Run) -> dict[str, Any]:
         },
         "not_propagated": skipped,
         "same_as_truth": same,
-        "summary": summary(comparisons, truth_rows),
+        "operator_ageing": {
+            "columns": list(AGEING_COLUMNS),
+            "rows": [[row[column] for column in AGEING_COLUMNS] for row in ageing],
+            "unchanged": unchanged,
+        },
+        "summary": {**summary(comparisons, truth_rows), **ageing_summary(ageing)},
     }
 
 
@@ -372,14 +400,15 @@ def comparison_rows(results: dict[str, Any]) -> list[dict[str, Any]]:
 
 def dumps_results(results: dict[str, Any]) -> str:
     """The results as JSON, readable, with each comparison on one line."""
-    rows = results["comparisons"]["rows"]
-    marked = {
-        **results,
-        "comparisons": {
-            **results["comparisons"],
-            "rows": [f"@@row{i}@@" for i in range(len(rows))],
-        },
-    }
+    marked = dict(results)
+    rows: list[list[Any]] = []
+    for key in ("comparisons", "operator_ageing"):
+        if key not in results:
+            continue
+        table = results[key]
+        marks = [f"@@row{len(rows) + i}@@" for i in range(len(table["rows"]))]
+        rows += table["rows"]
+        marked[key] = {**table, "rows": marks}
     text = dumps_pretty(marked, sort_keys=False)
     for i, row in enumerate(rows):
         text = text.replace(f'"@@row{i}@@"', json.dumps(row, ensure_ascii=False), 1)
@@ -470,6 +499,161 @@ def summary(comparisons: list[dict[str, Any]], truths: list[dict[str, Any]]) -> 
         "sources": sources,
         "leo_by_source": leo_by_source,
     }
+
+
+# How operators' orbits age --------------------------------------------------------------
+
+# One pair per row: the truth of a later run, against the object's operator set as an earlier
+# run had it, beside the newest GP set collected by the earlier run.
+AGEING_COLUMNS = (
+    "earlier_run",
+    "later_run",
+    "norad_id",
+    "source",
+    "orbit",
+    "truth_epoch",
+    "truth_sha256",
+    "set_epoch",
+    "set_data_source",
+    "set_sha256",
+    "age_days",
+    "rms_km",
+    "radial_rms_km",
+    "in_track_rms_km",
+    "cross_track_rms_km",
+    "gp_epoch",
+    "gp_sha256",
+    "gp_age_days",
+    "gp_rms_km",
+)
+
+
+def _collected_at(element_set: ElementSet) -> datetime | None:
+    """When SatChecker collected a set, from its ``date_collected``."""
+    text = str((element_set.source or {}).get("date_collected", ""))
+    try:
+        return datetime.strptime(text[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
+    except ValueError:
+        return None
+
+
+def _newest_gp(history: list, norad_id: int, moment: datetime) -> ElementSet | None:
+    """The GP set with the latest epoch among those SatChecker had collected by ``moment``."""
+    catalog = _history_catalog(history)
+    if catalog is None:
+        return None
+    collected = [
+        s
+        for s in catalog.element_sets(norad_id)
+        if (at := _collected_at(s)) is not None and at <= moment
+    ]
+    if not collected:
+        return None
+    return max(collected, key=lambda s: (s.epoch, s.sha256))
+
+
+def operator_ageing(runs: Sequence[Run]) -> tuple[list[dict[str, Any]], int]:
+    """Every pair of an earlier and a later run: each truth of the later run against the set
+    its operator had published by the earlier run with the latest epoch at or before the
+    truth's, and beside the newest GP set SatChecker had collected by then, from the later
+    run's answer. Returns the pairs and how many sets were unchanged between the runs."""
+    ordered = sorted(runs, key=lambda r: r.fetched_at)
+    catalogs = [
+        {source: parse_catalog(body) for source, body in sorted(r.supgp.items())} for r in ordered
+    ]
+    rows: list[dict[str, Any]] = []
+    unchanged = 0
+    for j, later in enumerate(ordered):
+        if not j:
+            continue
+        truths = choose_truths(catalogs[j], later.fetched_at)
+        histories = {
+            norad: parse_history(later.history[norad], norad)
+            for norad in sorted({t.norad_id for t in truths})
+            if norad in later.history
+        }
+        for i, before in enumerate(ordered[:j]):
+            for truth in truths:
+                catalog = catalogs[i].get(truth.source)
+                if catalog is None or truth.norad_id not in catalog.sets:
+                    continue
+                older = _latest_before(sup_sets(catalog, truth.norad_id), truth.epoch)
+                if older is None:
+                    continue
+                truth_set = truth.sup.element_set
+                if older.element_set.sha256 == truth_set.sha256:
+                    unchanged += 1
+                    continue
+                result = compare(older.element_set, truth_set)
+                if result is None:
+                    continue
+                history = histories.get(truth.norad_id, [])
+                gp = _newest_gp(history, truth.norad_id, before.fetched_at)
+                gp_result = None if gp is None else compare(gp, truth_set)
+                rows.append(
+                    {
+                        "earlier_run": before.path.name,
+                        "later_run": later.path.name,
+                        "norad_id": truth.norad_id,
+                        "source": truth.source,
+                        "orbit": truth.orbit,
+                        "truth_epoch": truth_set.record["EPOCH"],
+                        "truth_sha256": truth_set.sha256,
+                        "set_epoch": older.element_set.record["EPOCH"],
+                        "set_data_source": older.data_source,
+                        "set_sha256": older.element_set.sha256,
+                        **{k: result[k] for k in AGEING_COLUMNS if k in result},
+                        "gp_epoch": None if gp is None else gp.record["EPOCH"],
+                        "gp_sha256": None if gp is None else gp.sha256,
+                        "gp_age_days": None if gp_result is None else gp_result["age_days"],
+                        "gp_rms_km": None if gp_result is None else gp_result["rms_km"],
+                    }
+                )
+    return rows, unchanged
+
+
+def ageing_rows(results: dict[str, Any]) -> list[dict[str, Any]]:
+    """The pairs of written results as dictionaries."""
+    table = results["operator_ageing"]
+    return [dict(zip(table["columns"], row, strict=True)) for row in table["rows"]]
+
+
+def ageing_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_age: dict[str, dict[str, Any]] = {}
+    for key in sorted({(r["source"], r["orbit"]) for r in rows}):
+        for low, high in AGE_BINS:
+            label = f"{low:g}{DASH}{high:g}"
+            chosen = [
+                r for r in rows if (r["source"], r["orbit"]) == key and _bin(r["age_days"]) == label
+            ]
+            if not chosen:
+                continue
+            by_age[f"{key[0]} {key[1]} {label}"] = {
+                "source": key[0],
+                "orbit": key[1],
+                "age_days": label,
+                "objects": len({r["norad_id"] for r in chosen}),
+                "rms_km": _stats(r["rms_km"] for r in chosen),
+                "in_track_rms_km": _stats(r["in_track_rms_km"] for r in chosen),
+                "cross_track_rms_km": _stats(r["cross_track_rms_km"] for r in chosen),
+            }
+    against_gp: dict[str, dict[str, Any]] = {}
+    for key in sorted({(r["source"], r["orbit"]) for r in rows}):
+        pairs = [r for r in rows if (r["source"], r["orbit"]) == key and r["gp_rms_km"] is not None]
+        if not pairs:
+            continue
+        against_gp[f"{key[0]} {key[1]}"] = {
+            "source": key[0],
+            "orbit": key[1],
+            "pairs": len(pairs),
+            "operator_closer": sum(1 for r in pairs if r["rms_km"] < r["gp_rms_km"] - SAME_KM),
+            "gp_closer": sum(1 for r in pairs if r["gp_rms_km"] < r["rms_km"] - SAME_KM),
+            "operator_age_days": _stats(r["age_days"] for r in pairs),
+            "operator_rms_km": _stats(r["rms_km"] for r in pairs),
+            "gp_age_days": _stats(r["gp_age_days"] for r in pairs),
+            "gp_rms_km": _stats(r["gp_rms_km"] for r in pairs),
+        }
+    return {"operator_by_age": by_age, "operator_against_gp": against_gp}
 
 
 # The document -----------------------------------------------------------------------------
@@ -567,12 +751,77 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
             for source, cells in s["leo_by_source"].items()
         ],
     )
+    operator_by_age = _table(
+        [
+            "Source",
+            "Orbit",
+            "Set's age (days)",
+            "Pairs",
+            "Objects",
+            "Median (km)",
+            "90 % (km)",
+            "Largest (km)",
+            "In track, median (km)",
+            "Cross track, median (km)",
+        ],
+        [
+            [
+                f"`{row['source']}`",
+                row["orbit"],
+                row["age_days"],
+                str(row["rms_km"]["n"]),
+                str(row["objects"]),
+                _km(row["rms_km"]["median"]),
+                _km(row["rms_km"]["p90"]),
+                _km(row["rms_km"]["max"]),
+                _km(row["in_track_rms_km"]["median"]),
+                _km(row["cross_track_rms_km"]["median"]),
+            ]
+            for row in s["operator_by_age"].values()
+        ],
+    )
+    against_gp = _table(
+        [
+            "Source",
+            "Orbit",
+            "Pairs",
+            "Operator's set closer",
+            "GP set closer",
+            "Operator's set: age, median (days)",
+            "Median (km)",
+            "Newest GP set: age, median (days)",
+            "Median (km)",
+        ],
+        [
+            [
+                f"`{row['source']}`",
+                row["orbit"],
+                str(row["pairs"]),
+                str(row["operator_closer"]),
+                str(row["gp_closer"]),
+                f"{row['operator_age_days']['median']:.2f}",
+                _km(row["operator_rms_km"]["median"]),
+                f"{row['gp_age_days']['median']:.2f}",
+                _km(row["gp_rms_km"]["median"]),
+            ]
+            for row in s["operator_against_gp"].values()
+        ],
+    )
+    ageing = results["operator_ageing"]
+    runs = ", ".join(r["fetched_at"] for r in results["runs"])
+    ageing_run = (
+        f"Runs fetched {runs}: {len(ageing['rows'])} pairs of an operator's set and a later "
+        f"one, {ageing['unchanged']} sets unchanged between the runs."
+    )
     return {
         "run": run,
         "sources": sources,
         "newest_set": newest,
         "by_age": by_age,
         "leo_by_source": leo,
+        "ageing_run": ageing_run,
+        "operator_by_age": operator_by_age,
+        "operator_against_gp": against_gp,
     }
 
 
