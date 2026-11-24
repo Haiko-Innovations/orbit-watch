@@ -460,7 +460,7 @@ class RequestService:
         terms = self._record(request_id).terms
         middle = terms.window_start + (terms.window_end - terms.window_start) / 2
         limit = timedelta(days=PARAMETERS["max_reference_age_days"])
-        epochs = [s.epoch_time for s in self.element_sets.get(terms.target_norad_id, [])]
+        epochs = [s.epoch_time for s in self.verifying_sets(terms.target_norad_id)]
         if not any(e is not None and abs(e - middle) <= limit for e in epochs):
             raise ServiceError(
                 "reference_orbit_pending",
@@ -583,7 +583,7 @@ class RequestService:
         service's own objects it is the service's own catalogue, as before. For a real
         object it is the stored element set nearest the middle of the window, alone, so that
         the SIMULATED observations follow the set that verification picks for them."""
-        stored = self.element_sets.get(norad_id, [])
+        stored = self.verifying_sets(norad_id)
         if not stored:
             if norad_id in parse_catalog(self.context.catalog).sets:
                 return self.context.catalog
@@ -613,12 +613,18 @@ class RequestService:
         }
         return dumps_pretty(document, sort_keys=False).encode("utf-8")
 
+    def verifying_sets(self, norad_id: int) -> list[orbits.StoredSet]:
+        """The stored sets that verification picks from: the GP sets. The sets of an
+        operator's orbit are kept beside them, and step 6.2's last part lets verification
+        use them (D-63)."""
+        return [s for s in self.element_sets.get(norad_id, []) if not s.operator_orbit]
+
     def catalog_for(self, norad_ids: list[int]) -> bytes:
         """The catalogue that verifies these objects (step 5.4, D-47). Without stored sets
-        it is the service's own catalogue, as before. With them it holds every stored set of
-        the objects, from which verification picks the one nearest the observations (P5-04),
-        and the service's own records of the objects when those are real too."""
-        stored = [s.record for norad in norad_ids for s in self.element_sets.get(norad, [])]
+        it is the service's own catalogue, as before. With them it holds every stored GP set
+        of the objects, from which verification picks the one nearest the observations
+        (P5-04), and the service's own records of the objects when those are real too."""
+        stored = [s.record for norad in norad_ids for s in self.verifying_sets(norad)]
         if not stored:
             return self.context.catalog
         base = parse_catalog(self.context.catalog)
@@ -1255,7 +1261,7 @@ class RequestService:
                 )
             return None
         middle = document.window_start + (document.window_end - document.window_start) / 2
-        stored = [s for s in self.element_sets.get(document.norad_id, []) if s.epoch_time]
+        stored = [s for s in self.verifying_sets(document.norad_id) if s.epoch_time]
         if stored:
             nearest = min(stored, key=lambda s: (abs(s.epoch_time - middle), s.epoch, s.sha256))
             return self._orbit(nearest.source, nearest.epoch, nearest.sha256, final=False)

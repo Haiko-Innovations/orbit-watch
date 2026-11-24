@@ -157,6 +157,12 @@ is committed ([P5-05](decisions.md#p5-05-orbit-data-stays-out-of-the-repository)
   OneWeb, Planet, NASA for the ISS, the ILRS prediction centres for `CPF`, and SpaceX for
   Starlink. The service's [data sources page](legal/data-sources.md) thanks them.
 
+**For open requests** ([D-63](decisions.md#d-63-the-follower-fetches-operators-orbits)):
+the follower asks SupGP for an open request's object by catalogue number, after its GP
+data and at most once per two-hour update, when its operator publishes its orbit. It keeps
+the sets of the operator's orbit, with their `DATA_SOURCE` and `RMS`. A past window keeps
+SatChecker's GP, since SupGP keeps no history.
+
 ## Real orbits in examples and tests: manifests and the cache
 
 Examples and tests with real data name their reference orbits instead of

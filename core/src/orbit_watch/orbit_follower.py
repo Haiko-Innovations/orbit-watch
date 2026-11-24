@@ -5,7 +5,9 @@ objects per run, the objects asked for least recently first, ``PAUSE_S`` apart:
 
 * **CelesTrak** for a request whose window has not ended and starts within a day: the
   object's current GP data, one object by its catalogue number, CSV with gzip, at most once
-  per two-hour update (P5-02).
+  per two-hour update (P5-02). When the object's operator publishes its orbit (its target
+  has ``operator_orbits``), also its current SupGP data the same way, of which the sets of
+  the operator's orbit are kept (P6-03, D-63). Its ``target`` is ``SUPGP``.
 * **SatChecker** for a request whose window has ended, such as a replay (P5-10): the set
   nearest the middle of the window, asked for once, unless a stored set is within a day of
   it (P5-03).
@@ -41,7 +43,9 @@ from orbit_watch import allowlist, satchecker
 from orbit_watch.catalog import SOURCE_KEY, parse_catalog
 from orbit_watch.fetch import UPDATE_INTERVAL_S, FetchError, build_url, download_gp
 from orbit_watch.lifecycle import Status
-from orbit_watch.supgp import download_supgp
+from orbit_watch.supgp import SERVICE as SUPGP_SERVICE
+from orbit_watch.supgp import build_url as supgp_url
+from orbit_watch.supgp import download_supgp, sup_sets
 from orbit_watch.timeutil import format_utc, parse_utc
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -49,6 +53,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from orbit_watch.storage import Database
 
 SOURCES = ("celestrak", "satchecker")
+SUPGP = "supgp"  # the target of a request for an object's current SupGP data
 REQUESTS_PER_RUN = 3  # a run stays short: at most this many requests
 PAUSE_S = 2.0  # between two requests of one run
 UPDATE = timedelta(seconds=UPDATE_INTERVAL_S)  # CelesTrak updates GP data every two hours
@@ -62,9 +67,10 @@ TLE_LIMIT = 100_000  # a TLE holds catalogue numbers below this
 
 @dataclass(frozen=True)
 class Want:
-    """One request to a source: an object's current sets (``target`` is ''), the set
-    nearest a time in the past (``target`` is that time), or the objects of one of
-    CelesTrak's groups for the allow-list (``group``; ``norad_id`` is 0)."""
+    """One request to a source: an object's current GP sets (``target`` is ''), its current
+    SupGP sets (``target`` is ``SUPGP``), the set nearest a time in the past (``target`` is
+    that time), or the objects of one of CelesTrak's groups or SupGP sources for the
+    allow-list (``group``; ``norad_id`` is 0)."""
 
     source: str
     norad_id: int
@@ -76,7 +82,9 @@ class Want:
         if self.group:
             return {"source": self.source, "group": self.group}
         view: dict[str, Any] = {"source": self.source, "norad_id": self.norad_id}
-        if self.target:
+        if self.target == SUPGP:
+            view["data"] = "supgp"
+        elif self.target:
             view["nearest"] = self.target
         return view
 
@@ -116,11 +124,14 @@ def wanted(service: RequestService, now: datetime) -> list[Want]:
             key = ("celestrak", norad, "")
         else:
             middle = terms.window_start + (terms.window_end - terms.window_start) / 2
-            epochs = [_epoch(s.epoch) for s in service.element_sets.get(norad, [])]
+            epochs = [_epoch(s.epoch) for s in service.verifying_sets(norad)]
             if any(e is not None and abs(e - middle) <= NEAR_ENOUGH for e in epochs):
                 continue
             key = ("satchecker", norad, format_utc(middle))
         found.setdefault(key, Want(*key, request_id))
+        if key[0] == "celestrak" and targets[norad].operator_orbits:
+            supgp = ("celestrak", norad, SUPGP)  # after GP, which verification uses now
+            found.setdefault(supgp, Want(*supgp, request_id))
     return list(found.values())
 
 
@@ -237,6 +248,8 @@ def fetch_group(want: Want, opener: Callable) -> bytes:
 def fetch(want: Want, opener: Callable) -> list[dict[str, Any]]:
     """One request to the source: the object's element sets, each naming where it came
     from. Raises ``FetchError`` with the HTTP status, or None without an answer."""
+    if want.target == SUPGP:
+        return _fetch_supgp(want, opener)
     if want.source == "celestrak":
         body = download_gp("CATNR", str(want.norad_id), opener=opener)
         catalog = parse_catalog(body)
@@ -255,6 +268,34 @@ def fetch(want: Want, opener: Callable) -> list[dict[str, Any]]:
         want.norad_id, parse_utc(want.target), kind=kind, opener=opener
     )
     return [nearest.record]
+
+
+def _fetch_supgp(want: Want, opener: Callable) -> list[dict[str, Any]]:
+    """The object's current sets of its operator's orbit from CelesTrak's SupGP, each
+    naming its ``DATA_SOURCE``. Sets of other kinds, such as almanacs, are left out."""
+    body = download_supgp("CATNR", str(want.norad_id), opener=opener)
+    catalog = parse_catalog(body)
+    others = sorted(set(catalog.sets) - {want.norad_id})
+    if others or want.norad_id not in catalog.sets:
+        raise FetchError(
+            f"CelesTrak's SupGP answer for object {want.norad_id} holds the element sets of "
+            f"{', '.join(map(str, others)) or 'no object'}",
+            200,
+        )
+    url = supgp_url("CATNR", str(want.norad_id))
+    return [
+        {
+            **sup.element_set.record,
+            SOURCE_KEY: {
+                "service": SUPGP_SERVICE,
+                "url": url,
+                "data_source": sup.data_source,
+                "rms_km": sup.rms_km,
+            },
+        }
+        for sup in sup_sets(catalog, want.norad_id)
+        if sup.operator_orbit
+    ]
 
 
 def _record_status(db: Database, want: Want, status: int | None) -> None:
@@ -343,12 +384,13 @@ def status(db: Database, now: datetime, enabled: bool) -> dict[str, Any]:
             "resumed_at": row["resumed_at"],
         }
     missing = db.query(
-        "SELECT norad_id FROM orbit_asks WHERE source = 'celestrak' AND status = 404 "
+        "SELECT norad_id, target FROM orbit_asks WHERE source = 'celestrak' AND status = 404 "
         "ORDER BY norad_id"
     )
     stopped = any(s["status"] == "stopped" for s in sources.values())
     return {
         "status": "off" if not enabled else "stopped" if stopped else "ok",
         "sources": sources,
-        "objects_without_public_data": [int(row["norad_id"]) for row in missing],
+        "objects_without_public_data": [int(r["norad_id"]) for r in missing if not r["target"]],
+        "objects_without_supgp_data": [int(r["norad_id"]) for r in missing if r["target"] == SUPGP],
     }

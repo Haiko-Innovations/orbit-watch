@@ -37,6 +37,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   SpaceX-E` adds a Starlink object. `GET /v1/public/targets` gives them
   `operator_orbits`, and the data sources page thanks CelesTrak and the operators.
   Migration 0015.
+- The follower fetches an open request's object from CelesTrak's SupGP too, when its
+  operator publishes its orbit, and keeps the sets of that orbit beside the GP sets.
+  `GET /v1/public/reference-orbits` names them with their `data_source`, and
+  `GET /v1/health/reference-orbits` lists `objects_without_supgp_data`. Verification does
+  not use them yet (step 6.2, D-63).
 
 ### Changed
 
