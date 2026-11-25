@@ -298,8 +298,10 @@ set is kept. The allow-list keeps the groups as last fetched.
    - `403`: CelesTrak refused the service. Read its message before going on. If it blocks
      the address that Vercel shares with other users (P5-02), upload sets by hand until it
      lifts the block.
-   - no status: no answer came. The source may be down, or its firewall may block the
-     address.
+   - no status: no answer came, twice in a row. After the first, the follower waits two
+     hours and tries once more ([D-64](decisions.md#d-64-one-more-try-after-no-answer));
+     the health endpoint then says `waiting` and `no_answer_at`. The source may be down,
+     or its firewall may block the address.
    - `200`: the answer held no element set of the object. Look at the source's page for
      changes to its format.
 2. **Upload sets by hand** if requests need them meanwhile ([above](#reference-orbits)).

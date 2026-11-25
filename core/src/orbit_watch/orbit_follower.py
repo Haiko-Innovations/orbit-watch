@@ -17,13 +17,14 @@ or reserved. With the requests left in a run, it fetches CelesTrak's groups and 
 sources that the allow-list is built from, each at most once a day (P5-08, D-49, P6-04,
 D-62). A SupGP source's answer stops CelesTrak as a group's does.
 
-**Any answer that is not 200 with the object's element sets, or no answer at all, stops
-that source.** Nothing more is fetched from it until an administrator resumes it, since
-CelesTrak asks for a person to look, and no answer may mean that its firewall blocks the
-service's address. After a 500 or a 503, or no answer, the source also waits at least 15
-minutes, even once resumed. An object that answered 404 is not asked for again until an
-administrator says so. ``/v1/health/reference-orbits`` reports a stop, so the hourly uptime
-check opens an alert issue.
+**Any answer that is not 200 with the object's element sets stops that source.** Nothing
+more is fetched from it until an administrator resumes it, since CelesTrak asks for a person
+to look. After a 500 or a 503 the source also waits at least 15 minutes, even once resumed.
+**No answer at all** may be a slow moment or a firewall that blocks the service's address,
+so the first one makes the source wait two hours and try once more, and a second in a row
+stops it (D-64). An answer in between clears the first. An object that answered 404 is not
+asked for again until an administrator says so. ``/v1/health/reference-orbits`` reports a
+stop, so the hourly uptime check opens an alert issue.
 
 The requests are made outside the database's lock, one at a time. Each is recorded as asked
 for just before it is made, so that another process does not make it too, and each answer
@@ -58,6 +59,7 @@ REQUESTS_PER_RUN = 3  # a run stays short: at most this many requests
 PAUSE_S = 2.0  # between two requests of one run
 UPDATE = timedelta(seconds=UPDATE_INTERVAL_S)  # CelesTrak updates GP data every two hours
 BUSY_WAIT = timedelta(minutes=15)  # after a 500 or a 503, or no answer
+RETRY_WAIT = timedelta(hours=2)  # after the first request without an answer (D-64)
 LEAD = timedelta(days=1)  # CelesTrak: from a day before the window starts
 NEAR_ENOUGH = timedelta(days=1)  # SatChecker: a stored set this near the middle will do
 DAILY = timedelta(days=1)  # CelesTrak's groups for the allow-list: at most once a day
@@ -317,15 +319,24 @@ def answered(db: Database, want: Want, now: datetime) -> None:
     """Record a 200 with element sets. Call it in a transaction."""
     _record_status(db, want, 200)
     db.execute(
-        "UPDATE orbit_sources SET last_answer_at = ? WHERE source = ?",
+        "UPDATE orbit_sources SET last_answer_at = ?, no_answer_at = NULL WHERE source = ?",
         (format_utc(now), want.source),
         state=False,
     )
 
 
-def stop(db: Database, want: Want, error: FetchError, now: datetime) -> None:
-    """Stop asking the source, and say why, until a person resumes it. Call it in a
-    transaction."""
+def stop(db: Database, want: Want, error: FetchError, now: datetime) -> bool:
+    """Stop asking the source, and say why, until a person resumes it; returns True. The
+    first request without an answer only makes the source wait ``RETRY_WAIT`` and returns
+    False (D-64). Call it in a transaction."""
+    if error.status is None and _sources(db)[want.source]["no_answer_at"] is None:
+        db.execute(
+            "UPDATE orbit_sources SET no_answer_at = ?, not_before = ? WHERE source = ?",
+            (format_utc(now), format_utc(now + RETRY_WAIT), want.source),
+            state=False,
+        )
+        _record_status(db, want, None)
+        return False
     busy = error.status is None or error.status in (500, 503)
     db.execute(
         "UPDATE orbit_sources SET stopped_at = ?, stop_status = ?, stop_norad_id = ?, "
@@ -341,6 +352,7 @@ def stop(db: Database, want: Want, error: FetchError, now: datetime) -> None:
         state=False,
     )
     _record_status(db, want, error.status)
+    return True
 
 
 def resume(
@@ -353,7 +365,8 @@ def resume(
         raise ValueError(f"source must be one of {', '.join(SOURCES)}")
     db.execute(
         "UPDATE orbit_sources SET stopped_at = NULL, stop_status = NULL, stop_norad_id = NULL, "
-        "stop_reason = NULL, resumed_at = ?, resumed_by = ? WHERE source = ?",
+        "stop_reason = NULL, no_answer_at = NULL, resumed_at = ?, resumed_by = ? "
+        "WHERE source = ?",
         (format_utc(now), by, source),
         state=False,
     )
@@ -381,6 +394,7 @@ def status(db: Database, now: datetime, enabled: bool) -> dict[str, Any]:
             "reason": row["stop_reason"],
             "not_before": row["not_before"] if waiting else None,
             "last_answer_at": row["last_answer_at"],
+            "no_answer_at": row["no_answer_at"],
             "resumed_at": row["resumed_at"],
         }
     missing = db.query(

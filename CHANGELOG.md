@@ -45,6 +45,10 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Changed
 
+- A request to a source that gets no answer, such as a timeout, no longer stops the source
+  at once: the follower waits two hours and tries once more, and a second in a row stops
+  it. `GET /v1/health/reference-orbits` shows `no_answer_at` meanwhile. Migration 0016
+  (D-64).
 - New name patterns leave the navigation satellites of GPS, GLONASS and BeiDou, and the
   dual-use PAZ, QZS-6 and QZS-7, off the allow-list (D-62).
 

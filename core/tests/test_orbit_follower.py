@@ -219,6 +219,7 @@ def test_the_follower_fetches_an_open_requests_object_from_celestrak(world):
                     "reason": None,
                     "not_before": None,
                     "last_answer_at": "2026-11-01T12:00:00.000Z",
+                    "no_answer_at": None,
                     "resumed_at": None,
                 },
                 "satchecker": {
@@ -229,6 +230,7 @@ def test_the_follower_fetches_an_open_requests_object_from_celestrak(world):
                     "reason": None,
                     "not_before": None,
                     "last_answer_at": None,
+                    "no_answer_at": None,
                     "resumed_at": None,
                 },
             },
@@ -381,14 +383,42 @@ def test_an_object_without_public_data_is_not_asked_for_again(world):
     [urllib.error.URLError("connection refused"), TimeoutError("timed out")],
     ids=["unreachable", "timeout"],
 )
-def test_no_answer_stops_and_waits(world, failure):
-    """No answer may mean that CelesTrak's firewall blocks the service's address."""
+def test_no_answer_waits_and_tries_once_more_then_stops(world, failure):
+    """No answer may be a slow moment or a firewall that blocks the service's address: the
+    first makes CelesTrak wait two hours, and a second in a row stops it (D-64)."""
     open_request(world, 2, 99001)
     world["stand_in"].answers.append(no_answer(failure))
     (entry,) = follow(world)
+    assert "CelesTrak" in entry["waiting"] and "stopped" not in entry
+    status, document = health(world)
+    waiting = document["sources"]["celestrak"]
+    assert status == 200 and document["status"] == "ok"
+    assert waiting["status"] == "waiting" and waiting["not_before"] == "2026-11-01T14:00:00.000Z"
+    assert waiting["no_answer_at"] == "2026-11-01T12:00:00.000Z"
+    at(world, hours=1, minutes=59)
+    assert follow(world) == []
+    at(world, hours=2)
+    world["stand_in"].answers.append(no_answer(failure))
+    (entry,) = follow(world)
     assert "CelesTrak" in entry["stopped"]
-    stopped = health(world)[1]["sources"]["celestrak"]
-    assert stopped["http_status"] is None and stopped["not_before"] == "2026-11-01T12:15:00.000Z"
+    status, document = health(world)
+    stopped = document["sources"]["celestrak"]
+    assert status == 503 and stopped["http_status"] is None
+    assert stopped["not_before"] == "2026-11-01T14:15:00.000Z"
+
+
+def test_an_answer_between_clears_the_first_no_answer(world):
+    open_request(world, 2, 99001)
+    open_request(world, 3, 99002)
+    world["stand_in"].answers.append(no_answer(TimeoutError("timed out")))
+    assert [e.get("waiting", "") != "" for e in follow(world)] == [True]
+    at(world, hours=2)
+    assert [e.get("kept") for e in follow(world)] == [1, 1]  # both objects answered
+    assert health(world)[1]["sources"]["celestrak"]["no_answer_at"] is None
+    at(world, hours=4)
+    world["stand_in"].answers.append(no_answer(TimeoutError("timed out")))
+    (entry, *_) = follow(world)
+    assert "waiting" in entry  # a first no answer again, not a second
 
 
 @pytest.mark.parametrize(
