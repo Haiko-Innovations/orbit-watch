@@ -611,9 +611,13 @@ class Api:
                     records = orbit_follower.fetch(want, fetcher.opener)
             except FetchError as error:
                 with self.lock, self.db.transaction():
-                    orbit_follower.stop(self.db, want, error, self.wall_clock())
-                log.warning("fetching reference orbits stopped: %s", error)
-                done.append({**want.public(), "stopped": str(error)})
+                    stopped = orbit_follower.stop(self.db, want, error, self.wall_clock())
+                if stopped:
+                    log.warning("fetching reference orbits stopped: %s", error)
+                    done.append({**want.public(), "stopped": str(error)})
+                else:
+                    log.warning("no answer; trying once more in two hours: %s", error)
+                    done.append({**want.public(), "waiting": str(error)})
                 continue
             with self.lock, self.db.transaction():
                 if want.group:

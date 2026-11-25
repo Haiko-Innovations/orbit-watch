@@ -3666,3 +3666,21 @@ uses them, as D-61 said.
   the window is chosen from a run on 2026-11-26 or later, when verification starts to
   use them.
 
+### D-64 One more try after no answer
+
+Accepted · 2026-11-25. This changes D-48 for a request that gets no answer at all, such as
+a timeout. An answer that is not 200 still stops the source at once, as CelesTrak's usage
+policy asks.
+
+- **Why.** CelesTrak left the service's requests unanswered on 2026-11-24 at 06:30 UTC and
+  on 2026-11-25 at 12:30 UTC, both times a group or source read once a day. Its site
+  answered soon after, and the next requests were answered once a person resumed. Each
+  stop waited for a person for hours, while the open requests' objects went unfetched.
+- **The rule.** The first request without an answer makes the source wait two hours
+  (`no_answer_at`, migration 0016). The health endpoint then says `waiting` and answers
+  200. A second request in a row without an answer stops the source, as D-48 did at the
+  first. Any answer in between, and a person who resumes, clears the first.
+- **Still careful.** No answer may mean that a firewall blocks the service's address.
+  One more try two hours later is a single request at the pace of CelesTrak's update,
+  and a block shows as the second no answer, which stops the source and tells a person.
+
