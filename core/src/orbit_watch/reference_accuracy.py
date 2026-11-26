@@ -20,6 +20,10 @@
   newest GP set that SatChecker had collected by the earlier run. These are what the
   follower would have had to choose between for that time (P6-03). The ISS's ephemeris
   gives segments ahead, so its set may be one that had not begun at the earlier run.
+* **time shifts** (step 6.3, D-67): for each of those pairs, a track made in memory from
+  the truth, as a station under the satellite would see it, is shifted in time and
+  verified with the method as it is against both sets: D-46's false acceptances, measured
+  again against operators' orbits.
 
 Every answer is kept, as received, in a run directory of the cache outside the repository.
 A run is used only when it is complete. Without ``--fetch`` the measurement is recomputed from
@@ -40,17 +44,19 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from skyfield.api import wgs84
 
-from orbit_watch import __version__
+from orbit_watch import __version__, validation
 from orbit_watch.allowlist import MAX_CATALOGUE_NUMBER
 from orbit_watch.canonical import dumps_pretty
-from orbit_watch.catalog import Catalog, ElementSet, parse_catalog
+from orbit_watch.catalog import Catalog, ElementSet, parse_catalog, timescale
+from orbit_watch.model import Observation, ObservationSet, Station, Target
 from orbit_watch.satchecker import PAUSE_S, download, history_url, parse_history
 from orbit_watch.supgp import SupSet, download_supgp, sup_sets
 from orbit_watch.validation import orbit_class
 
 RESULTS_FORMAT = "orbit-watch/reference-orbit-accuracy"
-RESULTS_FORMAT_VERSION = "1.1"
+RESULTS_FORMAT_VERSION = "1.2"
 SOURCES = ("AST-E", "CPF", "ISS-E", "Kuiper-E", "OneWeb-E", "Planet-E")
 PER_GROUP = 6  # objects per source and orbit class
 ISS_SEGMENTS = 8
@@ -290,7 +296,9 @@ def measure(run: Run, earlier: Sequence[Run] = ()) -> dict[str, Any]:
     truths = choose_truths(catalogs, run.fetched_at)
     histories = {n: parse_history(body, n) for n, body in sorted(run.history.items())}
     runs = sorted([*earlier, run], key=lambda r: r.fetched_at)
-    ageing, unchanged = operator_ageing(runs)
+    pairs, unchanged = operator_pairs(runs)
+    ageing = ageing_from_pairs(pairs)
+    shifts = time_shifts(pairs)
     comparisons: list[dict[str, Any]] = []
     truth_rows: list[dict[str, Any]] = []
     skipped = same = 0
@@ -350,6 +358,16 @@ def measure(run: Run, earlier: Sequence[Run] = ()) -> dict[str, Any]:
             "history_days": HISTORY_DAYS,
             "span_s": SPAN_S,
             "step_s": STEP_S,
+            "track": {
+                "after_truth_epoch_s": TRACK_OFFSET_S,
+                "points": TRACK_POINTS,
+                "step_s": TRACK_STEP_S,
+                "angle_uncertainty_arcsec": TRACK_ANGLE_ARCSEC,
+                "noise_arcsec": validation.FABRICATED_NOISE_ARCSEC,
+                "time_uncertainty_s": TRACK_TIME_S,
+                "time_shifts_s": list(SHIFTS_S),
+                "method": f"{validation.METHOD_NAME} {validation.METHOD_VERSION}",
+            },
         },
         "run": {"fetched_at": _stamp(run.fetched_at), "directory": run.path.name},
         "runs": [{"fetched_at": _stamp(r.fetched_at), "directory": r.path.name} for r in runs],
@@ -365,7 +383,15 @@ def measure(run: Run, earlier: Sequence[Run] = ()) -> dict[str, Any]:
             "rows": [[row[column] for column in AGEING_COLUMNS] for row in ageing],
             "unchanged": unchanged,
         },
-        "summary": {**summary(comparisons, truth_rows), **ageing_summary(ageing)},
+        "time_shifts": {
+            "columns": list(SHIFT_COLUMNS),
+            "rows": [[row[column] for column in SHIFT_COLUMNS] for row in shifts],
+        },
+        "summary": {
+            **summary(comparisons, truth_rows),
+            **ageing_summary(ageing),
+            **shift_summary(shifts),
+        },
     }
 
 
@@ -407,7 +433,7 @@ def dumps_results(results: dict[str, Any]) -> str:
     """The results as JSON, readable, with each comparison on one line."""
     marked = dict(results)
     rows: list[list[Any]] = []
-    for key in ("comparisons", "operator_ageing"):
+    for key in ("comparisons", "operator_ageing", "time_shifts"):
         if key not in results:
             continue
         table = results[key]
@@ -557,16 +583,28 @@ def _newest_gp(history: list, norad_id: int, moment: datetime) -> ElementSet | N
     return max(collected, key=lambda s: (s.epoch, s.sha256))
 
 
-def operator_ageing(runs: Sequence[Run]) -> tuple[list[dict[str, Any]], int]:
-    """Every pair of an earlier and a later run: each truth of the later run against the set
+@dataclass(frozen=True)
+class Pair:
+    """A truth of a later run, the operator's set an earlier run had for its time, and the
+    newest GP set SatChecker had collected by the earlier run (None if it had none)."""
+
+    before: Run
+    later: Run
+    truth: Truth
+    older: SupSet
+    gp: ElementSet | None
+
+
+def operator_pairs(runs: Sequence[Run]) -> tuple[list[Pair], int]:
+    """Every pair of an earlier and a later run: each truth of the later run with the set
     its operator had published by the earlier run with the latest epoch at or before the
-    truth's, and beside the newest GP set SatChecker had collected by then, from the later
-    run's answer. Returns the pairs and how many sets were unchanged between the runs."""
+    truth's, and the newest GP set SatChecker had collected by then, from the later run's
+    answer. Returns the pairs and how many sets were unchanged between the runs."""
     ordered = sorted(runs, key=lambda r: r.fetched_at)
     catalogs = [
         {source: parse_catalog(body) for source, body in sorted(r.supgp.items())} for r in ordered
     ]
-    rows: list[dict[str, Any]] = []
+    pairs: list[Pair] = []
     unchanged = 0
     for j, later in enumerate(ordered):
         if not j:
@@ -585,36 +623,51 @@ def operator_ageing(runs: Sequence[Run]) -> tuple[list[dict[str, Any]], int]:
                 older = _latest_before(sup_sets(catalog, truth.norad_id), truth.epoch)
                 if older is None:
                     continue
-                truth_set = truth.sup.element_set
-                if older.element_set.sha256 == truth_set.sha256:
+                if older.element_set.sha256 == truth.sup.element_set.sha256:
                     unchanged += 1
-                    continue
-                result = compare(older.element_set, truth_set)
-                if result is None:
                     continue
                 history = histories.get(truth.norad_id, [])
                 gp = _newest_gp(history, truth.norad_id, before.fetched_at)
-                gp_result = None if gp is None else compare(gp, truth_set)
-                rows.append(
-                    {
-                        "earlier_run": before.path.name,
-                        "later_run": later.path.name,
-                        "norad_id": truth.norad_id,
-                        "source": truth.source,
-                        "orbit": truth.orbit,
-                        "truth_epoch": truth_set.record["EPOCH"],
-                        "truth_sha256": truth_set.sha256,
-                        "set_epoch": older.element_set.record["EPOCH"],
-                        "set_data_source": older.data_source,
-                        "set_sha256": older.element_set.sha256,
-                        **{k: result[k] for k in AGEING_COLUMNS if k in result},
-                        "gp_epoch": None if gp is None else gp.record["EPOCH"],
-                        "gp_sha256": None if gp is None else gp.sha256,
-                        "gp_age_days": None if gp_result is None else gp_result["age_days"],
-                        "gp_rms_km": None if gp_result is None else gp_result["rms_km"],
-                    }
-                )
-    return rows, unchanged
+                pairs.append(Pair(before, later, truth, older, gp))
+    return pairs, unchanged
+
+
+def operator_ageing(runs: Sequence[Run]) -> tuple[list[dict[str, Any]], int]:
+    """Each pair of ``operator_pairs`` as a row of distances, and the unchanged count."""
+    pairs, unchanged = operator_pairs(runs)
+    return ageing_from_pairs(pairs), unchanged
+
+
+def ageing_from_pairs(pairs: Sequence[Pair]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for pair in pairs:
+        truth_set = pair.truth.sup.element_set
+        older = pair.older
+        result = compare(older.element_set, truth_set)
+        if result is None:
+            continue
+        gp = pair.gp
+        gp_result = None if gp is None else compare(gp, truth_set)
+        rows.append(
+            {
+                "earlier_run": pair.before.path.name,
+                "later_run": pair.later.path.name,
+                "norad_id": pair.truth.norad_id,
+                "source": pair.truth.source,
+                "orbit": pair.truth.orbit,
+                "truth_epoch": truth_set.record["EPOCH"],
+                "truth_sha256": truth_set.sha256,
+                "set_epoch": older.element_set.record["EPOCH"],
+                "set_data_source": older.data_source,
+                "set_sha256": older.element_set.sha256,
+                **{k: result[k] for k in AGEING_COLUMNS if k in result},
+                "gp_epoch": None if gp is None else gp.record["EPOCH"],
+                "gp_sha256": None if gp is None else gp.sha256,
+                "gp_age_days": None if gp_result is None else gp_result["age_days"],
+                "gp_rms_km": None if gp_result is None else gp_result["rms_km"],
+            }
+        )
+    return rows
 
 
 def ageing_rows(results: dict[str, Any]) -> list[dict[str, Any]]:
@@ -659,6 +712,142 @@ def ageing_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "gp_rms_km": _stats(r["gp_rms_km"] for r in pairs),
         }
     return {"operator_by_age": by_age, "operator_against_gp": against_gp}
+
+
+# Time shifts against operators' orbits ----------------------------------------------------
+
+# D-46 found that, in low orbits, a track half a second late passes the residual check and
+# one a second late does not, against GP sets. Here the same is asked of the two sets a
+# service could have used for a pair's time: a track made from the truth, the later
+# operator's set, is shifted in time and verified, with the method as it is, against the
+# earlier operator's set and against the newest GP set of its time. The track is made in
+# memory, never written: it is what a station directly under the satellite would see,
+# with ``validation.FABRICATED_NOISE_ARCSEC`` of noise.
+TRACK_OFFSET_S = 3600  # an hour after the truth's epoch, inside SupGP's six hours
+TRACK_POINTS = 31
+TRACK_STEP_S = 2
+TRACK_ANGLE_ARCSEC = validation.FABRICATED_NOISE_ARCSEC
+TRACK_TIME_S = 0.01
+SHIFTS_S = (0.0, *validation.TIME_SHIFTS_S)
+REFERENCES = ("operator", "gp")
+REFERENCE_NAMES = {"operator": "Operator's set", "gp": "Newest GP set"}
+SHIFT_AGE_BINS = ((0.0, 1.0), (1.0, 2.0), (2.0, 3.0), (3.0, 10.0))
+SHIFT_COLUMNS = (
+    "earlier_run",
+    "later_run",
+    "norad_id",
+    "source",
+    "orbit",
+    "reference",
+    "set_sha256",
+    "age_days",
+    "results",
+    "fractions_within_limit",
+)
+
+
+def synthetic_track(truth: ElementSet, name: str, seed: int) -> ObservationSet:
+    """What a station directly under the satellite would see over a minute, an hour after
+    the truth's epoch, made from the truth with noise."""
+    ts = timescale()
+    middle = (truth.epoch + timedelta(seconds=TRACK_OFFSET_S)).replace(microsecond=0)
+    under = wgs84.subpoint_of(truth.satellite.at(ts.from_datetime(middle)))
+    station = Station(
+        id="UNDER-THE-SATELLITE",
+        latitude_deg=round(float(under.latitude.degrees), 4),
+        longitude_deg=round(float(under.longitude.degrees), 4),
+        altitude_m=0.0,
+        name="A station under the satellite, for the measurement only",
+    )
+    half = TRACK_POINTS // 2
+    observations = [
+        Observation(
+            time=middle + timedelta(seconds=TRACK_STEP_S * (i - half)),
+            time_uncertainty_s=TRACK_TIME_S,
+            angle_type="radec",
+            angle_uncertainty_arcsec=TRACK_ANGLE_ARCSEC,
+            frame="ICRF",
+            ra_deg=0.0,
+            dec_deg=0.0,
+        )
+        for i in range(TRACK_POINTS)
+    ]
+    target = Target(norad_id=truth.norad_id, name=name[:200] or None)
+    track = ObservationSet(station, target, observations, simulated=False)
+    return validation.fabricated(track, truth, seed)
+
+
+def time_shifts(pairs: Sequence[Pair]) -> list[dict[str, Any]]:
+    """For each pair and each set it could have used, the residual check's result for the
+    truth's track shifted by each of ``SHIFTS_S``."""
+    rows: list[dict[str, Any]] = []
+    for pair in pairs:
+        truth_set = pair.truth.sup.element_set
+        seed = int(truth_set.sha256[:8], 16)
+        track = synthetic_track(truth_set, pair.truth.name, seed)
+        middle = track.observations[TRACK_POINTS // 2].time
+        for reference, chosen in (("operator", pair.older.element_set), ("gp", pair.gp)):
+            if chosen is None:
+                continue
+            catalog = validation.catalog_bytes([chosen.record])
+            outcomes = [
+                validation.run(validation.shifted(track, shift), catalog) for shift in SHIFTS_S
+            ]
+            rows.append(
+                {
+                    "earlier_run": pair.before.path.name,
+                    "later_run": pair.later.path.name,
+                    "norad_id": pair.truth.norad_id,
+                    "source": pair.truth.source,
+                    "orbit": pair.truth.orbit,
+                    "reference": reference,
+                    "set_sha256": chosen.sha256,
+                    "age_days": round((middle - chosen.epoch).total_seconds() / 86400, 3),
+                    "results": [o.result for o in outcomes],
+                    "fractions_within_limit": [
+                        o.statistics.get("fraction_within_limit") for o in outcomes
+                    ],
+                }
+            )
+    return rows
+
+
+def shift_rows(results: dict[str, Any]) -> list[dict[str, Any]]:
+    """The time-shift rows of written results as dictionaries."""
+    table = results["time_shifts"]
+    return [dict(zip(table["columns"], row, strict=True)) for row in table["rows"]]
+
+
+def shift_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """How many tracks passed at each shift, by source, orbit class, reference and the
+    reference set's age (``SHIFT_AGE_BINS``)."""
+    summary_rows: dict[str, dict[str, Any]] = {}
+    keys = sorted({(r["source"], r["orbit"]) for r in rows})
+    for source, orbit in keys:
+        for reference in REFERENCES:
+            for low, high in SHIFT_AGE_BINS:
+                label = f"{low:g}{DASH}{high:g}"
+                chosen = [
+                    r
+                    for r in rows
+                    if (r["source"], r["orbit"], r["reference"]) == (source, orbit, reference)
+                    and low <= r["age_days"] < high
+                ]
+                if not chosen:
+                    continue
+                summary_rows[f"{source} {orbit} {reference} {label}"] = {
+                    "source": source,
+                    "orbit": orbit,
+                    "reference": reference,
+                    "age_days": label,
+                    "tracks": len(chosen),
+                    "passed": [
+                        sum(1 for r in chosen if r["results"][i] == "pass")
+                        for i in range(len(SHIFTS_S))
+                    ],
+                    "inconclusive": sum(1 for r in chosen if r["results"][0] == "inconclusive"),
+                }
+    return {"time_shifts": summary_rows}
 
 
 # The document -----------------------------------------------------------------------------
@@ -722,9 +911,9 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
             "Objects",
             "Median (km)",
             "90 % (km)",
-            "In track, median (km)",
-            "Cross track, median (km)",
-            "Radial, median (km)",
+            "In track, median (90 %) (km)",
+            "Cross track, median (90 %) (km)",
+            "Radial, median (90 %) (km)",
         ],
         [
             [
@@ -734,9 +923,9 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
                 str(row["objects"]),
                 _km(row["rms_km"]["median"]),
                 _km(row["rms_km"]["p90"]),
-                _km(row["in_track_rms_km"]["median"]),
-                _km(row["cross_track_rms_km"]["median"]),
-                _km(row["radial_rms_km"]["median"]),
+                _cell(row["in_track_rms_km"]),
+                _cell(row["cross_track_rms_km"]),
+                _cell(row["radial_rms_km"]),
             ]
             for row in s["by_age"].values()
         ],
@@ -766,8 +955,8 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
             "Median (km)",
             "90 % (km)",
             "Largest (km)",
-            "In track, median (km)",
-            "Cross track, median (km)",
+            "In track, median (90 %) (km)",
+            "Cross track, median (90 %) (km)",
         ],
         [
             [
@@ -779,8 +968,8 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
                 _km(row["rms_km"]["median"]),
                 _km(row["rms_km"]["p90"]),
                 _km(row["rms_km"]["max"]),
-                _km(row["in_track_rms_km"]["median"]),
-                _km(row["cross_track_rms_km"]["median"]),
+                _cell(row["in_track_rms_km"]),
+                _cell(row["cross_track_rms_km"]),
             ]
             for row in s["operator_by_age"].values()
         ],
@@ -818,6 +1007,32 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
         f"Runs fetched {runs}: {len(ageing['rows'])} pairs of an operator's set and a later "
         f"one, {ageing['unchanged']} sets unchanged between the runs."
     )
+    shifts = _table(
+        [
+            "Source",
+            "Orbit",
+            "Reference",
+            "Set's age (days)",
+            "Tracks",
+            *(f"{shift:g} s" for shift in SHIFTS_S),
+        ],
+        [
+            [
+                f"`{row['source']}`",
+                row["orbit"],
+                REFERENCE_NAMES[row["reference"]],
+                row["age_days"],
+                str(row["tracks"]),
+                *(str(n) for n in row["passed"]),
+            ]
+            for row in s["time_shifts"].values()
+        ],
+    )
+    track = results["settings"]["track"]
+    shift_run = (
+        f"{len(results['time_shifts']['rows'])} tracks of {TRACK_POINTS} positions, each "
+        f"verified with method {track['method']} at {len(SHIFTS_S)} shifts."
+    )
     return {
         "run": run,
         "sources": sources,
@@ -827,6 +1042,8 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
         "ageing_run": ageing_run,
         "operator_by_age": operator_by_age,
         "operator_against_gp": against_gp,
+        "shift_run": shift_run,
+        "time_shifts": shifts,
     }
 
 

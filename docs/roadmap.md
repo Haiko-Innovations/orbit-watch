@@ -37,6 +37,12 @@ it: the operator's set latest at or before the window, up to a day old, or three
 a laser-ranging prediction, as a third run on 2026-11-26 showed
 ([D-66](decisions.md#d-66-verification-uses-the-operators-orbit)). Step 6.2 is done.
 
+Step 6.3 makes method 3.0.0, with an orbit term along the track and one across it, by the
+orbit's source, orbit class and age. Its first part measures what the method needs: with
+the method as it is, a track shifted in time passed against sets under a day old as D-46
+found, but at two to three days 5 km rejected half the good tracks of satellites that
+manoeuvre ([D-67](decisions.md#d-67-the-measurement-for-method-300)).
+
 **Phase 5 is done** and released as version 0.6.0: real orbits and real observations
 on the testnet, beside the simulated ones. On the public service, a replay of real
 SCORE observations and a request for a real object with simulated observations both
