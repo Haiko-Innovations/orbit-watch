@@ -126,7 +126,7 @@ def wanted(service: RequestService, now: datetime) -> list[Want]:
             key = ("celestrak", norad, "")
         else:
             middle = terms.window_start + (terms.window_end - terms.window_start) / 2
-            epochs = [_epoch(s.epoch) for s in service.verifying_sets(norad)]
+            epochs = [_epoch(s.epoch) for s in service.gp_sets(norad)]
             if any(e is not None and abs(e - middle) <= NEAR_ENOUGH for e in epochs):
                 continue
             key = ("satchecker", norad, format_utc(middle))

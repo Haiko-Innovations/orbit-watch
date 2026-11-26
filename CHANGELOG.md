@@ -42,6 +42,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   `GET /v1/public/reference-orbits` names them with their `data_source`, and
   `GET /v1/health/reference-orbits` lists `objects_without_supgp_data`. Verification does
   not use them yet (step 6.2, D-63).
+- Verification uses the operator's orbit (step 6.2, D-66): the operator's set with the
+  latest epoch at or before the window, at most a day older, or three days for a
+  laser-ranging prediction, and otherwise the GP sets as before. The report names it,
+  with its `DATA_SOURCE`, and the labels say "the operator's orbit via CelesTrak". The
+  method stays 2.1.0. `docs/reference-orbit-accuracy.md` is measured with three runs.
 
 ### Fixed
 

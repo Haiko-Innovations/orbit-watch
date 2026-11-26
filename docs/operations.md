@@ -175,7 +175,10 @@ the element sets that open requests for real objects need
 - from CelesTrak's SupGP, the same way and after them, the current sets of the object's
   operator's orbit when the allow-list says its operator publishes it (`operator_orbits`;
   [D-63](decisions.md#d-63-the-follower-fetches-operators-orbits)). They are kept beside
-  the GP sets, and verification does not use them yet;
+  the GP sets. Verification uses the operator's set with the latest epoch at or before
+  the window, if it is at most a day older, or three days for a laser-ranging
+  prediction, and otherwise the GP sets
+  ([D-66](decisions.md#d-66-verification-uses-the-operators-orbit));
 - from SatChecker, the set nearest the middle of a window that has ended, such as a
   replay's, once.
 

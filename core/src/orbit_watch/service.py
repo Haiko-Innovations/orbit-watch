@@ -41,17 +41,26 @@ from orbit_watch import allowlist, orbits
 from orbit_watch import calibration as cal
 from orbit_watch import lifecycle as lc
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
-from orbit_watch.catalog import parse_catalog
+from orbit_watch.catalog import SOURCE_KEY, parse_catalog
 from orbit_watch.documents import Replay, Request
 from orbit_watch.formats import FormatError, Sites, detect_format, load_observation_sets
 from orbit_watch.lifecycle import RequestRecord, Status, TransitionError
 from orbit_watch.reviewers import ReviewerError, ReviewerRegistry
 from orbit_watch.settlement import SettlementAdapter, SettlementError, settlement_plan
 from orbit_watch.storage import Storage, StoredFiles
+from orbit_watch.supgp import SERVICE as SUPGP_SERVICE
 from orbit_watch.timeutil import format_utc
 from orbit_watch.verify.engine import PARAMETERS, UsageError, VerificationInput, verify
 
 VERIFIER = "system:verifier"
+# How much older than a window's start an operator's orbit may be for verification to use it
+# (P6-03, D-66), from the measurement of three runs (docs/reference-orbit-accuracy.md): a day,
+# after which the sets of satellites that manoeuvre were no better than GP, and three days
+# for the laser-ranging predictions, which held to 0.2-1.6 km at two to three days. Older,
+# the GP sets verify as before.
+OPERATOR_SET_MAX_AGE = timedelta(days=1)
+OPERATOR_SET_MAX_AGE_BY_SOURCE = {"CPF": timedelta(days=3)}
+OPERATOR_CHOICE = "the operator's orbit with the latest epoch at or before the window"
 PLATFORM = "platform:orbit-watch"
 LICENCE_URLS = {"CC-BY-4.0": "https://creativecommons.org/licenses/by/4.0/"}
 
@@ -460,7 +469,7 @@ class RequestService:
         terms = self._record(request_id).terms
         middle = terms.window_start + (terms.window_end - terms.window_start) / 2
         limit = timedelta(days=PARAMETERS["max_reference_age_days"])
-        epochs = [s.epoch_time for s in self.verifying_sets(terms.target_norad_id)]
+        epochs = [s.epoch_time for s in self.gp_sets(terms.target_norad_id)]
         if not any(e is not None and abs(e - middle) <= limit for e in epochs):
             raise ServiceError(
                 "reference_orbit_pending",
@@ -544,7 +553,10 @@ class RequestService:
                     request=self.request_documents[request_id],
                     observations=observations,
                     observations_format=observations_format,
-                    catalog=self.catalog_for([] if norad_id is None else [norad_id]),
+                    catalog=self.catalog_for(
+                        [] if norad_id is None else [norad_id],
+                        window_start=self._record(request_id).terms.window_start,
+                    ),
                     policy=self.policy_for(norad_id),
                     previous=previous,
                     declared_sha256=observations_sha256,
@@ -581,9 +593,10 @@ class RequestService:
     def simulation_catalog(self, norad_id: int, start: datetime, end: datetime) -> bytes:
         """The catalogue that a simulated station observes an object with (D-50). For the
         service's own objects it is the service's own catalogue, as before. For a real
-        object it is the stored element set nearest the middle of the window, alone, so that
-        the SIMULATED observations follow the set that verification picks for them."""
-        stored = self.verifying_sets(norad_id)
+        object it is the set that verification picks for the window, alone: its operator's
+        orbit (D-66), or else the stored GP set nearest the middle of the window. So the
+        SIMULATED observations follow the set they are verified against."""
+        stored = self.reference_sets(norad_id, start)
         if not stored:
             if norad_id in parse_catalog(self.context.catalog).sets:
                 return self.context.catalog
@@ -593,7 +606,8 @@ class RequestService:
                 "CelesTrak from a day before a request's window starts; try again later",
             )
         middle = start + (end - start) / 2
-        nearest = parse_catalog(self.catalog_for([norad_id])).nearest(norad_id, middle)
+        catalog = self.catalog_for([norad_id], window_start=start)
+        nearest = parse_catalog(catalog).nearest(norad_id, middle)
         if abs(nearest.epoch - middle) > timedelta(days=PARAMETERS["max_reference_age_days"]):
             raise ServiceError(
                 "no_reference_orbit",
@@ -613,23 +627,60 @@ class RequestService:
         }
         return dumps_pretty(document, sort_keys=False).encode("utf-8")
 
-    def verifying_sets(self, norad_id: int) -> list[orbits.StoredSet]:
-        """The stored sets that verification picks from: the GP sets. The sets of an
-        operator's orbit are kept beside them, and step 6.2's last part lets verification
-        use them (D-63)."""
+    def gp_sets(self, norad_id: int) -> list[orbits.StoredSet]:
+        """The stored GP sets of an object, without those of its operator's orbit."""
         return [s for s in self.element_sets.get(norad_id, []) if not s.operator_orbit]
 
-    def catalog_for(self, norad_ids: list[int]) -> bytes:
+    def operator_set(self, norad_id: int, window_start: datetime) -> orbits.StoredSet | None:
+        """The operator's orbit that verifies a window (P6-03, D-66): the stored set of the
+        operator's orbit with the latest epoch at or before the window's start, at most
+        ``OPERATOR_SET_MAX_AGE`` older, or its source's own limit; for several at that
+        epoch, such as several laser-ranging prediction centres, the one CelesTrak fitted
+        best. None without one."""
+
+        def limit(s: orbits.StoredSet) -> timedelta:
+            return OPERATOR_SET_MAX_AGE_BY_SOURCE.get(s.data_source or "", OPERATOR_SET_MAX_AGE)
+
+        usable = [
+            s
+            for s in self.element_sets.get(norad_id, [])
+            if s.operator_orbit
+            and s.epoch_time is not None
+            and window_start - limit(s) <= s.epoch_time <= window_start
+        ]
+        if not usable:
+            return None
+        latest = max(s.epoch_time for s in usable if s.epoch_time is not None)
+        tied = [s for s in usable if s.epoch_time == latest]
+        return min(tied, key=lambda s: (s.rms_km if s.rms_km is not None else 1e9, s.sha256))
+
+    def reference_sets(self, norad_id: int, window_start: datetime) -> list[orbits.StoredSet]:
+        """The stored sets that verify a window: its operator's orbit alone, or else every
+        GP set, from which verification picks the one nearest the observations."""
+        chosen = self.operator_set(norad_id, window_start)
+        return [chosen] if chosen is not None else self.gp_sets(norad_id)
+
+    def catalog_for(self, norad_ids: list[int], window_start: datetime | None = None) -> bytes:
         """The catalogue that verifies these objects (step 5.4, D-47). Without stored sets
-        it is the service's own catalogue, as before. With them it holds every stored GP set
-        of the objects, from which verification picks the one nearest the observations
-        (P5-04), and the service's own records of the objects when those are real too."""
-        stored = [s.record for norad in norad_ids for s in self.verifying_sets(norad)]
-        if not stored:
+        it is the service's own catalogue, as before. With them it holds the stored sets
+        that verify the window: the operator's orbit alone (D-66), named as chosen, or every
+        stored GP set, from which verification picks the one nearest the observations
+        (P5-04), with the service's own records of the objects when those are real too.
+        Without ``window_start``, the GP sets."""
+        records: list[dict[str, Any]] = []
+        chosen_any = False
+        for norad in norad_ids:
+            chosen = None if window_start is None else self.operator_set(norad, window_start)
+            if chosen is None:
+                records += [s.record for s in self.gp_sets(norad)]
+                continue
+            chosen_any = True
+            source = dict(chosen.record.get(SOURCE_KEY) or {})
+            records.append({**chosen.record, SOURCE_KEY: {**source, "chosen": OPERATOR_CHOICE}})
+        if not records:
             return self.context.catalog
         base = parse_catalog(self.context.catalog)
-        records = list(stored)
-        if not base.simulated:
+        if not base.simulated and not chosen_any:
             records += [r for norad in norad_ids for r in base.sets.get(norad, [])]
         document = {
             "format": "orbit-watch/gp-catalog",
@@ -1259,13 +1310,22 @@ class RequestService:
             block = report.get("reference_orbit")
             if isinstance(block, dict) and block.get("epoch"):
                 # Reports of format 1.0 (method 1.0.0 and 2.0.0) name no set's SHA-256.
-                kept = (block.get("source") or {}).get("kept_from")
+                source = block.get("source") or {}
                 return self._orbit(
-                    kept, str(block["epoch"]), block.get("element_set_sha256"), final=True
+                    source.get("kept_from"),
+                    str(block["epoch"]),
+                    block.get("element_set_sha256"),
+                    final=True,
+                    operator=source.get("service") == SUPGP_SERVICE,
                 )
             return None
         middle = document.window_start + (document.window_end - document.window_start) / 2
-        stored = [s for s in self.verifying_sets(document.norad_id) if s.epoch_time]
+        chosen = self.operator_set(document.norad_id, document.window_start)
+        if chosen is not None:
+            return self._orbit(
+                chosen.source, chosen.epoch, chosen.sha256, final=False, operator=True
+            )
+        stored = [s for s in self.gp_sets(document.norad_id) if s.epoch_time]
         if stored:
             nearest = min(stored, key=lambda s: (abs(s.epoch_time - middle), s.epoch, s.sha256))
             return self._orbit(nearest.source, nearest.epoch, nearest.sha256, final=False)
@@ -1278,12 +1338,20 @@ class RequestService:
         return None
 
     def _orbit(
-        self, kept: str | None, epoch: str, sha256: str | None, *, final: bool
+        self,
+        kept: str | None,
+        epoch: str,
+        sha256: str | None,
+        *,
+        final: bool,
+        operator: bool = False,
     ) -> dict[str, Any]:
-        """A reference orbit's label: a stored set by its source, or else the service's own
-        catalogue, which is SIMULATED when the catalogue is."""
+        """A reference orbit's label: a stored set by its source, an operator's orbit as
+        "the operator's orbit via CelesTrak" (P6-03), or else the service's own catalogue,
+        which is SIMULATED when the catalogue is."""
         if kept in orbits.SOURCE_NAMES:
-            source, name, simulated = kept, orbits.SOURCE_NAMES[kept], False
+            name = orbits.OPERATOR_ORBIT_NAME if operator else orbits.SOURCE_NAMES[kept]
+            source, simulated = kept, False
         else:
             source = "service"
             name = "the service's own catalogue"

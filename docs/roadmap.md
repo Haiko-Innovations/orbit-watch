@@ -8,7 +8,7 @@ plan is in [plan.md](plan.md); decisions and their reasons are in
 
 Every pull request that finishes a roadmap step also updates this page.
 
-## Status (2026-11-24)
+## Status (2026-11-26)
 
 **Phase 6 is under way**: more precise reference orbits and identification, on the
 testnet. Its decisions P6-01 to P6-12 were approved on 2026-11-23
@@ -32,8 +32,10 @@ sources, and Starlink objects one at a time; GPS, GLONASS, BeiDou and dual-use s
 stay off ([D-62](decisions.md#d-62-objects-whose-operators-publish-their-orbits-on-the-allow-list)).
 In its third part the follower fetches an open request's object from SupGP too, and keeps
 its operator's orbit beside the GP sets
-([D-63](decisions.md#d-63-the-follower-fetches-operators-orbits)). Verification uses it
-once a run on 2026-11-26 or later has shown how old it may be.
+([D-63](decisions.md#d-63-the-follower-fetches-operators-orbits)). Verification then uses
+it: the operator's set latest at or before the window, up to a day old, or three days for
+a laser-ranging prediction, as a third run on 2026-11-26 showed
+([D-66](decisions.md#d-66-verification-uses-the-operators-orbit)). Step 6.2 is done.
 
 **Phase 5 is done** and released as version 0.6.0: real orbits and real observations
 on the testnet, beside the simulated ones. On the public service, a replay of real
@@ -419,7 +421,7 @@ The choices behind this plan are **decisions P6-01 to P6-12** in
 | Step | Content | Done when |
 |---|---|---|
 | ✅ **6.1 Measure the reference orbits first** ([#138](https://github.com/Haiko-Innovations/orbit-watch/issues/138)) | GP sets of different ages from SatChecker against fresh SupGP sets fitted to operators' orbits, along track, cross track and radially, by orbit class, source and age; SCORE's coverage for orbit determination. | A page in `docs/` gives the numbers step 6.3 needs, reproducible with one command; every fetch stops at the first answer that is not 200, tested against local stand-ins. |
-| **6.2 Operators' orbits from SupGP** ([#139](https://github.com/Haiko-Innovations/orbit-watch/issues/139)) | `orbit-watch fetch-supgp`; the follower fetches an open request's object from SupGP; verification against the operator-derived set latest at or before the window; the report and labels name the source; objects whose operators publish their orbits on the allow-list; credits. | A delivery for an operator-tracked object is verified against its SupGP set, named in the report; the set's choice and the allow-list rule are tested; fetching stops and the health endpoint reports it, with no outside call in CI. |
+| ✅ **6.2 Operators' orbits from SupGP** ([#139](https://github.com/Haiko-Innovations/orbit-watch/issues/139)) | `orbit-watch fetch-supgp`; the follower fetches an open request's object from SupGP; verification against the operator-derived set latest at or before the window; the report and labels name the source; objects whose operators publish their orbits on the allow-list; credits. | A delivery for an operator-tracked object is verified against its SupGP set, named in the report; the set's choice and the allow-list rule are tested; fetching stops and the health endpoint reports it, with no outside call in CI. |
 | **6.3 Method 3.0.0** ([#140](https://github.com/Haiko-Innovations/orbit-watch/issues/140)) | The limit's orbit term by the orbit's source, age and orbit class, from step 6.1, in place of D-08's 5 km and the 7-day limit; a major method version. | Examples, known answers and the measurement on real data regenerated and their changes explained; D-46's time shifts measured again with operators' orbits; a settled request's report unchanged. |
 | **6.4 Orbit determination in the core** ([#141](https://github.com/Haiko-Innovations/orbit-watch/issues/141)) | Batch least squares of SGP4's mean elements and B* with numpy and sgp4; deterministic, with its own method version; `orbit-watch fit-orbit`; the limit of one station's fit stated. | Reproducible byte for byte; measured on simulated networks against the truth and on SCORE's real nights by predicting the next night, reproducible with one command. |
 | **6.5 A fitted orbit as a reference** ([#142](https://github.com/Haiko-Innovations/orbit-watch/issues/142)) | Fitted from other accepted deliveries, never from the one under verification; used only when more precise; refitted by the follower; named in the report and labels; Space-Track's user agreement read before fitted elements are published ([#114](https://github.com/Haiko-Innovations/orbit-watch/issues/114)). | Both rules tested; fitted elements published only after #114 is read. |

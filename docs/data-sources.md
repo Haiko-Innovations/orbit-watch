@@ -161,7 +161,9 @@ is committed ([P5-05](decisions.md#p5-05-orbit-data-stays-out-of-the-repository)
 the follower asks SupGP for an open request's object by catalogue number, after its GP
 data and at most once per two-hour update, when its operator publishes its orbit. It keeps
 the sets of the operator's orbit, with their `DATA_SOURCE` and `RMS`. A past window keeps
-SatChecker's GP, since SupGP keeps no history.
+SatChecker's GP, since SupGP keeps no history. Verification uses the operator's set with
+the latest epoch at or before the window, at most a day older, or three days for `CPF`
+([D-66](decisions.md#d-66-verification-uses-the-operators-orbit)).
 
 ## Real orbits in examples and tests: manifests and the cache
 

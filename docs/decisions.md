@@ -3709,3 +3709,35 @@ Accepted · 2026-11-26. A fix found in production.
   into the issue's text, which notifies nobody, and passes. The next run that passes
   still closes the issue (D-39).
 
+### D-66 Verification uses the operator's orbit
+
+Accepted · 2026-11-26. Step 6.2's last part carries out P6-03 in verification, with the age
+limit that D-61 and D-63 left to a later run.
+
+- **A third run**, fetched on 2026-11-26 at 08:25 UTC, 2.2 days after the second, gave 50
+  truth sets and 2,335 comparisons; all 49 answers were 200. With the two before it, it
+  gives 112 pairs of an operator's set and a later one
+  ([reference-orbit-accuracy.md](reference-orbit-accuracy.md#how-operators-orbits-age)):
+  - up to a day old, an operator's set was a median 0.1 to 0.9 km from the later one;
+  - two to three days old, the sets of satellites that manoeuvre (AST SpaceMobile,
+    Kuiper, OneWeb, Planet) were a median 3.2 to 9.1 km off, no better than a GP set of
+    that age, and closer than the newest GP set of the time in 33 of 71 pairs, against 29;
+  - the laser-ranging predictions were 0.2 to 1.6 km off at two to three days and 0.3 to
+    2.4 km at three to five, and closer than GP in 39 of 41 pairs.
+- **The choice.** A delivery is verified against the operator's set with the latest
+  epoch at or before the window's start, if it is at most a day older, or three days for
+  a laser-ranging prediction (`CPF`), which is published once a day and was 21 to 45
+  hours old when fetched. For several at that epoch, the one CelesTrak fitted best.
+  Without one, the GP sets verify as before, the one nearest the observations.
+- **Alone in the catalogue.** The chosen set is the verification's only set of the
+  object, with `"chosen": "the operator's orbit with the latest epoch at or before the
+  window"` in its source. The engine is unchanged, so the method stays 2.1.0, with D-08's
+  5 km term: method 3.0.0 gives operators' orbits their own term (P6-05).
+- **Named.** The report's `reference_orbit` names the set's source "CelesTrak SupGP",
+  its `DATA_SOURCE`, CelesTrak's `rms_km`, epoch and SHA-256. The labels say "the
+  operator's orbit via CelesTrak", before the delivery and after it. A simulated station
+  observes the same set it is verified against (D-50).
+- **Replays** keep SatChecker's GP: their windows are past.
+
+With this, step 6.2 is done.
+
