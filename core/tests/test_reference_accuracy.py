@@ -7,6 +7,7 @@ import copy
 import json
 import urllib.error
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 from test_reference_orbits import SIM, FakeResponse
@@ -16,6 +17,7 @@ from orbit_watch import reference_accuracy as ra
 from orbit_watch.catalog import parse_catalog
 from orbit_watch.cli import main
 from orbit_watch.fetch import FetchError
+from orbit_watch.geometry import predict
 from orbit_watch.supgp import sup_sets
 from orbit_watch.validation import update_document
 
@@ -153,6 +155,8 @@ TABLES = {
     "ageing_run",
     "operator_by_age",
     "operator_against_gp",
+    "shift_run",
+    "time_shifts",
 }
 
 
@@ -221,7 +225,9 @@ def test_an_operators_set_against_a_later_one_and_the_gp_set_of_its_time(tmp_pat
     )
     written = ra.dumps_results(results)
     assert json.loads(written) == results
-    assert written.count('\n      ["20261101T080000Z", ') == 1  # one line per pair
+    # one line per pair, and one per pair and set in the time shifts
+    assert written.count('\n      ["20261101T080000Z", ') == 3
+    assert [r["reference"] for r in ra.shift_rows(results)] == ["operator", "gp"]
 
 
 def test_a_set_unchanged_between_runs_is_counted_not_compared(tmp_path):
@@ -337,3 +343,43 @@ def test_the_command(tmp_path, capsys):
     assert "1 pair(s) with 1 earlier run(s)" in capsys.readouterr().out
     written = json.loads((root / "validation/reference-orbits/results.json").read_text())
     assert written["run"]["directory"] == "20261102T000000Z"
+
+
+# Time shifts against operators' orbits ----------------------------------------------------
+
+
+def truth_pair(gp=True):
+    catalog = parse_catalog(supgp_csv(sup_row(epoch=TRUTH_EPOCH)))
+    sup = sup_sets(catalog, 339001)[0]
+    truth = ra._truth(catalog, 339001, "AST-E", sup)
+    run = ra.Run(Path("20261102T000000Z"), FETCHED, {}, {})
+    return ra.Pair(run, run, truth, sup, sup.element_set if gp else None)
+
+
+def test_a_track_under_the_satellite_is_made_from_the_truth():
+    pair = truth_pair()
+    track = ra.synthetic_track(pair.truth.sup.element_set, pair.truth.name, seed=1)
+    assert len(track.observations) == ra.TRACK_POINTS
+    middle = track.observations[ra.TRACK_POINTS // 2].time
+    assert middle == datetime(2026, 11, 1, 13, tzinfo=UTC)  # an hour after the epoch
+    assert track.station.id == "UNDER-THE-SATELLITE"
+    prediction = predict(
+        pair.truth.sup.element_set.satellite, track.station, [middle], "radec", "ICRF"
+    )
+    assert prediction.elevation_deg[0] > 89  # overhead
+    assert ra.synthetic_track(pair.truth.sup.element_set, pair.truth.name, seed=1) == track
+
+
+def test_a_track_half_a_second_late_passes_and_one_a_second_late_does_not():
+    rows = ra.time_shifts([truth_pair()])
+    assert [r["reference"] for r in rows] == ["operator", "gp"]
+    shifts = dict(zip(ra.SHIFTS_S, rows[0]["results"], strict=True))
+    assert [shifts[s] for s in (0.0, 0.25, 0.5)] == ["pass"] * 3  # D-46, against the truth
+    assert [shifts[s] for s in (1.0, 2.0, 5.0, 10.0, 30.0)] == ["fail"] * 5
+    assert rows[0]["age_days"] == round(1 / 24, 3)  # the set's epoch to the track's middle
+    [row] = [v for k, v in ra.shift_summary(rows)["time_shifts"].items() if "operator" in k]
+    assert row["age_days"] == f"0{ra.DASH}1" and row["passed"] == [1, 1, 1, 0, 0, 0, 0, 0]
+
+
+def test_a_pair_without_a_gp_set_is_verified_against_the_operators_set_only():
+    assert [r["reference"] for r in ra.time_shifts([truth_pair(gp=False)])] == ["operator"]

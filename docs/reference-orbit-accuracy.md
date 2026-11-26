@@ -51,6 +51,17 @@ passed in 33 of 35 low-orbit tracks
   set of that age. Against the newest GP set of its time the operator's set was closer
   in 72 of 112 pairs, against 31, and in 39 of the laser-ranging satellites' 41.
 
+- **Across the track the error stays small in low and medium orbits.** For GP sets up to
+  three days old in low orbits, the 90th percentile across the track was 0.17 to 0.48 km
+  and radially 0.10 to 0.24 km, against 2.7 to 16 km along it; in medium orbits 0.13 to
+  0.24 km across it up to five days. In geosynchronous orbits it was 4.2 to 6.6 km across
+  the track, as large as along it.
+- **A track shifted in time, against the sets a service could have used**: with sets under a
+  day old, every good track of Kuiper, OneWeb and Planet passed and none a second late;
+  at two to three days, the method's 5 km rejected half the good tracks of satellites
+  that manoeuvre against operators' sets, and 29 of 46 against GP sets
+  ([Time shifts](#time-shifts-against-operators-orbits)).
+
 This agrees with step 5.3: in low orbits sets about three days old already rejected
 good tracks ([D-46](decisions.md#d-46-the-method-measured-on-real-data)).
 
@@ -120,29 +131,29 @@ follower would have had (step 5.4).
 Every comparison, by orbit class and the set's age at the middle of the six hours.
 
 <!-- measured:by_age -->
-| Orbit | Set's age (days) | Comparisons | Objects | Median (km) | 90 % (km) | In track, median (km) | Cross track, median (km) | Radial, median (km) |
+| Orbit | Set's age (days) | Comparisons | Objects | Median (km) | 90 % (km) | In track, median (90 %) (km) | Cross track, median (90 %) (km) | Radial, median (90 %) (km) |
 |---|---|---|---|---|---|---|---|---|
-| GEO | 0–0.5 | 12 | 5 | 4.02 | 4.58 | 1.67 | 2.26 | 0.85 |
-| GEO | 0.5–1 | 13 | 5 | 2.23 | 4.73 | 1.48 | 0.79 | 0.94 |
-| GEO | 1–2 | 20 | 5 | 5.07 | 5.59 | 1.35 | 0.77 | 1.12 |
-| GEO | 2–3 | 25 | 5 | 6.58 | 7.62 | 2.60 | 1.02 | 1.39 |
-| GEO | 3–5 | 34 | 4 | 9.42 | 11.7 | 5.07 | 7.36 | 1.59 |
-| GEO | 5–7 | 41 | 5 | 15.0 | 295.4 | 12.4 | 9.61 | 2.58 |
-| GEO | 7–10 | 68 | 5 | 22.0 | 298.0 | 19.6 | 11.6 | 3.06 |
-| LEO | 0–0.5 | 41 | 19 | 0.86 | 2.68 | 0.85 | 0.10 | 0.06 |
-| LEO | 0.5–1 | 76 | 26 | 0.52 | 3.48 | 0.51 | 0.06 | 0.05 |
-| LEO | 1–2 | 146 | 30 | 1.30 | 8.07 | 1.29 | 0.14 | 0.09 |
-| LEO | 2–3 | 182 | 30 | 3.69 | 16.0 | 3.69 | 0.23 | 0.13 |
-| LEO | 3–5 | 427 | 31 | 10.2 | 55.6 | 10.2 | 0.33 | 0.19 |
-| LEO | 5–7 | 372 | 31 | 32.4 | 127.6 | 32.4 | 0.38 | 0.32 |
-| LEO | 7–10 | 682 | 31 | 38.8 | 194.2 | 38.7 | 0.53 | 0.43 |
-| MEO | 0–0.5 | 3 | 2 | 0.09 | 2.52 | 0.05 | 0.07 | 0.02 |
-| MEO | 0.5–1 | 13 | 5 | 1.08 | 3.49 | 1.03 | 0.15 | 0.29 |
-| MEO | 1–2 | 9 | 3 | 2.99 | 3.94 | 2.90 | 0.14 | 0.72 |
-| MEO | 2–3 | 19 | 6 | 1.02 | 4.61 | 0.94 | 0.14 | 0.33 |
-| MEO | 3–5 | 26 | 6 | 0.87 | 5.54 | 0.80 | 0.14 | 0.32 |
-| MEO | 5–7 | 23 | 3 | 5.86 | 6.59 | 5.74 | 0.21 | 1.17 |
-| MEO | 7–10 | 62 | 6 | 2.62 | 8.23 | 2.59 | 0.30 | 0.41 |
+| GEO | 0–0.5 | 12 | 5 | 4.02 | 4.58 | 1.67 (3.66) | 2.26 (4.21) | 0.85 (1.57) |
+| GEO | 0.5–1 | 13 | 5 | 2.23 | 4.73 | 1.48 (3.37) | 0.79 (4.44) | 0.94 (1.62) |
+| GEO | 1–2 | 20 | 5 | 5.07 | 5.59 | 1.35 (4.81) | 0.77 (5.18) | 1.12 (1.84) |
+| GEO | 2–3 | 25 | 5 | 6.58 | 7.62 | 2.60 (7.13) | 1.02 (6.61) | 1.39 (2.23) |
+| GEO | 3–5 | 34 | 4 | 9.42 | 11.7 | 5.07 (11.4) | 7.36 (8.43) | 1.59 (2.63) |
+| GEO | 5–7 | 41 | 5 | 15.0 | 295.4 | 12.4 (112.4) | 9.61 (273.0) | 2.58 (4.50) |
+| GEO | 7–10 | 68 | 5 | 22.0 | 298.0 | 19.6 (119.4) | 11.6 (273.0) | 3.06 (4.75) |
+| LEO | 0–0.5 | 41 | 19 | 0.86 | 2.68 | 0.85 (2.67) | 0.10 (0.17) | 0.06 (0.10) |
+| LEO | 0.5–1 | 76 | 26 | 0.52 | 3.48 | 0.51 (3.48) | 0.06 (0.23) | 0.05 (0.16) |
+| LEO | 1–2 | 146 | 30 | 1.30 | 8.07 | 1.29 (8.07) | 0.14 (0.32) | 0.09 (0.17) |
+| LEO | 2–3 | 182 | 30 | 3.69 | 16.0 | 3.69 (16.0) | 0.23 (0.48) | 0.13 (0.24) |
+| LEO | 3–5 | 427 | 31 | 10.2 | 55.6 | 10.2 (55.6) | 0.33 (0.69) | 0.19 (0.54) |
+| LEO | 5–7 | 372 | 31 | 32.4 | 127.6 | 32.4 (127.6) | 0.38 (0.99) | 0.32 (1.49) |
+| LEO | 7–10 | 682 | 31 | 38.8 | 194.2 | 38.7 (194.2) | 0.53 (1.29) | 0.43 (3.14) |
+| MEO | 0–0.5 | 3 | 2 | 0.09 | 2.52 | 0.05 (2.43) | 0.07 (0.13) | 0.02 (0.64) |
+| MEO | 0.5–1 | 13 | 5 | 1.08 | 3.49 | 1.03 (3.39) | 0.15 (0.17) | 0.29 (0.81) |
+| MEO | 1–2 | 9 | 3 | 2.99 | 3.94 | 2.90 (3.85) | 0.14 (0.15) | 0.72 (0.86) |
+| MEO | 2–3 | 19 | 6 | 1.02 | 4.61 | 0.94 (4.50) | 0.14 (0.20) | 0.33 (0.99) |
+| MEO | 3–5 | 26 | 6 | 0.87 | 5.54 | 0.80 (5.43) | 0.14 (0.24) | 0.32 (1.11) |
+| MEO | 5–7 | 23 | 3 | 5.86 | 6.59 | 5.74 (6.47) | 0.21 (0.23) | 1.17 (1.25) |
+| MEO | 7–10 | 62 | 6 | 2.62 | 8.23 | 2.59 (8.10) | 0.30 (0.36) | 0.41 (1.40) |
 <!-- /measured:by_age -->
 
 ### Low orbits by source
@@ -184,27 +195,27 @@ Runs fetched 2026-11-23T21:05:00Z, 2026-11-24T04:46:16Z, 2026-11-26T08:25:19Z: 1
 <!-- /measured:ageing_run -->
 
 <!-- measured:operator_by_age -->
-| Source | Orbit | Set's age (days) | Pairs | Objects | Median (km) | 90 % (km) | Largest (km) | In track, median (km) | Cross track, median (km) |
+| Source | Orbit | Set's age (days) | Pairs | Objects | Median (km) | 90 % (km) | Largest (km) | In track, median (90 %) (km) | Cross track, median (90 %) (km) |
 |---|---|---|---|---|---|---|---|---|---|
-| `AST-E` | LEO | 0.5–1 | 6 | 6 | 0.30 | 16.5 | 19.1 | 0.30 | 0.04 |
-| `AST-E` | LEO | 2–3 | 12 | 6 | 9.05 | 458.1 | 606.0 | 9.04 | 0.23 |
-| `CPF` | GEO | 1–2 | 2 | 2 | 0.90 | 0.97 | 0.99 | 0.80 | 0.27 |
-| `CPF` | GEO | 2–3 | 7 | 5 | 1.64 | 2.80 | 2.80 | 1.42 | 0.39 |
-| `CPF` | GEO | 3–5 | 3 | 3 | 2.37 | 3.62 | 3.93 | 1.67 | 1.11 |
-| `CPF` | LEO | 2–3 | 10 | 5 | 0.22 | 1.37 | 1.37 | 0.17 | 0.09 |
-| `CPF` | LEO | 3–5 | 2 | 1 | 0.28 | 0.28 | 0.28 | 0.23 | 0.13 |
-| `CPF` | MEO | 1–2 | 5 | 5 | 0.28 | 0.40 | 0.47 | 0.27 | 0.04 |
-| `CPF` | MEO | 2–3 | 7 | 6 | 0.38 | 0.60 | 0.64 | 0.26 | 0.10 |
-| `CPF` | MEO | 3–5 | 5 | 5 | 0.78 | 0.87 | 0.89 | 0.70 | 0.16 |
-| `Kuiper-E` | LEO | 0–0.5 | 4 | 4 | 0.11 | 0.43 | 0.56 | 0.11 | 0.02 |
-| `Kuiper-E` | LEO | 0.5–1 | 2 | 2 | 0.18 | 0.25 | 0.27 | 0.16 | 0.06 |
-| `Kuiper-E` | LEO | 2–3 | 12 | 6 | 4.92 | 16.3 | 57.2 | 4.91 | 0.23 |
-| `OneWeb-E` | LEO | 0.5–1 | 5 | 5 | 0.34 | 0.43 | 0.48 | 0.34 | 0.02 |
-| `OneWeb-E` | LEO | 2–3 | 12 | 6 | 3.22 | 76.6 | 132.6 | 3.22 | 0.11 |
-| `Planet-E` | LEO | 0–0.5 | 5 | 5 | 0.28 | 1.19 | 1.63 | 0.28 | 0.02 |
-| `Planet-E` | LEO | 0.5–1 | 1 | 1 | 0.86 | 0.86 | 0.86 | 0.86 | 0.04 |
-| `Planet-E` | LEO | 1–2 | 1 | 1 | 4.44 | 4.44 | 4.44 | 4.44 | 0.04 |
-| `Planet-E` | LEO | 2–3 | 11 | 6 | 7.28 | 11.7 | 34.1 | 7.27 | 0.07 |
+| `AST-E` | LEO | 0.5–1 | 6 | 6 | 0.30 | 16.5 | 19.1 | 0.30 (16.4) | 0.04 (0.11) |
+| `AST-E` | LEO | 2–3 | 12 | 6 | 9.05 | 458.1 | 606.0 | 9.04 (457.9) | 0.23 (0.31) |
+| `CPF` | GEO | 1–2 | 2 | 2 | 0.90 | 0.97 | 0.99 | 0.80 (0.88) | 0.27 (0.35) |
+| `CPF` | GEO | 2–3 | 7 | 5 | 1.64 | 2.80 | 2.80 | 1.42 (2.61) | 0.39 (1.37) |
+| `CPF` | GEO | 3–5 | 3 | 3 | 2.37 | 3.62 | 3.93 | 1.67 (1.96) | 1.11 (3.06) |
+| `CPF` | LEO | 2–3 | 10 | 5 | 0.22 | 1.37 | 1.37 | 0.17 (1.37) | 0.09 (0.12) |
+| `CPF` | LEO | 3–5 | 2 | 1 | 0.28 | 0.28 | 0.28 | 0.23 (0.23) | 0.13 (0.13) |
+| `CPF` | MEO | 1–2 | 5 | 5 | 0.28 | 0.40 | 0.47 | 0.27 (0.39) | 0.04 (0.11) |
+| `CPF` | MEO | 2–3 | 7 | 6 | 0.38 | 0.60 | 0.64 | 0.26 (0.56) | 0.10 (0.14) |
+| `CPF` | MEO | 3–5 | 5 | 5 | 0.78 | 0.87 | 0.89 | 0.70 (0.80) | 0.16 (0.20) |
+| `Kuiper-E` | LEO | 0–0.5 | 4 | 4 | 0.11 | 0.43 | 0.56 | 0.11 (0.42) | 0.02 (0.03) |
+| `Kuiper-E` | LEO | 0.5–1 | 2 | 2 | 0.18 | 0.25 | 0.27 | 0.16 (0.24) | 0.06 (0.06) |
+| `Kuiper-E` | LEO | 2–3 | 12 | 6 | 4.92 | 16.3 | 57.2 | 4.91 (16.3) | 0.23 (0.27) |
+| `OneWeb-E` | LEO | 0.5–1 | 5 | 5 | 0.34 | 0.43 | 0.48 | 0.34 (0.43) | 0.02 (0.04) |
+| `OneWeb-E` | LEO | 2–3 | 12 | 6 | 3.22 | 76.6 | 132.6 | 3.22 (76.6) | 0.11 (0.17) |
+| `Planet-E` | LEO | 0–0.5 | 5 | 5 | 0.28 | 1.19 | 1.63 | 0.28 (1.19) | 0.02 (0.02) |
+| `Planet-E` | LEO | 0.5–1 | 1 | 1 | 0.86 | 0.86 | 0.86 | 0.86 (0.86) | 0.04 (0.04) |
+| `Planet-E` | LEO | 1–2 | 1 | 1 | 4.44 | 4.44 | 4.44 | 4.44 (4.44) | 0.04 (0.04) |
+| `Planet-E` | LEO | 2–3 | 11 | 6 | 7.28 | 11.7 | 34.1 | 7.27 (11.7) | 0.07 (0.11) |
 <!-- /measured:operator_by_age -->
 
 The two side by side, for the pairs that had a GP set of the same time:
@@ -247,6 +258,84 @@ The two side by side, for the pairs that had a GP set of the same time:
   prediction up to three days old** ([D-66](decisions.md#d-66-verification-uses-the-operators-orbit)).
   Older, the GP sets verify as before. The three runs were 8 hours and 2.2 days apart.
 
+## Time shifts against operators' orbits
+
+Step 5.3 found that against GP sets in low orbits a track half a second late passes and one
+a second late does not
+([D-46](decisions.md#d-46-the-method-measured-on-real-data)). Here the same question is
+asked of the two sets a service could have used for each pair above
+([D-67](decisions.md#d-67-the-measurement-for-method-300)):
+
+- **the track** is made from the truth, the later operator's set: what a station directly
+  under the satellite would see over one minute, an hour after the truth's epoch, 31
+  positions with 10″ of noise, each declared to 10″ and 0.01 s. It is made in memory and
+  never written;
+- **it is shifted** later by each of the times below and verified, with the method as it is
+  (2.1.0, its fixed 5 km orbit term), against the earlier operator's set and against the
+  newest GP set of the same time;
+- **each cell counts the tracks that passed** the residual check. At 0 s every track should
+  pass; past it, a pass is a false acceptance.
+
+<!-- measured:shift_run -->
+224 tracks of 31 positions, each verified with method orbit-watch-automated-verification 2.1.0 at 8 shifts.
+<!-- /measured:shift_run -->
+
+<!-- measured:time_shifts -->
+| Source | Orbit | Reference | Set's age (days) | Tracks | 0 s | 0.25 s | 0.5 s | 1 s | 2 s | 5 s | 10 s | 30 s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `AST-E` | LEO | Operator's set | 0–1 | 6 | 4 | 4 | 5 | 2 | 1 | 0 | 0 | 0 |
+| `AST-E` | LEO | Operator's set | 2–3 | 12 | 3 | 3 | 4 | 4 | 0 | 0 | 0 | 0 |
+| `AST-E` | LEO | Newest GP set | 0–1 | 6 | 5 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
+| `AST-E` | LEO | Newest GP set | 2–3 | 12 | 3 | 3 | 1 | 2 | 3 | 0 | 0 | 0 |
+| `CPF` | GEO | Operator's set | 1–2 | 2 | 2 | 2 | 2 | 2 | 1 | 0 | 0 | 0 |
+| `CPF` | GEO | Operator's set | 2–3 | 7 | 7 | 7 | 7 | 7 | 0 | 0 | 0 | 0 |
+| `CPF` | GEO | Operator's set | 3–10 | 3 | 3 | 3 | 3 | 3 | 1 | 0 | 0 | 0 |
+| `CPF` | GEO | Newest GP set | 0–1 | 4 | 4 | 4 | 4 | 2 | 2 | 0 | 0 | 0 |
+| `CPF` | GEO | Newest GP set | 2–3 | 3 | 1 | 1 | 1 | 1 | 1 | 0 | 0 | 0 |
+| `CPF` | GEO | Newest GP set | 3–10 | 5 | 3 | 3 | 3 | 3 | 1 | 0 | 0 | 0 |
+| `CPF` | LEO | Operator's set | 2–3 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| `CPF` | LEO | Operator's set | 3–10 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
+| `CPF` | LEO | Newest GP set | 0–1 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
+| `CPF` | LEO | Newest GP set | 1–2 | 8 | 6 | 6 | 8 | 2 | 0 | 0 | 0 | 0 |
+| `CPF` | LEO | Newest GP set | 3–10 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
+| `CPF` | MEO | Operator's set | 1–2 | 5 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 |
+| `CPF` | MEO | Operator's set | 2–3 | 7 | 7 | 7 | 7 | 5 | 0 | 0 | 0 | 0 |
+| `CPF` | MEO | Operator's set | 3–10 | 5 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 |
+| `CPF` | MEO | Newest GP set | 0–1 | 3 | 3 | 3 | 3 | 3 | 2 | 0 | 0 | 0 |
+| `CPF` | MEO | Newest GP set | 1–2 | 4 | 4 | 4 | 4 | 2 | 1 | 0 | 0 | 0 |
+| `CPF` | MEO | Newest GP set | 2–3 | 7 | 7 | 7 | 7 | 3 | 0 | 0 | 0 | 0 |
+| `CPF` | MEO | Newest GP set | 3–10 | 3 | 3 | 3 | 3 | 3 | 0 | 0 | 0 | 0 |
+| `Kuiper-E` | LEO | Operator's set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
+| `Kuiper-E` | LEO | Operator's set | 2–3 | 12 | 7 | 5 | 3 | 1 | 0 | 0 | 0 | 0 |
+| `Kuiper-E` | LEO | Newest GP set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
+| `Kuiper-E` | LEO | Newest GP set | 2–3 | 12 | 3 | 2 | 1 | 1 | 0 | 0 | 0 | 0 |
+| `OneWeb-E` | LEO | Operator's set | 0–1 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
+| `OneWeb-E` | LEO | Operator's set | 2–3 | 12 | 9 | 8 | 5 | 2 | 0 | 0 | 0 | 0 |
+| `OneWeb-E` | LEO | Newest GP set | 0–1 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
+| `OneWeb-E` | LEO | Newest GP set | 2–3 | 11 | 8 | 7 | 4 | 3 | 1 | 0 | 0 | 0 |
+| `OneWeb-E` | LEO | Newest GP set | 3–10 | 1 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 |
+| `Planet-E` | LEO | Operator's set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
+| `Planet-E` | LEO | Operator's set | 1–2 | 2 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `Planet-E` | LEO | Operator's set | 2–3 | 10 | 4 | 3 | 2 | 2 | 1 | 0 | 0 | 0 |
+| `Planet-E` | LEO | Newest GP set | 0–1 | 6 | 6 | 6 | 5 | 0 | 0 | 0 | 0 | 0 |
+| `Planet-E` | LEO | Newest GP set | 1–2 | 1 | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| `Planet-E` | LEO | Newest GP set | 2–3 | 11 | 3 | 3 | 2 | 2 | 1 | 0 | 0 | 0 |
+<!-- /measured:time_shifts -->
+
+- **Under a day old, the method works as D-46 found.** In low orbits every good track
+  passed against Kuiper's, OneWeb's and Planet's operator's sets, and none a second late
+  did; the newest GP sets of that age did the same. Four of AST SpaceMobile's six passed,
+  and two a second late, after a manoeuvre.
+- **Two to three days old, 5 km rejects good tracks.** In low orbits, of the satellites
+  that manoeuvre, 23 of 46 good tracks passed against the operator's sets and 17 of 46
+  against the GP sets; and 9 and 8 of 46 a second late passed, since the set's own error
+  along the track and the shift can cancel. The laser-ranging predictions still passed
+  all 12 good tracks in low orbits, and none a second late.
+- **In medium and geosynchronous orbits a second's shift passes**: such a satellite moves
+  a few kilometres a second or less, inside 5 km. Two seconds mostly fail.
+- **Shifts of five seconds or more never passed**, against any set.
+
+
 ## What the numbers suggest
 
 These are candidates for method 3.0.0, decided in step 6.3 (P6-05), not changes.
@@ -258,7 +347,9 @@ These are candidates for method 3.0.0, decided in step 6.3 (P6-05), not changes.
    request's object at most once per two-hour update (step 5.4), so the newest set is
    usually hours old.
 2. **In track and across track separately.** The error is nearly all along the
-   track. A term that is larger in track than across it would keep the limit tight
+   track in low and medium orbits: up to three days, its 90th percentile across the
+   track was below 0.5 km. Not in geosynchronous orbits, where it was 4 to 7 km across
+   it too. A term that is larger in track than across it would keep the limit tight
    across the track, where a wrong object in another plane shows, and loose along it,
    where timing and an old set show.
 3. **An operator's orbit gets a small term while it is fresh.** SupGP fits its

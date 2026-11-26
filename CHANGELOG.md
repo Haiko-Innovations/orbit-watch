@@ -47,6 +47,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   laser-ranging prediction, and otherwise the GP sets as before. The report names it,
   with its `DATA_SOURCE`, and the labels say "the operator's orbit via CelesTrak". The
   method stays 2.1.0. `docs/reference-orbit-accuracy.md` is measured with three runs.
+- The measurement for method 3.0.0 (step 6.3, D-67): `orbit-watch
+  measure-reference-orbits` gives the 90th percentiles along the track, across it and
+  radially, and verifies tracks made from each later operator's set, shifted by 0 to 30
+  seconds, against the sets a service could have used for their time. The results'
+  format is 1.2.
 
 ### Fixed
 

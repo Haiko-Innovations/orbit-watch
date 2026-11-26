@@ -3741,3 +3741,42 @@ limit that D-61 and D-63 left to a later run.
 
 With this, step 6.2 is done.
 
+### D-67 The measurement for method 3.0.0
+
+Accepted · 2026-11-26. Step 6.3
+([#140](https://github.com/Haiko-Innovations/orbit-watch/issues/140)) comes in three pull
+requests: this one measures what the method needs and changes nothing in it; the next
+makes method 3.0.0 in the engine and regenerates the examples, the known answers and the
+measurement on real data; the last makes the service use it. The maintainer approved the
+plan on 2026-11-26, with three choices:
+
+- **(a) Along and across the track separately.** The limit gets an orbit term along the
+  object's apparent motion, beside the timing term, and one across it, so that a set's
+  error along the track does not loosen the limit across it, where an object in another
+  plane shows.
+- **(b) Three days for a GP set in low orbits.** An older set leaves the residual check
+  inconclusive, not failed, in place of the 7 days of method 2.1.0.
+- **(c) Orbits not measured keep 2.1.0's values.** Highly elliptical orbits (HEO) keep
+  5 km and 7 days until they are measured, and the report says so.
+
+This pull request:
+
+- **Percentiles along and across the track.** The page's tables give the 90th percentile
+  of the in-track, cross-track and radial parts beside their medians: the cross-track
+  term needs them. For GP sets up to three days old in low orbits, it was 0.17 to 0.48 km
+  across the track, against 2.7 to 16 km along it; in geosynchronous orbits 4.2 to 6.6 km
+  across it.
+- **D-46's time shifts against operators' orbits.** Real observations of the cached
+  runs' days are not at hand, and SupGP keeps no history, so for each pair of D-61 a
+  track is made in memory from the truth, the later operator's set: what a station under
+  the satellite would see over a minute, an hour after the truth's epoch, with 10″ of
+  noise. It is shifted by 0 to 30 seconds and verified with method 2.1.0 against the
+  earlier operator's set and the newest GP set of its time. Under a day old, every good
+  track of Kuiper, OneWeb and Planet passed and none a second late, as D-46 found with
+  GP. At two to three days, 5 km rejected half the good tracks of satellites that
+  manoeuvre against operators' sets and 29 of 46 against GP sets. The laser-ranging
+  predictions passed all 12 good tracks in low orbits, and none a second late.
+- **The results' format is 1.2**: `settings.track` and a `time_shifts` table, one row per
+  pair and set, with the residual check's result at each shift. They still name sets by
+  epoch and SHA-256 only.
+
