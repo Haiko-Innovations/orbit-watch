@@ -270,57 +270,98 @@ asked of the two sets a service could have used for each pair above
   under the satellite would see over one minute, an hour after the truth's epoch, 31
   positions with 10″ of noise, each declared to 10″ and 0.01 s. It is made in memory and
   never written;
-- **it is shifted** later by each of the times below and verified, with the method as it is
-  (2.1.0, its fixed 5 km orbit term), against the earlier operator's set and against the
-  newest GP set of the same time;
+- **it is shifted** later by each of the times below and verified with method 2.1.0, its
+  fixed 5 km, and with method 3.0.0, its orbit term by the set's kind and age
+  ([D-68](decisions.md#d-68-method-300)), against the earlier operator's set and against
+  the newest GP set of the same time;
 - **each cell counts the tracks that passed** the residual check. At 0 s every track should
-  pass; past it, a pass is a false acceptance.
+  pass; past it, a pass is a false acceptance. A track that did not pass failed, or with
+  method 3.0.0 was inconclusive: past its set's ages.
 
 <!-- measured:shift_run -->
-224 tracks of 31 positions, each verified with method orbit-watch-automated-verification 2.1.0 at 8 shifts.
+224 pairs of a track and a set, of 31 positions each, verified with methods 2.1.0 and 3.0.0 at 8 shifts.
 <!-- /measured:shift_run -->
 
 <!-- measured:time_shifts -->
-| Source | Orbit | Reference | Set's age (days) | Tracks | 0 s | 0.25 s | 0.5 s | 1 s | 2 s | 5 s | 10 s | 30 s |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `AST-E` | LEO | Operator's set | 0–1 | 6 | 4 | 4 | 5 | 2 | 1 | 0 | 0 | 0 |
-| `AST-E` | LEO | Operator's set | 2–3 | 12 | 3 | 3 | 4 | 4 | 0 | 0 | 0 | 0 |
-| `AST-E` | LEO | Newest GP set | 0–1 | 6 | 5 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
-| `AST-E` | LEO | Newest GP set | 2–3 | 12 | 3 | 3 | 1 | 2 | 3 | 0 | 0 | 0 |
-| `CPF` | GEO | Operator's set | 1–2 | 2 | 2 | 2 | 2 | 2 | 1 | 0 | 0 | 0 |
-| `CPF` | GEO | Operator's set | 2–3 | 7 | 7 | 7 | 7 | 7 | 0 | 0 | 0 | 0 |
-| `CPF` | GEO | Operator's set | 3–10 | 3 | 3 | 3 | 3 | 3 | 1 | 0 | 0 | 0 |
-| `CPF` | GEO | Newest GP set | 0–1 | 4 | 4 | 4 | 4 | 2 | 2 | 0 | 0 | 0 |
-| `CPF` | GEO | Newest GP set | 2–3 | 3 | 1 | 1 | 1 | 1 | 1 | 0 | 0 | 0 |
-| `CPF` | GEO | Newest GP set | 3–10 | 5 | 3 | 3 | 3 | 3 | 1 | 0 | 0 | 0 |
-| `CPF` | LEO | Operator's set | 2–3 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
-| `CPF` | LEO | Operator's set | 3–10 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| `CPF` | LEO | Newest GP set | 0–1 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| `CPF` | LEO | Newest GP set | 1–2 | 8 | 6 | 6 | 8 | 2 | 0 | 0 | 0 | 0 |
-| `CPF` | LEO | Newest GP set | 3–10 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| `CPF` | MEO | Operator's set | 1–2 | 5 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 |
-| `CPF` | MEO | Operator's set | 2–3 | 7 | 7 | 7 | 7 | 5 | 0 | 0 | 0 | 0 |
-| `CPF` | MEO | Operator's set | 3–10 | 5 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 |
-| `CPF` | MEO | Newest GP set | 0–1 | 3 | 3 | 3 | 3 | 3 | 2 | 0 | 0 | 0 |
-| `CPF` | MEO | Newest GP set | 1–2 | 4 | 4 | 4 | 4 | 2 | 1 | 0 | 0 | 0 |
-| `CPF` | MEO | Newest GP set | 2–3 | 7 | 7 | 7 | 7 | 3 | 0 | 0 | 0 | 0 |
-| `CPF` | MEO | Newest GP set | 3–10 | 3 | 3 | 3 | 3 | 3 | 0 | 0 | 0 | 0 |
-| `Kuiper-E` | LEO | Operator's set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
-| `Kuiper-E` | LEO | Operator's set | 2–3 | 12 | 7 | 5 | 3 | 1 | 0 | 0 | 0 | 0 |
-| `Kuiper-E` | LEO | Newest GP set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
-| `Kuiper-E` | LEO | Newest GP set | 2–3 | 12 | 3 | 2 | 1 | 1 | 0 | 0 | 0 | 0 |
-| `OneWeb-E` | LEO | Operator's set | 0–1 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
-| `OneWeb-E` | LEO | Operator's set | 2–3 | 12 | 9 | 8 | 5 | 2 | 0 | 0 | 0 | 0 |
-| `OneWeb-E` | LEO | Newest GP set | 0–1 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
-| `OneWeb-E` | LEO | Newest GP set | 2–3 | 11 | 8 | 7 | 4 | 3 | 1 | 0 | 0 | 0 |
-| `OneWeb-E` | LEO | Newest GP set | 3–10 | 1 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 |
-| `Planet-E` | LEO | Operator's set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
-| `Planet-E` | LEO | Operator's set | 1–2 | 2 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| `Planet-E` | LEO | Operator's set | 2–3 | 10 | 4 | 3 | 2 | 2 | 1 | 0 | 0 | 0 |
-| `Planet-E` | LEO | Newest GP set | 0–1 | 6 | 6 | 6 | 5 | 0 | 0 | 0 | 0 | 0 |
-| `Planet-E` | LEO | Newest GP set | 1–2 | 1 | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
-| `Planet-E` | LEO | Newest GP set | 2–3 | 11 | 3 | 3 | 2 | 2 | 1 | 0 | 0 | 0 |
+| Method | Source | Orbit | Reference | Set's age (days) | Tracks | 0 s | 0.25 s | 0.5 s | 1 s | 2 s | 5 s | 10 s | 30 s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2.1.0 | `AST-E` | LEO | Operator's set | 0–1 | 6 | 4 | 4 | 5 | 2 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `AST-E` | LEO | Operator's set | 2–3 | 12 | 3 | 3 | 4 | 4 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `AST-E` | LEO | Newest GP set | 0–1 | 6 | 5 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `AST-E` | LEO | Newest GP set | 2–3 | 12 | 3 | 3 | 1 | 2 | 3 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | GEO | Operator's set | 1–2 | 2 | 2 | 2 | 2 | 2 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | GEO | Operator's set | 2–3 | 7 | 7 | 7 | 7 | 7 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | GEO | Operator's set | 3–10 | 3 | 3 | 3 | 3 | 3 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | GEO | Newest GP set | 0–1 | 4 | 4 | 4 | 4 | 2 | 2 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | GEO | Newest GP set | 2–3 | 3 | 1 | 1 | 1 | 1 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | GEO | Newest GP set | 3–10 | 5 | 3 | 3 | 3 | 3 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | LEO | Operator's set | 2–3 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | LEO | Operator's set | 3–10 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | LEO | Newest GP set | 0–1 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | LEO | Newest GP set | 1–2 | 8 | 6 | 6 | 8 | 2 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | LEO | Newest GP set | 3–10 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | MEO | Operator's set | 1–2 | 5 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | MEO | Operator's set | 2–3 | 7 | 7 | 7 | 7 | 5 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | MEO | Operator's set | 3–10 | 5 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | MEO | Newest GP set | 0–1 | 3 | 3 | 3 | 3 | 3 | 2 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | MEO | Newest GP set | 1–2 | 4 | 4 | 4 | 4 | 2 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | MEO | Newest GP set | 2–3 | 7 | 7 | 7 | 7 | 3 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `CPF` | MEO | Newest GP set | 3–10 | 3 | 3 | 3 | 3 | 3 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `Kuiper-E` | LEO | Operator's set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `Kuiper-E` | LEO | Operator's set | 2–3 | 12 | 7 | 5 | 3 | 1 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `Kuiper-E` | LEO | Newest GP set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `Kuiper-E` | LEO | Newest GP set | 2–3 | 12 | 3 | 2 | 1 | 1 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `OneWeb-E` | LEO | Operator's set | 0–1 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `OneWeb-E` | LEO | Operator's set | 2–3 | 12 | 9 | 8 | 5 | 2 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `OneWeb-E` | LEO | Newest GP set | 0–1 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `OneWeb-E` | LEO | Newest GP set | 2–3 | 11 | 8 | 7 | 4 | 3 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `OneWeb-E` | LEO | Newest GP set | 3–10 | 1 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `Planet-E` | LEO | Operator's set | 0–1 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `Planet-E` | LEO | Operator's set | 1–2 | 2 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `Planet-E` | LEO | Operator's set | 2–3 | 10 | 4 | 3 | 2 | 2 | 1 | 0 | 0 | 0 |
+| 2.1.0 | `Planet-E` | LEO | Newest GP set | 0–1 | 6 | 6 | 6 | 5 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `Planet-E` | LEO | Newest GP set | 1–2 | 1 | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| 2.1.0 | `Planet-E` | LEO | Newest GP set | 2–3 | 11 | 3 | 3 | 2 | 2 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `AST-E` | LEO | Operator's set | 0–1 | 6 | 4 | 2 | 0 | 1 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `AST-E` | LEO | Operator's set | 2–3 | 12 | 8 | 7 | 6 | 4 | 3 | 0 | 0 | 0 |
+| 3.0.0 | `AST-E` | LEO | Newest GP set | 0–1 | 6 | 5 | 4 | 3 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `AST-E` | LEO | Newest GP set | 2–3 | 12 | 7 | 6 | 5 | 4 | 3 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | GEO | Operator's set | 1–2 | 2 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | GEO | Operator's set | 2–3 | 7 | 7 | 7 | 7 | 3 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | GEO | Operator's set | 3–10 | 3 | 3 | 3 | 3 | 3 | 3 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | GEO | Newest GP set | 0–1 | 4 | 4 | 4 | 4 | 2 | 2 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | GEO | Newest GP set | 2–3 | 3 | 1 | 1 | 1 | 1 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | GEO | Newest GP set | 3–10 | 5 | 1 | 1 | 1 | 1 | 1 | 1 | 0 | 0 |
+| 3.0.0 | `CPF` | LEO | Operator's set | 2–3 | 10 | 10 | 4 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | LEO | Operator's set | 3–10 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | LEO | Newest GP set | 0–1 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | LEO | Newest GP set | 1–2 | 8 | 8 | 8 | 7 | 2 | 2 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | LEO | Newest GP set | 3–10 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | MEO | Operator's set | 1–2 | 5 | 5 | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | MEO | Operator's set | 2–3 | 7 | 7 | 5 | 3 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | MEO | Operator's set | 3–10 | 5 | 5 | 5 | 5 | 5 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | MEO | Newest GP set | 0–1 | 3 | 3 | 3 | 3 | 3 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | MEO | Newest GP set | 1–2 | 4 | 4 | 4 | 4 | 2 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | MEO | Newest GP set | 2–3 | 7 | 7 | 7 | 7 | 3 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `CPF` | MEO | Newest GP set | 3–10 | 3 | 3 | 3 | 3 | 3 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `Kuiper-E` | LEO | Operator's set | 0–1 | 6 | 6 | 4 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `Kuiper-E` | LEO | Operator's set | 2–3 | 12 | 9 | 9 | 5 | 2 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `Kuiper-E` | LEO | Newest GP set | 0–1 | 6 | 6 | 6 | 3 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `Kuiper-E` | LEO | Newest GP set | 2–3 | 12 | 9 | 6 | 4 | 2 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `OneWeb-E` | LEO | Operator's set | 0–1 | 5 | 5 | 3 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `OneWeb-E` | LEO | Operator's set | 2–3 | 12 | 10 | 10 | 10 | 9 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `OneWeb-E` | LEO | Newest GP set | 0–1 | 5 | 5 | 5 | 4 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `OneWeb-E` | LEO | Newest GP set | 2–3 | 11 | 9 | 9 | 9 | 9 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `OneWeb-E` | LEO | Newest GP set | 3–10 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `Planet-E` | LEO | Operator's set | 0–1 | 6 | 6 | 4 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `Planet-E` | LEO | Operator's set | 1–2 | 2 | 2 | 2 | 1 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `Planet-E` | LEO | Operator's set | 2–3 | 10 | 9 | 9 | 9 | 5 | 1 | 0 | 0 | 0 |
+| 3.0.0 | `Planet-E` | LEO | Newest GP set | 0–1 | 6 | 6 | 6 | 2 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `Planet-E` | LEO | Newest GP set | 1–2 | 1 | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| 3.0.0 | `Planet-E` | LEO | Newest GP set | 2–3 | 11 | 8 | 8 | 8 | 4 | 1 | 0 | 0 | 0 |
 <!-- /measured:time_shifts -->
+
+With method 2.1.0:
 
 - **Under a day old, the method works as D-46 found.** In low orbits every good track
   passed against Kuiper's, OneWeb's and Planet's operator's sets, and none a second late
@@ -334,6 +375,23 @@ asked of the two sets a service could have used for each pair above
 - **In medium and geosynchronous orbits a second's shift passes**: such a satellite moves
   a few kilometres a second or less, inside 5 km. Two seconds mostly fail.
 - **Shifts of five seconds or more never passed**, against any set.
+
+With method 3.0.0:
+
+- **Under a day old, half a second is caught against operators' sets.** Every good
+  track of Kuiper, OneWeb and Planet passed, and none half a second late; against the
+  newest GP set, allowed 4 km along the track, 9 of 17 half a second late passed, and
+  none a second late.
+- **Two to three days old, good tracks pass and a second's shift often does.** A GP set
+  that age is allowed 16 km along the track, and so is an operator's set past its day.
+  Of the satellites that manoeuvre, 36 of 46 good tracks passed against operators' sets
+  and 33 of 46 against GP sets, against 23 and 17 with method 2.1.0; but 20 and 19 a
+  second late passed too. That is the price of the term growing with age: the
+  follower fetches a request's object every two hours, so the set it verifies with is
+  usually hours old.
+- **The laser-ranging predictions pass all 10 good tracks in low orbits up to 3 days
+  old, and none half a second late.** Past 3 days, the check is inconclusive.
+- **Shifts of ten seconds or more never passed.**
 
 
 ## What the numbers suggest

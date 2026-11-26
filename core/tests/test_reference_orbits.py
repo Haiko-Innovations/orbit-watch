@@ -38,7 +38,13 @@ from orbit_watch.satchecker import (
 )
 from orbit_watch.sim.simulator import load_profile, simulate
 from orbit_watch.timeutil import parse_utc
-from orbit_watch.verify.engine import METHOD_NAME, METHOD_VERSION, VerificationInput, verify
+from orbit_watch.verify.engine import (
+    METHOD_NAME,
+    METHOD_VERSION,
+    METHOD_VERSIONS,
+    VerificationInput,
+    verify,
+)
 
 SIM = json.loads(catalog_bytes())["records"][0]  # SIM-CUBESAT-A, 339001, epoch 2026-11-01
 
@@ -133,8 +139,8 @@ def test_verification_uses_the_set_nearest_the_observations():
     assert reference["element_set_sha256"] == record_sha256(SIM)
     assert reference["selection"] == "nearest the middle of the observations"
     assert reference["element_sets_in_catalogue"] == 2
-    assert report["method"]["version"] == METHOD_VERSION == "2.1.0"
-    assert report["report_format_version"] == "1.1"
+    assert report["method"]["version"] == METHOD_VERSION == "3.0.0"
+    assert report["report_format_version"] == "1.2"
 
 
 def test_a_later_delivery_gets_the_later_set():
@@ -176,9 +182,13 @@ def test_the_quality_meter_uses_the_nearest_set():
     assert not any("more than" in n for n in report.get("notices", []))
 
 
-def test_the_terms_name_the_method():
+def test_the_terms_name_a_method_the_engine_runs():
+    # Until the service moves to method 3.0.0 (step 6.3, part 3), new requests keep 2.1.0,
+    # and their deliveries are verified with it (D-68).
     default = next(f.default for f in fields(Terms) if f.name == "verification_method")
-    assert default == f"{METHOD_NAME} {METHOD_VERSION}"
+    name, _, version = default.rpartition(" ")
+    assert name == METHOD_NAME and version in METHOD_VERSIONS
+    assert version == "2.1.0"
 
 
 # CelesTrak (fetch-gp) ---------------------------------------------------------------------

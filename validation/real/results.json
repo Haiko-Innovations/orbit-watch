@@ -4,15 +4,141 @@
   "simulated": false,
   "method": {
     "name": "orbit-watch-automated-verification",
-    "version": "2.1.0",
+    "version": "3.0.0",
     "parameters": {
-      "reference_position_error_km": 5.0,
       "residual_sigma_multiplier": 3.0,
       "min_fraction_within_limit": 0.8,
-      "max_reference_age_days": 7.0,
       "duplicate_time_resolution_s": 0.001,
       "duplicate_angle_resolution_arcsec": 1.0
-    }
+    },
+    "orbit_terms": [
+      {
+        "kind": "operator",
+        "description": "an operator's orbit via CelesTrak SupGP",
+        "orbit_class": "LEO",
+        "age_days": "0–1",
+        "radial_km": 0.5,
+        "in_track_km": 2.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "laser-ranging",
+        "description": "a laser-ranging prediction via CelesTrak SupGP",
+        "orbit_class": "LEO",
+        "age_days": "0–3",
+        "radial_km": 0.5,
+        "in_track_km": 2.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "laser-ranging",
+        "description": "a laser-ranging prediction via CelesTrak SupGP",
+        "orbit_class": "MEO",
+        "age_days": "0–3",
+        "radial_km": 0.5,
+        "in_track_km": 1.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "laser-ranging",
+        "description": "a laser-ranging prediction via CelesTrak SupGP",
+        "orbit_class": "GEO",
+        "age_days": "0–3",
+        "radial_km": 1.5,
+        "in_track_km": 3.0,
+        "cross_track_km": 1.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "LEO",
+        "age_days": "0–1",
+        "radial_km": 0.5,
+        "in_track_km": 4.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "LEO",
+        "age_days": "1–2",
+        "radial_km": 0.5,
+        "in_track_km": 9.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "LEO",
+        "age_days": "2–3",
+        "radial_km": 0.5,
+        "in_track_km": 16.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "MEO",
+        "age_days": "0–3",
+        "radial_km": 1.0,
+        "in_track_km": 5.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "MEO",
+        "age_days": "3–7",
+        "radial_km": 1.5,
+        "in_track_km": 7.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "GEO",
+        "age_days": "0–1",
+        "radial_km": 2.0,
+        "in_track_km": 4.0,
+        "cross_track_km": 4.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "GEO",
+        "age_days": "1–2",
+        "radial_km": 2.0,
+        "in_track_km": 5.0,
+        "cross_track_km": 5.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "GEO",
+        "age_days": "2–3",
+        "radial_km": 2.5,
+        "in_track_km": 8.0,
+        "cross_track_km": 7.0
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "GEO",
+        "age_days": "3–5",
+        "radial_km": 3.0,
+        "in_track_km": 12.0,
+        "cross_track_km": 8.5
+      },
+      {
+        "kind": "not-measured",
+        "description": "an orbit class not measured in step 6.1",
+        "orbit_class": "HEO",
+        "age_days": "0–7",
+        "radial_km": 5.0,
+        "in_track_km": 5.0,
+        "cross_track_km": 5.0
+      }
+    ]
   },
   "software": {
     "orbit-watch": "0.7.0.dev0"
@@ -1050,14 +1176,26 @@
         "rms_cross_track_arcsec": 71.8,
         "mean_along_track_s": -1.5315,
         "std_along_track_s": 0.3171,
-        "median_limit_arcsec": 1629.378,
+        "median_along_track_limit_arcsec": 1306.123,
+        "median_cross_track_limit_arcsec": 235.677,
+        "median_normalised_residual": 2.8422,
         "reference_epoch_max_age_days": 0.0586
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 656.99,
-        "orbit_term_arcsec": 1480.14,
-        "orbit_share_of_limit": 0.8252,
+        "orbit_term_along_arcsec": 1114.41,
+        "orbit_term_across_arcsec": 152.13,
+        "orbit_share_of_limit": 0.728,
         "median_range_km": 696.8,
         "median_rate_arcsec_per_s": 2189.96
       },
@@ -1080,7 +1218,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -1088,33 +1226,29 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
         "wrong_object": {
           "17844": "fail",
           "18374": "fail",
-          "18749": "fail",
           "19169": "fail",
           "21429": "fail",
           "23343": "fail",
           "39174": "fail",
           "43056": "fail",
-          "43641": "fail",
           "46265": "fail",
-          "47353": "fail",
           "52621": "fail",
           "53742": "fail",
-          "53984": "fail",
           "56530": "fail",
           "57115": "fail",
-          "58207": "fail",
           "62078": "fail",
           "100800": "fail",
           "101286": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -1139,13 +1273,25 @@
         "rms_cross_track_arcsec": 4432.892,
         "mean_along_track_s": -16.8812,
         "std_along_track_s": 30.3915,
-        "median_limit_arcsec": 193.202,
+        "median_along_track_limit_arcsec": 193.202,
+        "median_cross_track_limit_arcsec": 192.844,
+        "median_normalised_residual": 19.426,
         "reference_epoch_max_age_days": 0.0552
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 11.75,
-        "orbit_term_arcsec": 69.2,
+        "orbit_term_along_arcsec": 69.2,
+        "orbit_term_across_arcsec": 69.2,
         "orbit_share_of_limit": 0.1283,
         "median_range_km": 14903.1,
         "median_rate_arcsec_per_s": 39.17
@@ -1188,13 +1334,25 @@
         "rms_cross_track_arcsec": 4482.722,
         "mean_along_track_s": 305.6095,
         "std_along_track_s": 99.8151,
-        "median_limit_arcsec": 187.274,
+        "median_along_track_limit_arcsec": 187.274,
+        "median_cross_track_limit_arcsec": 187.14,
+        "median_normalised_residual": 43.5245,
         "reference_epoch_max_age_days": 0.1066
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 7.08,
-        "orbit_term_arcsec": 51.2,
+        "orbit_term_along_arcsec": 51.2,
+        "orbit_term_across_arcsec": 51.2,
         "orbit_share_of_limit": 0.0747,
         "median_range_km": 20143.6,
         "median_rate_arcsec_per_s": 23.61
@@ -1237,14 +1395,26 @@
         "rms_cross_track_arcsec": 6.215,
         "mean_along_track_s": 17.0614,
         "std_along_track_s": 48.8475,
-        "median_limit_arcsec": 1136.976,
+        "median_along_track_limit_arcsec": 1136.862,
+        "median_cross_track_limit_arcsec": 181.581,
+        "median_normalised_residual": 0.4566,
         "reference_epoch_max_age_days": 0.0862
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "GEO",
+          "age_days": "0–1",
+          "radial_km": 2.0,
+          "in_track_km": 4.0,
+          "cross_track_km": 4.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 1122.32,
-        "orbit_term_arcsec": 26.65,
-        "orbit_share_of_limit": 0.0005,
+        "orbit_term_along_arcsec": 21.26,
+        "orbit_term_across_arcsec": 23.91,
+        "orbit_share_of_limit": 0.0003,
         "median_range_km": 38699.6,
         "median_rate_arcsec_per_s": 14.96
       },
@@ -1276,10 +1446,10 @@
           "100": "fail"
         },
         "wrong_object": {
-          "66051": "fail",
-          "67232": "fail"
+          "66051": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -1310,7 +1480,7 @@
           "mean_along_track_s": 16.2865,
           "rms_cross_track_arcsec": 5.48,
           "fraction_within_limit": 1.0,
-          "result": "pass"
+          "result": "inconclusive"
         },
         {
           "asked_days": 14.0,
@@ -1346,14 +1516,26 @@
         "rms_cross_track_arcsec": 1584.767,
         "mean_along_track_s": -28.4854,
         "std_along_track_s": 25.5502,
-        "median_limit_arcsec": 1143.004,
+        "median_along_track_limit_arcsec": 1142.888,
+        "median_cross_track_limit_arcsec": 181.637,
+        "median_normalised_residual": 8.6186,
         "reference_epoch_max_age_days": 0.1438
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "GEO",
+          "age_days": "0–1",
+          "radial_km": 2.0,
+          "in_track_km": 4.0,
+          "cross_track_km": 4.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 1128.42,
-        "orbit_term_arcsec": 27.11,
-        "orbit_share_of_limit": 0.0006,
+        "orbit_term_along_arcsec": 21.62,
+        "orbit_term_across_arcsec": 24.33,
+        "orbit_share_of_limit": 0.0004,
         "median_range_km": 38048.9,
         "median_rate_arcsec_per_s": 15.05
       },
@@ -1395,14 +1577,26 @@
         "rms_cross_track_arcsec": 1134.527,
         "mean_along_track_s": -40.2589,
         "std_along_track_s": 47.8183,
-        "median_limit_arcsec": 1138.532,
+        "median_along_track_limit_arcsec": 1138.415,
+        "median_cross_track_limit_arcsec": 181.624,
+        "median_normalised_residual": 6.25,
         "reference_epoch_max_age_days": 0.3727
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "GEO",
+          "age_days": "0–1",
+          "radial_km": 2.0,
+          "in_track_km": 4.0,
+          "cross_track_km": 4.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 1123.89,
-        "orbit_term_arcsec": 27.0,
-        "orbit_share_of_limit": 0.0006,
+        "orbit_term_along_arcsec": 21.53,
+        "orbit_term_across_arcsec": 24.23,
+        "orbit_share_of_limit": 0.0004,
         "median_range_km": 38194.8,
         "median_rate_arcsec_per_s": 14.99
       },
@@ -1444,13 +1638,25 @@
         "rms_cross_track_arcsec": 8064.272,
         "mean_along_track_s": 34.378,
         "std_along_track_s": 24.8792,
-        "median_limit_arcsec": 195.894,
+        "median_along_track_limit_arcsec": 195.894,
+        "median_cross_track_limit_arcsec": 195.242,
+        "median_normalised_residual": 42.6267,
         "reference_epoch_max_age_days": 0.0806
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 15.97,
-        "orbit_term_arcsec": 75.63,
+        "orbit_term_along_arcsec": 75.63,
+        "orbit_term_across_arcsec": 75.63,
         "orbit_share_of_limit": 0.149,
         "median_range_km": 13637.0,
         "median_rate_arcsec_per_s": 53.25
@@ -1486,20 +1692,32 @@
       "result": "fail",
       "statistics": {
         "observations": 2,
-        "within_limit": 1,
-        "fraction_within_limit": 0.5,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
         "median_residual_arcsec": 892.206,
         "max_residual_arcsec": 1539.285,
         "rms_cross_track_arcsec": 420.088,
         "mean_along_track_s": 64.19,
         "std_along_track_s": 105.0845,
-        "median_limit_arcsec": 799.456,
+        "median_along_track_limit_arcsec": 799.456,
+        "median_cross_track_limit_arcsec": 182.119,
+        "median_normalised_residual": 2.372,
         "reference_epoch_max_age_days": 0.2599
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 778.44,
-        "orbit_term_arcsec": 27.7,
+        "orbit_term_along_arcsec": 27.7,
+        "orbit_term_across_arcsec": 27.7,
         "orbit_share_of_limit": 0.0012,
         "median_range_km": 37232.5,
         "median_rate_arcsec_per_s": 10.38
@@ -1507,7 +1725,7 @@
       "rounded": {
         "result": "fail",
         "median_residual_arcsec": 891.809,
-        "fraction_within_limit": 0.5
+        "fraction_within_limit": 0.0
       },
       "assumed_angle": {
         "10": "fail",
@@ -1542,14 +1760,26 @@
         "rms_cross_track_arcsec": 107.986,
         "mean_along_track_s": -1.6165,
         "std_along_track_s": 0.3795,
-        "median_limit_arcsec": 1728.798,
+        "median_along_track_limit_arcsec": 1421.895,
+        "median_cross_track_limit_arcsec": 246.987,
+        "median_normalised_residual": 2.6412,
         "reference_epoch_max_age_days": 0.0957
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 698.8,
-        "orbit_term_arcsec": 1570.99,
-        "orbit_share_of_limit": 0.8258,
+        "orbit_term_along_arcsec": 1225.18,
+        "orbit_term_across_arcsec": 169.12,
+        "orbit_share_of_limit": 0.7419,
         "median_range_km": 656.5,
         "median_rate_arcsec_per_s": 2329.34
       },
@@ -1571,7 +1801,7 @@
       "faults_on": "offset removed",
       "faults": {
         "time_shift_s": {
-          "0.25": "pass",
+          "0.25": "fail",
           "0.5": "fail",
           "1": "fail",
           "2": "fail",
@@ -1580,32 +1810,28 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
         "wrong_object": {
           "14208": "fail",
-          "17844": "fail",
           "18374": "fail",
           "19169": "fail",
           "21429": "fail",
           "23343": "fail",
           "39174": "fail",
           "43056": "fail",
-          "43641": "fail",
-          "47353": "fail",
           "52621": "fail",
           "53742": "fail",
-          "53984": "fail",
           "56530": "fail",
           "57115": "fail",
-          "58207": "fail",
           "62078": "fail",
           "100800": "fail",
           "101286": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -1630,14 +1856,26 @@
         "rms_cross_track_arcsec": 341.056,
         "mean_along_track_s": -1.6516,
         "std_along_track_s": 1.6704,
-        "median_limit_arcsec": 713.585,
+        "median_along_track_limit_arcsec": 580.413,
+        "median_cross_track_limit_arcsec": 192.003,
+        "median_normalised_residual": 2.8784,
         "reference_epoch_max_age_days": 0.0078
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 266.84,
-        "orbit_term_arcsec": 636.87,
-        "orbit_share_of_limit": 0.7965,
+        "orbit_term_along_arcsec": 482.99,
+        "orbit_term_across_arcsec": 66.82,
+        "orbit_share_of_limit": 0.6925,
         "median_range_km": 1619.4,
         "median_rate_arcsec_per_s": 889.47
       },
@@ -1679,14 +1917,26 @@
         "rms_cross_track_arcsec": 23.643,
         "mean_along_track_s": -1.6749,
         "std_along_track_s": 0.0553,
-        "median_limit_arcsec": 1895.205,
+        "median_along_track_limit_arcsec": 1586.035,
+        "median_cross_track_limit_arcsec": 252.093,
+        "median_normalised_residual": 2.7498,
         "reference_epoch_max_age_days": 0.0025
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 761.28,
-        "orbit_term_arcsec": 1726.22,
-        "orbit_share_of_limit": 0.8296,
+        "orbit_term_along_arcsec": 1379.62,
+        "orbit_term_across_arcsec": 176.5,
+        "orbit_share_of_limit": 0.7569,
         "median_range_km": 597.4,
         "median_rate_arcsec_per_s": 2537.61
       },
@@ -1723,26 +1973,22 @@
         },
         "wrong_object": {
           "14208": "fail",
-          "17844": "fail",
           "18374": "fail",
           "19169": "fail",
           "21429": "fail",
           "23343": "fail",
           "39174": "fail",
           "43056": "fail",
-          "43641": "fail",
           "46265": "fail",
-          "47353": "fail",
           "53742": "fail",
-          "53984": "fail",
           "56530": "fail",
           "57115": "fail",
-          "58207": "fail",
           "62078": "fail",
           "100800": "fail",
           "101286": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -1767,14 +2013,26 @@
         "rms_cross_track_arcsec": 86.123,
         "mean_along_track_s": -0.0892,
         "std_along_track_s": 0.0042,
-        "median_limit_arcsec": 1829.852,
+        "median_along_track_limit_arcsec": 1385.152,
+        "median_cross_track_limit_arcsec": 261.0,
+        "median_normalised_residual": 0.3457,
         "reference_epoch_max_age_days": 0.3388
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 7.93,
-        "orbit_term_arcsec": 1820.96,
-        "orbit_share_of_limit": 0.9903,
+        "orbit_term_along_arcsec": 1373.38,
+        "orbit_term_across_arcsec": 189.0,
+        "orbit_share_of_limit": 0.9831,
         "median_range_km": 566.3,
         "median_rate_arcsec_per_s": 2641.86
       },
@@ -1793,7 +2051,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -1806,7 +2064,8 @@
           "100": "fail"
         },
         "wrong_object": {},
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -1827,7 +2086,7 @@
           "mean_along_track_s": 6.3394,
           "rms_cross_track_arcsec": 514.06,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 7.0,
@@ -1837,7 +2096,7 @@
           "mean_along_track_s": 2.8833,
           "rms_cross_track_arcsec": 222.41,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 14.0,
@@ -1873,14 +2132,26 @@
         "rms_cross_track_arcsec": 103.275,
         "mean_along_track_s": -0.1186,
         "std_along_track_s": 0.0035,
-        "median_limit_arcsec": 1744.19,
+        "median_along_track_limit_arcsec": 1259.791,
+        "median_cross_track_limit_arcsec": 254.743,
+        "median_normalised_residual": 0.4309,
         "reference_epoch_max_age_days": 0.3202
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 7.14,
-        "orbit_term_arcsec": 1734.86,
-        "orbit_share_of_limit": 0.9893,
+        "orbit_term_along_arcsec": 1246.84,
+        "orbit_term_across_arcsec": 180.26,
+        "orbit_share_of_limit": 0.9796,
         "median_range_km": 594.5,
         "median_rate_arcsec_per_s": 2380.97
       },
@@ -1899,7 +2170,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -1912,7 +2183,8 @@
           "100": "fail"
         },
         "wrong_object": {},
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -1943,7 +2215,7 @@
           "mean_along_track_s": 6.4602,
           "rms_cross_track_arcsec": 510.08,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 14.0,
@@ -1979,14 +2251,26 @@
         "rms_cross_track_arcsec": 122.978,
         "mean_along_track_s": -0.1464,
         "std_along_track_s": 0.0078,
-        "median_limit_arcsec": 1841.407,
+        "median_along_track_limit_arcsec": 1387.364,
+        "median_cross_track_limit_arcsec": 262.282,
+        "median_normalised_residual": 0.504,
         "reference_epoch_max_age_days": 0.5836
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 7.91,
-        "orbit_term_arcsec": 1832.57,
-        "orbit_share_of_limit": 0.9904,
+        "orbit_term_along_arcsec": 1375.6,
+        "orbit_term_across_arcsec": 190.75,
+        "orbit_share_of_limit": 0.9831,
         "median_range_km": 562.9,
         "median_rate_arcsec_per_s": 2636.42
       },
@@ -2005,7 +2289,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -2018,7 +2302,8 @@
           "100": "fail"
         },
         "wrong_object": {},
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -2039,7 +2324,7 @@
           "mean_along_track_s": -0.0215,
           "rms_cross_track_arcsec": 98.99,
           "fraction_within_limit": 1.0,
-          "result": "pass"
+          "result": "inconclusive"
         },
         {
           "asked_days": 7.0,
@@ -2085,14 +2370,26 @@
         "rms_cross_track_arcsec": 25.204,
         "mean_along_track_s": -0.0133,
         "std_along_track_s": 0.027,
-        "median_limit_arcsec": 796.284,
+        "median_along_track_limit_arcsec": 573.211,
+        "median_cross_track_limit_arcsec": 197.185,
+        "median_normalised_residual": 0.1221,
         "reference_epoch_max_age_days": 0.0849
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 2.99,
-        "orbit_term_arcsec": 775.67,
-        "orbit_share_of_limit": 0.9489,
+        "orbit_term_along_arcsec": 544.21,
+        "orbit_term_across_arcsec": 80.51,
+        "orbit_share_of_limit": 0.9014,
         "median_range_km": 1329.6,
         "median_rate_arcsec_per_s": 995.47
       },
@@ -2124,7 +2421,8 @@
           "100": "fail"
         },
         "wrong_object": {},
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -2145,7 +2443,7 @@
           "mean_along_track_s": 29.0457,
           "rms_cross_track_arcsec": 1038.37,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 7.0,
@@ -2155,7 +2453,7 @@
           "mean_along_track_s": 29.0541,
           "rms_cross_track_arcsec": 1055.19,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 14.0,
@@ -2191,14 +2489,26 @@
         "rms_cross_track_arcsec": 92.77,
         "mean_along_track_s": -0.0571,
         "std_along_track_s": 0.0,
-        "median_limit_arcsec": 1443.283,
+        "median_along_track_limit_arcsec": 1210.804,
+        "median_cross_track_limit_arcsec": 228.427,
+        "median_normalised_residual": 0.4424,
         "reference_epoch_max_age_days": 0.1431
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 588.04,
-        "orbit_term_arcsec": 1305.71,
-        "orbit_share_of_limit": 0.8184,
+        "orbit_term_along_arcsec": 1043.01,
+        "orbit_term_across_arcsec": 140.64,
+        "orbit_share_of_limit": 0.742,
         "median_range_km": 789.8,
         "median_rate_arcsec_per_s": 1960.12
       },
@@ -2217,7 +2527,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -2232,7 +2542,8 @@
         "wrong_object": {
           "67232": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -2253,7 +2564,7 @@
           "mean_along_track_s": -0.1304,
           "rms_cross_track_arcsec": 111.33,
           "fraction_within_limit": 1.0,
-          "result": "pass"
+          "result": "inconclusive"
         },
         {
           "asked_days": 7.0,
@@ -2263,7 +2574,7 @@
           "mean_along_track_s": -0.3604,
           "rms_cross_track_arcsec": 107.37,
           "fraction_within_limit": 1.0,
-          "result": "pass"
+          "result": "inconclusive"
         },
         {
           "asked_days": 14.0,
@@ -2299,14 +2610,26 @@
         "rms_cross_track_arcsec": 46.16,
         "mean_along_track_s": 0.0973,
         "std_along_track_s": 0.0,
-        "median_limit_arcsec": 1014.359,
+        "median_along_track_limit_arcsec": 821.201,
+        "median_cross_track_limit_arcsec": 202.321,
+        "median_normalised_residual": 0.2704,
         "reference_epoch_max_age_days": 0.4369
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 386.42,
-        "orbit_term_arcsec": 920.44,
-        "orbit_share_of_limit": 0.8234,
+        "orbit_term_along_arcsec": 701.89,
+        "orbit_term_across_arcsec": 92.38,
+        "orbit_share_of_limit": 0.7305,
         "median_range_km": 1120.5,
         "median_rate_arcsec_per_s": 1288.08
       },
@@ -2337,10 +2660,9 @@
           "10": "fail",
           "100": "fail"
         },
-        "wrong_object": {
-          "66051": "fail"
-        },
-        "fabricated": "pass"
+        "wrong_object": {},
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -2361,7 +2683,7 @@
           "mean_along_track_s": 0.4105,
           "rms_cross_track_arcsec": 76.4,
           "fraction_within_limit": 1.0,
-          "result": "pass"
+          "result": "inconclusive"
         },
         {
           "asked_days": 7.0,
@@ -2371,7 +2693,7 @@
           "mean_along_track_s": -0.7777,
           "rms_cross_track_arcsec": 101.92,
           "fraction_within_limit": 1.0,
-          "result": "pass"
+          "result": "inconclusive"
         }
       ]
     },
@@ -2397,14 +2719,26 @@
         "rms_cross_track_arcsec": 105.389,
         "mean_along_track_s": -1.6134,
         "std_along_track_s": 0.2488,
-        "median_limit_arcsec": 1284.109,
+        "median_along_track_limit_arcsec": 944.83,
+        "median_cross_track_limit_arcsec": 216.794,
+        "median_normalised_residual": 2.565,
         "reference_epoch_max_age_days": 0.0258
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 450.58,
-        "orbit_term_arcsec": 1188.91,
-        "orbit_share_of_limit": 0.8572,
+        "orbit_term_along_arcsec": 810.73,
+        "orbit_term_across_arcsec": 120.83,
+        "orbit_share_of_limit": 0.7363,
         "median_range_km": 867.4,
         "median_rate_arcsec_per_s": 1501.94
       },
@@ -2427,7 +2761,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -2451,7 +2785,8 @@
           "69568": "fail",
           "100365": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -2476,14 +2811,26 @@
         "rms_cross_track_arcsec": 1198.265,
         "mean_along_track_s": -1.4002,
         "std_along_track_s": 0.0824,
-        "median_limit_arcsec": 1209.369,
+        "median_along_track_limit_arcsec": 1009.763,
+        "median_cross_track_limit_arcsec": 212.836,
+        "median_normalised_residual": 2.3495,
         "reference_epoch_max_age_days": 0.0973
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 465.72,
-        "orbit_term_arcsec": 1101.49,
-        "orbit_share_of_limit": 0.8296,
+        "orbit_term_along_arcsec": 877.68,
+        "orbit_term_across_arcsec": 113.58,
+        "orbit_share_of_limit": 0.7555,
         "median_range_km": 936.3,
         "median_rate_arcsec_per_s": 1552.4
       },
@@ -2500,37 +2847,7 @@
       },
       "offset_removed": {
         "shift_s": -1.4002,
-        "result": "pass"
-      },
-      "faults_on": "offset removed",
-      "faults": {
-        "time_shift_s": {
-          "0.25": "pass",
-          "0.5": "pass",
-          "1": "fail",
-          "2": "fail",
-          "5": "fail",
-          "10": "fail",
-          "30": "fail"
-        },
-        "station_moved_km": {
-          "1": "pass",
-          "10": "fail",
-          "100": "fail"
-        },
-        "wrong_object": {
-          "36086": "fail",
-          "48043": "fail",
-          "49175": "fail",
-          "51773": "fail",
-          "54183": "fail",
-          "55945": "fail",
-          "57290": "fail",
-          "59083": "fail",
-          "69568": "fail",
-          "69591": "fail"
-        },
-        "fabricated": "pass"
+        "result": "fail"
       }
     },
     {
@@ -2555,14 +2872,26 @@
         "rms_cross_track_arcsec": 95.38,
         "mean_along_track_s": -1.6719,
         "std_along_track_s": 0.2727,
-        "median_limit_arcsec": 861.405,
+        "median_along_track_limit_arcsec": 603.526,
+        "median_cross_track_limit_arcsec": 198.163,
+        "median_normalised_residual": 2.7025,
         "reference_epoch_max_age_days": 0.0845
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 270.91,
-        "orbit_term_arcsec": 797.58,
-        "orbit_share_of_limit": 0.8574,
+        "orbit_term_along_arcsec": 508.28,
+        "orbit_term_across_arcsec": 82.84,
+        "orbit_share_of_limit": 0.7089,
         "median_range_km": 1294.5,
         "median_rate_arcsec_per_s": 903.04
       },
@@ -2585,7 +2914,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -2599,26 +2928,22 @@
         },
         "wrong_object": {
           "14208": "fail",
-          "17844": "fail",
           "18374": "fail",
           "19169": "fail",
           "21429": "fail",
           "23343": "fail",
           "39174": "fail",
           "43056": "fail",
-          "43641": "fail",
           "46265": "fail",
-          "47353": "fail",
           "52621": "fail",
           "53742": "fail",
-          "53984": "fail",
           "56530": "fail",
           "57115": "fail",
-          "58207": "fail",
           "62078": "fail",
           "101286": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -2643,14 +2968,26 @@
         "rms_cross_track_arcsec": 107.729,
         "mean_along_track_s": -1.6828,
         "std_along_track_s": 0.0647,
-        "median_limit_arcsec": 1313.094,
+        "median_along_track_limit_arcsec": 868.324,
+        "median_cross_track_limit_arcsec": 220.275,
+        "median_normalised_residual": 2.6438,
         "reference_epoch_max_age_days": 0.0411
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 406.44,
-        "orbit_term_arcsec": 1235.57,
-        "orbit_share_of_limit": 0.8854,
+        "orbit_term_along_arcsec": 745.92,
+        "orbit_term_across_arcsec": 126.97,
+        "orbit_share_of_limit": 0.7379,
         "median_range_km": 834.7,
         "median_rate_arcsec_per_s": 1354.79
       },
@@ -2673,7 +3010,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -2686,29 +3023,21 @@
           "100": "fail"
         },
         "wrong_object": {
-          "14208": "fail",
           "17844": "fail",
           "18374": "fail",
-          "18749": "fail",
           "19169": "fail",
           "21429": "fail",
-          "23343": "fail",
           "39174": "fail",
           "43056": "fail",
           "43641": "fail",
           "46265": "fail",
-          "47353": "fail",
           "52621": "fail",
-          "53742": "fail",
-          "53984": "fail",
           "56530": "fail",
-          "57115": "fail",
-          "58193": "fail",
-          "58207": "fail",
           "62078": "fail",
           "100800": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "fail"
       }
     },
     {
@@ -2733,14 +3062,26 @@
         "rms_cross_track_arcsec": 1107.551,
         "mean_along_track_s": -2.8193,
         "std_along_track_s": 0.8583,
-        "median_limit_arcsec": 840.65,
+        "median_along_track_limit_arcsec": 687.215,
+        "median_cross_track_limit_arcsec": 196.242,
+        "median_normalised_residual": 7.5337,
         "reference_epoch_max_age_days": 0.0023
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 316.9,
-        "orbit_term_arcsec": 757.54,
-        "orbit_share_of_limit": 0.812,
+        "orbit_term_along_arcsec": 582.61,
+        "orbit_term_across_arcsec": 78.17,
+        "orbit_share_of_limit": 0.7187,
         "median_range_km": 1361.4,
         "median_rate_arcsec_per_s": 1056.33
       },
@@ -2782,14 +3123,26 @@
         "rms_cross_track_arcsec": 1072.264,
         "mean_along_track_s": -1.8369,
         "std_along_track_s": 0.6578,
-        "median_limit_arcsec": 1609.268,
+        "median_along_track_limit_arcsec": 1266.581,
+        "median_cross_track_limit_arcsec": 239.549,
+        "median_normalised_residual": 3.4945,
         "reference_epoch_max_age_days": 0.0066
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 618.87,
-        "orbit_term_arcsec": 1474.56,
-        "orbit_share_of_limit": 0.8396,
+        "orbit_term_along_arcsec": 1090.33,
+        "orbit_term_across_arcsec": 158.06,
+        "orbit_share_of_limit": 0.7411,
         "median_range_km": 699.4,
         "median_rate_arcsec_per_s": 2062.9
       },
@@ -2806,45 +3159,7 @@
       },
       "offset_removed": {
         "shift_s": -1.8369,
-        "result": "pass"
-      },
-      "faults_on": "offset removed",
-      "faults": {
-        "time_shift_s": {
-          "0.25": "pass",
-          "0.5": "fail",
-          "1": "fail",
-          "2": "fail",
-          "5": "fail",
-          "10": "fail",
-          "30": "fail"
-        },
-        "station_moved_km": {
-          "1": "pass",
-          "10": "fail",
-          "100": "fail"
-        },
-        "wrong_object": {
-          "17844": "fail",
-          "18374": "fail",
-          "19169": "fail",
-          "21429": "fail",
-          "39174": "fail",
-          "43056": "fail",
-          "43641": "fail",
-          "46265": "fail",
-          "47353": "fail",
-          "52621": "fail",
-          "53984": "fail",
-          "56530": "fail",
-          "57115": "fail",
-          "58193": "fail",
-          "58207": "fail",
-          "62078": "fail",
-          "100800": "fail",
-          "101286": "fail"
-        },
-        "fabricated": "pass"
+        "result": "fail"
       }
     },
     {
@@ -2869,13 +3184,25 @@
         "rms_cross_track_arcsec": 4087.139,
         "mean_along_track_s": -268.0925,
         "std_along_track_s": 82.3131,
-        "median_limit_arcsec": 185.194,
+        "median_along_track_limit_arcsec": 185.194,
+        "median_cross_track_limit_arcsec": 185.063,
+        "median_normalised_residual": 40.8754,
         "reference_epoch_max_age_days": 0.3985
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 6.97,
-        "orbit_term_arcsec": 42.99,
+        "orbit_term_along_arcsec": 42.99,
+        "orbit_term_across_arcsec": 42.99,
         "orbit_share_of_limit": 0.0539,
         "median_range_km": 23989.2,
         "median_rate_arcsec_per_s": 23.24
@@ -2918,14 +3245,26 @@
         "rms_cross_track_arcsec": 118.007,
         "mean_along_track_s": -1.0238,
         "std_along_track_s": 3.3766,
-        "median_limit_arcsec": 1554.683,
+        "median_along_track_limit_arcsec": 1217.836,
+        "median_cross_track_limit_arcsec": 235.69,
+        "median_normalised_residual": 2.9967,
         "reference_epoch_max_age_days": 0.0692
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 601.37,
-        "orbit_term_arcsec": 1422.32,
-        "orbit_share_of_limit": 0.837,
+        "orbit_term_along_arcsec": 1043.59,
+        "orbit_term_across_arcsec": 152.15,
+        "orbit_share_of_limit": 0.7343,
         "median_range_km": 725.1,
         "median_rate_arcsec_per_s": 2004.55
       },
@@ -2967,13 +3306,25 @@
         "rms_cross_track_arcsec": 917.08,
         "mean_along_track_s": -39.6162,
         "std_along_track_s": 1.8102,
-        "median_limit_arcsec": 385.689,
+        "median_along_track_limit_arcsec": 385.689,
+        "median_cross_track_limit_arcsec": 187.203,
+        "median_normalised_residual": 5.2887,
         "reference_epoch_max_age_days": 0.6409
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 337.21,
-        "orbit_term_arcsec": 51.43,
+        "orbit_term_along_arcsec": 51.43,
+        "orbit_term_across_arcsec": 51.43,
         "orbit_share_of_limit": 0.0178,
         "median_range_km": 20052.6,
         "median_rate_arcsec_per_s": 22.48
@@ -3016,13 +3367,25 @@
         "rms_cross_track_arcsec": 2469.894,
         "mean_along_track_s": -111.3366,
         "std_along_track_s": 101.9611,
-        "median_limit_arcsec": 1064.637,
+        "median_along_track_limit_arcsec": 1064.637,
+        "median_cross_track_limit_arcsec": 182.396,
+        "median_normalised_residual": 13.5428,
         "reference_epoch_max_age_days": 0.1634
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 1048.9,
-        "orbit_term_arcsec": 29.47,
+        "orbit_term_along_arcsec": 29.47,
+        "orbit_term_across_arcsec": 29.47,
         "orbit_share_of_limit": 0.0008,
         "median_range_km": 34996.9,
         "median_rate_arcsec_per_s": 7.77
@@ -3058,9 +3421,19 @@
       "result": "inconclusive",
       "statistics": {},
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 1775.25,
-        "orbit_term_arcsec": 52.4,
+        "orbit_term_along_arcsec": 52.4,
+        "orbit_term_across_arcsec": 52.4,
         "orbit_share_of_limit": 0.0009,
         "median_range_km": 19681.4,
         "median_rate_arcsec_per_s": 33.81
@@ -3099,14 +3472,26 @@
         "rms_cross_track_arcsec": 94.713,
         "mean_along_track_s": -1.3196,
         "std_along_track_s": 0.2935,
-        "median_limit_arcsec": 1782.812,
+        "median_along_track_limit_arcsec": 1283.288,
+        "median_cross_track_limit_arcsec": 248.944,
+        "median_normalised_residual": 2.0976,
         "reference_epoch_max_age_days": 0.0397
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 608.9,
-        "orbit_term_arcsec": 1665.91,
-        "orbit_share_of_limit": 0.8732,
+        "orbit_term_along_arcsec": 1115.2,
+        "orbit_term_across_arcsec": 171.97,
+        "orbit_share_of_limit": 0.7552,
         "median_range_km": 619.1,
         "median_rate_arcsec_per_s": 2029.66
       },
@@ -3129,7 +3514,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -3137,7 +3522,7 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
@@ -3153,7 +3538,8 @@
           "69591": "fail",
           "100365": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -3178,14 +3564,26 @@
         "rms_cross_track_arcsec": 334.564,
         "mean_along_track_s": -212.5985,
         "std_along_track_s": 26.9247,
-        "median_limit_arcsec": 681.083,
+        "median_along_track_limit_arcsec": 680.935,
+        "median_cross_track_limit_arcsec": 181.237,
+        "median_normalised_residual": 4.3319,
         "reference_epoch_max_age_days": 0.1606
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "GEO",
+          "age_days": "0–1",
+          "radial_km": 2.0,
+          "in_track_km": 4.0,
+          "cross_track_km": 4.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 656.45,
-        "orbit_term_arcsec": 23.54,
-        "orbit_share_of_limit": 0.0012,
+        "orbit_term_along_arcsec": 18.76,
+        "orbit_term_across_arcsec": 21.14,
+        "orbit_share_of_limit": 0.0008,
         "median_range_km": 43814.4,
         "median_rate_arcsec_per_s": 12.5
       },
@@ -3202,7 +3600,7 @@
       },
       "offset_removed": {
         "shift_s": -212.5985,
-        "result": "pass"
+        "result": "fail"
       }
     },
     {
@@ -3227,13 +3625,25 @@
         "rms_cross_track_arcsec": 5402.389,
         "mean_along_track_s": 800.1777,
         "std_along_track_s": 63.3051,
-        "median_limit_arcsec": 2704.341,
+        "median_along_track_limit_arcsec": 2704.293,
+        "median_cross_track_limit_arcsec": 181.584,
+        "median_normalised_residual": 30.0471,
         "reference_epoch_max_age_days": 0.3784
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "GEO",
+          "age_days": "0–1",
+          "radial_km": 2.0,
+          "in_track_km": 4.0,
+          "cross_track_km": 4.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 2698.21,
-        "orbit_term_arcsec": 26.66,
+        "orbit_term_along_arcsec": 21.25,
+        "orbit_term_across_arcsec": 23.93,
         "orbit_share_of_limit": 0.0001,
         "median_range_km": 38678.1,
         "median_rate_arcsec_per_s": 14.99
@@ -3276,14 +3686,26 @@
         "rms_cross_track_arcsec": 2257.161,
         "mean_along_track_s": -196.0615,
         "std_along_track_s": 63.5545,
-        "median_limit_arcsec": 184.654,
+        "median_along_track_limit_arcsec": 184.548,
+        "median_cross_track_limit_arcsec": 180.049,
+        "median_normalised_residual": 36.6062,
         "reference_epoch_max_age_days": 0.2456
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "MEO",
+          "age_days": "0–3",
+          "radial_km": 1.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 8.29,
-        "orbit_term_arcsec": 40.35,
-        "orbit_share_of_limit": 0.0478,
+        "orbit_term_along_arcsec": 39.86,
+        "orbit_term_across_arcsec": 4.22,
+        "orbit_share_of_limit": 0.0467,
         "median_range_km": 25557.0,
         "median_rate_arcsec_per_s": 27.63
       },
@@ -3325,14 +3747,26 @@
         "rms_cross_track_arcsec": 69.628,
         "mean_along_track_s": -1.7158,
         "std_along_track_s": 0.2443,
-        "median_limit_arcsec": 1478.504,
+        "median_along_track_limit_arcsec": 1176.031,
+        "median_cross_track_limit_arcsec": 229.911,
+        "median_normalised_residual": 2.8833,
         "reference_epoch_max_age_days": 0.1082
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 573.17,
-        "orbit_term_arcsec": 1350.94,
-        "orbit_share_of_limit": 0.8349,
+        "orbit_term_along_arcsec": 1011.0,
+        "orbit_term_across_arcsec": 143.03,
+        "orbit_share_of_limit": 0.7366,
         "median_range_km": 763.4,
         "median_rate_arcsec_per_s": 1910.58
       },
@@ -3355,7 +3789,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -3368,26 +3802,20 @@
           "100": "fail"
         },
         "wrong_object": {
-          "17844": "fail",
           "18374": "fail",
           "18749": "fail",
           "19169": "fail",
           "21429": "fail",
           "39174": "fail",
           "43056": "fail",
-          "46265": "fail",
           "47353": "fail",
-          "52621": "fail",
           "53984": "fail",
-          "56530": "fail",
-          "57115": "fail",
           "58193": "fail",
           "58207": "fail",
-          "62078": "fail",
-          "100800": "fail",
-          "101286": "fail"
+          "62078": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -3412,14 +3840,26 @@
         "rms_cross_track_arcsec": 173.461,
         "mean_along_track_s": -1.8136,
         "std_along_track_s": 0.3251,
-        "median_limit_arcsec": 1323.759,
+        "median_along_track_limit_arcsec": 945.792,
+        "median_cross_track_limit_arcsec": 222.687,
+        "median_normalised_residual": 3.0384,
         "reference_epoch_max_age_days": 0.0964
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 464.18,
-        "orbit_term_arcsec": 1226.57,
-        "orbit_share_of_limit": 0.8586,
+        "orbit_term_along_arcsec": 804.15,
+        "orbit_term_across_arcsec": 131.11,
+        "orbit_share_of_limit": 0.7299,
         "median_range_km": 840.8,
         "median_rate_arcsec_per_s": 1547.27
       },
@@ -3436,48 +3876,7 @@
       },
       "offset_removed": {
         "shift_s": -1.8136,
-        "result": "pass"
-      },
-      "faults_on": "offset removed",
-      "faults": {
-        "time_shift_s": {
-          "0.25": "pass",
-          "0.5": "pass",
-          "1": "fail",
-          "2": "fail",
-          "5": "fail",
-          "10": "fail",
-          "30": "fail"
-        },
-        "station_moved_km": {
-          "1": "pass",
-          "10": "fail",
-          "100": "fail"
-        },
-        "wrong_object": {
-          "14208": "fail",
-          "17844": "fail",
-          "18374": "fail",
-          "18749": "fail",
-          "19169": "fail",
-          "21429": "fail",
-          "23343": "fail",
-          "39174": "fail",
-          "43056": "fail",
-          "46265": "fail",
-          "47353": "fail",
-          "52621": "fail",
-          "53742": "fail",
-          "53984": "fail",
-          "56530": "fail",
-          "57115": "fail",
-          "58193": "fail",
-          "58207": "fail",
-          "62078": "fail",
-          "100800": "fail",
-          "101286": "fail"
-        },
-        "fabricated": "pass"
+        "result": "fail"
       }
     },
     {
@@ -3502,13 +3901,25 @@
         "rms_cross_track_arcsec": 1704.438,
         "mean_along_track_s": 149.6287,
         "std_along_track_s": 52.9784,
-        "median_limit_arcsec": 926.106,
+        "median_along_track_limit_arcsec": 926.106,
+        "median_cross_track_limit_arcsec": 182.516,
+        "median_normalised_residual": 9.4855,
         "reference_epoch_max_age_days": 0.7665
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "not-measured",
+          "description": "an orbit class not measured in step 6.1",
+          "orbit_class": "HEO",
+          "age_days": "0–7",
+          "radial_km": 5.0,
+          "in_track_km": 5.0,
+          "cross_track_km": 5.0
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 907.94,
-        "orbit_term_arcsec": 30.2,
+        "orbit_term_along_arcsec": 30.2,
+        "orbit_term_across_arcsec": 30.2,
         "orbit_share_of_limit": 0.0011,
         "median_range_km": 34151.9,
         "median_rate_arcsec_per_s": 12.11
@@ -3551,14 +3962,26 @@
         "rms_cross_track_arcsec": 94.623,
         "mean_along_track_s": -1.8057,
         "std_along_track_s": 0.218,
-        "median_limit_arcsec": 1719.214,
+        "median_along_track_limit_arcsec": 1357.625,
+        "median_cross_track_limit_arcsec": 242.149,
+        "median_normalised_residual": 2.9307,
         "reference_epoch_max_age_days": 0.0569
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 645.52,
-        "orbit_term_arcsec": 1583.23,
-        "orbit_share_of_limit": 0.8481,
+        "orbit_term_along_arcsec": 1180.7,
+        "orbit_term_across_arcsec": 161.98,
+        "orbit_share_of_limit": 0.7556,
         "median_range_km": 651.4,
         "median_rate_arcsec_per_s": 2151.73
       },
@@ -3581,7 +4004,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -3594,7 +4017,6 @@
           "100": "fail"
         },
         "wrong_object": {
-          "17844": "fail",
           "18374": "fail",
           "18749": "fail",
           "19169": "fail",
@@ -3602,17 +4024,13 @@
           "39174": "fail",
           "43056": "fail",
           "43641": "fail",
-          "46265": "fail",
-          "52621": "inconclusive",
           "53984": "fail",
-          "56530": "fail",
           "58193": "fail",
           "58207": "fail",
-          "62078": "fail",
-          "100800": "fail",
-          "101286": "fail"
+          "62078": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -3637,14 +4055,26 @@
         "rms_cross_track_arcsec": 109.301,
         "mean_along_track_s": -1.3268,
         "std_along_track_s": 0.197,
-        "median_limit_arcsec": 1377.283,
+        "median_along_track_limit_arcsec": 1093.134,
+        "median_cross_track_limit_arcsec": 222.979,
+        "median_normalised_residual": 2.1822,
         "reference_epoch_max_age_days": 0.0785
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 520.18,
-        "orbit_term_arcsec": 1262.51,
-        "orbit_share_of_limit": 0.8403,
+        "orbit_term_along_arcsec": 944.43,
+        "orbit_term_across_arcsec": 131.6,
+        "orbit_share_of_limit": 0.7464,
         "median_range_km": 816.9,
         "median_rate_arcsec_per_s": 1733.94
       },
@@ -3667,7 +4097,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -3691,7 +4121,8 @@
           "69591": "fail",
           "100365": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -3709,28 +4140,40 @@
       "result": "fail",
       "statistics": {
         "observations": 46,
-        "within_limit": 3,
-        "fraction_within_limit": 0.0652,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
         "median_residual_arcsec": 1919.866,
         "max_residual_arcsec": 4049.265,
         "rms_cross_track_arcsec": 50.663,
         "mean_along_track_s": -1.4375,
         "std_along_track_s": 0.2268,
-        "median_limit_arcsec": 1395.893,
+        "median_along_track_limit_arcsec": 899.272,
+        "median_cross_track_limit_arcsec": 226.691,
+        "median_normalised_residual": 2.2206,
         "reference_epoch_max_age_days": 0.058
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 421.06,
-        "orbit_term_arcsec": 1318.65,
-        "orbit_share_of_limit": 0.8924,
+        "orbit_term_along_arcsec": 773.95,
+        "orbit_term_across_arcsec": 137.8,
+        "orbit_share_of_limit": 0.7407,
         "median_range_km": 782.1,
         "median_rate_arcsec_per_s": 1403.53
       },
       "rounded": {
         "result": "fail",
         "median_residual_arcsec": 1915.496,
-        "fraction_within_limit": 0.0652
+        "fraction_within_limit": 0.0
       },
       "assumed_angle": {
         "10": "fail",
@@ -3746,7 +4189,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -3770,7 +4213,8 @@
           "69591": "fail",
           "100365": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -3795,14 +4239,26 @@
         "rms_cross_track_arcsec": 147.121,
         "mean_along_track_s": -1.541,
         "std_along_track_s": 0.3408,
-        "median_limit_arcsec": 1815.982,
+        "median_along_track_limit_arcsec": 1502.917,
+        "median_cross_track_limit_arcsec": 247.648,
+        "median_normalised_residual": 2.5343,
         "reference_epoch_max_age_days": 0.021
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 720.1,
-        "orbit_term_arcsec": 1657.36,
-        "orbit_share_of_limit": 0.8329,
+        "orbit_term_along_arcsec": 1306.84,
+        "orbit_term_across_arcsec": 170.09,
+        "orbit_share_of_limit": 0.7555,
         "median_range_km": 622.3,
         "median_rate_arcsec_per_s": 2400.32
       },
@@ -3825,7 +4281,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -3839,26 +4295,22 @@
         },
         "wrong_object": {
           "14208": "fail",
-          "17844": "fail",
           "18374": "fail",
           "19169": "fail",
           "21429": "fail",
           "23343": "fail",
           "39174": "fail",
           "43056": "fail",
-          "43641": "fail",
           "46265": "fail",
-          "47353": "fail",
           "52621": "fail",
-          "53984": "fail",
           "56530": "fail",
           "57115": "fail",
-          "58207": "fail",
           "62078": "fail",
           "100800": "fail",
           "101286": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "fail"
       }
     },
     {
@@ -3883,14 +4335,26 @@
         "rms_cross_track_arcsec": 1925.109,
         "mean_along_track_s": 183.228,
         "std_along_track_s": 41.0931,
-        "median_limit_arcsec": 2120.862,
+        "median_along_track_limit_arcsec": 2120.791,
+        "median_cross_track_limit_arcsec": 181.855,
+        "median_normalised_residual": 10.6435,
         "reference_epoch_max_age_days": 0.4299
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "GEO",
+          "age_days": "0–1",
+          "radial_km": 2.0,
+          "in_track_km": 4.0,
+          "cross_track_km": 4.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 2113.01,
-        "orbit_term_arcsec": 28.88,
-        "orbit_share_of_limit": 0.0002,
+        "orbit_term_along_arcsec": 23.09,
+        "orbit_term_across_arcsec": 25.91,
+        "orbit_share_of_limit": 0.0001,
         "median_range_km": 35704.6,
         "median_rate_arcsec_per_s": 15.65
       },
@@ -3907,7 +4371,7 @@
       },
       "offset_removed": {
         "shift_s": 183.228,
-        "result": "pass"
+        "result": "fail"
       }
     },
     {
@@ -3932,14 +4396,26 @@
         "rms_cross_track_arcsec": 77.509,
         "mean_along_track_s": -1.6078,
         "std_along_track_s": 0.2518,
-        "median_limit_arcsec": 2040.657,
+        "median_along_track_limit_arcsec": 1605.499,
+        "median_cross_track_limit_arcsec": 265.269,
+        "median_normalised_residual": 2.722,
         "reference_epoch_max_age_days": 0.0268
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 770.84,
-        "orbit_term_arcsec": 1880.87,
-        "orbit_share_of_limit": 0.8495,
+        "orbit_term_along_arcsec": 1397.06,
+        "orbit_term_across_arcsec": 194.85,
+        "orbit_share_of_limit": 0.756,
         "median_range_km": 548.3,
         "median_rate_arcsec_per_s": 2569.48
       },
@@ -3962,7 +4438,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -3970,12 +4446,11 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
         "wrong_object": {
-          "17844": "fail",
           "18374": "fail",
           "18749": "fail",
           "19169": "fail",
@@ -3983,18 +4458,13 @@
           "39174": "fail",
           "43056": "fail",
           "43641": "fail",
-          "46265": "fail",
           "47353": "fail",
-          "52621": "fail",
-          "56530": "fail",
-          "57115": "fail",
           "58193": "fail",
           "58207": "fail",
-          "62078": "fail",
-          "100800": "fail",
-          "101286": "fail"
+          "62078": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -4019,14 +4489,26 @@
         "rms_cross_track_arcsec": 98.37,
         "mean_along_track_s": -1.5274,
         "std_along_track_s": 0.1912,
-        "median_limit_arcsec": 2066.168,
+        "median_along_track_limit_arcsec": 1725.907,
+        "median_cross_track_limit_arcsec": 264.527,
+        "median_normalised_residual": 2.4365,
         "reference_epoch_max_age_days": 0.0567
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 828.72,
-        "orbit_term_arcsec": 1884.11,
-        "orbit_share_of_limit": 0.8315,
+        "orbit_term_along_arcsec": 1502.91,
+        "orbit_term_across_arcsec": 193.84,
+        "orbit_share_of_limit": 0.758,
         "median_range_km": 547.4,
         "median_rate_arcsec_per_s": 2762.38
       },
@@ -4049,7 +4531,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -4057,7 +4539,7 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
@@ -4073,7 +4555,8 @@
           "69591": "fail",
           "100365": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -4098,14 +4581,26 @@
         "rms_cross_track_arcsec": 83.776,
         "mean_along_track_s": -1.4647,
         "std_along_track_s": 0.1457,
-        "median_limit_arcsec": 1442.465,
+        "median_along_track_limit_arcsec": 981.166,
+        "median_cross_track_limit_arcsec": 230.107,
+        "median_normalised_residual": 2.3553,
         "reference_epoch_max_age_days": 0.0944
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 473.46,
-        "orbit_term_arcsec": 1350.61,
-        "orbit_share_of_limit": 0.8767,
+        "orbit_term_along_arcsec": 840.31,
+        "orbit_term_across_arcsec": 143.35,
+        "orbit_share_of_limit": 0.7335,
         "median_range_km": 763.6,
         "median_rate_arcsec_per_s": 1578.21
       },
@@ -4128,7 +4623,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -4152,7 +4647,8 @@
           "69591": "fail",
           "100365": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -4177,14 +4673,26 @@
         "rms_cross_track_arcsec": 51.368,
         "mean_along_track_s": -1.6508,
         "std_along_track_s": 0.0095,
-        "median_limit_arcsec": 2070.503,
+        "median_along_track_limit_arcsec": 1677.333,
+        "median_cross_track_limit_arcsec": 264.718,
+        "median_normalised_residual": 2.6875,
         "reference_epoch_max_age_days": 0.0236
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 802.33,
-        "orbit_term_arcsec": 1900.22,
-        "orbit_share_of_limit": 0.8423,
+        "orbit_term_along_arcsec": 1461.96,
+        "orbit_term_across_arcsec": 194.1,
+        "orbit_share_of_limit": 0.7597,
         "median_range_km": 542.7,
         "median_rate_arcsec_per_s": 2674.43
       },
@@ -4215,32 +4723,28 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
         "wrong_object": {
           "14208": "fail",
-          "17844": "fail",
           "18374": "fail",
           "19169": "fail",
           "21429": "fail",
           "23343": "fail",
           "39174": "fail",
           "43056": "fail",
-          "43641": "fail",
           "46265": "fail",
-          "47353": "fail",
           "52621": "fail",
           "53742": "fail",
-          "53984": "fail",
           "57115": "fail",
-          "58207": "fail",
           "62078": "fail",
           "100800": "fail",
           "101286": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -4265,14 +4769,26 @@
         "rms_cross_track_arcsec": 64.371,
         "mean_along_track_s": -1.5765,
         "std_along_track_s": 0.1764,
-        "median_limit_arcsec": 2092.906,
+        "median_along_track_limit_arcsec": 1673.256,
+        "median_cross_track_limit_arcsec": 266.436,
+        "median_normalised_residual": 2.5937,
         "reference_epoch_max_age_days": 0.0011
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 797.02,
-        "orbit_term_arcsec": 1926.69,
-        "orbit_share_of_limit": 0.8477,
+        "orbit_term_along_arcsec": 1460.15,
+        "orbit_term_across_arcsec": 196.4,
+        "orbit_share_of_limit": 0.761,
         "median_range_km": 535.8,
         "median_rate_arcsec_per_s": 2656.74
       },
@@ -4303,32 +4819,28 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
         "wrong_object": {
           "14208": "fail",
-          "17844": "fail",
           "18374": "fail",
           "19169": "fail",
           "21429": "fail",
           "23343": "fail",
           "39174": "fail",
           "43056": "fail",
-          "43641": "fail",
           "46265": "fail",
-          "47353": "fail",
           "52621": "fail",
           "53742": "fail",
-          "53984": "fail",
           "56530": "fail",
-          "58207": "fail",
           "62078": "fail",
           "100800": "fail",
           "101286": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -4353,14 +4865,26 @@
         "rms_cross_track_arcsec": 60.381,
         "mean_along_track_s": -1.4961,
         "std_along_track_s": 0.1274,
-        "median_limit_arcsec": 1443.781,
+        "median_along_track_limit_arcsec": 998.723,
+        "median_cross_track_limit_arcsec": 226.998,
+        "median_normalised_residual": 2.2517,
         "reference_epoch_max_age_days": 0.0532
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 467.12,
-        "orbit_term_arcsec": 1354.22,
-        "orbit_share_of_limit": 0.8798,
+        "orbit_term_along_arcsec": 864.2,
+        "orbit_term_across_arcsec": 138.3,
+        "orbit_share_of_limit": 0.7488,
         "median_range_km": 761.6,
         "median_rate_arcsec_per_s": 1557.06
       },
@@ -4383,7 +4907,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -4391,7 +4915,7 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
@@ -4407,7 +4931,8 @@
           "69591": "fail",
           "100365": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -4425,28 +4950,40 @@
       "result": "fail",
       "statistics": {
         "observations": 10,
-        "within_limit": 1,
-        "fraction_within_limit": 0.1,
+        "within_limit": 0,
+        "fraction_within_limit": 0.0,
         "median_residual_arcsec": 3746.821,
         "max_residual_arcsec": 13181.663,
         "rms_cross_track_arcsec": 158.236,
         "mean_along_track_s": -2.1775,
         "std_along_track_s": 2.0338,
-        "median_limit_arcsec": 1870.518,
+        "median_along_track_limit_arcsec": 1331.847,
+        "median_cross_track_limit_arcsec": 254.173,
+        "median_normalised_residual": 2.7514,
         "reference_epoch_max_age_days": 0.0245
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 631.67,
-        "orbit_term_arcsec": 1751.41,
-        "orbit_share_of_limit": 0.8767,
+        "orbit_term_along_arcsec": 1158.63,
+        "orbit_term_across_arcsec": 179.45,
+        "orbit_share_of_limit": 0.7568,
         "median_range_km": 588.9,
         "median_rate_arcsec_per_s": 2105.55
       },
       "rounded": {
         "result": "fail",
         "median_residual_arcsec": 3757.667,
-        "fraction_within_limit": 0.1
+        "fraction_within_limit": 0.0
       },
       "assumed_angle": {
         "10": "fail",
@@ -4481,14 +5018,26 @@
         "rms_cross_track_arcsec": 57.909,
         "mean_along_track_s": -1.6433,
         "std_along_track_s": 0.2991,
-        "median_limit_arcsec": 1514.229,
+        "median_along_track_limit_arcsec": 1045.309,
+        "median_cross_track_limit_arcsec": 231.114,
+        "median_normalised_residual": 2.7493,
         "reference_epoch_max_age_days": 0.0476
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 489.9,
-        "orbit_term_arcsec": 1421.44,
-        "orbit_share_of_limit": 0.8812,
+        "orbit_term_along_arcsec": 905.68,
+        "orbit_term_across_arcsec": 144.96,
+        "orbit_share_of_limit": 0.7507,
         "median_range_km": 725.5,
         "median_rate_arcsec_per_s": 1633.01
       },
@@ -4511,7 +5060,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -4519,12 +5068,11 @@
           "30": "fail"
         },
         "station_moved_km": {
-          "1": "pass",
+          "1": "fail",
           "10": "fail",
           "100": "fail"
         },
         "wrong_object": {
-          "17844": "fail",
           "18374": "fail",
           "18749": "fail",
           "19169": "fail",
@@ -4532,18 +5080,13 @@
           "39174": "fail",
           "43056": "fail",
           "43641": "fail",
-          "46265": "fail",
           "47353": "fail",
-          "52621": "fail",
           "53984": "fail",
-          "56530": "fail",
-          "57115": "fail",
           "58193": "fail",
-          "62078": "fail",
-          "100800": "fail",
-          "101286": "fail"
+          "62078": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -4568,14 +5111,26 @@
         "rms_cross_track_arcsec": 2950.958,
         "mean_along_track_s": -1.5296,
         "std_along_track_s": 2.5511,
-        "median_limit_arcsec": 1306.446,
+        "median_along_track_limit_arcsec": 797.792,
+        "median_cross_track_limit_arcsec": 220.337,
+        "median_normalised_residual": 15.1387,
         "reference_epoch_max_age_days": 0.067
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 368.34,
-        "orbit_term_arcsec": 1240.46,
-        "orbit_share_of_limit": 0.9015,
+        "orbit_term_along_arcsec": 684.4,
+        "orbit_term_across_arcsec": 127.08,
+        "orbit_share_of_limit": 0.7359,
         "median_range_km": 831.4,
         "median_rate_arcsec_per_s": 1227.78
       },
@@ -4617,14 +5172,26 @@
         "rms_cross_track_arcsec": 38.447,
         "mean_along_track_s": -0.1528,
         "std_along_track_s": 0.0143,
-        "median_limit_arcsec": 928.558,
+        "median_along_track_limit_arcsec": 710.917,
+        "median_cross_track_limit_arcsec": 203.473,
+        "median_normalised_residual": 0.3125,
         "reference_epoch_max_age_days": 0.064
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 3.8,
-        "orbit_term_arcsec": 910.94,
-        "orbit_share_of_limit": 0.9624,
+        "orbit_term_along_arcsec": 687.74,
+        "orbit_term_across_arcsec": 94.87,
+        "orbit_share_of_limit": 0.9359,
         "median_range_km": 1132.2,
         "median_rate_arcsec_per_s": 1267.59
       },
@@ -4643,7 +5210,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -4656,7 +5223,8 @@
           "100": "fail"
         },
         "wrong_object": {},
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -4677,7 +5245,7 @@
           "mean_along_track_s": 7.6607,
           "rms_cross_track_arcsec": 196.92,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 7.0,
@@ -4687,7 +5255,7 @@
           "mean_along_track_s": 5.3835,
           "rms_cross_track_arcsec": 75.67,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 14.0,
@@ -4723,14 +5291,26 @@
         "rms_cross_track_arcsec": 46.52,
         "mean_along_track_s": -0.0372,
         "std_along_track_s": 0.0166,
-        "median_limit_arcsec": 862.014,
+        "median_along_track_limit_arcsec": 651.312,
+        "median_cross_track_limit_arcsec": 200.196,
+        "median_normalised_residual": 0.2281,
         "reference_epoch_max_age_days": 0.012
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 3.47,
-        "orbit_term_arcsec": 843.0,
-        "orbit_share_of_limit": 0.9564,
+        "orbit_term_along_arcsec": 625.94,
+        "orbit_term_across_arcsec": 87.63,
+        "orbit_share_of_limit": 0.9236,
         "median_range_km": 1223.4,
         "median_rate_arcsec_per_s": 1157.97
       },
@@ -4762,7 +5342,8 @@
           "100": "fail"
         },
         "wrong_object": {},
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -4783,7 +5364,7 @@
           "mean_along_track_s": -3.3438,
           "rms_cross_track_arcsec": 78.26,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 7.0,
@@ -4829,14 +5410,26 @@
         "rms_cross_track_arcsec": 27.0,
         "mean_along_track_s": -0.0724,
         "std_along_track_s": 0.0223,
-        "median_limit_arcsec": 868.926,
+        "median_along_track_limit_arcsec": 647.647,
+        "median_cross_track_limit_arcsec": 137.708,
+        "median_normalised_residual": 0.2218,
         "reference_epoch_max_age_days": 0.231
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 103.71,
         "timing_term_arcsec": 3.53,
-        "orbit_term_arcsec": 862.71,
-        "orbit_share_of_limit": 0.9857,
+        "orbit_term_along_arcsec": 639.31,
+        "orbit_term_across_arcsec": 89.49,
+        "orbit_share_of_limit": 0.9744,
         "median_range_km": 1195.4,
         "median_rate_arcsec_per_s": 1177.95
       },
@@ -4855,7 +5448,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -4868,7 +5461,8 @@
           "100": "fail"
         },
         "wrong_object": {},
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -4889,7 +5483,7 @@
           "mean_along_track_s": -1.899,
           "rms_cross_track_arcsec": 262.77,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 7.0,
@@ -4899,7 +5493,7 @@
           "mean_along_track_s": -21.2871,
           "rms_cross_track_arcsec": 1249.86,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 14.0,
@@ -4935,14 +5529,26 @@
         "rms_cross_track_arcsec": 15.785,
         "mean_along_track_s": 0.0191,
         "std_along_track_s": 0.0495,
-        "median_limit_arcsec": 799.023,
+        "median_along_track_limit_arcsec": 600.245,
+        "median_cross_track_limit_arcsec": 197.276,
+        "median_normalised_residual": 0.1123,
         "reference_epoch_max_age_days": 0.085
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 3.16,
-        "orbit_term_arcsec": 778.48,
-        "orbit_share_of_limit": 0.9492,
+        "orbit_term_along_arcsec": 572.61,
+        "orbit_term_across_arcsec": 80.73,
+        "orbit_share_of_limit": 0.91,
         "median_range_km": 1324.8,
         "median_rate_arcsec_per_s": 1052.61
       },
@@ -4974,7 +5580,8 @@
           "100": "fail"
         },
         "wrong_object": {},
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       },
       "reference_age": [
         {
@@ -5005,7 +5612,7 @@
           "mean_along_track_s": -69.0185,
           "rms_cross_track_arcsec": 3286.17,
           "fraction_within_limit": 0.0,
-          "result": "fail"
+          "result": "inconclusive"
         },
         {
           "asked_days": 14.0,
@@ -5041,14 +5648,26 @@
         "rms_cross_track_arcsec": 92.03,
         "mean_along_track_s": -1.5171,
         "std_along_track_s": 0.2638,
-        "median_limit_arcsec": 1891.93,
+        "median_along_track_limit_arcsec": 1564.227,
+        "median_cross_track_limit_arcsec": 255.787,
+        "median_normalised_residual": 2.6672,
         "reference_epoch_max_age_days": 0.0598
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 774.14,
-        "orbit_term_arcsec": 1716.89,
-        "orbit_share_of_limit": 0.8235,
+        "orbit_term_along_arcsec": 1344.8,
+        "orbit_term_across_arcsec": 181.73,
+        "orbit_share_of_limit": 0.7394,
         "median_range_km": 600.7,
         "median_rate_arcsec_per_s": 2580.48
       },
@@ -5071,7 +5690,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -5084,7 +5703,6 @@
           "100": "fail"
         },
         "wrong_object": {
-          "17844": "fail",
           "18374": "fail",
           "18749": "fail",
           "19169": "fail",
@@ -5092,17 +5710,13 @@
           "39174": "fail",
           "43056": "fail",
           "43641": "fail",
-          "46265": "fail",
           "47353": "fail",
-          "52621": "fail",
           "53984": "fail",
-          "56530": "fail",
           "58193": "fail",
-          "58207": "fail",
-          "100800": "fail",
-          "101286": "fail"
+          "58207": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -5127,14 +5741,26 @@
         "rms_cross_track_arcsec": 110.708,
         "mean_along_track_s": -1.3877,
         "std_along_track_s": 0.1529,
-        "median_limit_arcsec": 1356.295,
+        "median_along_track_limit_arcsec": 877.644,
+        "median_cross_track_limit_arcsec": 224.951,
+        "median_normalised_residual": 2.5091,
         "reference_epoch_max_age_days": 0.0587
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 434.04,
-        "orbit_term_arcsec": 1272.3,
-        "orbit_share_of_limit": 0.88,
+        "orbit_term_along_arcsec": 741.26,
+        "orbit_term_across_arcsec": 134.92,
+        "orbit_share_of_limit": 0.7134,
         "median_range_km": 810.6,
         "median_rate_arcsec_per_s": 1446.79
       },
@@ -5157,7 +5783,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -5170,29 +5796,22 @@
           "100": "fail"
         },
         "wrong_object": {
-          "14208": "fail",
           "17844": "fail",
           "18374": "fail",
-          "18749": "fail",
           "19169": "fail",
           "21429": "fail",
-          "23343": "fail",
           "39174": "fail",
           "43056": "fail",
           "43641": "fail",
           "46265": "fail",
-          "47353": "fail",
           "52621": "fail",
-          "53742": "fail",
-          "53984": "fail",
           "56530": "fail",
           "57115": "fail",
-          "58193": "fail",
-          "58207": "fail",
           "100800": "fail",
           "101286": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     },
     {
@@ -5217,14 +5836,26 @@
         "rms_cross_track_arcsec": 74.256,
         "mean_along_track_s": -1.9313,
         "std_along_track_s": 0.2536,
-        "median_limit_arcsec": 1678.297,
+        "median_along_track_limit_arcsec": 1333.761,
+        "median_cross_track_limit_arcsec": 240.056,
+        "median_normalised_residual": 3.2659,
         "reference_epoch_max_age_days": 0.0068
       },
       "limit_terms": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "angle_term_arcsec": 180.0,
         "timing_term_arcsec": 668.65,
-        "orbit_term_arcsec": 1528.78,
-        "orbit_share_of_limit": 0.8298,
+        "orbit_term_along_arcsec": 1139.92,
+        "orbit_term_across_arcsec": 158.83,
+        "orbit_share_of_limit": 0.7305,
         "median_range_km": 674.6,
         "median_rate_arcsec_per_s": 2228.85
       },
@@ -5247,7 +5878,7 @@
       "faults": {
         "time_shift_s": {
           "0.25": "pass",
-          "0.5": "pass",
+          "0.5": "fail",
           "1": "fail",
           "2": "fail",
           "5": "fail",
@@ -5271,7 +5902,8 @@
           "69591": "fail",
           "100365": "fail"
         },
-        "fabricated": "pass"
+        "fabricated": "pass",
+        "rounded": "pass"
       }
     }
   ]

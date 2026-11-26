@@ -13,6 +13,7 @@ from datetime import datetime
 
 import numpy as np
 from skyfield.api import wgs84
+from skyfield.positionlib import ICRF
 
 from orbit_watch.catalog import timescale
 from orbit_watch.model import Observation, Station
@@ -53,7 +54,10 @@ def predict(
     """Predicted angles of a satellite seen from a station at the given UTC times."""
     ts = timescale()
     t = ts.from_datetimes(times)
-    topocentric = (satellite - topos(station)).at(t)
+    return _angles((satellite - topos(station)).at(t), angle_type, frame)
+
+
+def _angles(topocentric, angle_type: str, frame: str | None) -> Prediction:
     alt, az, distance = topocentric.altaz()
     if angle_type == "radec":
         if frame == "of-date":
@@ -89,6 +93,11 @@ class Residuals:
     rate_arcsec_per_s: np.ndarray
     range_km: np.ndarray
     elevation_deg: np.ndarray
+    # The unit vectors of the prediction, of the apparent motion and across it, in the
+    # observations' frame (3 x n), which ``orbit_projection`` projects onto.
+    predicted_unit: np.ndarray | None = None
+    along_unit: np.ndarray | None = None
+    cross_unit: np.ndarray | None = None
 
 
 def residuals(satellite, station: Station, observations: list[Observation]) -> Residuals:
@@ -130,4 +139,52 @@ def residuals(satellite, station: Station, observations: list[Observation]) -> R
         rate_arcsec_per_s=rate * ARCSEC_PER_RAD,
         range_km=now.range_km,
         elevation_deg=now.elevation_deg,
+        predicted_unit=p,
+        along_unit=u,
+        cross_unit=c,
     )
+
+
+AU_KM = 149597870.7
+
+
+def orbit_projection(
+    satellite, station: Station, observations: list[Observation], res: Residuals
+) -> np.ndarray:
+    """How the satellite's position moved by a kilometre radially, along its track and
+    across it shows on the sky: arcseconds along the apparent motion and across it, per
+    kilometre, as an array of n x 2 x 3 (method 3.0.0, D-68).
+
+    The directions are of the satellite's geocentric orbit at each time. Each moved
+    position is turned into angles exactly as a prediction is, in the observations' own
+    frame, and compared with the prediction along ``res``'s unit vectors."""
+    kinds = {(o.angle_type, o.frame) for o in observations}
+    if len(kinds) != 1:
+        raise ValueError("orbit_projection() needs observations of a single angle type and frame")
+    angle_type, frame = kinds.pop()
+    ts = timescale()
+    t = ts.from_datetimes([o.time for o in observations])
+    geocentric = satellite.at(t)
+    r = np.asarray(geocentric.position.km)
+    v = np.asarray(geocentric.velocity.km_per_s)
+    radial = r / np.linalg.norm(r, axis=0)
+    normal = np.cross(r.T, v.T).T
+    cross_track = normal / np.linalg.norm(normal, axis=0)
+    in_track = np.cross(cross_track.T, radial.T).T
+    topocentric = (satellite - topos(station)).at(t)
+    p, u, c = res.predicted_unit, res.along_unit, res.cross_unit
+    out = np.zeros((len(observations), 2, 3))
+    for axis, direction in enumerate((radial, in_track, cross_track)):
+        moved = ICRF(
+            topocentric.position.au + direction / AU_KM,
+            topocentric.velocity.au_per_d,
+            t,
+            topocentric.center,
+            topocentric.target,
+        )
+        angles = _angles(moved, angle_type, frame)
+        q = unit_vectors(angle_type, angles.angle_1_deg, angles.angle_2_deg)
+        offset = q - p
+        out[:, 0, axis] = np.sum(offset * u, axis=0) * ARCSEC_PER_RAD
+        out[:, 1, axis] = np.sum(offset * c, axis=0) * ARCSEC_PER_RAD
+    return out

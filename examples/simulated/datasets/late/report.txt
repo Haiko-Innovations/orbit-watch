@@ -1,4 +1,4 @@
-Orbit Watch verification (orbit-watch-automated-verification 2.1.0)
+Orbit Watch verification (orbit-watch-automated-verification 3.0.0)
 Inputs include SIMULATED data.
 Request SIM-REQ-0001: object 339001, window 2026-11-01T15:00:00.000Z to 2026-11-02T03:00:00.000Z
 FAIL: 2 check(s) failed: observations are inside the time window, minimum number of observations.
@@ -22,6 +22,6 @@ FAIL: 2 check(s) failed: observations are inside the time window, minimum number
   PASS  No duplicates or resubmissions
         No repeated observations in the file and no overlap with 1 earlier delivery.
   PASS  Residuals against the public reference orbit
-        16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 8.6″ against a typical limit of 20.95′.
+        16 of 16 observations (100%) lie within their limits (needed 80%). Median residual 8.6″ against typical limits of 35.88′ along the track and 2.31′ across it. The reference orbit, a GP set in LEO, 1–2 days old, is allowed 9 km along its track, 0.5 km across it and 0.5 km radially.
 
 Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.

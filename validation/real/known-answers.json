@@ -3,7 +3,7 @@
   "format_version": "1.0",
   "simulated": false,
   "description": "Real tracks from SCORE with a settled answer, for reviewer calibration. Made by orbit-watch measure-method from results.json; see docs/real-data-validation.md.",
-  "method": "2.1.0",
+  "method": "3.0.0",
   "entries": [
     {
       "group": "examples/real",
@@ -106,15 +106,6 @@
     },
     {
       "group": "validation/real",
-      "file": "100365-20260930T0226-SCORE-3727e074cd22.json",
-      "sha256": "5207bb4cbdce73f1fe4f9060a147ca78f8d0704103a5836f0d93225ba6efdb38",
-      "norad_id": 100365,
-      "expected": "reject",
-      "automated_verdict": "fail",
-      "reason": "The times are 1.4 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
-    },
-    {
-      "group": "validation/real",
       "file": "100800-20261119T0150-SCORE-f08826b327e0.json",
       "sha256": "e7ae7fda435c091aa480a79fe5a029832dc065cb6474c1b94463525783c48463",
       "norad_id": 100800,
@@ -130,15 +121,6 @@
       "expected": "reject",
       "automated_verdict": "fail",
       "reason": "The times are 1.7 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
-    },
-    {
-      "group": "validation/real",
-      "file": "18749-20261112T0140-SCORE-3727e074cd22.json",
-      "sha256": "68a42a9ed21cfefd558907b2cccd1b20a2174ce0d93d82f7205bedead00baf8d",
-      "norad_id": 18749,
-      "expected": "reject",
-      "automated_verdict": "fail",
-      "reason": "The times are 1.8 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
     },
     {
       "group": "validation/real",
@@ -175,15 +157,6 @@
       "expected": "reject",
       "automated_verdict": "fail",
       "reason": "The times are 1.7 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
-    },
-    {
-      "group": "validation/real",
-      "file": "43641-20261116T0128-SCORE-7da85e3920f6.json",
-      "sha256": "22823027b23969891c95dca356e81a96504007ff9dadc46bb6eaa84e3d459c7d",
-      "norad_id": 43641,
-      "expected": "reject",
-      "automated_verdict": "fail",
-      "reason": "The times are 1.8 s off, like this phone's other tracks of low orbits; the angles fit once the offset is taken out."
     },
     {
       "group": "validation/real",

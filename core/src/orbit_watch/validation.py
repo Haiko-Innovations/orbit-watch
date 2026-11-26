@@ -32,16 +32,19 @@ from orbit_watch import __version__, orbit_cache
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
 from orbit_watch.catalog import Catalog, ElementSet, parse_catalog, record_sha256
 from orbit_watch.formats import owjson
-from orbit_watch.geometry import predict, residuals
+from orbit_watch.geometry import predict
 from orbit_watch.model import ObservationSet
 from orbit_watch.timeutil import format_utc
+from orbit_watch.verify import orbit_terms
 from orbit_watch.verify.engine import (
     METHOD_NAME,
     METHOD_VERSION,
     PARAMETERS,
     VerificationInput,
+    ellipse,
     verify,
 )
+from orbit_watch.verify.orbit_terms import orbit_class
 
 RESULTS_FORMAT = "orbit-watch/real-data-validation"
 RESULTS_FORMAT_VERSION = "1.0"
@@ -128,19 +131,6 @@ def instrument_kind(instrument: str) -> str:
     return instrument
 
 
-def orbit_class(record: dict[str, Any]) -> str:
-    """LEO, MEO, GEO or HEO, from the element set's mean motion and eccentricity."""
-    mean_motion = float(record["MEAN_MOTION"])  # revolutions a day
-    eccentricity = float(record["ECCENTRICITY"])
-    if eccentricity >= 0.25:
-        return "HEO"
-    if mean_motion >= 11.25:
-        return "LEO"
-    if 0.9 <= mean_motion <= 1.1:
-        return "GEO"
-    return "MEO"
-
-
 # One run of the method --------------------------------------------------------------------
 
 
@@ -198,7 +188,9 @@ class Outcome:
     statistics: dict[str, Any]
 
 
-def run(observation_set: ObservationSet, catalog: bytes) -> Outcome:
+def run(
+    observation_set: ObservationSet, catalog: bytes, method_version: str = METHOD_VERSION
+) -> Outcome:
     """``verify()`` on one track, as the service would run it for a request of the track's
     own object over the track's time."""
     norad = observation_set.target.norad_id
@@ -214,6 +206,7 @@ def run(observation_set: ObservationSet, catalog: bytes) -> Outcome:
             catalog=catalog,
             policy=policy_for(norad),
             declared_sha256=sha256_bytes(observations),
+            method_version=method_version,
         )
     )
     check = next(c for c in report["checks"] if c["id"] == "orbit_residuals")
@@ -295,48 +288,49 @@ def _seed(text: str) -> int:
 # The limit's terms ------------------------------------------------------------------------
 
 
-def limit_terms(observation_set: ObservationSet, reference: ElementSet) -> dict[str, float]:
-    """Medians of the three terms of each observation's limit, computed as the residual
-    check computes them, and the median share of the limit's square that the reference
-    orbit's term makes."""
-    obs = observation_set.observations
-    res = residuals(reference.satellite, observation_set.station, obs)
-    k = PARAMETERS["residual_sigma_multiplier"]
-    sigma = np.array([o.angle_uncertainty_arcsec for o in obs])
-    tau = np.array([o.time_uncertainty_s for o in obs])
-    angle = k * sigma
-    timing = k * tau * res.rate_arcsec_per_s
-    orbit = np.degrees(np.arctan2(PARAMETERS["reference_position_error_km"], res.range_km)) * 3600
-    limit_sq = angle**2 + timing**2 + orbit**2
+def _term(reference: ElementSet, observation_set: ObservationSet) -> orbit_terms.OrbitTerm:
+    """The orbit term the check gives the set for the track; past the method's ages, its
+    last row's, to show what lies beyond."""
+    times = [o.time for o in observation_set.observations]
+    age = max(abs((t - reference.epoch).total_seconds()) / 86400 for t in times)
+    term = orbit_terms.term_for(reference.record, age, simulated=True)
+    assert term is not None
+    return term
+
+
+def limit_terms(observation_set: ObservationSet, reference: ElementSet) -> dict[str, Any]:
+    """Medians of the terms of each observation's limit, computed as the residual check
+    computes them, and the median share of the limit's square along the track that the
+    reference orbit's term makes."""
+    term = _term(reference, observation_set)
+    e = ellipse(reference.satellite, observation_set.station, observation_set.observations, term)
     return {
-        "angle_term_arcsec": _r(np.median(angle), 2),
-        "timing_term_arcsec": _r(np.median(timing), 2),
-        "orbit_term_arcsec": _r(np.median(orbit), 2),
-        "orbit_share_of_limit": _r(np.median(orbit**2 / limit_sq), 4),
-        "median_range_km": _r(np.median(res.range_km), 1),
-        "median_rate_arcsec_per_s": _r(np.median(res.rate_arcsec_per_s), 2),
+        "orbit_term": term.public(),
+        "angle_term_arcsec": _r(np.median(e.angle_term), 2),
+        "timing_term_arcsec": _r(np.median(e.timing_term), 2),
+        "orbit_term_along_arcsec": _r(np.median(e.orbit_along), 2),
+        "orbit_term_across_arcsec": _r(np.median(e.orbit_cross), 2),
+        "orbit_share_of_limit": _r(np.median(e.orbit_along**2 / e.along_limit**2), 4),
+        "median_range_km": _r(np.median(e.range_km), 1),
+        "median_rate_arcsec_per_s": _r(np.median(e.rate), 2),
     }
 
 
 def age_residuals(observation_set: ObservationSet, reference: ElementSet) -> dict[str, Any]:
     """The residual check's statistics against an element set of any age, computed as the
-    check computes them. The check itself stops at ``max_reference_age_days``; this shows
-    what lies beyond."""
+    check computes them. The check itself stops at the oldest age its orbit term has; this
+    shows what lies beyond, with the term's last row."""
     obs = observation_set.observations
-    res = residuals(reference.satellite, observation_set.station, obs)
-    k = PARAMETERS["residual_sigma_multiplier"]
-    sigma = np.array([o.angle_uncertainty_arcsec for o in obs])
-    tau = np.array([o.time_uncertainty_s for o in obs])
-    orbit = np.degrees(np.arctan2(PARAMETERS["reference_position_error_km"], res.range_km)) * 3600
-    limit = np.sqrt((k * sigma) ** 2 + (k * tau * res.rate_arcsec_per_s) ** 2 + orbit**2)
+    term = _term(reference, observation_set)
+    e = ellipse(reference.satellite, observation_set.station, obs, term)
     ages = [abs((o.time - reference.epoch).total_seconds()) / 86400 for o in obs]
     return {
         "reference_epoch": format_utc(reference.epoch),
         "age_days": _r(max(ages), 3),
-        "median_residual_arcsec": _r(np.median(res.separation_arcsec), 2),
-        "mean_along_track_s": _r(np.mean(res.along_s), 4),
-        "rms_cross_track_arcsec": _r(np.sqrt(np.mean(res.cross_arcsec**2)), 2),
-        "fraction_within_limit": _r(np.mean(res.separation_arcsec <= limit), 4),
+        "median_residual_arcsec": _r(np.median(e.sep), 2),
+        "mean_along_track_s": _r(np.mean(e.along_s), 4),
+        "rms_cross_track_arcsec": _r(np.sqrt(np.mean(e.cross**2)), 2),
+        "fraction_within_limit": _r(np.mean(e.normalised <= 1.0), 4),
     }
 
 
@@ -370,7 +364,12 @@ def measure(inputs: Inputs, log: Callable[[str], None] = lambda message: None) -
         "format": RESULTS_FORMAT,
         "format_version": RESULTS_FORMAT_VERSION,
         "simulated": False,
-        "method": {"name": METHOD_NAME, "version": METHOD_VERSION, "parameters": PARAMETERS},
+        "method": {
+            "name": METHOD_NAME,
+            "version": METHOD_VERSION,
+            "parameters": PARAMETERS,
+            "orbit_terms": orbit_terms.table(),
+        },
         "software": {"orbit-watch": __version__},
         "settings": {
             "requirements": REQUIREMENTS,
@@ -453,6 +452,8 @@ def _measure_track(track: Track, inputs: Inputs) -> dict[str, Any]:
         },
         "wrong_object": _wrong_objects(sound, track.middle, inputs),
         "fabricated": run(fabricated(sound, reference, _seed(track.file)), catalog).result,
+        # The station at about a kilometre, as a profile may publish it (P5-11).
+        "rounded": run(rounded(sound, ROUNDING_DECIMALS), catalog).result,
     }
     if passed:
         # The reference orbit's age.
@@ -473,7 +474,7 @@ def _wrong_objects(
         parsed = inputs.parsed(other)
         nearest = parsed.nearest(other, middle)
         age = abs((nearest.epoch - middle).total_seconds()) / 86400
-        if age > PARAMETERS["max_reference_age_days"]:
+        if age > orbit_terms.oldest_age(nearest.record):
             continue
         changed = relabelled(observation_set, other, parsed.name(other))
         results[str(other)] = run(changed, inputs.catalog(other)).result
@@ -677,7 +678,8 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
                     str(_count(members, "fail")),
                     str(_count(members, "inconclusive")),
                     _arcsec(_median([s.get("median_residual_arcsec") for s in stats])),
-                    _arcsec(_median([s.get("median_limit_arcsec") for s in stats])),
+                    _arcsec(_median([s.get("median_along_track_limit_arcsec") for s in stats])),
+                    _arcsec(_median([s.get("median_cross_track_limit_arcsec") for s in stats])),
                 ]
             )
         return _table(
@@ -689,7 +691,8 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
                 "Fail",
                 "Inconclusive",
                 "Median residual",
-                "Median limit",
+                "Median limit along",
+                "Median limit across",
             ],
             body,
         )
@@ -705,7 +708,8 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
                 name,
                 _arcsec(_median([t["angle_term_arcsec"] for t in terms])),
                 _arcsec(_median([t["timing_term_arcsec"] for t in terms])),
-                _arcsec(_median([t["orbit_term_arcsec"] for t in terms])),
+                _arcsec(_median([t["orbit_term_along_arcsec"] for t in terms])),
+                _arcsec(_median([t["orbit_term_across_arcsec"] for t in terms])),
                 f"{_median([t['median_range_km'] for t in terms]):,.0f} km",
                 f"{_median([t['orbit_share_of_limit'] for t in terms]):.0%}",
             ]
@@ -715,9 +719,10 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
             "Instrument",
             "Angle term 3\u03c3",
             "Timing term 3\u03c4 \u00d7 rate",
-            "Orbit term (5 km)",
+            "Orbit term along",
+            "Orbit term across",
             "Range",
-            "Orbit term's share of the limit²",
+            "Orbit term's share of the limit² along",
         ],
         body,
     )
@@ -794,13 +799,14 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
         ],
     )
     out["station_moved"] = _table(
-        ["Tracks", "n"] + [f"{d:g} km" for d in STATION_MOVES_KM],
+        ["Tracks", "n"] + [f"{d:g} km north" for d in STATION_MOVES_KM] + ["Rounded to 0.01°"],
         [
             [name, str(len(members))]
             + [
                 accepted(members, lambda m, d=d: m["faults"]["station_moved_km"][f"{d:g}"])
                 for d in STATION_MOVES_KM
             ]
+            + [accepted(members, lambda m: m["faults"]["rounded"])]
             for name, members in groups.items()
         ],
     )
@@ -889,7 +895,8 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
                 str(r["observations"]),
                 r["result"],
                 _arcsec(stats.get("median_residual_arcsec")),
-                _arcsec(stats.get("median_limit_arcsec")),
+                _arcsec(stats.get("median_along_track_limit_arcsec")),
+                _arcsec(stats.get("median_cross_track_limit_arcsec")),
                 NONE if along is None else f"{along:+.2f} s",
                 _arcsec(stats.get("rms_cross_track_arcsec")),
                 NONE if age is None else f"{age:.2f} d",
@@ -904,7 +911,8 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
             "Obs.",
             "Result",
             "Median residual",
-            "Median limit",
+            "Limit along",
+            "Limit across",
             "Mean along-track",
             "RMS cross-track",
             "Set's age",

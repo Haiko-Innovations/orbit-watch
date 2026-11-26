@@ -138,7 +138,9 @@ def test_a_good_track_and_its_faults(simulated_inputs):
     assert faults["wrong_object"] and set(faults["wrong_object"].values()) == {"fail"}
     assert row["rounded"]["result"] == "pass"
     terms = row["limit_terms"]
-    assert terms["orbit_share_of_limit"] > 0.5 and terms["orbit_term_arcsec"] > 0
+    assert terms["orbit_share_of_limit"] > 0.5 and terms["orbit_term_along_arcsec"] > 0
+    assert 0 < terms["orbit_term_across_arcsec"] < terms["orbit_term_along_arcsec"]
+    assert terms["orbit_term"]["kind"] == "gp" and terms["orbit_term"]["age_days"] == "0\u20131"
     # The catalogue's one set is 0.85 days before the track: it stands for "about 1 day".
     assert [a["asked_days"] for a in row["reference_age"]] == [1.0]
 

@@ -21,21 +21,39 @@ from orbit_watch.canonical import sha256_bytes
 from orbit_watch.catalog import Catalog, CatalogError, ElementSet, parse_catalog, record_sha256
 from orbit_watch.documents import Request, TargetPolicy
 from orbit_watch.formats import FormatError, Sites, detect_format, load_observation_sets
-from orbit_watch.geometry import residuals
+from orbit_watch.geometry import orbit_projection, residuals
 from orbit_watch.model import Observation, ObservationSet
 from orbit_watch.timeutil import format_utc
+from orbit_watch.verify import orbit_terms
 
 REPORT_FORMAT = "orbit-watch/verification-report"
-REPORT_FORMAT_VERSION = "1.1"
+REPORT_FORMAT_VERSION = "1.2"
+REPORT_FORMAT_VERSIONS = {"2.1.0": "1.1", "3.0.0": "1.2"}
 METHOD_NAME = "orbit-watch-automated-verification"
-METHOD_VERSION = "2.1.0"
+METHOD_VERSION = "3.0.0"
+# Every method version the engine still runs. A request names its method in its terms, and
+# a delivery is verified with that method, so an earlier request keeps its own (D-68).
+METHOD_VERSIONS = ("2.1.0", "3.0.0")
 ACCEPTED_OBSERVATION_FORMATS = [
     "orbit-watch/observation-set 1.0",
     "iod",
     "ccsds-tdm 1.0/2.0 subset",
 ]
 
+# Method 3.0.0's parameters. Its orbit term is by the set's kind, orbit class and age, and
+# separate radially, along the track and across it: ``orbit_terms.TERMS`` (D-68).
 PARAMETERS: dict[str, float] = {
+    # Each observation may deviate by this many declared sigmas (angle and timing).
+    "residual_sigma_multiplier": 3.0,
+    # Share of observations that must lie within their limit.
+    "min_fraction_within_limit": 0.8,
+    # Two observations are the same if they agree to these resolutions.
+    "duplicate_time_resolution_s": 0.001,
+    "duplicate_angle_resolution_arcsec": 1.0,
+}
+
+# Method 2.1.0's parameters, as its reports name them.
+PARAMETERS_2_1_0: dict[str, float] = {
     # Assumed error of the public reference orbit (GP elements are good to about
     # a kilometre at epoch and degrade quickly; 5 km tolerates a few days).
     "reference_position_error_km": 5.0,
@@ -88,6 +106,7 @@ class VerificationInput:
     previous: list[bytes] = field(default_factory=list)
     declared_sha256: str | None = None
     sites: Sites | None = None
+    method_version: str = METHOD_VERSION
 
 
 def _r(value: float, digits: int) -> float:
@@ -145,6 +164,12 @@ def _load_single_set(
 
 
 def verify(inp: VerificationInput) -> dict[str, Any]:
+    if inp.method_version not in METHOD_VERSIONS:
+        raise UsageError(
+            f"unknown method version {inp.method_version!r}; this engine runs "
+            f"{', '.join(METHOD_VERSIONS)}"
+        )
+    version = inp.method_version
     try:
         request = Request.parse(inp.request)
         policy = TargetPolicy.parse(inp.policy)
@@ -191,7 +216,8 @@ def verify(inp: VerificationInput) -> dict[str, Any]:
         checks["declared_uncertainty"] = _declared_uncertainty(request, obs)
         checks["hash_match"] = _hash_match(inp)
         checks["duplicates"] = _duplicates(inp, observation_set)
-        checks["orbit_residuals"] = _orbit_residuals(
+        residual_check = _orbit_residuals if version == "3.0.0" else _orbit_residuals_2_1_0
+        checks["orbit_residuals"] = residual_check(
             request, catalog, reference, reference_error, observation_set
         )
 
@@ -219,7 +245,7 @@ def verify(inp: VerificationInput) -> dict[str, Any]:
     )
     report: dict[str, Any] = {
         "report_format": REPORT_FORMAT,
-        "report_format_version": REPORT_FORMAT_VERSION,
+        "report_format_version": REPORT_FORMAT_VERSIONS[version],
         "verdict": verdict,
         "summary": summary,
         "simulated_input": simulated,
@@ -227,12 +253,21 @@ def verify(inp: VerificationInput) -> dict[str, Any]:
     if simulated:
         report["notice"] = "Inputs include SIMULATED data. " + SIMULATION_NOTICE
     report["disclaimer"] = DISCLAIMER
-    report["method"] = {
-        "name": METHOD_NAME,
-        "version": METHOD_VERSION,
-        "parameters": dict(PARAMETERS),
-        "accepted_observation_formats": ACCEPTED_OBSERVATION_FORMATS,
-    }
+    if version == "2.1.0":
+        report["method"] = {
+            "name": METHOD_NAME,
+            "version": version,
+            "parameters": dict(PARAMETERS_2_1_0),
+            "accepted_observation_formats": ACCEPTED_OBSERVATION_FORMATS,
+        }
+    else:
+        report["method"] = {
+            "name": METHOD_NAME,
+            "version": version,
+            "parameters": dict(PARAMETERS),
+            "orbit_terms": orbit_terms.table(),
+            "accepted_observation_formats": ACCEPTED_OBSERVATION_FORMATS,
+        }
     report["software"] = _software()
     report["inputs"] = {
         "request_sha256": sha256_bytes(inp.request),
@@ -530,7 +565,217 @@ def _duplicates(inp: VerificationInput, observation_set: ObservationSet) -> dict
     )
 
 
+@dataclass
+class Ellipse:
+    """Method 3.0.0's residuals and limits of each observation, in arcseconds."""
+
+    sep: np.ndarray
+    along: np.ndarray
+    cross: np.ndarray
+    along_s: np.ndarray
+    rate: np.ndarray
+    range_km: np.ndarray
+    angle_term: np.ndarray  # k times the declared angle uncertainty, in every direction
+    timing_term: np.ndarray  # k times the time uncertainty, along the motion
+    orbit_along: np.ndarray  # the orbit term's part along the motion
+    orbit_cross: np.ndarray  # and across it
+    along_limit: np.ndarray
+    cross_limit: np.ndarray
+    normalised: np.ndarray  # 1 on the ellipse; within the limit when at most 1
+
+
+def ellipse(satellite, station, obs: list[Observation], term: orbit_terms.OrbitTerm) -> Ellipse:
+    """Each observation's residual against method 3.0.0's limit (D-68)."""
+    groups: dict[tuple, list[int]] = {}
+    for index, o in enumerate(obs):
+        groups.setdefault((o.angle_type, o.frame), []).append(index)
+    n = len(obs)
+    sep = np.zeros(n)
+    along = np.zeros(n)
+    cross = np.zeros(n)
+    along_s = np.zeros(n)
+    rate = np.zeros(n)
+    rng = np.zeros(n)
+    projection = np.zeros((n, 2, 3))
+    for indices in groups.values():
+        chosen = [obs[i] for i in indices]
+        res = residuals(satellite, station, chosen)
+        sep[indices], along[indices], cross[indices] = (
+            res.separation_arcsec,
+            res.along_arcsec,
+            res.cross_arcsec,
+        )
+        along_s[indices], rate[indices], rng[indices] = (
+            res.along_s,
+            res.rate_arcsec_per_s,
+            res.range_km,
+        )
+        projection[indices] = orbit_projection(satellite, station, chosen, res)
+    k = PARAMETERS["residual_sigma_multiplier"]
+    sigma = np.array([o.angle_uncertainty_arcsec for o in obs])
+    tau = np.array([o.time_uncertainty_s for o in obs])
+    errors = np.diag([term.radial_km, term.in_track_km, term.cross_track_km]) ** 2
+    orbit = projection @ errors @ np.transpose(projection, (0, 2, 1))
+    angle_term = k * sigma
+    timing_term = k * tau * rate
+    covariance = orbit.copy()
+    covariance[:, 0, 0] += angle_term**2 + timing_term**2
+    covariance[:, 1, 1] += angle_term**2
+    vector = np.stack([along, cross], axis=1)[:, :, None]
+    normalised = np.sqrt(
+        np.einsum("nij,nij->n", vector, np.linalg.solve(covariance, vector)).clip(min=0.0)
+    )
+    return Ellipse(
+        sep=sep,
+        along=along,
+        cross=cross,
+        along_s=along_s,
+        rate=rate,
+        range_km=rng,
+        angle_term=angle_term,
+        timing_term=timing_term,
+        orbit_along=np.sqrt(orbit[:, 0, 0]),
+        orbit_cross=np.sqrt(orbit[:, 1, 1]),
+        along_limit=np.sqrt(covariance[:, 0, 0]),
+        cross_limit=np.sqrt(covariance[:, 1, 1]),
+        normalised=normalised,
+    )
+
+
 def _orbit_residuals(
+    request: Request,
+    catalog: Catalog,
+    reference: ElementSet | None,
+    reference_error: str | None,
+    observation_set: ObservationSet,
+) -> dict[str, Any]:
+    """Method 3.0.0's residual check (D-68). Each observation's residual, along the
+    object's apparent motion and across it, is measured against an ellipse: its declared
+    angle uncertainty in every direction, its time uncertainty along the motion, and the
+    reference orbit's term radially, along its track and across it, as each shows on the
+    sky from the station. An observation is within its limit when its residual lies inside
+    the ellipse."""
+    norad = request.norad_id
+    if norad not in catalog:
+        return _check(
+            "orbit_residuals",
+            "inconclusive",
+            f"The reference catalogue has no orbit for object {norad}.",
+        )
+    obs = observation_set.observations
+    if reference is None:
+        return _check("orbit_residuals", "inconclusive", reference_error or "No reference orbit.")
+    satellite = reference.satellite
+    epoch = reference.epoch
+    several = len(catalog.sets[norad]) > 1
+    max_age = max(abs((o.time - epoch).total_seconds()) / 86400 for o in obs)
+    term = orbit_terms.term_for(reference.record, max_age, simulated=catalog.simulated)
+    if term is None:
+        oldest = orbit_terms.oldest_age(reference.record)
+        orbit = orbit_terms.orbit_class(reference.record)
+        return _check(
+            "orbit_residuals",
+            "inconclusive",
+            f"The {'nearest ' if several else ''}reference orbit epoch "
+            f"({epoch.strftime('%Y-%m-%d %H:%M')} UTC) is up to {max_age:.1f} days from the "
+            f"observations. In {orbit} an element set is used up to {oldest:g} days from its "
+            "epoch: older, the residuals would mostly measure the age of the orbit. Use a "
+            "newer element set.",
+            {"orbit_class": orbit, "reference_epoch_max_age_days": _r(max_age, 4)},
+        )
+    note = ""
+    if catalog.simulated and max_age > orbit_terms.oldest_age(reference.record):
+        note = (
+            f" The reference orbit is SIMULATED and up to {max_age:.1f} days from its epoch; "
+            "simulated observations are computed from the same elements, so its age does not "
+            "limit this check."
+        )
+
+    e = ellipse(satellite, observation_set.station, obs, term)
+    n = len(obs)
+    sep, along, cross, along_s, rng = e.sep, e.along, e.cross, e.along_s, e.range_km
+    normalised, along_limit, cross_limit = e.normalised, e.along_limit, e.cross_limit
+    within = normalised <= 1.0
+    fraction = float(np.mean(within))
+    median_sep = float(np.median(sep))
+    median_along_limit = float(np.median(along_limit))
+    median_cross_limit = float(np.median(cross_limit))
+    mean_along_s = float(np.mean(along_s))
+    std_along_s = float(np.std(along_s, ddof=1)) if n > 1 else 0.0
+    rms_cross = float(np.sqrt(np.mean(cross**2)))
+    statistics = {
+        "observations": n,
+        "within_limit": int(np.sum(within)),
+        "fraction_within_limit": _r(fraction, 4),
+        "median_residual_arcsec": _r(median_sep, 3),
+        "max_residual_arcsec": _r(float(np.max(sep)), 3),
+        "rms_cross_track_arcsec": _r(rms_cross, 3),
+        "mean_along_track_s": _r(mean_along_s, 4),
+        "std_along_track_s": _r(std_along_s, 4),
+        "median_along_track_limit_arcsec": _r(median_along_limit, 3),
+        "median_cross_track_limit_arcsec": _r(median_cross_limit, 3),
+        "median_normalised_residual": _r(float(np.median(normalised)), 4),
+        "reference_epoch_max_age_days": _r(max_age, 4),
+    }
+    per_observation = [
+        {
+            "time": format_utc(o.time),
+            "residual_arcsec": _r(sep[i], 3),
+            "along_track_arcsec": _r(along[i], 3),
+            "cross_track_arcsec": _r(cross[i], 3),
+            "along_track_s": _r(along_s[i], 4),
+            "along_track_limit_arcsec": _r(along_limit[i], 3),
+            "cross_track_limit_arcsec": _r(cross_limit[i], 3),
+            "normalised_residual": _r(normalised[i], 4),
+            "range_km": _r(rng[i], 3),
+            "within_limit": bool(within[i]),
+        }
+        for i, o in enumerate(obs)
+    ]
+    details = {
+        "orbit_term": term.public(),
+        "statistics": statistics,
+        "per_observation": per_observation,
+    }
+    share = f"{int(np.sum(within))} of {n} observations ({fraction:.0%})"
+    needed = PARAMETERS["min_fraction_within_limit"]
+    limits = (
+        f"typical limits of {_fmt_angle(median_along_limit)} along the track and "
+        f"{_fmt_angle(median_cross_limit)} across it"
+    )
+    orbit = (
+        f" The reference orbit, {orbit_terms.KINDS[term.kind]} in {term.orbit}, "
+        f"{term.age_days} days old, is allowed {term.in_track_km:g} km along its track, "
+        f"{term.cross_track_km:g} km across it and {term.radial_km:g} km radially."
+    )
+    if fraction >= needed:
+        return _check(
+            "orbit_residuals",
+            "pass",
+            f"{share} lie within their limits (needed {needed:.0%}). Median residual "
+            f"{_fmt_angle(median_sep)} against {limits}.{orbit}{note}",
+            details,
+        )
+    reason = (
+        f"Only {share} lie within their limits (needed {needed:.0%}). Median residual "
+        f"{_fmt_angle(median_sep)} against {limits}.{orbit}"
+    )
+    if abs(mean_along_s) > 3 * max(std_along_s, 1e-3) / math.sqrt(n) and rms_cross < median_sep:
+        direction = "ahead of" if mean_along_s > 0 else "behind"
+        reason += (
+            f" The residuals lie mostly along the track: the object is on average "
+            f"{abs(mean_along_s):.2f} s {direction} the prediction. That points to a different "
+            "object in a similar orbit or to a timing error."
+        )
+    else:
+        reason += (
+            " The positions do not follow the reference orbit of the requested object: it may "
+            "be a different object, wrong times or wrong station coordinates."
+        )
+    return _check("orbit_residuals", "fail", reason + note, details)
+
+
+def _orbit_residuals_2_1_0(
     request: Request,
     catalog: Catalog,
     reference: ElementSet | None,
@@ -555,7 +800,7 @@ def _orbit_residuals(
     # Real GP elements degrade away from their epoch. A SIMULATED catalogue's elements are
     # the truth that simulated observations are computed from, so their age does not matter.
     note = ""
-    if max_age > PARAMETERS["max_reference_age_days"]:
+    if max_age > PARAMETERS_2_1_0["max_reference_age_days"]:
         if not catalog.simulated:
             return _check(
                 "orbit_residuals",
@@ -564,7 +809,7 @@ def _orbit_residuals(
                 f"({epoch.strftime('%Y-%m-%d %H:%M')} UTC) is up to "
                 f"{max_age:.1f} days from the observations. GP elements are only reliable close "
                 f"to their epoch, so the residuals would mostly measure the age of the orbit. Use "
-                f"an element set within {PARAMETERS['max_reference_age_days']:g} days.",
+                f"an element set within {PARAMETERS_2_1_0['max_reference_age_days']:g} days.",
             )
         note = (
             f" The reference orbit is SIMULATED and up to {max_age:.1f} days from its epoch; "
@@ -595,8 +840,8 @@ def _orbit_residuals(
             res.range_km,
         )
 
-    k = PARAMETERS["residual_sigma_multiplier"]
-    ref_km = PARAMETERS["reference_position_error_km"]
+    k = PARAMETERS_2_1_0["residual_sigma_multiplier"]
+    ref_km = PARAMETERS_2_1_0["reference_position_error_km"]
     sigma = np.array([o.angle_uncertainty_arcsec for o in obs])
     tau = np.array([o.time_uncertainty_s for o in obs])
     ref_arcsec = np.degrees(np.arctan2(ref_km, rng)) * 3600
@@ -635,7 +880,7 @@ def _orbit_residuals(
     ]
     details = {"statistics": statistics, "per_observation": per_observation}
     share = f"{int(np.sum(within))} of {n} observations ({fraction:.0%})"
-    needed = PARAMETERS["min_fraction_within_limit"]
+    needed = PARAMETERS_2_1_0["min_fraction_within_limit"]
     if fraction >= needed:
         return _check(
             "orbit_residuals",
