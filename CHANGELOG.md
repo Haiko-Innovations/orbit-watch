@@ -50,6 +50,8 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   an answer the service cannot read stops the source with the reason. The measurement
   skips them, and a run that did not finish counts for the two hours between SupGP
   downloads (D-65).
+- The hourly uptime check fails, and so notifies, only once per outage: while its alert
+  issue is open, a failed run writes its time into the issue and passes (D-65).
 
 ### Changed
 

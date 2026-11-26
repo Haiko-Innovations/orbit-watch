@@ -3703,4 +3703,9 @@ Accepted · 2026-11-26. A fix found in production.
     as D-48's other answers do, so the health endpoint says why.
   - The measurement skips such objects too, and counts a run that did not finish for its
     two hours between SupGP downloads, since it downloaded them.
+- **One notification per outage.** The stop failed the hourly uptime check every hour
+  through the night, and each failed run sent the maintainer a message. Now only the run
+  that opens the alert issue fails. While the issue is open, a failed run writes its time
+  into the issue's text, which notifies nobody, and passes. The next run that passes
+  still closes the issue (D-39).
 

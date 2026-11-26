@@ -265,7 +265,14 @@ Then:
 
 ### The uptime check failed
 
-1. Open the failed run: which check failed, and with what answer.
+Only the run that opens the alert issue fails and notifies. While the issue is open, each
+later failed run writes its link and time into the issue's text and passes, so a long
+outage sends one notification
+([D-65](decisions.md#d-65-temporary-catalogue-numbers-and-answers-the-service-cannot-read)).
+The next run that passes closes the issue.
+
+1. Open the failed run, or the latest one the issue names: which check failed, and with
+   what answer.
 2. **`/v1/health` fails:** the deployment is broken. Look at the logs
    (`vercel logs --deployment <url>`) and roll back
    ([deployment.md](deployment.md#deploying-and-rolling-back)).
