@@ -1,5 +1,5 @@
-"""The follower fetches operators' orbits from CelesTrak's SupGP (phase 6, step 6.2, third
-part; decisions P6-03 and D-63).
+"""The follower fetches operators' orbits from CelesTrak's SupGP, and verification uses them
+(phase 6, step 6.2, third part; decisions P6-03, D-63 and D-66).
 
 The world is the allow-list tests': CelesTrak is a local stand-in whose groups and SupGP
 sources hold made-up objects with a SIMULATED object's elements. No test calls an outside
@@ -22,12 +22,20 @@ from test_allowlist_service import (  # noqa: F401 - the world fixture
     sup,
     world,
 )
-from test_orbit_follower import Answer, http_error, made_up_record
+from test_orbit_follower import SPLIT, STATION, Answer, http_error, made_up_record
+
+from orbit_watch.catalog import parse_catalog
+from orbit_watch.formats import owjson
+from orbit_watch.orbits import OPERATOR_ORBIT_NAME
+from orbit_watch.service import OPERATOR_CHOICE
+from orbit_watch.sim.simulator import load_profile, simulate
+from orbit_watch.timeutil import parse_utc
 
 ONEWEB = 99036  # in the source OneWeb-E only
 SCHOOL = 99016  # in the group education and the source CPF
 SCIENCE = 99015  # in the group science only
 SUPGP_URL = "https://celestrak.org/NORAD/elements/supplemental/sup-gp.php"
+WINDOW = (parse_utc("2026-11-01T15:00:00Z"), parse_utc("2026-11-02T03:00:00Z"))  # the default
 
 
 def open_for(world, norad, number=2):  # noqa: F811
@@ -74,17 +82,91 @@ def test_an_operator_tracked_objects_orbit_is_fetched_after_its_gp_data(world): 
     assert "TLE_LINE1" not in json.dumps(listed)  # names, never elements
 
 
-def test_verification_still_uses_the_gp_set(world):  # noqa: F811
+def test_a_delivery_is_verified_against_the_operators_orbit(world):  # noqa: F811
     fetch_all_groups(world)
     rid = open_for(world, ONEWEB)
     follow(world)
+    service, now = world["service"], world["clock"]
+    assert len(service.element_sets[ONEWEB]) == 2  # GP and the operator's orbit
+    before = service.labels(rid)["reference_orbit"]
+    assert before["source_name"] == OPERATOR_ORBIT_NAME and before["final"] is False
+    service.fund(rid, REQUESTER, SPLIT, now())
+    service.reserve(rid, STATION, now())
+    observed = simulate(
+        parse_catalog(service.simulation_catalog(ONEWEB, WINDOW[0], WINDOW[1])),
+        ONEWEB,
+        load_profile("sim-cmos-gps"),
+        WINDOW[0],
+        WINDOW[1],
+        seed=7,
+    )
+    text = json.loads(owjson.write_observation_set(observed))
+    text["simulated"] = False  # as a station's own observations would be
+    service.deliver(rid, STATION, json.dumps(text).encode(), WINDOW[0] + timedelta(hours=1))
+    report = json.loads(service.files[service.deliveries[rid].report_sha256])
+    block = report["reference_orbit"]
+    assert block["source"]["service"] == "CelesTrak SupGP"
+    assert block["source"]["data_source"] == "OneWeb-E"
+    assert block["source"]["chosen"] == OPERATOR_CHOICE
+    assert block["element_sets_in_catalogue"] == 1
+    assert report["verdict"] == "pass"
+    after = service.labels(rid)["reference_orbit"]
+    assert after["source_name"] == OPERATOR_ORBIT_NAME and after["final"] is True
+    assert after["element_set_sha256"] == block["element_set_sha256"]
+
+
+def keep(world, *rows):  # noqa: F811
+    records = [
+        {**row, "source": {"service": "CelesTrak SupGP", "data_source": row["DATA_SOURCE"]}}
+        for row in rows
+    ]
+    world["service"].keep_element_sets(records, "celestrak", world["clock"]())
+
+
+def epoch_before(hours):
+    return (WINDOW[0] - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%S.000000")
+
+
+def test_the_latest_operators_set_at_or_before_the_window_best_fitted(world):  # noqa: F811
     service = world["service"]
-    assert len(service.element_sets[ONEWEB]) == 2
-    assert [s.operator_orbit for s in service.verifying_sets(ONEWEB)] == [False]
-    catalog = json.loads(service.catalog_for([ONEWEB]))
+    row = {**sup(ONEWEB, "TEST ONEWEB 1", "OneWeb-E")}
+    keep(
+        world,
+        {**row, "EPOCH": epoch_before(30)},  # more than a day before the window
+        {**row, "EPOCH": epoch_before(-1)},  # after the window began
+        {**row, "EPOCH": epoch_before(3)},
+        {**row, "EPOCH": epoch_before(1), "RMS": "0.3"},
+        {**row, "EPOCH": epoch_before(1), "RMS": "0.1"},
+        {**row, "EPOCH": epoch_before(0.5), "DATA_SOURCE": "OneWeb-TLE"},  # not an orbit's
+    )
+    chosen = service.operator_set(ONEWEB, WINDOW[0])
+    assert chosen.epoch == epoch_before(1) and chosen.rms_km == 0.1
+    assert service.operator_set(ONEWEB, WINDOW[0] + timedelta(hours=40)) is None  # too old
+    assert service.operator_set(ONEWEB, WINDOW[0] - timedelta(hours=40)) is None  # none yet
+    assert service.reference_sets(ONEWEB, WINDOW[0]) == [chosen]
+
+
+def test_a_laser_ranging_prediction_is_used_for_three_days(world):  # noqa: F811
+    service = world["service"]
+    keep(
+        world,
+        {**sup(SCHOOL, "TEST SCHOOL [COD]", "CPF"), "EPOCH": epoch_before(60)},
+        {**sup(ONEWEB, "TEST ONEWEB 1", "OneWeb-E"), "EPOCH": epoch_before(30)},
+    )
+    assert service.operator_set(SCHOOL, WINDOW[0]).data_source == "CPF"  # 2.5 days old
+    assert service.operator_set(ONEWEB, WINDOW[0]) is None  # more than a day old
+    assert service.operator_set(SCHOOL, WINDOW[0] + timedelta(hours=13)) is None  # 3 days
+
+
+def test_without_an_operators_set_the_gp_sets_verify(world):  # noqa: F811
+    fetch_all_groups(world)
+    rid = open_for(world, SCIENCE)
+    follow(world)
+    service = world["service"]
+    assert service.operator_set(SCIENCE, WINDOW[0]) is None
+    catalog = json.loads(service.catalog_for([SCIENCE], window_start=WINDOW[0]))
     assert [r["source"]["service"] for r in catalog["records"]] == ["CelesTrak"]
-    label = service.labels(rid)["reference_orbit"]
-    assert label["source_name"] == "CelesTrak" and label["final"] is False
+    assert service.labels(rid)["reference_orbit"]["source_name"] == "CelesTrak"
 
 
 def test_both_are_asked_for_again_two_hours_later(world):  # noqa: F811

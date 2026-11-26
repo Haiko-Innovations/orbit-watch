@@ -10,8 +10,8 @@ object, the epoch, the source and the SHA-256, with which anyone can fetch the s
 from the same source and repeat a verification.
 
 A set from CelesTrak's SupGP (step 6.2, D-63) is kept as CelesTrak's, with its
-``DATA_SOURCE``. Those of an operator's orbit are named so, but verification does not use
-them yet: it picks from the GP sets (``StoredSet.operator_orbit`` is False).
+``DATA_SOURCE``. Those of an operator's orbit (``StoredSet.operator_orbit``) are named so,
+and verification uses one when it is fresh enough for the window (D-66).
 """
 
 from __future__ import annotations
@@ -57,6 +57,14 @@ class StoredSet:
         """CelesTrak's ``DATA_SOURCE`` of a SupGP set, such as ``OneWeb-E``; None for GP."""
         value = str(self.record.get("DATA_SOURCE") or "").strip()
         return value or None
+
+    @property
+    def rms_km(self) -> float | None:
+        """CelesTrak's fit of a SupGP set to the operator's data, in km; None for GP."""
+        try:
+            return float(self.record["RMS"]) if str(self.record.get("RMS", "")).strip() else None
+        except ValueError:
+            return None
 
     @property
     def operator_orbit(self) -> bool:
