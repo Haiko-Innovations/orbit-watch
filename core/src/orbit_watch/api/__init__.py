@@ -75,6 +75,7 @@ from orbit_watch.api import keys, privacy, sessions
 from orbit_watch.api.limits import Limits, RateLimited, client_ip
 from orbit_watch.api.sessions import SessionError
 from orbit_watch.canonical import dumps_pretty, sha256_bytes
+from orbit_watch.catalog import CatalogError
 from orbit_watch.chain import WALLET_PREFIX, ChainError
 from orbit_watch.fetch import FetchError
 from orbit_watch.schema import validate
@@ -619,17 +620,27 @@ class Api:
                     log.warning("no answer; trying once more in two hours: %s", error)
                     done.append({**want.public(), "waiting": str(error)})
                 continue
-            with self.lock, self.db.transaction():
-                if want.group:
-                    result = {
-                        "objects": self.service.keep_group(want.group, body, self.wall_clock())
-                    }
-                else:
-                    kept, already = self.service.keep_element_sets(
-                        records, want.source, self.wall_clock()
-                    )
-                    result = {"kept": len(kept), "already_kept": already}
-                orbit_follower.answered(self.db, want, self.wall_clock())
+            try:
+                with self.lock, self.db.transaction():
+                    if want.group:
+                        objects = self.service.keep_group(want.group, body, self.wall_clock())
+                        result = {"objects": objects}
+                    else:
+                        kept, already = self.service.keep_element_sets(
+                            records, want.source, self.wall_clock()
+                        )
+                        result = {"kept": len(kept), "already_kept": already}
+                    orbit_follower.answered(self.db, want, self.wall_clock())
+            except (CatalogError, ServiceError, ValueError, KeyError) as error:
+                # An answer of 200 that the service cannot read stops the source too, and
+                # says why, instead of failing every run (D-65).
+                self.service._reload()
+                unreadable = FetchError(f"could not read the answer: {error}", 200)
+                with self.lock, self.db.transaction():
+                    orbit_follower.stop(self.db, want, unreadable, self.wall_clock())
+                log.warning("fetching reference orbits stopped: %s", unreadable)
+                done.append({**want.public(), "stopped": str(unreadable)})
+                continue
             done.append({**want.public(), **result})
         return done
 

@@ -293,6 +293,18 @@ def test_a_run_is_fetched_politely(tmp_path):
     assert ra.run_dirs(tmp_path) == [path, later]
 
 
+def test_a_run_that_did_not_finish_still_counts_for_the_two_hours(tmp_path):
+    (tmp_path / "reference-accuracy" / "20261102T000000Z").mkdir(parents=True)  # no run.json
+    with pytest.raises(ValueError, match="at least two hours"):
+        ra.fetch_run(tmp_path, now=lambda: FETCHED + timedelta(hours=1), opener=lambda *a: None)
+
+
+def test_a_temporary_catalogue_number_is_not_a_truth():
+    rows = [sup_row(), sup_row(NORAD_CAT_ID=799649740, OBJECT_NAME="SIM NEW")]
+    truths = ra.choose_truths({"AST-E": parse_catalog(supgp_csv(*rows))}, FETCHED)
+    assert [t.norad_id for t in truths] == [339001]
+
+
 def test_the_first_answer_that_is_not_200_stops_the_run(tmp_path):
     opener, calls = opener_for(lambda url: 503 if "CPF" in url else answers_for(url))
     with pytest.raises(FetchError, match="HTTP 503"):

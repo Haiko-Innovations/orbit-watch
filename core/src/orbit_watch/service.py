@@ -759,7 +759,11 @@ class RequestService:
             members = allowlist.operator_members(body)
         else:
             catalog = parse_catalog(body)
-            members = {norad: catalog.name(norad) for norad in sorted(catalog.records)}
+            members = {
+                norad: catalog.name(norad)
+                for norad in sorted(catalog.records)
+                if norad <= allowlist.MAX_CATALOGUE_NUMBER
+            }
         info = {"fetched_at": format_utc(now), "sha256": sha256_bytes(body), "members": members}
         if self.storage is not None:
             self.storage.db.execute(
