@@ -43,6 +43,16 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   `GET /v1/health/reference-orbits` lists `objects_without_supgp_data`. Verification does
   not use them yet (step 6.2, D-63).
 
+### Fixed
+
+- Objects with temporary nine-digit catalogue numbers in a SupGP source, such as those of
+  a recent launch, broke the reading of `Kuiper-E`. They are left off the allow-list, and
+  an answer the service cannot read stops the source with the reason. The measurement
+  skips them, and a run that did not finish counts for the two hours between SupGP
+  downloads (D-65).
+- The hourly uptime check fails, and so notifies, only once per outage: while its alert
+  issue is open, a failed run writes its time into the issue and passes (D-65).
+
 ### Changed
 
 - A request to a source that gets no answer, such as a timeout, no longer stops the source

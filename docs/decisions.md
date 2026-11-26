@@ -3684,3 +3684,28 @@ policy asks.
   One more try two hours later is a single request at the pace of CelesTrak's update,
   and a block shows as the second no answer, which stops the source and tells a person.
 
+### D-65 Temporary catalogue numbers, and answers the service cannot read
+
+Accepted · 2026-11-26. A fix found in production.
+
+- **What happened.** By 2026-11-26, CelesTrak's `Kuiper-E` held 427 sets, against 391 on
+  2026-11-24. Among them were objects of a recent launch with temporary nine-digit
+  catalogue numbers, such as 799649740. SGP4 and the TLE's Alpha-5 encoding take numbers
+  up to 339999, and the service built every set's orbit only to see which objects had an
+  operator's orbit. Reading `Kuiper-E` failed, most likely in every run of the follower
+  from 2026-11-25, without saying why. The source was asked again every two hours, as
+  CelesTrak allows. CelesTrak timed out at 12:30 UTC and answered 503 at 14:30, which
+  stopped fetching. The measurement run of 2026-11-26 failed the same way.
+- **The fix.**
+  - The list leaves out catalogue numbers above 339999 from every group and source. It
+    reads an object's `DATA_SOURCE` from its sets without building their orbits.
+  - An answer of 200 that the service cannot read now stops the source with the reason,
+    as D-48's other answers do, so the health endpoint says why.
+  - The measurement skips such objects too, and counts a run that did not finish for its
+    two hours between SupGP downloads, since it downloaded them.
+- **One notification per outage.** The stop failed the hourly uptime check every hour
+  through the night, and each failed run sent the maintainer a message. Now only the run
+  that opens the alert issue fails. While the issue is open, a failed run writes its time
+  into the issue's text, which notifies nobody, and passes. The next run that passes
+  still closes the issue (D-39).
+

@@ -302,8 +302,15 @@ def test_the_operations_workflows_keep_to_the_rules(repo_root):
     for name in ("backup.yml", "uptime.yml"):
         text = (folder / name).read_text(encoding="utf-8")
         assert "permissions:\n  contents: read\n  issues: write\n" in text, name
-        assert "Alert the maintainer\n        if: failure()" in text, name
-        assert "Close the alert\n        if: success()" in text, name
+        if name == "uptime.yml":
+            # One alert per outage (D-65): the check may fail; the alert step decides.
+            assert "id: check\n        continue-on-error: true" in text
+            assert "Alert the maintainer\n        if: steps.check.outcome == 'failure'" in text
+            assert "Close the alert\n        if: steps.check.outcome == 'success'" in text
+            assert "gh issue comment" not in text  # a comment would notify; an edit does not
+        else:
+            assert "Alert the maintainer\n        if: failure()" in text, name
+            assert "Close the alert\n        if: success()" in text, name
         assert '--assignee "${ASSIGNEE}"' in text and "${{ vars.ALERT_ASSIGNEE }}" in text
         for used in re.findall(r"uses: (\S+)", text):
             assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", used), used

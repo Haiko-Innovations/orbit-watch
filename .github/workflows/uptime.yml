@@ -5,7 +5,9 @@ name: Uptime
 # stops, the fetching of reference orbits, which stops at the first answer from CelesTrak
 # or SatChecker that is not 200 and waits for a person (step 5.4, D-48), and the web
 # application. A failed run opens an issue assigned to the maintainer (the repository
-# variable ALERT_ASSIGNEE), and the next run that passes closes it.
+# variable ALERT_ASSIGNEE), and the next run that passes closes it. Only the run that opens
+# the issue fails: while it is open, later failed runs write their time into it and pass,
+# so that a long outage sends one notification, not one an hour (D-65).
 
 on:
   schedule:
@@ -32,6 +34,8 @@ jobs:
       SERVICE: https://orbit-watch-tan.vercel.app
     steps:
       - name: The API, the follower, the reference orbits and the web application answer
+        id: check
+        continue-on-error: true
         env:
           FAIL_ON_PURPOSE: ${{ inputs.fail }}
         run: |
@@ -53,9 +57,10 @@ jobs:
 
       # The alert (D-39): an issue assigned to the maintainer, which reaches them like
       # everything else they follow on GitHub. One open issue at a time; the next run that
-      # passes closes it.
+      # passes closes it. A run that finds it open edits its body, which notifies nobody,
+      # and passes (D-65).
       - name: Alert the maintainer
-        if: failure()
+        if: steps.check.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -63,15 +68,22 @@ jobs:
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          if [ -n "$(gh issue list --label "alert: uptime" --state open --json number --jq '.[].number')" ]; then
-            echo "An alert is already open."
+          help="What to do: docs/operations.md#the-uptime-check-failed. The next run that passes closes this issue."
+          open="$(gh issue list --label "alert: uptime" --state open --json number,body --jq '.[0] // empty')"
+          if [ -n "${open}" ]; then
+            number="$(jq -r .number <<<"${open}")"
+            first="$(jq -r .body <<<"${open}" | head -n 1)"
+            body="$(printf '%s\n\nStill failing: %s at %s.\n\n%s' "${first}" "${RUN}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${help}")"
+            gh api --method PATCH "repos/${GH_REPO}/issues/${number}" -f body="${body}" --silent
+            echo "The alert #${number} is already open; this run is written into it."
             exit 0
           fi
           gh issue create --label "alert: uptime" --assignee "${ASSIGNEE}" --title "Alert: the public service does not answer" \
-            --body "${RUN} failed. What to do: docs/operations.md#the-uptime-check-failed. The next run that passes closes this issue."
+            --body "$(printf '%s failed.\n\n%s' "${RUN}" "${help}")"
+          exit 1
 
       - name: Close the alert
-        if: success()
+        if: steps.check.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

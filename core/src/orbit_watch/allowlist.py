@@ -31,7 +31,7 @@ from typing import Any
 from orbit_watch.canonical import sha256_bytes
 from orbit_watch.catalog import parse_catalog
 from orbit_watch.documents import TargetPolicy
-from orbit_watch.supgp import sup_sets
+from orbit_watch.supgp import is_operator_orbit
 
 # Conservative name patterns. A civilian object wrongly excluded is a small
 # loss; a military object wrongly included is not acceptable.
@@ -97,6 +97,12 @@ def _patterns() -> list[re.Pattern[str]]:
     return [re.compile(p, re.IGNORECASE) for p in DEFAULT_EXCLUDED_NAME_PATTERNS]
 
 
+# SGP4 and the TLE's Alpha-5 encoding take catalogue numbers up to 339999. CelesTrak gives
+# objects not yet catalogued, such as those of a launch days ago, temporary numbers of nine
+# digits; they cannot be propagated here, so they are left off the list (D-65).
+MAX_CATALOGUE_NUMBER = 339_999
+
+
 def is_operator_source(name: str) -> bool:
     """Whether a name of ``GROUPS`` is one of CelesTrak's SupGP sources, not a GP group."""
     return name in OPERATOR_SOURCES
@@ -109,12 +115,18 @@ def plain_name(name: str) -> str:
 
 
 def operator_members(body: bytes) -> dict[int, str]:
-    """The objects of one SupGP source's answer that have an operator's orbit, by name."""
+    """The objects of one SupGP source's answer that have an operator's orbit, by name,
+    read from the sets' fields without building their orbits. Temporary catalogue numbers,
+    above ``MAX_CATALOGUE_NUMBER``, are left out."""
     catalog = parse_catalog(body)
     return {
         norad: plain_name(catalog.name(norad))
         for norad in sorted(catalog.sets)
-        if any(s.operator_orbit for s in sup_sets(catalog, norad))
+        if norad <= MAX_CATALOGUE_NUMBER
+        and any(
+            is_operator_orbit(str(record.get("DATA_SOURCE", "")).strip())
+            for record in catalog.sets[norad]
+        )
     }
 
 

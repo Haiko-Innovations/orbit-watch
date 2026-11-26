@@ -42,6 +42,7 @@ from typing import Any
 import numpy as np
 
 from orbit_watch import __version__
+from orbit_watch.allowlist import MAX_CATALOGUE_NUMBER
 from orbit_watch.canonical import dumps_pretty
 from orbit_watch.catalog import Catalog, ElementSet, parse_catalog
 from orbit_watch.satchecker import PAUSE_S, download, history_url, parse_history
@@ -122,6 +123,8 @@ def choose_truths(sources: dict[str, Catalog], moment: datetime) -> list[Truth]:
             continue
         groups: dict[str, list[tuple[int, SupSet]]] = {}
         for norad_id in sorted(catalog.sets):
+            if norad_id > MAX_CATALOGUE_NUMBER:
+                continue  # a temporary number, which SGP4 cannot take
             sup = _latest_before(sup_sets(catalog, norad_id), moment)
             if sup is None:
                 continue
@@ -236,9 +239,11 @@ def fetch_run(
     (the run then stays incomplete and unused). Refuses to start within two hours of the
     last run, since CelesTrak asks for that much between SupGP downloads."""
     moment = now().astimezone(UTC).replace(microsecond=0)
-    previous = run_dirs(cache_dir)
-    if previous:
-        last = load_run(previous[-1]).fetched_at
+    root = cache_dir / "reference-accuracy"
+    started = sorted(p.name for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
+    if started:
+        # Every run that began counts, complete or not: it downloaded SupGP data.
+        last = datetime.strptime(started[-1], "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
         if (moment - last).total_seconds() < MIN_RUN_GAP_S:
             raise ValueError(
                 f"the last run was fetched at {_stamp(last)}; CelesTrak asks for at least two "

@@ -243,6 +243,28 @@ def test_the_objects_whose_operators_publish_their_orbits():
     assert not set(allowlist.combine(policy_bytes(), sources, {})) & set(ALLOWED)
 
 
+def test_a_temporary_catalogue_number_is_left_out():
+    """CelesTrak numbers objects not yet catalogued with nine digits, which SGP4 cannot
+    take; the list leaves them out without building their orbits (D-65)."""
+    body = csv_of(sup(99035, "TEST KUIPER 1", "Kuiper-E"), sup(799649740, "TEST NEW", "Kuiper-E"))
+    assert allowlist.operator_members(body) == {99035: "TEST KUIPER 1"}
+
+
+def test_an_answer_the_service_cannot_read_stops_celestrak(world, monkeypatch):
+    from orbit_watch.catalog import CatalogError
+
+    def broken(group, body, now):
+        raise CatalogError("cannot build an orbit for 99033")
+
+    monkeypatch.setattr(world["service"], "keep_group", broken)
+    entries = follow(world)
+    assert "could not read the answer" in entries[0]["stopped"]
+    response = world["client"].get("/v1/health/reference-orbits")
+    assert response.status_code == 503
+    assert "cannot build an orbit" in response.json()["sources"]["celestrak"]["reason"]
+    assert len(entries) == 1  # nothing more is asked in that run
+
+
 def test_only_sets_of_an_operators_orbit_make_an_object_a_member():
     body = csv_of(
         sup(99033, "TEST AST 1", "AST-E"),
