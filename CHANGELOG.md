@@ -58,8 +58,7 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   laser-ranging prediction or a GP set), orbit class and age, from step 6.1's
   measurements. A GP set in low orbits is used up to three days from its epoch. The
   report (format 1.2) names the orbit term. `orbit-watch validate --method` runs 2.1.0
-  or 3.0.0; the service verifies with the method a request's terms name, still 2.1.0
-  for new requests. The examples, the known answers and the measurement on real data
+  or 3.0.0; the service verifies with the method a request's terms name. The examples, the known answers and the measurement on real data
   are made with 3.0.0, and the time shifts against operators' orbits with both.
 
 ### Fixed
@@ -74,6 +73,11 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Changed
 
+- New requests name method 3.0.0 in their terms; those made before keep 2.1.0 and their
+  reports. A replay waits for, and a simulated station observes a real object with, a
+  set the request's method uses: under 3.0.0 within three days of the window for a GP
+  set in low orbits. A pass list still plans with a set up to seven days away. Phase 1's
+  examples are regenerated, with the same outcomes (step 6.3, D-69).
 - A request to a source that gets no answer, such as a timeout, no longer stops the source
   at once: the follower waits two hours and tries once more, and a second in a row stops
   it. `GET /v1/health/reference-orbits` shows `no_answer_at` meanwhile. Migration 0016

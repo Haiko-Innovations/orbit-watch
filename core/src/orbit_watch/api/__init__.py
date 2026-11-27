@@ -79,7 +79,7 @@ from orbit_watch.catalog import CatalogError
 from orbit_watch.chain import WALLET_PREFIX, ChainError
 from orbit_watch.fetch import FetchError
 from orbit_watch.schema import validate
-from orbit_watch.service import RequestService, ServiceError
+from orbit_watch.service import RequestService, ServiceError, method_version
 from orbit_watch.settlement import SettlementError
 from orbit_watch.timeutil import format_utc, parse_utc
 
@@ -177,6 +177,9 @@ STATUS = {
     "read_only": 503,
 }
 PASS_LIST_SPAN = timedelta(days=7)  # a station's pass list covers at most this (D-58)
+# A pass list plans observations: a set up to a week from the window predicts its passes
+# to within seconds, so it is not held to the verification method's age limit (D-69).
+PASS_LIST_AGE_DAYS = 7.0
 READ_ONLY_MESSAGE = (
     "the service is read-only for maintenance: nothing can be changed right now, but "
     "everything can be read"
@@ -1302,7 +1305,9 @@ class Api:
         station = StationProfile.from_document(profile)
         terms = record.terms
         end = min(terms.window_end, terms.window_start + PASS_LIST_SPAN)
-        catalogue = self.service.simulation_catalog(terms.target_norad_id, terms.window_start, end)
+        catalogue = self.service.simulation_catalog(
+            terms.target_norad_id, terms.window_start, end, max_age_days=PASS_LIST_AGE_DAYS
+        )
         found_passes = passes(
             parse_catalog(catalogue),
             terms.target_norad_id,
@@ -1354,7 +1359,7 @@ class Api:
         if found["place"] != "exact" and self.station_decimals is not None:
             profile = privacy.rounded_station(profile, self.station_decimals)  # saved earlier
         catalogue = self.service.simulation_catalog(
-            terms.target_norad_id, terms.window_start, terms.window_end
+            terms.target_norad_id, terms.window_start, terms.window_end, method_version(terms)
         )
         observations = simulate(
             parse_catalog(catalogue),
