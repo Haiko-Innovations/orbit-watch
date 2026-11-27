@@ -75,6 +75,9 @@ class TransitionError(ValueError):
 # --------------------------------------------------------------------------- terms
 
 
+VERIFICATION_METHOD = "orbit-watch-automated-verification 3.0.0"
+
+
 @dataclass(frozen=True)
 class Terms:
     """What the requester and the observers agree on. Frozen when the request opens."""
@@ -92,7 +95,9 @@ class Terms:
     verification_timeout_hours: float = DEFAULT_VERIFICATION_TIMEOUT_HOURS
     embargo_days: int = 0
     licence: str = "CC-BY-4.0"
-    verification_method: str = "orbit-watch-automated-verification 2.1.0"
+    # New requests name method 3.0.0 (D-69). A request keeps the method its terms name, so
+    # those made earlier are still verified with 2.1.0.
+    verification_method: str = VERIFICATION_METHOD
 
     def problems(self) -> list[str]:
         found = []

@@ -144,7 +144,8 @@ def test_an_administrator_simulates_a_real_object(world):  # noqa: F811
     # Far from every stored set, the age limit would make verification inconclusive.
     far = admin_simulate(world, 99015, "2026-11-20T00:00:00Z", "2026-11-20T12:00:00Z")
     assert far.status_code == 409
-    assert "within 7 days" in far.json()["error"]["message"]
+    # Method 3.0.0 uses a GP set in low orbits up to three days from its epoch (D-69).
+    assert "within 3 days of the window, as method 3.0.0 needs" in far.json()["error"]["message"]
     # Not on the list: refused as before.
     assert admin_simulate(world, 99012).status_code == 404
     # The service's own objects: from its own catalogue, as before.
@@ -170,3 +171,33 @@ def test_the_simulation_uses_the_set_nearest_the_window(world):  # noqa: F811
         world["context"].catalog
     )
     at(world, hours=1)  # the clock is not used: nothing is fetched
+
+
+def test_a_pass_list_plans_with_an_older_set_than_verification_uses(world):  # noqa: F811
+    # The stored set is from 2026-11-01. A window about five and a half days later: method
+    # 3.0.0 uses a GP set in low orbits up to three days, so no simulated delivery is made
+    # only to be inconclusive, but the pass list plans with it, up to a week (D-69).
+    fetch_all_groups(world)
+    station_profile(world)
+    reserved(world, "SIM-REQ-0054", simulated=True)
+    service, now = world["service"], world["clock"]
+    rid = "SIM-REQ-0055"
+    later = request_bytes(
+        request_id=rid,
+        norad_id=99015,
+        simulated=True,
+        start="2026-11-06T15:00:00Z",
+        end="2026-11-07T03:00:00Z",
+    )
+    service.create(later, REQUESTER, now())
+    service.open(rid, REQUESTER, now())
+    service.fund(rid, REQUESTER, SPLIT, now())
+    service.reserve(rid, STATION, now())
+    refused = simulate(world, rid)
+    assert refused.status_code == 409
+    message = refused.json()["error"]["message"]
+    assert "within 3 days of the window, as method 3.0.0 needs" in message
+    passes = world["client"].get(
+        f"/v1/requests/{rid}/passes", headers={"Authorization": f"Bearer {world['station']}"}
+    )
+    assert passes.status_code == 200, passes.text

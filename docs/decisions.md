@@ -3840,3 +3840,33 @@ Method 3.0.0 carries out P6-05 with the plan of D-67.
   against an operator's set under a day old no good track failed and no track half a
   second late passed. At two to three days the growing term lets most good tracks
   through, and many a second late too.
+
+
+### D-69 New requests use method 3.0.0
+
+Accepted · 2026-11-27 (with the pull request that implements step 6.3's last part).
+The service moves to method 3.0.0 (D-68), and step 6.3 is done.
+
+- **New requests name 3.0.0.** The terms' default `verification_method` is
+  `orbit-watch-automated-verification 3.0.0` (`lifecycle.VERIFICATION_METHOD`). A
+  request keeps the method its terms name: those made before name 2.1.0, are verified
+  with it and keep their reports. A test settles a request whose stored terms name
+  2.1.0, opens the service again and finds the same report; another verifies a
+  committed 2.1.0 report again byte for byte (D-68).
+- **The service's age limits follow the request's method.** Before, a replay waited
+  for, and a simulated station observed a real object with, a set within 2.1.0's seven
+  days of the window. Now the limit is the oldest age the request's method uses the set
+  at (`service.reference_age_days`): seven days for every set under 2.1.0; under 3.0.0
+  three days for a GP set in low orbits, seven in medium orbits, five in geosynchronous
+  ones, seven in highly elliptical ones (D-67, choices b and c). So a replay is not
+  delivered, and simulated observations are not made, only to be inconclusive. The
+  administrator's simulation names no request and uses the newest method.
+- **A pass list keeps seven days.** It plans observations and verifies nothing: a set
+  up to a week from the window predicts a pass to within seconds, so a station of a
+  long window still sees its passes before a newer set is fetched (D-58).
+- **Regenerated.** Phase 1's examples go through the service: their outcomes are
+  unchanged, and their reports now name 3.0.0, so their hashes in `summary.json`
+  changed. The station quality meter is a method of its own (1.1.0) and keeps its seven
+  days.
+- **Production.** New requests on the public testnet name 3.0.0 once this is deployed;
+  open requests made before keep 2.1.0.

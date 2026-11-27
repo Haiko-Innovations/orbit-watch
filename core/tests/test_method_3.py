@@ -1,20 +1,33 @@
-"""Method 3.0.0 (phase 6, step 6.3, part 2; decisions D-67 and D-68): the orbit term by the
-set's kind, orbit class and age, the ellipse along and across the apparent motion, and
-method 2.1.0 still run for the requests whose terms name it. Every element set here is
-SIMULATED.
+"""Method 3.0.0 (phase 6, step 6.3; decisions D-67 to D-69): the orbit term by the set's
+kind, orbit class and age, the ellipse along and across the apparent motion, new requests
+naming 3.0.0, and method 2.1.0 still run for the requests whose terms name it. Every
+element set here is SIMULATED.
 """
 
 import json
 from dataclasses import replace
+from datetime import timedelta
 
 import pytest
+from helpers import catalog_bytes, packaged, policy_bytes, request_bytes
 from test_reference_accuracy import truth_pair
-from test_service import DELIVERY, STATION, datasets, funded_and_reserved, make_service  # noqa: F401
+from test_service import (  # noqa: F401
+    DELIVERY,
+    REQUESTER,
+    STATION,
+    datasets,
+    funded_and_reserved,
+    make_service,
+)
 
 from orbit_watch import cli
+from orbit_watch import lifecycle as lc
 from orbit_watch import reference_accuracy as ra
 from orbit_watch.canonical import dumps_pretty
 from orbit_watch.geometry import orbit_projection, residuals
+from orbit_watch.lifecycle import Status
+from orbit_watch.reviewers import ReviewerRegistry
+from orbit_watch.service import VerificationContext, open_service, reference_age_days
 from orbit_watch.verify import orbit_terms
 from orbit_watch.verify.engine import (
     METHOD_VERSION,
@@ -182,13 +195,61 @@ def delivered_method(service, rid):
 def test_the_service_verifies_with_the_method_the_terms_name(datasets):  # noqa: F811
     service, _ = make_service()
     rid = funded_and_reserved(service)
+    assert service.records[rid].terms.verification_method == lc.VERIFICATION_METHOD
     service.deliver(rid, STATION, datasets["acceptable"], DELIVERY)
-    assert delivered_method(service, rid) == "2.1.0"  # the terms' default, for now
+    assert delivered_method(service, rid) == "3.0.0"  # new requests (D-69)
 
     service, _ = make_service()
     rid = funded_and_reserved(service)
     record = service.records[rid]
-    terms = replace(record.terms, verification_method="orbit-watch-automated-verification 3.0.0")
+    terms = replace(record.terms, verification_method="orbit-watch-automated-verification 2.1.0")
     service.records[rid] = replace(record, terms=terms)
     service.deliver(rid, STATION, datasets["acceptable"], DELIVERY)
-    assert delivered_method(service, rid) == "3.0.0"
+    assert delivered_method(service, rid) == "2.1.0"
+
+
+def test_a_request_made_before_keeps_method_2_1_0_and_its_report(database, datasets):  # noqa: F811
+    registry = ReviewerRegistry.parse(packaged("reviewers.json"))
+    context = VerificationContext(catalog=catalog_bytes(), policy=policy_bytes())
+    service = open_service(database, registry, context)
+    service.adapter.grant(REQUESTER, 1000, key="budget")
+    old = funded_and_reserved(service)
+    # As a database from before D-69 holds it: the terms name method 2.1.0.
+    document = service.records[old].to_document()
+    document["terms"]["verification_method"] = "orbit-watch-automated-verification 2.1.0"
+    with service.storage.db.transaction():
+        service.storage.db.execute(
+            "UPDATE requests SET record_json = ? WHERE request_id = ?",
+            (json.dumps(document, sort_keys=True), old),
+        )
+    service.storage.close()
+
+    service = open_service(database, registry, context)
+    service.deliver(old, STATION, datasets["acceptable"], DELIVERY)
+    service.tick(DELIVERY + timedelta(hours=24))
+    record = service.records[old]
+    assert record.status is Status.SETTLED and record.outcome is Status.ACCEPTED
+    report = service.report(old)
+    assert json.loads(report)["method"]["version"] == "2.1.0"
+    assert json.loads(report)["report_format_version"] == "1.1"
+    service.storage.close()
+
+    # Opened again, the settled request and its report are as they were.
+    service = open_service(database, registry, context)
+    assert service.report(old) == report
+    assert service.records[old].terms.verification_method.endswith(" 2.1.0")
+    new = funded_and_reserved(service, request_bytes(request_id="SIM-REQ-0002"))
+    service.deliver(new, STATION, datasets["wrong_target"], DELIVERY)
+    assert delivered_method(service, new) == "3.0.0"
+    service.storage.close()
+
+
+def test_the_service_waits_for_and_picks_a_set_by_the_methods_age_limit():
+    # A replay waits for, and a simulated station observes with, a set the request's
+    # method uses (D-69): 2.1.0's seven days for every set, or 3.0.0's by orbit class.
+    assert reference_age_days("2.1.0", LEO) == 7.0
+    assert reference_age_days("3.0.0", LEO) == 3.0
+    assert reference_age_days("3.0.0", {**LEO, "DATA_SOURCE": "OneWeb-E"}) == 3.0  # then GP
+    assert reference_age_days("3.0.0", MEO) == 7.0
+    assert reference_age_days("3.0.0", GEO) == 5.0
+    assert reference_age_days("3.0.0", HEO) == 7.0

@@ -113,7 +113,7 @@ and hashed; later changes to the defaults never affect an open request.
 | `verification_timeout_hours` | 24 | positive |
 | `embargo_days` | 0 | 0 to 30 |
 | `licence` | CC-BY-4.0 | |
-| `verification_method` | orbit-watch-automated-verification 2.1.0 | |
+| `verification_method` | orbit-watch-automated-verification 3.0.0 | a method the engine runs; requests made before 2026-11-27 name 2.1.0 and keep it ([D-69](decisions.md#d-69-new-requests-use-method-300)) |
 
 ## Not decided yet
 

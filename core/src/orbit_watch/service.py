@@ -50,6 +50,7 @@ from orbit_watch.settlement import SettlementAdapter, SettlementError, settlemen
 from orbit_watch.storage import Storage, StoredFiles
 from orbit_watch.supgp import SERVICE as SUPGP_SERVICE
 from orbit_watch.timeutil import format_utc
+from orbit_watch.verify import orbit_terms
 from orbit_watch.verify.engine import (
     PARAMETERS_2_1_0,
     UsageError,
@@ -89,14 +90,22 @@ def _atomic[F: Callable[..., Any]](method: F) -> F:
     return wrapper  # type: ignore[return-value]
 
 
-# How far from a window the service looks for a reference orbit before a replay is
-# delivered, and for a simulated station's: method 2.1.0's seven days.
-REFERENCE_AGE_DAYS = PARAMETERS_2_1_0["max_reference_age_days"]
-
-
 def method_version(terms: lc.Terms) -> str:
-    """The version of the verification method a request's terms name, such as "2.1.0"."""
+    """The version of the verification method a request's terms name, such as "3.0.0"."""
     return terms.verification_method.rpartition(" ")[2]
+
+
+DEFAULT_METHOD_VERSION = lc.VERIFICATION_METHOD.rpartition(" ")[2]
+
+
+def reference_age_days(version: str, record: dict[str, Any]) -> float:
+    """How far from its epoch a method uses an element set: method 2.1.0's seven days for
+    every set (D-08), or method 3.0.0's oldest age for the set's kind and orbit class (D-67,
+    choice b). The service waits for, or picks, a reference orbit by the same limit, so a
+    replay or a simulated station's delivery is not made only to be inconclusive (D-69)."""
+    if version == "2.1.0":
+        return PARAMETERS_2_1_0["max_reference_age_days"]
+    return orbit_terms.oldest_age(record)
 
 
 class ServiceError(ValueError):
@@ -483,14 +492,17 @@ class RequestService:
             )
         terms = self._record(request_id).terms
         middle = terms.window_start + (terms.window_end - terms.window_start) / 2
-        limit = timedelta(days=REFERENCE_AGE_DAYS)
-        epochs = [s.epoch_time for s in self.gp_sets(terms.target_norad_id)]
-        if not any(e is not None and abs(e - middle) <= limit for e in epochs):
+        version = method_version(terms)
+        if not any(
+            s.epoch_time is not None
+            and abs(s.epoch_time - middle) <= timedelta(days=reference_age_days(version, s.record))
+            for s in self.gp_sets(terms.target_norad_id)
+        ):
             raise ServiceError(
                 "reference_orbit_pending",
-                f"the service keeps no element set of object {terms.target_norad_id} within "
-                f"{REFERENCE_AGE_DAYS:g} days of the window yet. The follower "
-                "fetches SatChecker's nearest set once the request is open; try again later",
+                f"the service keeps no element set of object {terms.target_norad_id} near "
+                f"enough to the window for method {version} yet. The follower fetches "
+                "SatChecker's nearest set once the request is open; try again later",
             )
 
     @_atomic
@@ -607,12 +619,20 @@ class RequestService:
         base = parse_catalog(self.context.catalog)
         return set(base.sets) if base.simulated else set()
 
-    def simulation_catalog(self, norad_id: int, start: datetime, end: datetime) -> bytes:
+    def simulation_catalog(
+        self,
+        norad_id: int,
+        start: datetime,
+        end: datetime,
+        version: str = DEFAULT_METHOD_VERSION,
+        max_age_days: float | None = None,
+    ) -> bytes:
         """The catalogue that a simulated station observes an object with (D-50). For the
         service's own objects it is the service's own catalogue, as before. For a real
         object it is the set that verification picks for the window, alone: its operator's
         orbit (D-66), or else the stored GP set nearest the middle of the window. So the
-        SIMULATED observations follow the set they are verified against."""
+        SIMULATED observations follow the set they are verified against, with method
+        ``version``'s limit on its age, or ``max_age_days`` for a pass list (D-69)."""
         stored = self.reference_sets(norad_id, start)
         if not stored:
             if norad_id in parse_catalog(self.context.catalog).sets:
@@ -625,12 +645,15 @@ class RequestService:
         middle = start + (end - start) / 2
         catalog = self.catalog_for([norad_id], window_start=start)
         nearest = parse_catalog(catalog).nearest(norad_id, middle)
-        if abs(nearest.epoch - middle) > timedelta(days=REFERENCE_AGE_DAYS):
+        allowed = max_age_days
+        if allowed is None:
+            allowed = reference_age_days(version, nearest.record)
+        if abs(nearest.epoch - middle) > timedelta(days=allowed):
+            needs = "for a pass list" if max_age_days is not None else f"as method {version} needs"
             raise ServiceError(
                 "no_reference_orbit",
-                f"object {norad_id} has no element set within "
-                f"{REFERENCE_AGE_DAYS:g} days of the window; the nearest is "
-                f"from {format_utc(nearest.epoch)}",
+                f"object {norad_id} has no element set within {allowed:g} days of the "
+                f"window, {needs}; the nearest is from {format_utc(nearest.epoch)}",
             )
         document = {
             "format": "orbit-watch/gp-catalog",

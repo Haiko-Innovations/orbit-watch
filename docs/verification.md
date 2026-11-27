@@ -15,7 +15,7 @@ Current method: **`orbit-watch-automated-verification` 3.0.0**
 
 | Version | Release | Change |
 |---|---|---|
-| 3.0.0 | 0.7.0 | The limit is an ellipse along the object's apparent motion and across it. Its orbit term is by the reference orbit's kind (an operator's orbit, a laser-ranging prediction or a GP set), orbit class and age, separately radially, along the track and across it, from step 6.1's measurements; past a row's last age the check is inconclusive ([D-68](decisions.md#d-68-method-300)). It replaces 2.1.0's 5 km and 7 days. Report format 1.2. A request's terms name its method, and its deliveries are verified with it: the engine runs 2.1.0 as well. |
+| 3.0.0 | 0.7.0 | The limit is an ellipse along the object's apparent motion and across it. Its orbit term is by the reference orbit's kind (an operator's orbit, a laser-ranging prediction or a GP set), orbit class and age, separately radially, along the track and across it, from step 6.1's measurements; past a row's last age the check is inconclusive ([D-68](decisions.md#d-68-method-300)). It replaces 2.1.0's 5 km and 7 days. Report format 1.2. A request's terms name its method, and its deliveries are verified with it: new requests name 3.0.0, and the engine runs 2.1.0 for those made before ([D-69](decisions.md#d-69-new-requests-use-method-300)). |
 | 2.1.0 | 0.6.0 | The element set nearest the observations, when the catalogue holds several sets of the object ([P5-04](decisions.md#p5-04-the-element-set-nearest-the-observations)); the report names it. With one set per object every verdict stays the same. Report format 1.1. |
 | 2.0.0 | 0.5.0 | No reference age limit for a SIMULATED catalogue: a residual check that 1.0.0 called inconclusive can now pass or fail. |
 | 1.0.0 | 0.1.0 | The first method. |
@@ -146,8 +146,9 @@ within their limits. Method 3.0.0's other parameters:
 
 ### Method 2.1.0
 
-The engine still runs it, for requests whose terms name it (`orbit-watch validate
---method 2.1.0`). Its limit is one circle:
+The engine still runs it, for the requests made before 2026-11-27, whose terms name it
+([D-69](decisions.md#d-69-new-requests-use-method-300); `orbit-watch validate --method
+2.1.0`). Its limit is one circle:
 
 ```
 limit = sqrt( (k·σ_angle)² + (k·σ_time·rate)² + θ_ref² ),    θ_ref = atan(reference_position_error_km / range)
@@ -207,4 +208,8 @@ for byte in CI, so an unintended change cannot slip through.
 A request's terms name the method its deliveries are verified with, and the engine
 keeps running every method that open or settled requests name, so a report is never
 made again with another method. Method 2.1.0's reports stay byte for byte what they
-were: a test verifies a committed 2.1.0 report again.
+were: a test verifies a committed 2.1.0 report again, and another settles a request
+whose stored terms name 2.1.0 and finds its report unchanged after the service is opened
+again. The service also waits for, and picks, a reference orbit by the age limit of the
+request's method: a replay is delivered, and a simulated station observes a real object,
+only with a set that method uses (D-69).

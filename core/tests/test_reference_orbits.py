@@ -183,12 +183,11 @@ def test_the_quality_meter_uses_the_nearest_set():
 
 
 def test_the_terms_name_a_method_the_engine_runs():
-    # Until the service moves to method 3.0.0 (step 6.3, part 3), new requests keep 2.1.0,
-    # and their deliveries are verified with it (D-68).
+    # New requests name the engine's newest method, 3.0.0 (D-69).
     default = next(f.default for f in fields(Terms) if f.name == "verification_method")
     name, _, version = default.rpartition(" ")
     assert name == METHOD_NAME and version in METHOD_VERSIONS
-    assert version == "2.1.0"
+    assert version == METHOD_VERSIONS[-1] == "3.0.0"
 
 
 # CelesTrak (fetch-gp) ---------------------------------------------------------------------
