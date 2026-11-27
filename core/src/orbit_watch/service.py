@@ -50,7 +50,12 @@ from orbit_watch.settlement import SettlementAdapter, SettlementError, settlemen
 from orbit_watch.storage import Storage, StoredFiles
 from orbit_watch.supgp import SERVICE as SUPGP_SERVICE
 from orbit_watch.timeutil import format_utc
-from orbit_watch.verify.engine import PARAMETERS, UsageError, VerificationInput, verify
+from orbit_watch.verify.engine import (
+    PARAMETERS_2_1_0,
+    UsageError,
+    VerificationInput,
+    verify,
+)
 
 VERIFIER = "system:verifier"
 # How much older than a window's start an operator's orbit may be for verification to use it
@@ -82,6 +87,16 @@ def _atomic[F: Callable[..., Any]](method: F) -> F:
             raise
 
     return wrapper  # type: ignore[return-value]
+
+
+# How far from a window the service looks for a reference orbit before a replay is
+# delivered, and for a simulated station's: method 2.1.0's seven days.
+REFERENCE_AGE_DAYS = PARAMETERS_2_1_0["max_reference_age_days"]
+
+
+def method_version(terms: lc.Terms) -> str:
+    """The version of the verification method a request's terms name, such as "2.1.0"."""
+    return terms.verification_method.rpartition(" ")[2]
 
 
 class ServiceError(ValueError):
@@ -468,13 +483,13 @@ class RequestService:
             )
         terms = self._record(request_id).terms
         middle = terms.window_start + (terms.window_end - terms.window_start) / 2
-        limit = timedelta(days=PARAMETERS["max_reference_age_days"])
+        limit = timedelta(days=REFERENCE_AGE_DAYS)
         epochs = [s.epoch_time for s in self.gp_sets(terms.target_norad_id)]
         if not any(e is not None and abs(e - middle) <= limit for e in epochs):
             raise ServiceError(
                 "reference_orbit_pending",
                 f"the service keeps no element set of object {terms.target_norad_id} within "
-                f"{PARAMETERS['max_reference_age_days']:g} days of the window yet. The follower "
+                f"{REFERENCE_AGE_DAYS:g} days of the window yet. The follower "
                 "fetches SatChecker's nearest set once the request is open; try again later",
             )
 
@@ -565,6 +580,8 @@ class RequestService:
                         if sites_sha256 is None
                         else Sites.parse(self.files[sites_sha256])
                     ),
+                    # The method the request's terms name (D-68).
+                    method_version=method_version(self._record(request_id).terms),
                 )
             )
         except UsageError as error:  # a configuration problem, not the station's fault
@@ -608,11 +625,11 @@ class RequestService:
         middle = start + (end - start) / 2
         catalog = self.catalog_for([norad_id], window_start=start)
         nearest = parse_catalog(catalog).nearest(norad_id, middle)
-        if abs(nearest.epoch - middle) > timedelta(days=PARAMETERS["max_reference_age_days"]):
+        if abs(nearest.epoch - middle) > timedelta(days=REFERENCE_AGE_DAYS):
             raise ServiceError(
                 "no_reference_orbit",
                 f"object {norad_id} has no element set within "
-                f"{PARAMETERS['max_reference_age_days']:g} days of the window; the nearest is "
+                f"{REFERENCE_AGE_DAYS:g} days of the window; the nearest is "
                 f"from {format_utc(nearest.epoch)}",
             )
         document = {

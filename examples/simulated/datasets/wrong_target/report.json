@@ -1,6 +1,6 @@
 {
   "report_format": "orbit-watch/verification-report",
-  "report_format_version": "1.1",
+  "report_format_version": "1.2",
   "verdict": "fail",
   "summary": "FAIL: 1 check(s) failed: residuals against the public reference orbit.",
   "simulated_input": true,
@@ -8,15 +8,141 @@
   "disclaimer": "Automated verification by a prototype method. It compares the observations with a public reference orbit and the request terms; it is not production-ready scientific validation and does not prove that the measurements are physically correct.",
   "method": {
     "name": "orbit-watch-automated-verification",
-    "version": "2.1.0",
+    "version": "3.0.0",
     "parameters": {
-      "reference_position_error_km": 5.0,
       "residual_sigma_multiplier": 3.0,
       "min_fraction_within_limit": 0.8,
-      "max_reference_age_days": 7.0,
       "duplicate_time_resolution_s": 0.001,
       "duplicate_angle_resolution_arcsec": 1.0
     },
+    "orbit_terms": [
+      {
+        "kind": "operator",
+        "description": "an operator's orbit via CelesTrak SupGP",
+        "orbit_class": "LEO",
+        "age_days": "0–1",
+        "radial_km": 0.5,
+        "in_track_km": 2.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "laser-ranging",
+        "description": "a laser-ranging prediction via CelesTrak SupGP",
+        "orbit_class": "LEO",
+        "age_days": "0–3",
+        "radial_km": 0.5,
+        "in_track_km": 2.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "laser-ranging",
+        "description": "a laser-ranging prediction via CelesTrak SupGP",
+        "orbit_class": "MEO",
+        "age_days": "0–3",
+        "radial_km": 0.5,
+        "in_track_km": 1.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "laser-ranging",
+        "description": "a laser-ranging prediction via CelesTrak SupGP",
+        "orbit_class": "GEO",
+        "age_days": "0–3",
+        "radial_km": 1.5,
+        "in_track_km": 3.0,
+        "cross_track_km": 1.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "LEO",
+        "age_days": "0–1",
+        "radial_km": 0.5,
+        "in_track_km": 4.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "LEO",
+        "age_days": "1–2",
+        "radial_km": 0.5,
+        "in_track_km": 9.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "LEO",
+        "age_days": "2–3",
+        "radial_km": 0.5,
+        "in_track_km": 16.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "MEO",
+        "age_days": "0–3",
+        "radial_km": 1.0,
+        "in_track_km": 5.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "MEO",
+        "age_days": "3–7",
+        "radial_km": 1.5,
+        "in_track_km": 7.0,
+        "cross_track_km": 0.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "GEO",
+        "age_days": "0–1",
+        "radial_km": 2.0,
+        "in_track_km": 4.0,
+        "cross_track_km": 4.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "GEO",
+        "age_days": "1–2",
+        "radial_km": 2.0,
+        "in_track_km": 5.0,
+        "cross_track_km": 5.5
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "GEO",
+        "age_days": "2–3",
+        "radial_km": 2.5,
+        "in_track_km": 8.0,
+        "cross_track_km": 7.0
+      },
+      {
+        "kind": "gp",
+        "description": "a GP set",
+        "orbit_class": "GEO",
+        "age_days": "3–5",
+        "radial_km": 3.0,
+        "in_track_km": 12.0,
+        "cross_track_km": 8.5
+      },
+      {
+        "kind": "not-measured",
+        "description": "an orbit class not measured in step 6.1",
+        "orbit_class": "HEO",
+        "age_days": "0–7",
+        "radial_km": 5.0,
+        "in_track_km": 5.0,
+        "cross_track_km": 5.0
+      }
+    ],
     "accepted_observation_formats": [
       "orbit-watch/observation-set 1.0",
       "iod",
@@ -122,8 +248,17 @@
       "id": "orbit_residuals",
       "title": "Residuals against the public reference orbit",
       "result": "fail",
-      "reason": "Only 0 of 16 observations (0%) lie within their limits (needed 80%). Median residual 3.94° against a typical limit of 20.11′. The residuals lie mostly along the track: the object is on average 7.86 s behind the prediction. That points to a different object in a similar orbit or to a timing error.",
+      "reason": "Only 0 of 16 observations (0%) lie within their limits (needed 80%). Median residual 3.94° against typical limits of 15.47′ along the track and 2.09′ across it. The reference orbit, a GP set in LEO, 0–1 days old, is allowed 4 km along its track, 0.5 km across it and 0.5 km radially. The residuals lie mostly along the track: the object is on average 7.86 s behind the prediction. That points to a different object in a similar orbit or to a timing error.",
       "details": {
+        "orbit_term": {
+          "kind": "gp",
+          "description": "a GP set",
+          "orbit_class": "LEO",
+          "age_days": "0–1",
+          "radial_km": 0.5,
+          "in_track_km": 4.0,
+          "cross_track_km": 0.5
+        },
         "statistics": {
           "observations": 16,
           "within_limit": 0,
@@ -133,7 +268,9 @@
           "rms_cross_track_arcsec": 319.161,
           "mean_along_track_s": -7.8597,
           "std_along_track_s": 0.1401,
-          "median_limit_arcsec": 1206.871,
+          "median_along_track_limit_arcsec": 928.022,
+          "median_cross_track_limit_arcsec": 125.516,
+          "median_normalised_residual": 15.0813,
           "reference_epoch_max_age_days": 0.722
         },
         "per_observation": [
@@ -143,7 +280,9 @@
             "along_track_arcsec": -11918.155,
             "cross_track_arcsec": 103.205,
             "along_track_s": -7.7543,
-            "limit_arcsec": 1021.457,
+            "along_track_limit_arcsec": 802.382,
+            "cross_track_limit_arcsec": 106.694,
+            "normalised_residual": 14.8561,
             "range_km": 1011.119,
             "within_limit": false
           },
@@ -153,7 +292,9 @@
             "along_track_arcsec": -12260.31,
             "cross_track_arcsec": 104.195,
             "along_track_s": -7.7612,
-            "limit_arcsec": 1036.186,
+            "along_track_limit_arcsec": 823.013,
+            "cross_track_limit_arcsec": 108.119,
+            "normalised_residual": 14.9,
             "range_km": 996.761,
             "within_limit": false
           },
@@ -163,7 +304,9 @@
             "along_track_arcsec": -12512.941,
             "cross_track_arcsec": 112.765,
             "along_track_s": -7.7843,
-            "limit_arcsec": 1045.642,
+            "along_track_limit_arcsec": 835.856,
+            "cross_track_limit_arcsec": 109.039,
+            "normalised_residual": 14.9724,
             "range_km": 987.757,
             "within_limit": false
           },
@@ -173,7 +316,9 @@
             "along_track_arcsec": -12632.789,
             "cross_track_arcsec": 116.313,
             "along_track_s": -7.8053,
-            "limit_arcsec": 1049.368,
+            "along_track_limit_arcsec": 840.046,
+            "cross_track_limit_arcsec": 109.409,
+            "normalised_residual": 15.0403,
             "range_km": 984.253,
             "within_limit": false
           },
@@ -183,7 +328,9 @@
             "along_track_arcsec": -12629.545,
             "cross_track_arcsec": 121.629,
             "along_track_s": -7.8345,
-            "limit_arcsec": 1047.177,
+            "along_track_limit_arcsec": 835.259,
+            "cross_track_limit_arcsec": 109.212,
+            "normalised_residual": 15.1222,
             "range_km": 986.311,
             "within_limit": false
           },
@@ -193,7 +340,9 @@
             "along_track_arcsec": -12450.571,
             "cross_track_arcsec": 113.288,
             "along_track_s": -7.8376,
-            "limit_arcsec": 1039.178,
+            "along_track_limit_arcsec": 821.769,
+            "cross_track_limit_arcsec": 108.456,
+            "normalised_residual": 15.1544,
             "range_km": 993.894,
             "within_limit": false
           },
@@ -203,7 +352,9 @@
             "along_track_arcsec": -12178.126,
             "cross_track_arcsec": 121.866,
             "along_track_s": -7.8589,
-            "limit_arcsec": 1025.764,
+            "along_track_limit_arcsec": 800.407,
+            "cross_track_limit_arcsec": 107.181,
+            "normalised_residual": 15.2171,
             "range_km": 1006.877,
             "within_limit": false
           },
@@ -213,7 +364,9 @@
             "along_track_arcsec": -11798.32,
             "cross_track_arcsec": 136.998,
             "along_track_s": -7.8788,
-            "limit_arcsec": 1007.557,
+            "along_track_limit_arcsec": 772.434,
+            "cross_track_limit_arcsec": 105.447,
+            "normalised_residual": 15.2747,
             "range_km": 1025.055,
             "within_limit": false
           },
@@ -223,7 +376,9 @@
             "along_track_arcsec": -16003.632,
             "cross_track_arcsec": 424.405,
             "along_track_s": -7.643,
-            "limit_arcsec": 1426.936,
+            "along_track_limit_arcsec": 1092.403,
+            "cross_track_limit_arcsec": 147.887,
+            "normalised_residual": 14.6529,
             "range_km": 723.604,
             "within_limit": false
           },
@@ -233,7 +388,9 @@
             "along_track_arcsec": -16918.823,
             "cross_track_arcsec": 432.001,
             "along_track_s": -7.7052,
-            "limit_arcsec": 1462.82,
+            "along_track_limit_arcsec": 1147.117,
+            "cross_track_limit_arcsec": 151.424,
+            "normalised_residual": 14.7514,
             "range_km": 705.878,
             "within_limit": false
           },
@@ -243,7 +400,9 @@
             "along_track_arcsec": -17591.834,
             "cross_track_arcsec": 441.693,
             "along_track_s": -7.7872,
-            "limit_arcsec": 1484.698,
+            "along_track_limit_arcsec": 1182.025,
+            "cross_track_limit_arcsec": 153.577,
+            "normalised_residual": 14.8852,
             "range_km": 695.491,
             "within_limit": false
           },
@@ -253,7 +412,9 @@
             "along_track_arcsec": -17901.868,
             "cross_track_arcsec": 449.27,
             "along_track_s": -7.8653,
-            "limit_arcsec": 1490.53,
+            "along_track_limit_arcsec": 1192.97,
+            "cross_track_limit_arcsec": 154.141,
+            "normalised_residual": 15.009,
             "range_km": 692.774,
             "within_limit": false
           },
@@ -263,7 +424,9 @@
             "along_track_arcsec": -17845.232,
             "cross_track_arcsec": 443.239,
             "along_track_s": -7.9508,
-            "limit_arcsec": 1479.743,
+            "along_track_limit_arcsec": 1178.671,
+            "cross_track_limit_arcsec": 153.06,
+            "normalised_residual": 15.1423,
             "range_km": 697.816,
             "within_limit": false
           },
@@ -273,7 +436,9 @@
             "along_track_arcsec": -17388.452,
             "cross_track_arcsec": 441.055,
             "along_track_s": -8.0191,
-            "limit_arcsec": 1453.389,
+            "along_track_limit_arcsec": 1141.105,
+            "cross_track_limit_arcsec": 150.44,
+            "normalised_residual": 15.2409,
             "range_km": 710.451,
             "within_limit": false
           },
@@ -283,7 +448,9 @@
             "along_track_arcsec": -16671.668,
             "cross_track_arcsec": 436.281,
             "along_track_s": -8.1052,
-            "limit_arcsec": 1413.868,
+            "along_track_limit_arcsec": 1084.889,
+            "cross_track_limit_arcsec": 146.521,
+            "normalised_residual": 15.3704,
             "range_km": 730.283,
             "within_limit": false
           },
@@ -293,7 +460,9 @@
             "along_track_arcsec": -15690.353,
             "cross_track_arcsec": 419.299,
             "along_track_s": -8.1652,
-            "limit_arcsec": 1364.374,
+            "along_track_limit_arcsec": 1015.997,
+            "cross_track_limit_arcsec": 141.622,
+            "normalised_residual": 15.4461,
             "range_km": 756.743,
             "within_limit": false
           }

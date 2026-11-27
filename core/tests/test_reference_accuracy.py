@@ -226,8 +226,17 @@ def test_an_operators_set_against_a_later_one_and_the_gp_set_of_its_time(tmp_pat
     written = ra.dumps_results(results)
     assert json.loads(written) == results
     # one line per pair, and one per pair and set in the time shifts
-    assert written.count('\n      ["20261101T080000Z", ') == 3
-    assert [r["reference"] for r in ra.shift_rows(results)] == ["operator", "gp"]
+    assert written.count('\n      ["20261101T080000Z", ') == 1
+    # and one line per pair, set and method in the time shifts
+    assert written.count('\n      ["2.1.0", "20261101T080000Z", ') == 2
+    assert written.count('\n      ["3.0.0", "20261101T080000Z", ') == 2
+    shifts = [(r["method"], r["reference"]) for r in ra.shift_rows(results)]
+    assert shifts == [
+        ("2.1.0", "operator"),
+        ("3.0.0", "operator"),
+        ("2.1.0", "gp"),
+        ("3.0.0", "gp"),
+    ]
 
 
 def test_a_set_unchanged_between_runs_is_counted_not_compared(tmp_path):
@@ -371,15 +380,20 @@ def test_a_track_under_the_satellite_is_made_from_the_truth():
 
 
 def test_a_track_half_a_second_late_passes_and_one_a_second_late_does_not():
-    rows = ra.time_shifts([truth_pair()])
+    rows = [r for r in ra.time_shifts([truth_pair()]) if r["method"] == "2.1.0"]
     assert [r["reference"] for r in rows] == ["operator", "gp"]
     shifts = dict(zip(ra.SHIFTS_S, rows[0]["results"], strict=True))
     assert [shifts[s] for s in (0.0, 0.25, 0.5)] == ["pass"] * 3  # D-46, against the truth
     assert [shifts[s] for s in (1.0, 2.0, 5.0, 10.0, 30.0)] == ["fail"] * 5
     assert rows[0]["age_days"] == round(1 / 24, 3)  # the set's epoch to the track's middle
     [row] = [v for k, v in ra.shift_summary(rows)["time_shifts"].items() if "operator" in k]
+    assert row["method"] == "2.1.0"
     assert row["age_days"] == f"0{ra.DASH}1" and row["passed"] == [1, 1, 1, 0, 0, 0, 0, 0]
 
 
 def test_a_pair_without_a_gp_set_is_verified_against_the_operators_set_only():
-    assert [r["reference"] for r in ra.time_shifts([truth_pair(gp=False)])] == ["operator"]
+    rows = ra.time_shifts([truth_pair(gp=False)])
+    assert [(r["method"], r["reference"]) for r in rows] == [
+        ("2.1.0", "operator"),
+        ("3.0.0", "operator"),
+    ]

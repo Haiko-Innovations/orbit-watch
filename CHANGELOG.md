@@ -52,6 +52,15 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
   radially, and verifies tracks made from each later operator's set, shifted by 0 to 30
   seconds, against the sets a service could have used for their time. The results'
   format is 1.2.
+- Method 3.0.0 (step 6.3, D-68): each observation's limit is an ellipse along the
+  object's apparent motion and across it, with the reference orbit's term radially,
+  along its track and across it, by the set's kind (an operator's orbit, a
+  laser-ranging prediction or a GP set), orbit class and age, from step 6.1's
+  measurements. A GP set in low orbits is used up to three days from its epoch. The
+  report (format 1.2) names the orbit term. `orbit-watch validate --method` runs 2.1.0
+  or 3.0.0; the service verifies with the method a request's terms name, still 2.1.0
+  for new requests. The examples, the known answers and the measurement on real data
+  are made with 3.0.0, and the time shifts against operators' orbits with both.
 
 ### Fixed
 

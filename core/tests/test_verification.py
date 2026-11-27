@@ -169,7 +169,7 @@ def test_a_stale_real_reference_orbit_is_inconclusive():
     report = verify_later(later_observations(), real_catalog_bytes())
     residuals = next(c for c in report["checks"] if c["id"] == "orbit_residuals")
     assert residuals["result"] == "inconclusive"
-    assert "only reliable close to their epoch" in residuals["reason"]
+    assert "In LEO an element set is used up to 3 days from its epoch" in residuals["reason"]
     assert report["verdict"] == "inconclusive"
 
 

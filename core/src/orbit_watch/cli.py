@@ -18,6 +18,10 @@ from orbit_watch.formats import iod as iod_format
 from orbit_watch.formats import tdm as tdm_format
 from orbit_watch.storage import StorageError
 
+# The verification engine's METHOD_VERSIONS, named here so that the parser does not import
+# the engine (tests keep the two the same).
+VERIFICATION_METHODS = ("2.1.0", "3.0.0")
+
 EXIT_OK = 0
 EXIT_FAILED = 1  # the command ran, but the result is negative (e.g. verification failed)
 EXIT_USAGE = 2  # bad input, missing files, unsupported options
@@ -183,6 +187,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
                 previous=[Path(p).read_bytes() for p in args.previous],
                 declared_sha256=declared,
                 sites=_load_sites(args.sites),
+                method_version=args.method,
             )
         )
     except UsageError as exc:
@@ -1280,6 +1285,13 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--sites", help="sites file (for IOD and TDM input)")
     validate.add_argument("--from", dest="input_format", choices=FORMATS, help="input format")
     validate.add_argument("--declared-sha256", help="expected SHA-256 of the observation file")
+    validate.add_argument(
+        "--method",
+        choices=VERIFICATION_METHODS,
+        default=VERIFICATION_METHODS[-1],
+        help=f"the verification method's version (default {VERIFICATION_METHODS[-1]}); a "
+        "request's terms name the method its deliveries are verified with",
+    )
     validate.add_argument("--report", help="write the JSON report to this file")
     validate.add_argument("--json", action="store_true", help="print the JSON report")
     validate.set_defaults(handler=cmd_validate)

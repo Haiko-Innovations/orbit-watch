@@ -366,7 +366,7 @@ def measure(run: Run, earlier: Sequence[Run] = ()) -> dict[str, Any]:
                 "noise_arcsec": validation.FABRICATED_NOISE_ARCSEC,
                 "time_uncertainty_s": TRACK_TIME_S,
                 "time_shifts_s": list(SHIFTS_S),
-                "method": f"{validation.METHOD_NAME} {validation.METHOD_VERSION}",
+                "methods": list(SHIFT_METHODS),
             },
         },
         "run": {"fetched_at": _stamp(run.fetched_at), "directory": run.path.name},
@@ -732,7 +732,9 @@ SHIFTS_S = (0.0, *validation.TIME_SHIFTS_S)
 REFERENCES = ("operator", "gp")
 REFERENCE_NAMES = {"operator": "Operator's set", "gp": "Newest GP set"}
 SHIFT_AGE_BINS = ((0.0, 1.0), (1.0, 2.0), (2.0, 3.0), (3.0, 10.0))
+SHIFT_METHODS = ("2.1.0", "3.0.0")
 SHIFT_COLUMNS = (
+    "method",
     "earlier_run",
     "later_run",
     "norad_id",
@@ -790,25 +792,28 @@ def time_shifts(pairs: Sequence[Pair]) -> list[dict[str, Any]]:
             if chosen is None:
                 continue
             catalog = validation.catalog_bytes([chosen.record])
-            outcomes = [
-                validation.run(validation.shifted(track, shift), catalog) for shift in SHIFTS_S
-            ]
-            rows.append(
-                {
-                    "earlier_run": pair.before.path.name,
-                    "later_run": pair.later.path.name,
-                    "norad_id": pair.truth.norad_id,
-                    "source": pair.truth.source,
-                    "orbit": pair.truth.orbit,
-                    "reference": reference,
-                    "set_sha256": chosen.sha256,
-                    "age_days": round((middle - chosen.epoch).total_seconds() / 86400, 3),
-                    "results": [o.result for o in outcomes],
-                    "fractions_within_limit": [
-                        o.statistics.get("fraction_within_limit") for o in outcomes
-                    ],
-                }
-            )
+            for method in SHIFT_METHODS:
+                outcomes = [
+                    validation.run(validation.shifted(track, shift), catalog, method)
+                    for shift in SHIFTS_S
+                ]
+                rows.append(
+                    {
+                        "method": method,
+                        "earlier_run": pair.before.path.name,
+                        "later_run": pair.later.path.name,
+                        "norad_id": pair.truth.norad_id,
+                        "source": pair.truth.source,
+                        "orbit": pair.truth.orbit,
+                        "reference": reference,
+                        "set_sha256": chosen.sha256,
+                        "age_days": round((middle - chosen.epoch).total_seconds() / 86400, 3),
+                        "results": [o.result for o in outcomes],
+                        "fractions_within_limit": [
+                            o.statistics.get("fraction_within_limit") for o in outcomes
+                        ],
+                    }
+                )
     return rows
 
 
@@ -819,23 +824,25 @@ def shift_rows(results: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def shift_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """How many tracks passed at each shift, by source, orbit class, reference and the
-    reference set's age (``SHIFT_AGE_BINS``)."""
+    """How many tracks passed at each shift, by method, source, orbit class, reference and
+    the reference set's age (``SHIFT_AGE_BINS``)."""
     summary_rows: dict[str, dict[str, Any]] = {}
     keys = sorted({(r["source"], r["orbit"]) for r in rows})
-    for source, orbit in keys:
+    for method, (source, orbit) in [(m, k) for m in SHIFT_METHODS for k in keys]:
         for reference in REFERENCES:
             for low, high in SHIFT_AGE_BINS:
                 label = f"{low:g}{DASH}{high:g}"
                 chosen = [
                     r
                     for r in rows
-                    if (r["source"], r["orbit"], r["reference"]) == (source, orbit, reference)
+                    if (r["method"], r["source"], r["orbit"], r["reference"])
+                    == (method, source, orbit, reference)
                     and low <= r["age_days"] < high
                 ]
                 if not chosen:
                     continue
-                summary_rows[f"{source} {orbit} {reference} {label}"] = {
+                summary_rows[f"{method} {source} {orbit} {reference} {label}"] = {
+                    "method": method,
                     "source": source,
                     "orbit": orbit,
                     "reference": reference,
@@ -1009,6 +1016,7 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
     )
     shifts = _table(
         [
+            "Method",
             "Source",
             "Orbit",
             "Reference",
@@ -1018,6 +1026,7 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
         ],
         [
             [
+                row["method"],
                 f"`{row['source']}`",
                 row["orbit"],
                 REFERENCE_NAMES[row["reference"]],
@@ -1029,9 +1038,10 @@ def tables(results: dict[str, Any]) -> dict[str, str]:
         ],
     )
     track = results["settings"]["track"]
+    tracks = len({(r[1], r[2], r[3], r[6]) for r in results["time_shifts"]["rows"]})
     shift_run = (
-        f"{len(results['time_shifts']['rows'])} tracks of {TRACK_POINTS} positions, each "
-        f"verified with method {track['method']} at {len(SHIFTS_S)} shifts."
+        f"{tracks} pairs of a track and a set, of {TRACK_POINTS} positions each, verified "
+        f"with methods {' and '.join(track['methods'])} at {len(SHIFTS_S)} shifts."
     )
     return {
         "run": run,

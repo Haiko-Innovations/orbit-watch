@@ -3780,3 +3780,63 @@ This pull request:
   pair and set, with the residual check's result at each shift. They still name sets by
   epoch and SHA-256 only.
 
+
+### D-68 Method 3.0.0
+
+Accepted · 2026-11-26 (with the pull request that implements step 6.3's second part).
+Method 3.0.0 carries out P6-05 with the plan of D-67.
+
+- **An ellipse, not a circle.** Each observation's limit is an ellipse on the sky, along
+  the object's apparent motion and across it: the declared angle uncertainty in every
+  direction, the time uncertainty along the motion, and the reference orbit's term
+  radially, along its track and across it, as those kilometres show from the station
+  (choice a). They are shown by moving the predicted position a kilometre in each
+  direction and turning it into angles as a prediction is, in the observations' own
+  frame. An observation is within its limit when its residual lies inside the ellipse;
+  when the ellipse is a circle, this is method 2.1.0's test.
+- **The orbit term by kind, orbit class and age**
+  ([verification.md](verification.md#automated-verification),
+  `verify/orbit_terms.py`). Each value is the 90th percentile step 6.1 measured for its
+  row, rounded up to the next kilometre along the track and the next half kilometre
+  radially and across it: an operator's orbit up to a day old in low orbits 2 km along
+  the track and 0.5 km across it; a laser-ranging prediction up to three days old 1 to
+  3 km; a GP set in low orbits 4, 9 and 16 km along the track at up to one, two and
+  three days, and 0.5 km across it; in medium orbits 5 and 7 km up to three and seven
+  days; in geosynchronous orbits 4 to 12 km along the track and 4.5 to 8.5 km across
+  it, up to five days. An operator's set past its ages is taken as a GP set of its age.
+- **Ages.** Past the last age of every kind that applies, the check is inconclusive:
+  three days for a GP set in low orbits (choice b), seven in medium orbits, five in
+  geosynchronous orbits, where sets older than that were hundreds of kilometres off
+  after manoeuvres. Highly elliptical orbits, not measured, keep 2.1.0's 5 km in every
+  direction and seven days (choice c). A SIMULATED catalogue keeps its last row's values
+  past its ages, as it had no age limit before.
+- **Both methods run.** A request's terms name its method (`verification_method`), and
+  the service verifies a delivery with that method, so that an open or settled request
+  keeps its own. The engine runs 2.1.0 and 3.0.0, `orbit-watch validate --method`
+  chooses, and the default is 3.0.0. A test verifies a committed 2.1.0 report again,
+  byte for byte. New requests keep 2.1.0 in their terms until the service moves to 3.0.0
+  (step 6.3's last part).
+- **The report** (format 1.2) names the orbit term it used (`details.orbit_term`),
+  every row of the table (`method.orbit_terms`), and for each observation its
+  `along_track_limit_arcsec`, `cross_track_limit_arcsec` and `normalised_residual`.
+- **Regenerated.** The simulated examples keep their verdicts; their reports name
+  3.0.0 and the orbit term. Phase 1's examples go through the service and keep 2.1.0.
+  On real data ([real-data-validation.md](real-data-validation.md)):
+  - every published track keeps its result: the video camera's 8 and the eVscopes' 2
+    pass, the phones' 35 fail;
+  - half a second's shift passes in 7 of 32 low-orbit tracks, against 33 of 35, and one
+    second in none, as before;
+  - no wrong object passes, in 261 tries;
+  - a set about 3 days old in low orbits leaves the check inconclusive where 2.1.0
+    rejected good tracks;
+  - a station 1 km north fails 9 of 32 low-orbit tracks, and a place rounded to about a
+    kilometre fails 2 of the 22 phone tracks with their offset taken out. P5-11 already
+    says that a rounded place is verified as rounded; the measurement now shows the cost
+    of that rounding for these tracks too;
+  - 22 phone tracks pass once their offset is taken out, against 25; the known answers
+    are 36, against 39, since three phone tracks no longer fit the orbit then.
+- **D-46's time shifts against operators' orbits**, with both methods
+  ([reference-orbit-accuracy.md](reference-orbit-accuracy.md#time-shifts-against-operators-orbits)):
+  against an operator's set under a day old no good track failed and no track half a
+  second late passed. At two to three days the growing term lets most good tracks
+  through, and many a second late too.
