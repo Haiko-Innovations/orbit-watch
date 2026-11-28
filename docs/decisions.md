@@ -3870,3 +3870,63 @@ The service moves to method 3.0.0 (D-68), and step 6.3 is done.
   days.
 - **Production.** New requests on the public testnet name 3.0.0 once this is deployed;
   open requests made before keep 2.1.0.
+
+
+### D-70 Orbit determination in the core
+
+Accepted · 2026-11-28 (with the pull request that implements step 6.4's first part).
+The plan of step 6.4 and its choices were approved on 2026-11-28. The step comes in
+three parts:
+
+1. the fit and `orbit-watch fit-orbit`;
+2. the fit measured on simulated networks of stations, where the true orbit is known;
+3. the fit measured on SCORE's real nights from the video camera, of PELICAN 3001
+   (three nights) and ACS 3 (five), by predicting the next night. It is compared with
+   the GP set available when the fit was made, and with the newest one before that
+   night.
+
+The fit carries out P6-06 ([orbit-determination.md](orbit-determination.md)), with four
+choices:
+
+- **(a) Equinoctial elements.** The fit moves the mean motion, the eccentricity vector,
+  the inclination's vector and the mean longitude. In near-circular low orbits the
+  argument of perigee and the mean anomaly are nearly undefined apart, and their sum is
+  well defined.
+- **(b) B\* over two days.** It is fitted only when the observations span at least two
+  days; over less, the start set's value is kept.
+- **(c) The start set as a measurement.** At its epoch and at the middle of each track,
+  the fit's position is held to the start set's: radially, along the track and across
+  it. The weights are method 3.0.0's orbit term for its kind and age (D-68), with the
+  90th percentile as 1.645 standard deviations. A short arc from one station does not
+  leave the orbit free where angles do not measure it.
+- **(d) Outliers by a fixed rule.** The observation furthest off, if it is more than
+  three standard deviations off, is dropped and the fit made again. This is repeated
+  one at a time, for at most a tenth of the observations. The plan said "all above the
+  threshold, once". The tests showed that a far observation pulls the first fit far
+  enough to push a good one above the threshold, and one at a time keeps that one.
+
+Also:
+
+- **Deterministic.** Fixed steps, iterations and stopping rules, and rounded output, so
+  a fit is repeated byte for byte. The method is `orbit-watch-orbit-fit 1.0.0`, its
+  document `orbit-watch/orbit-fit` 1.0, named by the SHA-256 of its inputs. The
+  committed example (`examples/orbit-fit/`, `orbit-watch demo --orbit-fit`) is made
+  again in CI and compared byte for byte.
+- **The same on every machine.** CI on x86 found the example, made on aarch64,
+  different in the perigee's and the covariance's last digits. The fit therefore:
+  - takes central differences with steps of some hundred metres to a few kilometres;
+  - ends with two full Gauss–Newton steps;
+  - rounds the perigee to 5 decimals and computes the mean anomaly from the mean
+    longitude;
+  - gives standard deviations and correlations in place of the covariance.
+
+  A test changes the inputs by 10⁻¹⁰ degrees and finds the same document.
+- **What it gives.** The fitted set in OMM form, which reads as any catalogue's; the
+  fitted elements' standard deviations and correlations; the position's standard deviation at the last
+  observation; and each observation's residuals.
+- **No new dependency.** numpy, and SGP4 through Skyfield, as P6-06 said. A candidate
+  orbit is built as the catalogue builds one (`EarthSatellite.from_omm`), so a fitted
+  set reads back as it was fitted.
+- **Real objects.** The document of a fit to a real object says that its elements are
+  not for publication until #114 (P6-07). Part 3 publishes only residuals, differences
+  and SHA-256s, and commits no element set (D-06).

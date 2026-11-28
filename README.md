@@ -85,6 +85,7 @@ night. See [docs/quality-meter.md](docs/quality-meter.md) and
 | Station quality meter | `score-station` | [quality-meter.md](docs/quality-meter.md) |
 | Public orbit data and the civilian allow-list | `fetch-gp`, `fetch-satchecker`, `fetch-orbits`, `allowlist build` | [data-sources.md](docs/data-sources.md) |
 | Real observations that observers published in SCORE (CC BY 4.0) | `fetch-score`, `convert-score` | [data-sources.md](docs/data-sources.md#real-observations-score), [examples/real/](examples/real) |
+| Orbit determination: SGP4's elements fitted to observations, deterministic | `fit-orbit` | [orbit-determination.md](docs/orbit-determination.md), [examples/orbit-fit/](examples/orbit-fit) |
 | The verification method measured on real data, with faults put into copies of real tracks | `measure-method` | [real-data-validation.md](docs/real-data-validation.md), [validation/real/](validation/real) |
 | Request lifecycle, optimistic verification, reviewer rounds | | [lifecycle.md](docs/lifecycle.md), [optimistic-verification.md](docs/optimistic-verification.md) |
 | Settlement rules and the points ledger | | [settlement.md](docs/settlement.md) |

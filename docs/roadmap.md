@@ -49,6 +49,13 @@ while those made before keep 2.1.0 and their reports, and the service's age limi
 each request's method ([D-69](decisions.md#d-69-new-requests-use-method-300)). Step 6.3 is
 done.
 
+Step 6.4 brings orbit determination into the core, in three parts. The first is the fit
+and `orbit-watch fit-orbit`. From a set 4 km off, three simulated stations' night brings
+it within about 20 metres of the truth, and it is repeated byte for byte
+([D-70](decisions.md#d-70-orbit-determination-in-the-core),
+[orbit-determination.md](orbit-determination.md)). The second and third parts measure
+it, on simulated networks and on SCORE's real nights.
+
 **Phase 5 is done** and released as version 0.6.0: real orbits and real observations
 on the testnet, beside the simulated ones. On the public service, a replay of real
 SCORE observations and a request for a real object with simulated observations both

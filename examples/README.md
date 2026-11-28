@@ -13,6 +13,9 @@
   verification reports, and in `quality/` three nights of a simulated station
   with the station quality meter's report. CI regenerates it and requires a
   byte-identical result.
+- [`orbit-fit/`](orbit-fit): the output of `orbit-watch demo --orbit-fit`: three
+  simulated stations' observations of a simulated object, the start set moved 4 km
+  along the track, and the orbit fitted to them. CI regenerates it too.
 - [`phase1/`](phase1): the output of `orbit-watch demo --phase 1`: five
   simulated requests through the whole request chain, with every outcome,
   the points and the reviewer profiles. CI regenerates it too.

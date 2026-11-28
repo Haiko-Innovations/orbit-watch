@@ -1,0 +1,67 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.0",
+  "simulated": true,
+  "station": {
+    "id": "SIM-MADRID",
+    "latitude_deg": 40.42,
+    "longitude_deg": -3.7,
+    "altitude_m": 660.0,
+    "name": "Simulated station near Madrid, Spain",
+    "iod_station_number": 9907
+  },
+  "target": {
+    "norad_id": 339001
+  },
+  "observations": [
+    {
+      "time": "2026-11-01T18:49:31.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 15.42955251,
+      "dec_deg": 46.95712406,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:49:41.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 19.50505741,
+      "dec_deg": 52.8148488,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:49:51.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 24.60586309,
+      "dec_deg": 58.19403833,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:50:01.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 30.9879393,
+      "dec_deg": 62.94046364,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T18:50:11.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 39.01220907,
+      "dec_deg": 66.95030084,
+      "angle_uncertainty_arcsec": 10.0
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.7.0.dev0 simulator",
+    "notes": "SIMULATED by the Orbit Watch simulator: profile sim-cmos-gps, seed 3. Not real observations."
+  }
+}

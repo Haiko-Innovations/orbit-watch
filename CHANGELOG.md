@@ -10,6 +10,14 @@ Formats and methods have their own versions; see [docs/releasing.md](docs/releas
 
 ### Added
 
+- Orbit determination in the core (step 6.4, D-70): `orbit-watch fit-orbit` fits SGP4's
+  mean elements, and B* over at least two days, to observation files by batch least
+  squares, from the catalogue's set nearest them. The start set counts as a measurement
+  with step 6.1's measured error, and outliers are dropped one at a time. The fit is
+  deterministic and named by the SHA-256 of its inputs (method `orbit-watch-orbit-fit`
+  1.0.0, document format 1.0). `orbit-watch demo --orbit-fit` makes the example in
+  `examples/orbit-fit/`, compared byte for byte in CI.
+
 - Phase 6 plan: more precise reference orbits and identification on the testnet,
   in eight steps (6.1 to 6.8, #138 to #145) with completion criteria in
   `docs/roadmap.md`, and the decisions P6-01 to P6-12 in `docs/decisions.md`,
