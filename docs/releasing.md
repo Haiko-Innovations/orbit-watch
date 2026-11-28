@@ -28,6 +28,7 @@ reports outlive the software that made them:
 | Reference-orbit manifest format | `format_version` in the document (`orbit_cache.py`) | 1.0 |
 | Verification method | `METHOD_VERSION` in `verify/engine.py`, in every report; `METHOD_VERSIONS` are those the engine still runs | 3.0.0, and 2.1.0 for the requests whose terms name it |
 | Verification report format | `report_format_version` | 1.2 (method 3.0.0), 1.1 (method 2.1.0) |
+| Orbit fit method and document | `METHOD_VERSION`, `FORMAT_VERSION` in `orbit_fit.py` | 1.0.0, 1.0 |
 | Station quality meter method and report | `METHOD_VERSION`, `report_format_version` in `quality.py` | 1.1.0, 1.0 |
 | Measurement on real data, and its known answers | `RESULTS_FORMAT_VERSION` in `validation.py`, `format_version` in `known-answers.json` | 1.0, 1.0 |
 | The Sun formula's measurement | `format_version` in `validation/sun/results.json` (`sun_check.py`) | 1.0 |

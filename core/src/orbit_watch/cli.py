@@ -207,6 +207,14 @@ def cmd_validate(args: argparse.Namespace) -> int:
 def cmd_demo(args: argparse.Namespace) -> int:
     from orbit_watch.sim.scenarios import run_demo, summary_table
 
+    if args.orbit_fit:
+        from orbit_watch.orbit_fit import render_text
+        from orbit_watch.sim.fit_example import run_fit_example
+
+        out = args.out or "orbit-watch-demo-orbit-fit"
+        sys.stdout.write(render_text(run_fit_example(out)))
+        print(f"\nThe example is in {out}/")
+        return EXIT_OK
     if args.phase == 2:
         return _demo_phase2(args)
     if args.phase == 1:
@@ -307,6 +315,50 @@ def cmd_score_station(args: argparse.Namespace) -> int:
     else:
         sys.stdout.write(quality.render_text(report))
     return EXIT_OK
+
+
+def cmd_fit_orbit(args: argparse.Namespace) -> int:
+    from orbit_watch import orbit_fit
+    from orbit_watch.catalog import parse_catalog
+
+    catalog = parse_catalog(Path(args.catalog).read_bytes())
+    sites = _load_sites(args.sites)
+    sets = []
+    for name in args.inputs:
+        loaded = load_observation_sets(Path(name), input_format=args.input_format, sites=sites)
+        for message in loaded.warnings:
+            _err(f"warning: {message}")
+        for message in loaded.skipped:
+            _err(f"skipped: {message}")
+        sets.extend(loaded.sets)
+    objects = sorted({s.target.norad_id for s in sets})
+    norad = args.norad_id
+    if norad is None:
+        if len(objects) != 1:
+            raise FormatError(
+                f"the input has observations of {len(objects)} objects; choose one with --norad-id"
+            )
+        norad = objects[0]
+    sets = [s for s in sets if s.target.norad_id == norad and s.observations]
+    if norad not in catalog:
+        raise FormatError(f"object {norad} is not in the catalogue")
+    start = orbit_fit.start_set_for(catalog.element_sets(norad), sets) if sets else None
+    try:
+        if start is None:
+            raise orbit_fit.FitError(f"no observations of object {norad}")
+        document = orbit_fit.fit(start, sets, simulated_catalog=catalog.simulated)
+    except orbit_fit.FitError as exc:
+        _err(str(exc))
+        return EXIT_USAGE
+    if args.out:
+        write_text(args.out, dumps_pretty(document, sort_keys=False))
+    if args.json:
+        sys.stdout.write(dumps_pretty(document, sort_keys=False))
+    else:
+        sys.stdout.write(orbit_fit.render_text(document))
+        if args.out:
+            print(f"fit written to {args.out}")
+    return EXIT_OK if document["result"]["converged"] else EXIT_FAILED
 
 
 def cmd_fetch_gp(args: argparse.Namespace) -> int:
@@ -1196,6 +1248,12 @@ def build_parser() -> argparse.ArgumentParser:
         "through the whole request chain; 2: the same five requests on a testnet chain, "
         "against a running service",
     )
+    demo.add_argument(
+        "--orbit-fit",
+        action="store_true",
+        help="the orbit fit's example: three SIMULATED stations, a start set 4 km off "
+        "(default output orbit-watch-demo-orbit-fit)",
+    )
     phase2 = demo.add_argument_group(
         "phase 2 (testnet chain)",
         "Runs against a request service on a chain (orbit-watch serve --network "
@@ -1295,6 +1353,23 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--report", help="write the JSON report to this file")
     validate.add_argument("--json", action="store_true", help="print the JSON report")
     validate.set_defaults(handler=cmd_validate)
+
+    fit_orbit = commands.add_parser(
+        "fit-orbit",
+        help="fit an orbit to observations, starting from a reference orbit",
+        description="Batch least squares of SGP4's mean elements, and B* over at least two "
+        "days, to the angles of observation files, from the catalogue's set nearest them "
+        "(D-70). Deterministic: the same inputs give the same file. Fitted elements of real "
+        "objects are not for publication (P6-07).",
+    )
+    fit_orbit.add_argument("inputs", nargs="+", help="observation files (.json, .iod, .tdm)")
+    fit_orbit.add_argument("--catalog", required=True, help="reference orbits to start from")
+    fit_orbit.add_argument("--norad-id", type=int, help="object to fit when the input has several")
+    fit_orbit.add_argument("--sites", help="sites file with station coordinates (IOD and TDM)")
+    fit_orbit.add_argument("--from", dest="input_format", choices=FORMATS, help="input format")
+    fit_orbit.add_argument("--out", help="write the fit (JSON) to this file")
+    fit_orbit.add_argument("--json", action="store_true", help="print the fit as JSON")
+    fit_orbit.set_defaults(handler=cmd_fit_orbit)
 
     score = commands.add_parser(
         "score-station",

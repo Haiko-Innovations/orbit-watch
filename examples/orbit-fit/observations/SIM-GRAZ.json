@@ -1,0 +1,85 @@
+{
+  "format": "orbit-watch/observation-set",
+  "format_version": "1.0",
+  "simulated": true,
+  "station": {
+    "id": "SIM-GRAZ",
+    "latitude_deg": 47.07,
+    "longitude_deg": 15.49,
+    "altitude_m": 490.0,
+    "name": "Simulated station near Graz, Austria",
+    "iod_station_number": 9906
+  },
+  "target": {
+    "norad_id": 339001
+  },
+  "observations": [
+    {
+      "time": "2026-11-01T17:15:24.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 12.08723318,
+      "dec_deg": 21.43237601,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T17:15:34.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 14.53065179,
+      "dec_deg": 26.22468953,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T17:15:44.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 17.37184303,
+      "dec_deg": 31.20455911,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T17:16:04.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 24.54431426,
+      "dec_deg": 41.21101896,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T17:16:14.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 29.08193214,
+      "dec_deg": 46.00608872,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T17:16:24.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 34.38517554,
+      "dec_deg": 50.46445802,
+      "angle_uncertainty_arcsec": 10.0
+    },
+    {
+      "time": "2026-11-01T17:16:34.000Z",
+      "time_uncertainty_s": 0.01,
+      "angle_type": "radec",
+      "frame": "ICRF",
+      "ra_deg": 40.53532543,
+      "dec_deg": 54.45190612,
+      "angle_uncertainty_arcsec": 10.0
+    }
+  ],
+  "source": {
+    "software": "orbit-watch 0.7.0.dev0 simulator",
+    "notes": "SIMULATED by the Orbit Watch simulator: profile sim-cmos-gps, seed 2. Not real observations."
+  }
+}
