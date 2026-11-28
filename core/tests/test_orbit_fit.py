@@ -112,7 +112,9 @@ def test_b_star_is_fitted_over_two_days_and_kept_over_less():
     long = orbit_fit.fit(start(), observed(days=3.0), simulated_catalog=True)
     assert long["result"]["span_days"] >= 2.0
     assert long["method"]["fitted"][-1] == "bstar"
-    assert len(long["result"]["covariance"]["matrix"]) == 7
+    covariance = long["result"]["covariance"]
+    assert len(covariance["standard_deviations"]) == len(covariance["correlations"]) == 7
+    assert all(row[k] == 1.0 for k, row in enumerate(covariance["correlations"]))
 
 
 def test_the_start_set_is_a_measurement_at_its_epoch_and_each_track():
@@ -173,6 +175,22 @@ def test_the_fit_is_named_by_its_inputs():
     shas = [i["sha256"] for i in one["inputs"]["observation_sets"]]
     assert shas == [orbit_fit.set_sha256(s) for s in sets]
     assert one["inputs"]["start_set"]["sha256"] == start().sha256
+
+
+@pytest.mark.parametrize(("count", "days"), [(3, 1.0), (1, 1.0), (1, 3.0)])
+def test_rounding_in_the_inputs_does_not_move_the_fit(count, days):
+    # Another machine rounds differently: changes of 1e-10 degrees, far below any
+    # observation's precision, give the same document (D-70).
+    sets = observed(stations=fit_example.STATIONS[:count], days=days)
+    found = []
+    for eps in (-1e-10, 0.0, 1e-10):
+        moved = [
+            replace(s, observations=[replace(o, ra_deg=o.ra_deg + eps) for o in s.observations])
+            for s in sets
+        ]
+        document = orbit_fit.fit(start(), moved, simulated_catalog=True)
+        found.append((document["result"], document["per_observation"]))
+    assert found[0] == found[1] == found[2]
 
 
 def test_a_real_objects_fit_is_marked_not_for_publication():

@@ -58,12 +58,21 @@ angle uncertainty, plus the declared time uncertainty times the motion's rate al
 motion. The directions are those of the current orbit and are held fixed while the
 derivatives are taken.
 
-**The iteration.** Levenberg–Marquardt with central differences, with fixed steps for
-each element. Damping starts at 10⁻³ of the normal matrix's diagonal and changes by a
-factor of 10. The fit stops after an accepted step smaller than 10⁻⁴ of every element's
-standard deviation, after a step that lowers the cost by less than 10⁻⁹ of it, when no
-step lowers the cost, or after 30 iterations. `result.converged` is false only in the
-last case, and `orbit-watch fit-orbit` then exits with 1.
+**The iteration.** Levenberg–Marquardt with central differences. Each element has a
+fixed step of some hundred metres to a few kilometres in position: 10⁻⁴ in each element
+and 10⁻⁵ in B\*. The problem is nearly linear at that scale. Smaller steps let rounding
+in the predictions into the derivatives. Damping starts at 10⁻³ of the normal matrix's
+diagonal and changes by a factor of 10. The fit stops after an accepted step smaller
+than 10⁻⁴ of every element's standard deviation, after a step that lowers the cost by
+less than 10⁻⁹ of it, when no step lowers the cost, or after 30 iterations.
+`result.converged` is false only in the last case, and `orbit-watch fit-orbit` then
+exits with 1.
+
+The fit then takes two full Gauss–Newton steps, which `result.iterations` does not
+count. Near the minimum, whether a step lowers the cost is decided by rounding. In a
+direction the observations hardly measure, such as the perigee of a near-circular
+orbit, that rounding would decide where the fit stops. Gauss–Newton steps go to the
+linear least squares solution itself, which rounding hardly moves.
 
 **Outliers** (choice d). After the fit, the observation furthest off is dropped and the
 fit made again, if it is more than three standard deviations off. This is done one
@@ -88,7 +97,8 @@ with `"used": false`.
   - the start set's terms;
   - the position's standard deviation at the last observation, and how far the fit
     moved from the start set there, radially, along the track and across it;
-  - the covariance of the fitted elements, in the order of `covariance.parameters`;
+  - the fitted elements' standard deviations and correlations, in the order of
+    `covariance.parameters`;
   - the fitted set as an OMM record (`omm`), which reads as any catalogue's.
 - `per_observation`: each observation's residuals and whether it was used.
 
@@ -97,12 +107,26 @@ with `"used": false`.
 | Value | Rounded to |
 |---|---|
 | Mean motion, eccentricity | 9 decimals |
-| Angles | 7 decimals of a degree |
-| B\*, covariance | 7 significant digits |
+| Inclination, node, mean anomaly | 7 decimals of a degree |
+| Argument of perigee | 5 decimals of a degree |
+| B\* | 7 significant digits |
+| Standard deviations of the elements | 4 significant digits |
+| Correlations | 4 decimals |
 | Residuals | 0.01″ |
 | Positions | 1 m |
 
+The mean anomaly is computed from the mean longitude and the rounded perigee. So the
+object's place on its orbit keeps 7 decimals. Rounding the perigee moves the position
+by less than a millimetre in a near-circular orbit, and by a few metres at most in a
+highly elliptical one. Correlations are rounded absolutely, because near-zero
+covariances carry relative rounding noise.
+
 The last evaluation uses the rounded set, so the document describes the set it gives.
+
+**The same on every machine.** The example was first made on aarch64, and CI on x86
+found its perigee and covariance different in the last digits. The changes above make a
+test pass: inputs changed by 10⁻¹⁰ degrees, far below any observation's precision, give
+the same document with three stations and with one, over one day and over three.
 The example in [`examples/orbit-fit/`](../examples/orbit-fit) is made again in CI and
 compared byte for byte (`orbit-watch demo --orbit-fit`). In it, three simulated stations
 see a simulated object on one night. The fit starts from its set moved 4.3 km along the

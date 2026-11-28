@@ -3912,8 +3912,17 @@ Also:
   document `orbit-watch/orbit-fit` 1.0, named by the SHA-256 of its inputs. The
   committed example (`examples/orbit-fit/`, `orbit-watch demo --orbit-fit`) is made
   again in CI and compared byte for byte.
+- **The same on every machine.** CI on x86 found the example, made on aarch64,
+  different in the perigee's and the covariance's last digits. The fit therefore:
+  - takes central differences with steps of some hundred metres to a few kilometres;
+  - ends with two full Gauss–Newton steps;
+  - rounds the perigee to 5 decimals and computes the mean anomaly from the mean
+    longitude;
+  - gives standard deviations and correlations in place of the covariance.
+
+  A test changes the inputs by 10⁻¹⁰ degrees and finds the same document.
 - **What it gives.** The fitted set in OMM form, which reads as any catalogue's; the
-  covariance of the fitted elements; the position's standard deviation at the last
+  fitted elements' standard deviations and correlations; the position's standard deviation at the last
   observation; and each observation's residuals.
 - **No new dependency.** numpy, and SGP4 through Skyfield, as P6-06 said. A candidate
   orbit is built as the catalogue builds one (`EarthSatellite.from_omm`), so a fitted

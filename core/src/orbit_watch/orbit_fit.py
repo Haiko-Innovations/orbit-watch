@@ -54,9 +54,10 @@ METHOD_NAME = "orbit-watch-orbit-fit"
 METHOD_VERSION = "1.0.0"
 
 NAMES = ("mean_motion_rev_per_day", "af", "ag", "chi", "psi", "mean_longitude_rad", "bstar")
-# Central differences: a step for each element, small against what the fit resolves and
-# large against SGP4's rounding.
-STEPS = (1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 1e-6, 1e-6)
+# Central differences: a step for each element of some hundred metres to a few kilometres
+# in position. The problem is nearly linear at that scale, and the steps are large enough
+# that rounding in the predictions does not move the fit's end (D-70).
+STEPS = (1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-5)
 
 PARAMETERS: dict[str, Any] = {
     "elements": "equinoctial: mean motion, af, ag, chi, psi, mean longitude; and B*",
@@ -66,6 +67,7 @@ PARAMETERS: dict[str, Any] = {
     "max_iterations": 30,
     "min_relative_cost_decrease": 1e-9,
     "min_step_in_sigma": 1e-4,
+    "final_gauss_newton_steps": 2,
     "damping_start": 1e-3,
     "damping_tries": 8,
     "outlier_threshold_sigma": 3.0,
@@ -117,9 +119,18 @@ def to_record(start: dict[str, Any], x: np.ndarray, rounded: bool = False) -> di
     node = math.atan2(chi, psi) if (chi or psi) else 0.0
     i = 2 * math.atan(math.hypot(chi, psi))
 
-    def degrees(angle: float) -> float:
-        value = math.degrees(angle) % 360.0
-        return round(value, 7) % 360.0 if rounded else value
+    node_deg = math.degrees(node) % 360.0
+    perigee_deg = math.degrees(longitude_of_perigee - node) % 360.0
+    if rounded:
+        # The argument of perigee to 5 decimals, the mean anomaly from the mean longitude
+        # and the rounded perigee: in a near-circular orbit the perigee is poorly defined,
+        # and rounding it on its own moves the position by less than a millimetre, while
+        # the mean longitude, which places the object on its orbit, keeps 7 decimals.
+        node_deg = round(node_deg, 7) % 360.0
+        perigee_deg = round(perigee_deg, 5) % 360.0
+    anomaly_deg = (math.degrees(longitude) - node_deg - perigee_deg) % 360.0
+    if rounded:
+        anomaly_deg = round(anomaly_deg, 7) % 360.0
 
     record = dict(omm_fields(start))
     record.update(
@@ -127,9 +138,9 @@ def to_record(start: dict[str, Any], x: np.ndarray, rounded: bool = False) -> di
             "MEAN_MOTION": round(n, 9) if rounded else n,
             "ECCENTRICITY": round(e, 9) if rounded else e,
             "INCLINATION": round(math.degrees(i), 7) if rounded else math.degrees(i),
-            "RA_OF_ASC_NODE": degrees(node),
-            "ARG_OF_PERICENTER": degrees(longitude_of_perigee - node),
-            "MEAN_ANOMALY": degrees(longitude - longitude_of_perigee),
+            "RA_OF_ASC_NODE": node_deg,
+            "ARG_OF_PERICENTER": perigee_deg,
+            "MEAN_ANOMALY": anomaly_deg,
             "BSTAR": float(f"{bstar:.6e}") if rounded else bstar,
         }
     )
@@ -371,6 +382,18 @@ def _solve(model: _Model, x0: np.ndarray, free: list[int]) -> _State:
         if small_step or small_gain:
             converged = True
             break
+    # At the minimum, comparing costs is at the mercy of rounding, and in directions the
+    # observations hardly measure it decides where the fit stops. Full Gauss-Newton
+    # steps there move to the linear least squares solution itself, which rounding
+    # moves far less, so the fit ends at the same place on every machine.
+    for _ in range(PARAMETERS["final_gauss_newton_steps"]):
+        delta = np.linalg.solve(jacobian.T @ jacobian, -(jacobian.T @ r))
+        x = x.copy()
+        x[free] += delta
+        model.set_axes(satellite_of(to_record(model.start.record, x)))
+        r = model.vector(to_record(model.start.record, x))
+        cost = float(r @ r)
+        jacobian = _jacobian(model, x, free)
     return _State(x, cost, iterations, converged, jacobian, free)
 
 
@@ -397,10 +420,6 @@ def _worst_outlier(model: _Model, satellite) -> tuple[int, int] | None:
 
 def _r(value: float, digits: int) -> float:
     return round(float(value), digits)
-
-
-def _sig(value: float) -> float:
-    return float(f"{float(value):.6e}")
 
 
 def set_sha256(observation_set: ObservationSet) -> str:
@@ -543,15 +562,25 @@ def fit(
             else [],
             "position_sigma_km_at_last_observation": sigma_last,
             "difference_from_start_set_km_at_last_observation": difference,
-            "covariance": {
-                "parameters": [NAMES[j] for j in free],
-                "matrix": [[_sig(v) for v in row] for row in covariance],
-            },
+            "covariance": _covariance(covariance, free),
             "omm": record,
         },
         "per_observation": per_observation,
     }
     return document
+
+
+def _covariance(covariance: np.ndarray, free: list[int]) -> dict[str, Any]:
+    """The fitted elements' covariance as standard deviations, to four significant digits,
+    and correlations, to four decimals: near-zero covariances carry rounding noise that a
+    relative rounding would show, and correlations do not."""
+    sigma = np.sqrt(np.diag(covariance))
+    correlation = covariance / np.outer(sigma, sigma)
+    return {
+        "parameters": [NAMES[j] for j in free],
+        "standard_deviations": [float(f"{v:.3e}") for v in sigma],
+        "correlations": [[_r(v, 4) + 0.0 for v in row] for row in correlation],
+    }
 
 
 def _position_sigma(

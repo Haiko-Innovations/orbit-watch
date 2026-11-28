@@ -15,6 +15,7 @@
       "max_iterations": 30,
       "min_relative_cost_decrease": 1e-09,
       "min_step_in_sigma": 0.0001,
+      "final_gauss_newton_steps": 2,
       "damping_start": 0.001,
       "damping_tries": 8,
       "outlier_threshold_sigma": 3.0,
@@ -133,54 +134,62 @@
         "psi",
         "mean_longitude_rad"
       ],
-      "matrix": [
+      "standard_deviations": [
+        9.044e-06,
+        1.579e-05,
+        2.48e-05,
+        1.234e-05,
+        2.363e-05,
+        8.133e-05
+      ],
+      "correlations": [
         [
-          8.178449e-11,
-          -2.874054e-11,
-          4.146379e-11,
-          1.72361e-11,
-          3.077509e-11,
-          -2.388864e-10
+          1.0,
+          -0.2013,
+          0.1849,
+          0.1545,
+          0.144,
+          -0.3248
         ],
         [
-          -2.874054e-11,
-          2.493121e-10,
-          -3.871523e-10,
-          -1.802253e-10,
-          -3.272617e-10,
-          -1.096198e-09
+          -0.2013,
+          1.0,
+          -0.9885,
+          -0.9249,
+          -0.8772,
+          -0.8536
         ],
         [
-          4.146379e-11,
-          -3.871523e-10,
-          6.152339e-10,
-          2.740058e-10,
-          4.970561e-10,
-          1.730658e-09
+          0.1849,
+          -0.9885,
+          1.0,
+          0.8952,
+          0.8481,
+          0.8579
         ],
         [
-          1.72361e-11,
-          -1.802253e-10,
-          2.740058e-10,
-          1.522848e-10,
-          2.848302e-10,
-          8.396657e-10
+          0.1545,
+          -0.9249,
+          0.8952,
+          1.0,
+          0.9769,
+          0.8366
         ],
         [
-          3.077509e-11,
-          -3.272617e-10,
-          4.970561e-10,
-          2.848302e-10,
-          5.582763e-10,
-          1.552633e-09
+          0.144,
+          -0.8772,
+          0.8481,
+          0.9769,
+          1.0,
+          0.808
         ],
         [
-          -2.388864e-10,
-          -1.096198e-09,
-          1.730658e-09,
-          8.396657e-10,
-          1.552633e-09,
-          6.614545e-09
+          -0.3248,
+          -0.8536,
+          0.8579,
+          0.8366,
+          0.808,
+          1.0
         ]
       ]
     },
@@ -192,8 +201,8 @@
       "ECCENTRICITY": 0.001105138,
       "INCLINATION": 97.5204263,
       "RA_OF_ASC_NODE": 330.0006059,
-      "ARG_OF_PERICENTER": 90.3956613,
-      "MEAN_ANOMALY": 359.6060825,
+      "ARG_OF_PERICENTER": 90.39566,
+      "MEAN_ANOMALY": 359.6060837,
       "EPHEMERIS_TYPE": 0,
       "CLASSIFICATION_TYPE": "U",
       "NORAD_CAT_ID": 339001,
@@ -236,7 +245,7 @@
       "set": 0,
       "index": 3,
       "time": "2026-11-01T15:44:45.000Z",
-      "along_track_arcsec": -19.54,
+      "along_track_arcsec": -19.53,
       "cross_track_arcsec": 2.31,
       "normalised_residual": 1.055,
       "used": true
@@ -245,7 +254,7 @@
       "set": 0,
       "index": 4,
       "time": "2026-11-01T15:44:55.000Z",
-      "along_track_arcsec": -2.64,
+      "along_track_arcsec": -2.63,
       "cross_track_arcsec": -1.24,
       "normalised_residual": 0.186,
       "used": true
@@ -254,7 +263,7 @@
       "set": 0,
       "index": 5,
       "time": "2026-11-01T15:45:15.000Z",
-      "along_track_arcsec": 2.31,
+      "along_track_arcsec": 2.32,
       "cross_track_arcsec": -0.53,
       "normalised_residual": 0.135,
       "used": true
@@ -272,7 +281,7 @@
       "set": 0,
       "index": 7,
       "time": "2026-11-01T17:18:33.000Z",
-      "along_track_arcsec": -15.89,
+      "along_track_arcsec": -15.88,
       "cross_track_arcsec": 1.09,
       "normalised_residual": 0.687,
       "used": true
@@ -299,7 +308,7 @@
       "set": 0,
       "index": 10,
       "time": "2026-11-01T17:19:03.000Z",
-      "along_track_arcsec": -23.37,
+      "along_track_arcsec": -23.36,
       "cross_track_arcsec": -7.15,
       "normalised_residual": 1.182,
       "used": true
@@ -398,7 +407,7 @@
       "set": 2,
       "index": 1,
       "time": "2026-11-01T18:49:41.000Z",
-      "along_track_arcsec": -16.03,
+      "along_track_arcsec": -16.02,
       "cross_track_arcsec": 7.54,
       "normalised_residual": 0.995,
       "used": true
@@ -407,7 +416,7 @@
       "set": 2,
       "index": 2,
       "time": "2026-11-01T18:49:51.000Z",
-      "along_track_arcsec": 9.07,
+      "along_track_arcsec": 9.08,
       "cross_track_arcsec": -3.52,
       "normalised_residual": 0.523,
       "used": true
